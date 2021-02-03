@@ -1,0 +1,7 @@
+[package]
+name = "hmlm"
+version = "0.1.0"
+# edition = "2018"
+
+[dependencies]
+xml-rs = "0.8.3"
