@@ -76,13 +76,13 @@ pub enum Token {
 /// By default this flag is not set. Use `enable_errors` and `disable_errors` methods
 /// to toggle the behavior.
 pub struct Lexer<'a, R:BufRead> {
-    reader     : &'a mut Reader<'a, R>,
+    reader     : &'a mut Reader<R>,
     read_ahead : Option<Char>,
 }
 
 impl <'a, R:BufRead> Lexer<'a, R> {
     /// Returns a new lexer with default state.
-    pub fn new<'b>(reader : &'b mut Reader<'b, R>) -> Lexer<'b, R>  {
+    pub fn new<'b>(reader : &'b mut Reader<R>) -> Lexer<'b, R>  {
         Lexer {
             reader,
             read_ahead: None,

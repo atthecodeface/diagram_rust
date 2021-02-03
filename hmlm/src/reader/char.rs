@@ -203,9 +203,9 @@ impl FilePosition {
 ///     let mut reader    = Reader::new(&mut buf_bytes);
 ///     for x in reader {
 /// ```
-pub struct Reader<'a, R:BufRead> {
+pub struct Reader<R:BufRead> {
     /// The reader from which data is to be fetched
-    buf_reader : &'a mut R,
+    buf_reader : R,
     /// Position within the file of the next character to be decoded
     cursor     : FilePosition,
     /// `eof` is set when the stream is complete - any character
@@ -227,11 +227,11 @@ pub struct Reader<'a, R:BufRead> {
 }
 
 //ip Reader
-impl <'a, R:BufRead> Reader<'a, R> {
+impl <R:BufRead> Reader<R> {
 
     //fp new
     /// Returns a new UTF-8 character reader, with a file position of the start of the file
-    pub fn new<'b> (buf_reader : &'b mut R) -> Reader<'b, R> {
+    pub fn new (buf_reader: R) -> Reader<R> {
         Reader {
             buf_reader,
             cursor: FilePosition::new(),
@@ -341,7 +341,7 @@ impl <'a, R:BufRead> Reader<'a, R> {
 }
 
 //ip Iterator for Reader
-impl <'a, R:BufRead> Iterator for Reader<'a, R> {
+impl <R:BufRead> Iterator for Reader<R> {
     // we will be counting with usize
     type Item = char;
 
