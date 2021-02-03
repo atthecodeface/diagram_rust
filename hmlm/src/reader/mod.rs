@@ -9,7 +9,7 @@ use xml::reader::XmlEvent;
 use self::parser::ParseError;
 
 pub struct EventReader<'a, R: Read> {
-    lexer : lexer::Lexer<'a, R>,
+    lexer : lexer::LexerOfReader<'a, R>,
     parser: parser::Parser,
     finished : bool,
 }

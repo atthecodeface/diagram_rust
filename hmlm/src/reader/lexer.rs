@@ -490,7 +490,7 @@ impl Lexer {
 //tp LexerOfReader
 pub struct LexerOfReader<'a, R:Read> {
     reader     : &'a mut Reader<R>,
-    lexer      : Lexer2,
+    lexer      : Lexer,
 }
 
 impl <'a, R:Read> LexerOfReader<'a, R> {
