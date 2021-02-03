@@ -29,6 +29,12 @@ const BUFFER_SIZE  : usize = 2048;
 /// There is no reason why `BUFFER_SLACK` should be larger than 4.
 const BUFFER_SLACK : usize = 4;
 
+//a Blah
+pub trait CharReader {
+    fn next_char(&mut self) -> CharResult;
+    fn pos(&self) -> FilePosition;
+}
+
 //a Character result and error
 //tp Char
 /// `Char` represents a unicode character or EOF marker
@@ -215,12 +221,6 @@ impl <R:Read> Reader<R> {
         }
     }
 
-    //mp pos
-    /// Return the file position of the next character to be decoded from the stream
-    pub fn pos(&self) -> FilePosition {
-        self.cursor
-    }
-
     //mp complete
     /// Return `true` if the reader has consumed all the data available on the stream
     pub fn complete(&mut self) -> Result<bool, CharError> {
@@ -261,13 +261,32 @@ impl <R:Read> Reader<R> {
         Ok(n)
     }
 
+    //fm buffered_data
+    /// Get the unconsumed buffered data - useful if the Reader has completed its task,
+    /// and the `Read` stream is to be used for something further. This call returns the
+    /// buffered data that has already been read from the `Read` stream, and which should be
+    /// consumed before any more `read` calls to the stream.
+    pub fn buffered_data(&self) -> &[u8] {
+        &self.current[self.start..self.end]
+    }
+
+    //zz All done
+}
+
+impl <R:Read> CharReader for Reader<R> {
+    //mp pos
+    /// Return the file position of the next character to be decoded from the stream
+    fn pos(&self) -> FilePosition {
+        self.cursor
+    }
+
     //fm next_char
     /// Get the next character from the stream
     ///
     /// # Errors
     ///
     /// May return CharError::MalformedUtf8 if 
-    pub fn next_char(&mut self) -> CharResult {
+    fn next_char(&mut self) -> CharResult {
         if self.eof {
             Ok(Char::Eof)
         } else if self.start == self.end { // no data present, try reading data
@@ -316,17 +335,6 @@ impl <R:Read> Reader<R> {
             }
         }
     }
-
-    //fm buffered_data
-    /// Get the unconsumed buffered data - useful if the Reader has completed its task,
-    /// and the `Read` stream is to be used for something further. This call returns the
-    /// buffered data that has already been read from the `Read` stream, and which should be
-    /// consumed before any more `read` calls to the stream.
-    pub fn buffered_data(&self) -> &[u8] {
-        &self.current[self.start..self.end]
-    }
-
-    //zz All done
 }
 
 //ip Iterator for Reader - iterate over characters
