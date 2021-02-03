@@ -18,7 +18,7 @@ impl <'a, R: Read> EventReader<'a, R> {
     /// Creates a new reader, consuming the given stream.
     #[inline]
     pub fn new<'b> (source: &'b mut char::Reader<R>) -> EventReader<'b, R> {
-        let lexer       = lexer::Lexer::new(source);
+        let lexer       = lexer::LexerOfReader::new(source);
         let parser      = parser::Parser::new();
         EventReader { lexer, parser, finished:false }
     }

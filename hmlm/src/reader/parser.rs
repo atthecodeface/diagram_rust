@@ -13,7 +13,7 @@ use xml::reader::XmlEvent;
 use xml::common::XmlVersion;
 
 use super::char::FilePosition;
-use super::lexer::{Token, TokenWithPos, TokenError, Lexer, NamespaceName};
+use super::lexer::{Token, TokenWithPos, TokenError, LexerOfReader, NamespaceName};
 
 //a Conversion functions
 fn owned_of_ns_name (ns_name:&NamespaceName) -> OwnedName {
@@ -307,7 +307,7 @@ mod tests {
     fn test_string(s:&str, exp:Vec<XmlEvent>) {
         let mut bytes  = s.as_bytes();
         let mut reader = Reader::new(&mut bytes);
-        let mut lexer  = Lexer::new(&mut reader);
+        let mut lexer  = LexerOfReader::new(&mut reader);
         let mut parser  = Parser::new();
         for i in 0..exp.len() {
             let t = parser.next_event(|| lexer.next_token_with_pos());

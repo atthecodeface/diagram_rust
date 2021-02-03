@@ -144,23 +144,23 @@ impl fmt::Display for Token {
     }
 }
 
-//a Lexer2
+//a Lexer
 /// `Lexer` is a tokenizer for HMLH documents
 ///
 /// Main method is `next_token` which accepts an `Read` instance
 ///
-//tp Lexer2
-pub struct Lexer2 {
+//tp Lexer
+pub struct Lexer {
     read_ahead : Option<Char>,
     token_start: FilePosition,
 }
 
-impl Lexer2 {
+impl Lexer {
 
     //fp new - 
     /// Returns a new lexer with default state.
-    pub fn new() -> Lexer2  {
-        Lexer2 {
+    pub fn new() -> Lexer  {
+        Lexer {
             read_ahead: None,
             token_start: FilePosition::new(),
         }
@@ -482,25 +482,25 @@ impl Lexer2 {
     //zz All done
 }
 
-//a Lexer
+//a LexerOfReader
 /// `Lexer` is a tokenizer for HMLH documents
 ///
 /// Main method is `next_token` which accepts an `Read` instance
 ///
-//tp Lexer
-pub struct Lexer<'a, R:Read> {
+//tp LexerOfReader
+pub struct LexerOfReader<'a, R:Read> {
     reader     : &'a mut Reader<R>,
     lexer      : Lexer2,
 }
 
-impl <'a, R:Read> Lexer<'a, R> {
+impl <'a, R:Read> LexerOfReader<'a, R> {
 
     //fp new - 
     /// Returns a new lexer with default state.
-    pub fn new<'b>(reader : &'b mut Reader<R>) -> Lexer<'b, R>  {
-        Lexer {
+    pub fn new<'b>(reader : &'b mut Reader<R>) -> LexerOfReader<'b, R>  {
+        LexerOfReader {
             reader,
-            lexer: Lexer2::new(),
+            lexer: Lexer::new(),
         }
     }
 
@@ -535,7 +535,7 @@ mod tests {
     fn test_blah() {
         let mut buf = "; This is a comment\n   ; with more comment\n #banana r='2' \"\"\"Stuff \"\"  and more \"\"\"".as_bytes();
         let mut reader = Reader::new(&mut buf);
-        let mut lexer  = Lexer::new(&mut reader);
+        let mut lexer  = LexerOfReader::new(&mut reader);
         loop {
             let t = lexer.next_token();
             assert_eq!( t.is_err(), false, "T should not be an error");
