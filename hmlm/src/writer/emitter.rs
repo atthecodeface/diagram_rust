@@ -155,7 +155,7 @@ impl Emitter {
         Ok(())
     }
 
-    pub fn emit_current_namespace_attributes<W>(&mut self, target: &mut W) -> HmlmResult<()>
+    pub fn emit_current_namespace_attributes<W>(&mut self, _target: &mut W) -> HmlmResult<()>
         where W: Write
     {
         /*
@@ -178,7 +178,7 @@ impl Emitter {
     }
 
     pub fn emit_end_element<W: Write>(&mut self, target: &mut W,
-                                      name: Option<Name>) -> HmlmResult<()> {
+                                      _name: Option<Name>) -> HmlmResult<()> {
         self.emit_pending_element(target, false)?;
         self.indent_level = self.indent_stack.pop().unwrap().close(target)?;
         Ok(())

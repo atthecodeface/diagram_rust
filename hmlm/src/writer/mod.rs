@@ -33,20 +33,17 @@ impl<W: Write> EventWriter<W> {
     pub fn write<'a, E>(&mut self, event: E) -> HmlmResult<()>
     where E: Into<XmlEvent<'a>> {
         match event.into() {
-            XmlEvent::StartDocument { version, encoding, standalone } => {
+            XmlEvent::StartDocument { version:_, encoding:_, standalone:_ } => {
                 Ok(())
             },
-            XmlEvent::ProcessingInstruction { name, data } => {
+            XmlEvent::ProcessingInstruction { name:_, data:_ } => {
                 Ok(())
             }
-            XmlEvent::StartElement { name, attributes, namespace } => {
-                // println!("{:#?}",namespace);
-                // self.emitter.namespace_stack_mut().push_empty().checked_target().extend(namespace.as_ref());
+            XmlEvent::StartElement { name, attributes, namespace:_ } => {
                 self.emitter.emit_start_element(&mut self.sink, name, &attributes)
             }
             XmlEvent::EndElement { name } => {
                 let r = self.emitter.emit_end_element(&mut self.sink, name);
-                // self.emitter.namespace_stack_mut().try_pop();
                 r
             }
             XmlEvent::Comment(content) => {

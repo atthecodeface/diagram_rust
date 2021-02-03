@@ -8,24 +8,26 @@ pub mod parser;
 use xml::reader::XmlEvent;
 use self::parser::ParseError;
 
-pub struct EventReader<'a, R: Read> {
-    lexer : lexer::LexerOfReader<'a, R>,
-    parser: parser::Parser,
+pub struct EventReader<R: Read> {
+    reader : char::Reader<R>,
+    lexer  : lexer::Lexer,
+    parser : parser::Parser,
     finished : bool,
 }
 
-impl <'a, R: Read> EventReader<'a, R> {
+impl <R: Read> EventReader<R> {
     /// Creates a new reader, consuming the given stream.
     #[inline]
-    pub fn new<'b> (source: &'b mut char::Reader<R>) -> EventReader<'b, R> {
-        let lexer       = lexer::LexerOfReader::new(source);
+    pub fn new (source: R) -> EventReader<R> {
+        let reader      = char::Reader::new(source);
+        let lexer       = lexer::Lexer::new();
         let parser      = parser::Parser::new();
-        EventReader { lexer, parser, finished:false }
+        EventReader { reader, lexer, parser, finished:false }
     }
 }
 
 //ip Iterator for EventReader - iterate over events
-impl <'a, R:Read> Iterator for EventReader<'a, R> {
+impl <R:Read> Iterator for EventReader<R> {
     // we will be counting with usize
     type Item = Result<XmlEvent,ParseError>;
 
@@ -34,9 +36,9 @@ impl <'a, R:Read> Iterator for EventReader<'a, R> {
         if self.finished {
             None
         } else {
-            let (mut p, mut l) = (&mut self.parser, &mut self.lexer);
+            let (p, l, r) = (&mut self.parser, &mut self.lexer, &mut self.reader);
              {
-            let e = p.next_event(|| l.next_token_with_pos());
+            let e = p.next_event(|| l.next_token_with_pos(r));
             match e {
                 Ok(XmlEvent::EndDocument) | Err(_) => self.finished = true,
                 _ => (),

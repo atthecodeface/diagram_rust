@@ -3,17 +3,14 @@
 
 //a Imports
 use std::fmt;
-use std::io::prelude::BufRead;
-use std::io::Read;
-use std::result;
-use xml::attribute::{Attribute, OwnedAttribute};
+use xml::attribute::{OwnedAttribute};
 use xml::name::{Name, OwnedName};
 use xml::namespace::{Namespace, NamespaceStack};
 use xml::reader::XmlEvent;
 use xml::common::XmlVersion;
 
 use super::char::FilePosition;
-use super::lexer::{Token, TokenWithPos, TokenError, LexerOfReader, NamespaceName};
+use super::lexer::{Token, TokenWithPos, TokenError, NamespaceName};
 
 //a Conversion functions
 fn owned_of_ns_name (ns_name:&NamespaceName) -> OwnedName {
@@ -29,11 +26,11 @@ fn owned_of_ns_name (ns_name:&NamespaceName) -> OwnedName {
 pub enum ParseError {
     /// `UnexpectedTagIndent` occurs when a tag is provided in the stream
     /// with too many '#' as an indent
-    UnexpectedTagIndent(FilePosition, FilePosition),
+    UnexpectedTagIndent(FilePosition, FilePosition, usize),
     /// `UnexpectedAttribute` occurs when an attribute token is in the
     /// stream but it does not follow an open tag or another attribute
     /// token
-    UnexpectedAttribute(FilePosition, FilePosition),
+    UnexpectedAttribute(FilePosition, FilePosition, NamespaceName),
     /// `EventAfterEnd` occurs when the client polls for an event after an EndDocument event has been provide
     EventAfterEnd,
     /// `TokenError` occurs when there is an underlying token decode error, or IO error
@@ -53,19 +50,19 @@ impl ParseError {
     pub fn no_more_events() -> ParseError {
         ParseError::EventAfterEnd
     }
-    pub fn unexpected_attribute(pos1: FilePosition, pos2: FilePosition) -> ParseError {
-        ParseError::UnexpectedAttribute(pos1, pos2)
+    pub fn unexpected_attribute(pos1: FilePosition, pos2: FilePosition, ns_name:NamespaceName) -> ParseError {
+        ParseError::UnexpectedAttribute(pos1, pos2, ns_name.clone())
     }
-    pub fn unexpected_tag_indent(pos1: FilePosition, pos2: FilePosition) -> ParseError {
-        ParseError::UnexpectedTagIndent(pos1, pos2)
+    pub fn unexpected_tag_indent(pos1: FilePosition, pos2: FilePosition, depth:usize) -> ParseError {
+        ParseError::UnexpectedTagIndent(pos1, pos2, depth)
     }
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ParseError::UnexpectedAttribute(pos1, pos2) => write!(f, "Unexpected HMLH attribute at {}", pos1),
-            ParseError::UnexpectedTagIndent(pos1, pos2) => write!(f, "Unexpected tag indent in tag at {}", pos1),
+        match self {
+            ParseError::UnexpectedAttribute(pos1, _pos2, ns_name) => write!(f, "Unexpected HMLH attribute {} at {}", ns_name, pos1),
+            ParseError::UnexpectedTagIndent(pos1, _pos2, depth) => write!(f, "Unexpected tag indent {} in tag at {}", depth, pos1),
             ParseError::EventAfterEnd            => write!(f, "Client request event after EndDocument was reported"),
             ParseError::Token(ref e) => write!(f, "{}", e),
         }
@@ -184,7 +181,7 @@ impl Parser {
     /// If no start_element being built then return ParseError, otherwise add it to the top of the stack
     fn start_element_add_attribute(&mut self, ns_name:NamespaceName, value:String) -> Result<(),ParseError> {
         if !self.start_element_building {
-            Err(ParseError::unexpected_attribute(self.token_start, self.token_end))
+            Err(ParseError::unexpected_attribute(self.token_start, self.token_end, ns_name))
         } else {
             let attr = OwnedAttribute::new(owned_of_ns_name(&ns_name),value);
             let n = self.tag_stack.len()-1;
@@ -231,18 +228,18 @@ impl Parser {
             if self.tag_depth>0 { // close the current element at the top of the stack
                 self.pop_tag_stack()
             } else { // token should match, open should be boxed, and we can close the element this involves dropping the pending_tag too
-                let (depth, ns_name) = self.pending_close_tag.pop().unwrap();
+                let (_depth, _ns_name) = self.pending_close_tag.pop().unwrap();
                 self.pop_tag_stack()
             }
         } else if self.pending_open_tag.len()>0 { // will close something or open this!
             let (depth,_,_) = self.pending_open_tag[0];
             if depth<=self.tag_depth { // close the current element at the top of the stack
                 self.pop_tag_stack()
-            } else if (depth==self.tag_depth+1) { // open the new element
+            } else if depth==self.tag_depth+1 { // open the new element
                 self.push_tag_stack();
                 self.next_event(get_token)
             } else { // too far down!
-                Err(ParseError::unexpected_tag_indent(self.token_start, self.token_end))
+                Err(ParseError::unexpected_tag_indent(self.token_start, self.token_end, depth))
             }
         } else { // read a token and do something!
             let token = {
@@ -296,8 +293,15 @@ impl Parser {
 //a Test
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Parser;
     use super::super::char::Reader;
+    use xml::attribute::{Attribute, OwnedAttribute};
+    use xml::name::{Name, OwnedName};
+    use xml::namespace::{Namespace};
+    use xml::reader::XmlEvent;
+    use xml::common::XmlVersion;
+
+    use super::super::lexer::{LexerOfReader};
     fn onos(s:&str) -> OwnedName {
         Name::from(s).to_owned()
     }
