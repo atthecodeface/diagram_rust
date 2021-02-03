@@ -1,21 +1,57 @@
-//! Contains simple lexer for HMLM documents.
+//! This module provides a tokenizer for HMLH documents. HMLH documents are UTF-8 encoded.
 //!
-//! This module is for internal use.
+//! An HMLH token can be a tag, such as `###banana`, which may be
+//! an explicit boxing open tag e.g. `##fruit{` or the equivalent close
+//! tag `##fruit}`
+//!
+//! The token may be a comment - any HMLH line whose first non-whitespace character is a semicolon
+//! makes the rest of the line after the semicolon a comment
+//!
+//! The token may be characters - a quoted string - which starts with either a single or double quote character.
+//! Quoted strings using one quote character to delineate it, in which case the contents are escaped, and must not contain newlines
+//! Alternatively quoted strings may start with three quote characters, in which case they can be boxed, and the terminate at the
+//! next occurrence of the same three quote characters
+//!
+//! A token may be a attribute - which is of the form [<name_space>:]<name>=<quoted string>
 
+//a Imports
 use std::fmt;
-use std::io::prelude::BufRead;
+use std::io::prelude::Read;
 use super::utils::*;
 use super::char::*;
 
+//a TokenError
+//tp TokenError
+/// `TokenError` represents an error in a token stream; this may be
+/// due to a UTF-8 decoding error, an I/O error on the underlying
+/// stream, or an unexpected character within a token.
 #[derive(Debug)]
 pub enum TokenError {
-    UnexpectedCharacter(char, FilePosition),
-    UnexpectedEOF(FilePosition),
+    /// `UnexpectedCharacter` indicates that a character occurred that
+    /// did not fit with those required by the current token A
+    /// character that is not permitted to start a token (such as a
+    /// digit) would be unexpected if the tokenizer is looking for the
+    /// start of a token, for example. Tokens are expected to be
+    /// separated by whitespace - and so on. Two file positions are
+    /// provided in the error - the first is from the start of the
+    /// token, the second the position of the error
+    UnexpectedCharacter(char, FilePosition, FilePosition),
+    /// `UnexpectedEOF` indicates that an EOF was found during the
+    /// decoding of, for example, a quoted string, or within an
+    /// attribute. EOF can only occur after a token (or whitespace following a token). Two file positions are
+    /// provided in the error - the first is from the start of the
+    /// token, the second the position of the error
+    UnexpectedEOF(FilePosition, FilePosition),
+    /// `MalformedUtf8` occurs if the underlying char stream indicates a malformed UTF-8 encoding
     MalformedUtf8(usize, FilePosition),
+    /// `IoError`s from the underlying stream get passed through
     IoError(std::io::Error),
 }
 
+//ip From CharError for TokenError
 impl From<CharError> for TokenError {
+    //mp from CharError
+    /// Render a CharError as a TokenError for implicit conversions
     fn from(e: CharError) -> TokenError {
         match e {
             CharError::IoError(e    )       => TokenError::IoError(e),
@@ -24,38 +60,60 @@ impl From<CharError> for TokenError {
     }
 }
 
+//ip From std::io::Error for TokenError
 impl From<std::io::Error> for TokenError {
+    //mp from std::io::Error
+    /// Render an IO Error as a TokenError for implicit conversions
     fn from(e: std::io::Error) -> TokenError {
         TokenError::IoError(e)
     }
 }
 
+//ip fmt::Display for TokenError
 impl fmt::Display for TokenError {
+    //mp fmt - format a `TokenError` for display
+    /// Display the `TokenError` in a human-readable form
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            TokenError::UnexpectedEOF(pos) => write!(f, "unexpected EOF in token at {}", pos),
-            TokenError::UnexpectedCharacter(ch, pos) => write!(f, "unexpected character {} at {}", ch, pos),
+            TokenError::UnexpectedEOF(pos1, pos2) => write!(f, "unexpected EOF at {} in token starting at {}", pos2, pos1),
+            TokenError::UnexpectedCharacter(ch, pos1, pos2) => write!(f, "unexpected character {} at {} in token starting at {}", ch, pos2, pos1),
             TokenError::MalformedUtf8(n, pos) => write!(f, "malformed UTF-8 of {} bytes at {}", n, pos),
             TokenError::IoError(ref e) => write!(f, "IO error: {}", e),
         }
     }
 }
 
+//a NamespaceName and Token
+/// `NamespaceName` represents a tag name or an attribute name; it is
+/// a string with an optional namespace string
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct NamespaceName {
+    /// `namespace` is an optional prefix really - that which comes before a ':' in an attribute or tag namespace_name
+    pub namespace: Option<String>,
+    /// `name` is the local portion of the tag or attribute
+    pub name : String,
+}
 
+//ip fmt::Display for NamespaceName
+impl fmt::Display for NamespaceName {
+    //mp fmt - format a `NamespaceName` for display
+    /// Display the `NamespaceName` in a human-readable form
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self.namespace {
+            None     => write!(f, "{}", self.name),
+            Some(ns) => write!(f, "{}:{}", ns, self.name),
+        }
+    }
+}
 
 /// `Token` represents a single item in an HMLH document
 /// This will be an entity that effects the parse state of the parser
 /// Hence it includes all of attr="string with spaces"
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct NamespaceName {
-    namespace: Option<String>,
-    name : String,
-}
-#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Token {
     /// ; stuff up to newline
     Comment(Vec<String>),
-    /// ###<tag>[{] Tag open - with depth (number of #) and true if multiline
+    /// ###<tag>[{] Tag open - with depth (number of #) and true if boxed
     TagOpen(NamespaceName, usize, bool),
     /// ###<tag>} Tag close - with depth (number of #)
     TagClose(NamespaceName, usize),
@@ -66,32 +124,52 @@ pub enum Token {
     /// End of file
     EndOfFile,
 }
+pub type TokenWithPos = (FilePosition, FilePosition, Token);
 
-/// `Lexer` is a lexer for HMLH documents
-///
-/// Main method is `next_token` which accepts an `std::io::Read` instance and
-/// tries to read the next lexeme from it.
-///
-/// When `skip_errors` flag is set, invalid lexemes will be returned as `Chunk`s.
-/// When it is not set, errors will be reported as `Err` objects with a string message.
-/// By default this flag is not set. Use `enable_errors` and `disable_errors` methods
-/// to toggle the behavior.
-pub struct Lexer<'a, R:BufRead> {
-    reader     : &'a mut Reader<R>,
-    read_ahead : Option<Char>,
+//ip fmt::Display for Token
+impl fmt::Display for Token {
+    //mp fmt - format a `Token` for display
+    /// Display the `Token` in a human-readable form
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::Comment(v) => write!(f, "<comment : {}...>", v[0]),
+            Token::TagOpen(ns_name, depth, false) => write!(f, "<{} {}/>", depth, ns_name),
+            Token::TagOpen(ns_name, depth, true)  => write!(f, "<{} {}>",  depth, ns_name),
+            Token::TagClose(ns_name, depth)       => write!(f, "</{} {}>",  depth, ns_name),
+            Token::Attribute(ns_name, value)      => write!(f, "<{}='{}'>",  ns_name, value),
+            Token::Characters(value)              => write!(f, "[{}]",  value),
+            Token::EndOfFile                      => write!(f, "<!EOF>"),
+        }
+    }
 }
 
-impl <'a, R:BufRead> Lexer<'a, R> {
+//a Lexer
+/// `Lexer` is a tokenizer for HMLH documents
+///
+/// Main method is `next_token` which accepts an `Read` instance
+///
+//tp Lexer
+pub struct Lexer<'a, R:Read> {
+    reader     : &'a mut Reader<R>,
+    read_ahead : Option<Char>,
+    token_start: FilePosition,
+}
+
+impl <'a, R:Read> Lexer<'a, R> {
+
+    //fp new - 
     /// Returns a new lexer with default state.
     pub fn new<'b>(reader : &'b mut Reader<R>) -> Lexer<'b, R>  {
         Lexer {
             reader,
             read_ahead: None,
+            token_start: FilePosition::new(),
         }
     }
 
+    //mi peek_char - peek at the next character
     /// Peek character
-    pub fn peek_char(&mut self) -> CharResult {
+    fn peek_char(&mut self) -> CharResult {
         match self.read_ahead {
             Some(x) => {
                 Ok(x)
@@ -104,16 +182,18 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         }
     }
 
+    //mi peek_char_no_eof - peek at the next character, with an error if it is EOF
     /// Peek character - EOF not permitted
-    pub fn peek_char_no_eof(&mut self) -> Result<char, TokenError> {
+    fn peek_char_no_eof(&mut self) -> Result<char, TokenError> {
         match self.peek_char()? {
             Char::Char(ch) => { Ok(ch) },
             _              => { Err(self.unexpected_eof()) },
         }
     }
 
+    //mi get_char - get the next character
     /// Get character
-    pub fn get_char(&mut self) -> CharResult {
+    fn get_char(&mut self) -> CharResult {
         match self.read_ahead {
             Some(x) => {
                 self.read_ahead = None;
@@ -123,21 +203,25 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         }
     }
 
+    //mi get_char - get the next character, with an error if it is EOF
     /// Get character - EOF not permitted
-    pub fn get_char_no_eof(&mut self) -> Result<char, TokenError> {
+    fn get_char_no_eof(&mut self) -> Result<char, TokenError> {
         match self.get_char()? {
             Char::Char(ch) => { Ok(ch) },
             _              => { Err(self.unexpected_eof()) },
         }
     }
 
-    /// Unget character
-    pub fn unget_char(&mut self, char:Char) -> () {
+    //mi unget_char - return a character to the (single char) readahead buffer
+    /// Unget a character - put it into the readahead
+    fn unget_char(&mut self, char:Char) -> () {
         self.read_ahead = Some(char);
     }
-    
-    /// Returns a new lexer with default state.
-    pub fn skip_whitespace(&mut self) -> Result<(),CharError> {
+
+    //mi skip_whitespace - get up to first non-whitespace character
+    /// Read characters until EOF or non-whitespace
+    /// If non-whitespace, then unget it back into the readahead
+    fn skip_whitespace(&mut self) -> Result<(),CharError> {
         loop {
             let ch = self.get_char()?;
             match ch {
@@ -155,9 +239,10 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         }
         Ok(())
     }
-    
-    /// Read line
-    pub fn read_line(&mut self) -> Result<String,CharError> {
+
+    //mi read_line - read up to newline, for (e.g.) comments
+    /// Read the string from the current char to a newline, leaving that out
+    fn read_line(&mut self) -> Result<String,CharError> {
         let mut s = String::new();
         loop {
             let ch = self.get_char()?;
@@ -177,18 +262,17 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         return Ok(s);        
     }
 
-    /// Tries to read the next token from the buffer.
+    //mp next_token
+    /// Tries to read the next token from the buffer, returning an Ok(Token) on success
     ///
-    /// It is possible to pass different instaces of `BufReader` each time
-    /// this method is called, but the resulting behavior is undefined in this case.
+    /// # Errors
     ///
-    /// Return value:
-    /// * `Err(reason) where reason: reader::Error` - when an error occurs;
-    /// * `Ok(None)` - upon end of stream is reached;
-    /// * `Ok(Some(token)) where token: Token` - in case a complete-token has been read from the stream.
+    /// Can return an IO error from the underlying stream, or a UTF-8 encoding error.
+    ///
+    /// Additionally it may return an error for characters that are illegal within the token stream
     pub fn next_token(&mut self) -> Result<Token,TokenError> {
-        println!("Next token");
         self.skip_whitespace()?;
+        self.token_start = self.reader.pos();
         match self.peek_char()? {
             Char::Char(ch) => {
                 if is_semicolon(ch as u32) {
@@ -216,20 +300,29 @@ impl <'a, R:BufRead> Lexer<'a, R> {
                 } else if is_name_start(ch as u32) {
                     return self.read_attribute();
                 }
-                return Err(TokenError::UnexpectedCharacter(ch, self.reader.pos()));
+                return Err(self.unexpected_character(ch));
             }
             _ => Ok(Token::EndOfFile),
         }
     }
 
+    //mp next_token_with_pos
+    /// Tries to read the next token from the buffer, returning an Ok(TokenWithPos) on success
+    ///
+    /// same as next_token, but returns the bounds of the token too, if not an error
+    pub fn next_token_with_pos(&mut self) -> Result<TokenWithPos,TokenError> {
+        let t = self.next_token()?;
+        Ok( (self.token_start, self.reader.pos(), t) )
+    }
+
     //mi unexpected_eof
     fn unexpected_eof(&self) -> TokenError {
-        TokenError::UnexpectedEOF(self.reader.pos())
+        TokenError::UnexpectedEOF(self.token_start, self.reader.pos())
     }
 
     //mi unexpected_character
     fn unexpected_character(&self, ch:char) -> TokenError {
-        TokenError::UnexpectedCharacter(ch, self.reader.pos())
+        TokenError::UnexpectedCharacter(ch, self.token_start, self.reader.pos())
     }
 
     //mi read_name - read a name, cursor should be pointing at a is_name_start character
@@ -276,7 +369,13 @@ impl <'a, R:BufRead> Lexer<'a, R> {
     }
 
     //mi read_tag - read a tag given cursor is at first #
-    // a tag is #+ <name> [ { | } ] <whitespace>
+    /// the stream cursor points at the first # in the tag,
+    /// and this method reads the tag from that point
+    ///
+    /// a tag is #+ <namespace_name> [ { | } ] <whitespace>
+    ///
+    /// The result is a TagOpen or TagClose, with the depth set to the number of '#'s
+    /// at the front of the tag, and the namespace_name set appropriately
     fn read_tag(&mut self) -> Result<Token,TokenError> {
         let mut hash_count : usize =0;
         loop {
@@ -310,7 +409,11 @@ impl <'a, R:BufRead> Lexer<'a, R> {
     }
 
     //mi read_quoted_string
-    // pointing at single or double quote
+    /// reads a quoted string, given the stream cursor is pointing at the opening quote character
+    /// an empty quoted string is two identical quote characters then a different character (or EOF)
+    /// a triple quoted string starts with three identical quote characters and continues (including newlines)
+    /// until the next three identical quote characters
+    /// otherwise it is a single quoted string, which should handle escapes (only \\ => \, \" => ", \' => ', \n => newline?)
     pub fn read_quoted_string(&mut self) -> Result<String,TokenError> {
         let mut result = String::new();
         let ch = self.get_char_no_eof()?;
@@ -343,7 +446,10 @@ impl <'a, R:BufRead> Lexer<'a, R> {
     }
 
     //mi read_triple_quoted_string
-    // pointing at first character of contents (after the triple)
+    /// read a triple quoted string, with the stream cursor pointing
+    /// at first character of contents (after the triple quote) keeps
+    /// reading characters and pushing them until the three
+    /// consecutive quote characters are seen.
     fn read_triple_quoted_string(&mut self, quote_char:char) -> Result<String,TokenError> {
         let mut result = String::new();
         let mut num_quotes = 0;
@@ -374,6 +480,7 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         Ok(Token::Attribute(name,value))
     }
 
+    //zz All done
 }
 
 //a Test
@@ -391,6 +498,6 @@ mod tests {
             println!("{:?}", t);
             if t.unwrap() == Token::EndOfFile {break;}
         }
-        assert_eq!(true, false);
+        // assert_eq!(true, false);
     }
 }
