@@ -1,18 +1,27 @@
 //a Documentation
-/// 
+//! The `char` module provides a streaming char reader struct that
+//! converts a `Read` stream into a stream of `Char` values.
+//!
+//! If the `Read` stream comes from a file then this is just a
+//! streaming version of (e.g.) std::fs::read_to_string, but if the
+//! `Read` stream comes from, e.g., a std::net::TcpStream then it has
+//! more value: the `Char` value returned can indicate that the stream
+//! currently has no data valid, but the reader can continue when it
+//! does.
 
 //a Imports
-use std::io::prelude::BufRead;
+use std::io::prelude::Read;
 use std::fmt;
 use std::fmt::Write;
+use super::utils;
 
 //a Constants
 /// `BUFFER_SIZE` is the maximum number of bytes held in the UTF-8
 /// character reader from the incoming stream.  The larger the value,
 /// the larger the data read requests from the stream. This value must be larger than `BUFFER_SLACK`.
 /// For testing purposes this value should be small (such as 8), to catch corner cases in the code where UTF-8 encodings
-/// run over the end of a buffer; for performance, this value should be larger (e.g. 256).
-const BUFFER_SIZE  : usize = 256;
+/// run over the end of a buffer; for performance, this value should be larger (e.g. 2048).
+const BUFFER_SIZE  : usize = 2048;
 /// `BUFFER_SLACK` must be at least 4 - the maximum number of bytes in
 /// a UTF-8 encoding; when fewer than BUFFER_SLACK bytes are in the
 /// buffer a read from the buffer stream is performed - attempting to
@@ -27,6 +36,9 @@ const BUFFER_SLACK : usize = 4;
 pub enum Char {
     /// Eof indicates end of stream/file reached; once a reader returns Eof, it should continue to do so
     Eof,
+    /// NoData indicates that the stream/file did not supply data, but this is configured to not be EOF
+    /// This can only be returned by the reader if `eof_on_no_data` is false
+    NoData,
     /// Char indicates a valid Unicode character
     Char(char)
 }
@@ -37,7 +49,8 @@ impl fmt::Display for Char {
     /// Display the character as either the character itself, or '<EOF>'
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Char::Eof => write!(f, "<EOF>"),
+            Char::Eof    => write!(f, "<EOF>"),
+            Char::NoData => write!(f, "<NoData>"),
             Char::Char(ref ch) => f.write_char(*ch),
         }
     }
@@ -82,54 +95,6 @@ impl fmt::Display for CharError {
 /// `CharResult` represents the result of fetching a character
 pub type CharResult = std::result::Result<Char,CharError>;
 
-//a Character functions - for HMLH
-pub fn is_newline(ch:u32) -> bool {(ch==10) || (ch==133)}
-pub fn is_whitespace(ch:u32) -> bool {
-    (ch==9)  || (ch==10) || (ch==11) ||
-    (ch==12) || (ch==13) || (ch==32) ||
-    (ch==133) || (ch==160)
-}
-
-pub fn is_digit(ch:u32) -> bool { (ch>=48) && (ch<=57) }
-
-pub fn is_semicolon(ch:u32) -> bool { ch==59 }
-
-pub fn is_hash(ch:u32) -> bool { ch==35 }
-
-pub fn is_equals(ch:u32) -> bool { ch==61 }
-
-pub fn is_single_quote(ch:u32) -> bool { ch==39 }
-pub fn is_double_quote(ch:u32) -> bool { ch==34 }
-
-pub fn is_name_start(ch:u32) -> bool {
-    match ch {
-        58 => {true}, // colon
-        95 => {true}, // underscore
-        _  => { ((ch>=65) && (ch<=90))       ||    // A-Z
-                    ((ch>=97) && (ch<=122))     ||   // a-z 
-                    ((ch>=0xc0) && (ch<=0xd6)) ||
-                    ((ch>=0xd8) && (ch<=0xf6)) ||
-                    ((ch>=0xf8) && (ch<=0x2ff)) ||
-                    ((ch>=0x370) && (ch<=0x37d)) ||
-                    ((ch>=0x37f) && (ch<=0x1fff)) ||
-                    ((ch>=0x200c) && (ch<=0x200d)) ||
-                    ((ch>=0x2070) && (ch<=0x218f)) ||
-                    ((ch>=0x2c00) && (ch<=0x2fef)) ||
-                    ((ch>=0x3001) && (ch<=0xd7ff)) ||
-                    ((ch>=0xf900) && (ch<=0xfdcf)) ||
-                    ((ch>=0xfdf0) && (ch<=0xfffd)) ||
-                    ((ch>=0x10000) && (ch<=0xeffff))  }
-    }
-}
-
-pub fn is_name(ch:u32) -> bool {
-  is_name_start(ch) || (
-      ((ch==45) || (ch==46) || (ch==0xb7)) || // - .
-          ((ch>=48) && (ch<=57)) || // 0-9
-          ((ch>=0x399) && (ch<=0x36f)) ||
-          ((ch>=0x203f) && (ch<=0x2040)) )
-}
-
 //a FilePosition
 //tp FilePosition
 /// Holds the line number and character position of a character in a file
@@ -143,6 +108,7 @@ pub struct FilePosition {
 
 //ip fmt::Display for FilePosition
 impl fmt::Display for FilePosition {
+
     //mp fmt - format a `CharError` for display
     /// Display the `FilePosition` as line and column
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -165,7 +131,7 @@ impl FilePosition {
     /// Move the file position on by a character, accounting for newlines
     pub fn move_by(&mut self, ch:char) -> () {
         self.ch += 1;
-        if is_newline(ch as u32) {
+        if utils::is_newline(ch as u32) {
             self.ln += 1;
             self.ch = 0;
         }
@@ -177,21 +143,14 @@ impl FilePosition {
 //a Reader
 //tp Reader
 /// `Reader` provides a stream of characters by UTF-8 decoding a byte
-/// stream provided by something that implements the `BufRead` trait.
+/// stream provided by something that implements the `Read` trait.
 /// It utilizes an internal buffer of bytes that are filled as
-/// required from the `BufRead` object; it maintains a position with
+/// required from the `Read` object; it maintains a position with
 /// the stream (line and character) for the next character, and
-/// provides the ability to get a stream of characters from `BufRead`
+/// provides the ability to get a stream of characters from `Read`
 /// object with any UTF-8 encoding errors reported by line and
 /// character.
 /// 
-/// The `BufRead` object is borrowed for the lifetime of the `Reader`;
-/// as the `Reader` maintains its internal read-ahead buffer it does
-/// not make sense to permit the `BufRead` object be used until the
-/// `Reader` completes.
-///
-/// Actually it should probably not borrow the reader, but consume it.
-///
 /// If simple files are to be read, using std::fs::read_to_string is
 /// a better approach than using the `Reader`
 ///
@@ -200,14 +159,26 @@ impl FilePosition {
 /// ```
 ///     let str = "This is a \u{1f600} string\nWith a newline\n";
 ///     let mut buf_bytes = buf.as_bytes();
-///     let mut reader    = Reader::new(&mut buf_bytes);
+///     let reader    = Reader::new(&mut buf_bytes);
 ///     for x in reader {
+///         // use char x
+///     }
 /// ```
-pub struct Reader<R:BufRead> {
+///
+/// This example could just as easily use 'for x in str'
+///
+/// The `Reader`, though, can be used over any object supporting `Read` such
+/// as a std::net::TcpStream
+///
+pub struct Reader<R:Read> {
     /// The reader from which data is to be fetched
     buf_reader : R,
     /// Position within the file of the next character to be decoded
     cursor     : FilePosition,
+    /// `eof_on_no_data` defaults to true; it can be set to false to indicate that
+    /// if the stream has no data then the reader should return Char::NoData
+    /// when its buffer does not contain a complete UTF-8 character
+    eof_on_no_data : bool,
     /// `eof` is set when the stream is complete - any character
     /// requested once `eof` is asserted will be `Char::Eof`.
     eof        : bool,
@@ -227,7 +198,7 @@ pub struct Reader<R:BufRead> {
 }
 
 //ip Reader
-impl <R:BufRead> Reader<R> {
+impl <R:Read> Reader<R> {
 
     //fp new
     /// Returns a new UTF-8 character reader, with a file position of the start of the file
@@ -235,6 +206,7 @@ impl <R:BufRead> Reader<R> {
         Reader {
             buf_reader,
             cursor: FilePosition::new(),
+            eof_on_no_data : true,
             eof:    false,
             current : [0; BUFFER_SIZE],
             start     : 0,
@@ -248,50 +220,53 @@ impl <R:BufRead> Reader<R> {
     pub fn pos(&self) -> FilePosition {
         self.cursor
     }
+
+    //mp complete
+    /// Return `true` if the reader has consumed all the data available on the stream
+    pub fn complete(&mut self) -> Result<bool, CharError> {
+        if self.eof {
+            Ok(true)
+        } else if self.start!=self.end {
+            Ok(false)
+        } else {
+            Ok(self.fetch_input()? == 0)
+        }
+    }
     
-    //fp fetch_input
-    /// Fetch input from the `BufRead` into the internal buffer,
+    //fi fetch_input
+    /// Fetch input from the `Read` into the internal buffer,
     /// moving valid data to the start of the buffer first if
     /// required.  This method should only be invoked if more data is
     /// required; it is relatively code-heavy
     /// 
     /// To reduce the frequency
     fn fetch_input(&mut self) -> Result<usize, std::io::Error> {
-        match self.buf_reader.fill_buf() {
-            Err(e) => { Err(e) },
-            Ok(b) => {
-                let bl = b.len();
-                if bl==0 {
-                    self.eof = true;
-                    Ok(0)
-                } else {
-                    if self.start>BUFFER_SIZE-BUFFER_SLACK {
-                        // Move everything down by self.start
-                        let n = self.end - self.start;
-                        if n>0 {
-                            for i in 0..n {
-                                self.current[i] = self.current[self.start+i];
-                            }
-                        }
-                        self.valid_end -= self.start;
-                        self.start      = 0; // == self.start - self.start
-                        self.end        = n; // == self.end   - self.start
-                    }
-                    let room = BUFFER_SIZE - self.end;
-                    let n = {if bl>room {room} else {bl}};
-                    for i in 0..n {
-                        self.current[self.end+i] = b[i];
-                    }
-                    self.buf_reader.consume(n);
-                    self.end += n;
-                    Ok(n)
+        if self.start>BUFFER_SIZE-BUFFER_SLACK {
+            // Move everything down by self.start
+            let n = self.end - self.start;
+            if n>0 {
+                for i in 0..n {
+                    self.current[i] = self.current[self.start+i];
                 }
             }
+            self.valid_end -= self.start;
+            self.start      = 0; // == self.start - self.start
+            self.end        = n; // == self.end   - self.start
         }
+        let n = self.buf_reader.read( &mut self.current[self.end..BUFFER_SIZE] )?;
+        self.end += n;
+        if n==0 && self.eof_on_no_data {
+            self.eof = true;
+        }
+        Ok(n)
     }
 
     //fm next_char
-    /// Get the next character
+    /// Get the next character from the stream
+    ///
+    /// # Errors
+    ///
+    /// May return CharError::MalformedUtf8 if 
     pub fn next_char(&mut self) -> CharResult {
         if self.eof {
             Ok(Char::Eof)
@@ -321,7 +296,11 @@ impl <R:BufRead> Reader<R> {
                             None => { // incomplete UTF-8 fetch more
                                 match self.fetch_input()? {
                                     0 => { // ... and eof reached when incomplete UTF8 is present
-                                        Err(CharError::MalformedUtf8(self.end-self.start, self.cursor))
+                                        if self.eof {
+                                            Err(CharError::MalformedUtf8(self.end-self.start, self.cursor))
+                                        } else {
+                                            Ok(Char::NoData)
+                                        }
                                     }
                                     _ => { // ... but got more data so try that!
                                         self.next_char()
@@ -337,19 +316,29 @@ impl <R:BufRead> Reader<R> {
             }
         }
     }
+
+    //fm buffered_data
+    /// Get the unconsumed buffered data - useful if the Reader has completed its task,
+    /// and the `Read` stream is to be used for something further. This call returns the
+    /// buffered data that has already been read from the `Read` stream, and which should be
+    /// consumed before any more `read` calls to the stream.
+    pub fn buffered_data(&self) -> &[u8] {
+        &self.current[self.start..self.end]
+    }
+
     //zz All done
 }
 
-//ip Iterator for Reader
-impl <R:BufRead> Iterator for Reader<R> {
+//ip Iterator for Reader - iterate over characters
+impl <R:Read> Iterator for Reader<R> {
     // we will be counting with usize
     type Item = char;
 
     //mp next - return next character or None if end of file
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_char() {
-            Ok(Char::Eof) => None,
             Ok(Char::Char(ch)) => Some(ch),
+            Ok(Char::Eof) => None,
             _ => {panic!("Error in stream");},
         }
     }
@@ -359,46 +348,14 @@ impl <R:BufRead> Iterator for Reader<R> {
 
 //a Test
 #[cfg(test)]
-const TEST_CHARS : [(u32,u32);15] = [ (10, 0b_00_011),
-                                    (133, 0b_00_011),
-                                     (' ' as u32,  0b_00000_00_010),
-                                     ('0' as u32,  0b_00000_10_100),
-                                     ('9' as u32,  0b_00000_10_100),
-                                     ('A' as u32,  0b_00000_11_000),
-                                     ('Z' as u32,  0b_00000_11_000),
-                                     ('a' as u32,  0b_00000_11_000),
-                                     ('z' as u32,  0b_00000_11_000),
-                                     ('_' as u32,  0b_00000_11_000),
-                                     ('=' as u32,  0b_00100_00_000),
-                                     (';' as u32,  0b_00001_00_000),
-                                     ('#' as u32,  0b_00010_00_000),
-                                     ('"' as u32,  0b_10000_00_000),
-                                     ('\'' as u32, 0b_01000_00_000),
-                                        ];
-#[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_chars() {
-        for (ch, mask) in TEST_CHARS.iter() {
-            assert_eq!( ((mask>>0)&1) == 1, is_newline(*ch)     , "is_newline {} {}", ch, std::char::from_u32(*ch).unwrap()     );
-            assert_eq!( ((mask>>1)&1) == 1, is_whitespace(*ch)  , "is_whitespace {} {}", ch, std::char::from_u32(*ch).unwrap()  );
-            assert_eq!( ((mask>>2)&1) == 1, is_digit(*ch)       , "is_digit {} {}", ch, std::char::from_u32(*ch).unwrap()       );
-            assert_eq!( ((mask>>3)&1) == 1, is_name_start(*ch)  , "is_name_start {} {}", ch, std::char::from_u32(*ch).unwrap()  );
-            assert_eq!( ((mask>>4)&1) == 1, is_name(*ch)        , "is_name {} {}", ch, std::char::from_u32(*ch).unwrap()        );
-            assert_eq!( ((mask>>5)&1) == 1, is_semicolon(*ch)   , "is_semicolon {} {}", ch, std::char::from_u32(*ch).unwrap()   );
-            assert_eq!( ((mask>>6)&1) == 1, is_hash(*ch)        , "is_hash {} {}", ch, std::char::from_u32(*ch).unwrap()        );
-            assert_eq!( ((mask>>7)&1) == 1, is_equals(*ch)      , "is_equals {} {}", ch, std::char::from_u32(*ch).unwrap()      );
-            assert_eq!( ((mask>>8)&1) == 1, is_single_quote(*ch), "is_single_quote {} {}", ch, std::char::from_u32(*ch).unwrap());
-            assert_eq!( ((mask>>9)&1) == 1, is_double_quote(*ch), "is_double_quote {} {}", ch, std::char::from_u32(*ch).unwrap());
-        }
-    }
     #[test]
     fn test_reader() {
         let buf = "This is a \u{2764} string\nWith a newline\n\u{0065}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}";
         let char_list : Vec<char> = buf.chars().collect();
         let mut buf_bytes = buf.as_bytes();
-        let mut reader = Reader::new(&mut buf_bytes);
+        let reader = Reader::new(&mut buf_bytes);
         for (i,ch) in reader.enumerate() {
             assert_eq!(ch, char_list[i], "Mismatch in characters from string {} {}", char_list[i], ch );//, reader.pos(), );
         }

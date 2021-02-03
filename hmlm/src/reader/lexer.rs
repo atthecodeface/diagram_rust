@@ -4,6 +4,7 @@
 
 use std::fmt;
 use std::io::prelude::BufRead;
+use super::utils::*;
 use super::char::*;
 
 #[derive(Debug)]
@@ -106,8 +107,8 @@ impl <'a, R:BufRead> Lexer<'a, R> {
     /// Peek character - EOF not permitted
     pub fn peek_char_no_eof(&mut self) -> Result<char, TokenError> {
         match self.peek_char()? {
-            Char::Eof      => { Err(self.unexpected_eof()) },
             Char::Char(ch) => { Ok(ch) },
+            _              => { Err(self.unexpected_eof()) },
         }
     }
 
@@ -125,8 +126,8 @@ impl <'a, R:BufRead> Lexer<'a, R> {
     /// Get character - EOF not permitted
     pub fn get_char_no_eof(&mut self) -> Result<char, TokenError> {
         match self.get_char()? {
-            Char::Eof      => { Err(self.unexpected_eof()) },
             Char::Char(ch) => { Ok(ch) },
+            _              => { Err(self.unexpected_eof()) },
         }
     }
 
@@ -189,7 +190,6 @@ impl <'a, R:BufRead> Lexer<'a, R> {
         println!("Next token");
         self.skip_whitespace()?;
         match self.peek_char()? {
-            Char::Eof => Ok(Token::EndOfFile),
             Char::Char(ch) => {
                 if is_semicolon(ch as u32) {
                     self.get_char()?; // drop the semicolon
@@ -198,12 +198,12 @@ impl <'a, R:BufRead> Lexer<'a, R> {
                         comment_strings.push(self.read_line()?);
                         self.skip_whitespace()?;
                         match self.peek_char()? {
-                            Char::Eof => {break;},
                             Char::Char(ch) => {
                                 if !is_semicolon(ch as u32) {
                                     break;
                                 }
                             },
+                            _ => {break;},
                         }
                         self.get_char()?;
                     }
@@ -218,6 +218,7 @@ impl <'a, R:BufRead> Lexer<'a, R> {
                 }
                 return Err(TokenError::UnexpectedCharacter(ch, self.reader.pos()));
             }
+            _ => Ok(Token::EndOfFile),
         }
     }
 
@@ -301,10 +302,10 @@ impl <'a, R:BufRead> Lexer<'a, R> {
             }
         };
         match self.peek_char()? {
-            Char::Eof => Ok(result),
             Char::Char(ch) => {
                 if is_whitespace(ch as u32) { Ok(result) } else { Err(self.unexpected_character(ch)) }
             },
+            _ => Ok(result),
         }
     }
 
