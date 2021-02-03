@@ -40,7 +40,7 @@ impl<W: Write> EventWriter<W> {
                 Ok(())
             }
             XmlEvent::StartElement { name, attributes, namespace } => {
-                println!("{:#?}",namespace);
+                // println!("{:#?}",namespace);
                 // self.emitter.namespace_stack_mut().push_empty().checked_target().extend(namespace.as_ref());
                 self.emitter.emit_start_element(&mut self.sink, name, &attributes)
             }
