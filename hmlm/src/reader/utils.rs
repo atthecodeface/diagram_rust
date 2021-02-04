@@ -16,6 +16,7 @@ pub fn is_equals(ch:u32) -> bool { ch==61 }
 
 pub fn is_single_quote(ch:u32) -> bool { ch==39 }
 pub fn is_double_quote(ch:u32) -> bool { ch==34 }
+pub fn is_quote(ch:u32) -> bool { ch==34 || ch==39 }
 
 pub fn is_name_start(ch:u32) -> bool {
     match ch {

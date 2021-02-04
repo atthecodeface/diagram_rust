@@ -407,6 +407,39 @@ impl Lexer {
         }
     }
 
+    //mi read_string
+    /// Reads a string, possibly a quoted string, given the stream cursor is pointing at the opening character.
+    ///
+    /// The string must start with a quote character or a different non-whitespace character
+    /// If it starts with a non-whitespace character then the string goes up to EOF or or whitespace
+    /// If it starts with a quote character then it is a quoted string
+    pub fn read_string<R:CharReader> (&mut self, reader:&mut R) -> Result<String,TokenError> {
+        let ch = self.peek_char_no_eof(reader)?;
+        if is_quote(ch as u32) {
+            self.read_quoted_string(reader)
+        } else {
+            let mut result = String::new();
+            loop {
+                let ch = self.get_char(reader)?;
+                match ch {
+                    Char::Char(c) => {
+                        if is_whitespace(c as u32) {
+                            self.unget_char(ch);
+                            break;
+                        } else {
+                            result.push(c);
+                        }
+                    }
+                    _      => {
+                        self.unget_char(ch);
+                        break;
+                    },
+                }
+            }
+            Ok(result)
+        }
+    }
+
     //mi read_quoted_string
     /// reads a quoted string, given the stream cursor is pointing at the opening quote character
     /// an empty quoted string is two identical quote characters then a different character (or EOF)
@@ -474,8 +507,8 @@ impl Lexer {
     fn read_attribute<R:CharReader> (&mut self, reader:&mut R) -> Result<Token,TokenError> {
         let name = self.read_namespace_name(reader)?;
         let ch = self.get_char_no_eof(reader)?;
-        if ch!='=' {return Err(self.unexpected_character(reader, ch)); }
-        let value=self.read_quoted_string(reader)?;
+        if !is_equals(ch as u32) {return Err(self.unexpected_character(reader, ch)); }
+        let value=self.read_string(reader)?;
         Ok(Token::Attribute(name,value))
     }
 

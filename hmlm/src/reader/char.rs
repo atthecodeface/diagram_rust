@@ -11,7 +11,6 @@
 
 //a Imports
 use std::io::prelude::Read;
-use std::fmt;
 use std::fmt::Write;
 use super::utils;
 
@@ -29,7 +28,7 @@ const BUFFER_SIZE  : usize = 2048;
 /// There is no reason why `BUFFER_SLACK` should be larger than 4.
 const BUFFER_SLACK : usize = 4;
 
-//a Blah
+//a CharReader trait
 pub trait CharReader {
     fn next_char(&mut self) -> CharResult;
     fn pos(&self) -> FilePosition;
@@ -49,11 +48,11 @@ pub enum Char {
     Char(char)
 }
 
-//ip fmt::Display for Char
-impl fmt::Display for Char {
+//ip std::fmt::Display for Char
+impl std::fmt::Display for Char {
     //mp fmt - format a character for display
     /// Display the character as either the character itself, or '<EOF>'
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             Char::Eof    => write!(f, "<EOF>"),
             Char::NoData => write!(f, "<NoData>"),
@@ -85,11 +84,11 @@ impl From<std::io::Error> for CharError {
     }
 }
 
-//ip fmt::Display for CharError
-impl fmt::Display for CharError {
+//ip std::fmt::Display for CharError
+impl std::fmt::Display for CharError {
     //mp fmt - format a `CharError` for display
     /// Display the `CharError` in a human-readable form
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             CharError::MalformedUtf8(n, pos) => write!(f, "malformed UTF-8 of {} bytes at {}", n, pos),
             CharError::IoError(ref e) => write!(f, "IO error: {}", e),
@@ -112,12 +111,12 @@ pub struct FilePosition {
     pub ch: usize,
 }
 
-//ip fmt::Display for FilePosition
-impl fmt::Display for FilePosition {
+//ip std::fmt::Display for FilePosition
+impl std::fmt::Display for FilePosition {
 
     //mp fmt - format a `CharError` for display
     /// Display the `FilePosition` as line and column
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "line {} column {}", self.ln+1, self.ch+1)
     }
 
