@@ -18,21 +18,21 @@ limitations under the License.
 
 //a Imports
 use std::collections::HashMap;
-use super::value::{StylableValue, StylableType};
+use super::value::{StyleValue, StyleType};
 
 //tp StyleTypeInstance
 /// A `StyleTypeInstance` is used for everything that may belong to a style; it
 /// has an ID, and a type (such as rgb or int etc)
 pub struct StyleTypeInstance {// from types    
     name  : String,
-    stype : StylableType,
+    stype : StyleType,
 }
 
 impl StyleTypeInstance {
-    pub fn new(name:String, stype:StylableType) -> Self {
+    pub fn new(name:String, stype:StyleType) -> Self {
         Self { name, stype }
     }
-    pub fn get_type(&self) -> StylableType {
+    pub fn get_type(&self) -> StyleType {
         self.stype
     }
 }
@@ -52,14 +52,14 @@ impl std::fmt::Display for StyleTypeInstance {
 /// A `Style` is a collection of `StyleTypeInstance`s, such as for a line the style might be color and width
 /// Each element in the style can be optional - if it is optional, then a default value is used?
 pub struct Style {
-    styles : Vec<(StyleTypeInstance, (StylableValue, bool))>
+    styles : Vec<(StyleTypeInstance, (StyleValue, bool))>
 }
 
 impl Style { // from style.ml
     pub fn create() -> Self {
         Self { styles:Vec::new() }
     }
-    pub fn add_styling(&mut self, sid:StyleTypeInstance, value:StylableValue, opt:bool) -> () {
+    pub fn add_styling(&mut self, sid:StyleTypeInstance, value:StyleValue, opt:bool) -> () {
         self.styles.push( (sid,(value,opt)) );
     }
 
@@ -72,7 +72,7 @@ impl Style { // from style.ml
     }
 */
 
-    pub fn get_value(&self, sid:&StyleTypeInstance) -> Option<StylableValue> {
+    pub fn get_value(&self, sid:&StyleTypeInstance) -> Option<StyleValue> {
         None
     }
     pub fn get_opt(&self, sid:&StyleTypeInstance) -> Option<bool> {
@@ -111,7 +111,7 @@ pub struct StyleTypeSet { // from types - was t_style_ids
 }
 
 // Style and style change callback
-// pub type StyleChangeCallback = FnMut Vec<(StyleTypeInstance, StylableValue)> -> ()
+// pub type StyleChangeCallback = FnMut Vec<(StyleTypeInstance, StyleValue)> -> ()
 
 //tp StyleTypeSet
 // immutable, but contains a hash table of Style_id_hash.t -> Style_id.t *)

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::value::{StylableValue, StylableType};
+use super::value::{StyleValue, StyleType};
 use super::style::{StyleTypeInstance};
 
 //tp StylableDescriptor
@@ -9,7 +9,7 @@ pub struct StylableDescriptor {
     //   each entry is a state_class -> (list of state_name of state_class->int) mappings
     // state_descriptor : Vec<(String,  Vec<(String,int)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
-    pub styles : Vec<(String, StylableType, StylableValue, bool)>,
+    pub styles : Vec<(String, StyleType, StyleValue, bool)>,
 }
 
 //tp StylableDescriptorBuild
@@ -32,7 +32,7 @@ pub struct StylableNode<'a>{
     // num_base_styles       : usize, // size of desc_build.sids
     extra_sids            : Vec<StyleTypeInstance>, // ?
     /// values is in 1-to-1 correspondence with desc_built.sids
-    values                : Vec<StylableValue>,
+    values                : Vec<StyleValue>,
     /// state is a vector the same length as the start_descriptor
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
     /// this has a 1-to-1 correspondence with desc_built.state_descriptor

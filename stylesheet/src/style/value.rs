@@ -92,11 +92,11 @@ mod test_res {
 }
 
 //a Stylesheet values and value types
-//tp StylableType
-/// `StylableType` is used in descriptors of stylesheets to define
+//tp StyleType
+/// `StyleType` is used in descriptors of stylesheets to define
 /// the styles that are expected within the stylesheet.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum StylableType {
+pub enum StyleType {
     /// `Float` indicates that the style should be one float value
     Float,
     /// `FloatArray` indicates that the style should be a list of float values
@@ -111,8 +111,8 @@ pub enum StylableType {
     TokenList
 }
 
-//ti std::fmt::Display for StylableType
-impl std::fmt::Display for StylableType {
+//ti std::fmt::Display for StyleType
+impl std::fmt::Display for StyleType {
     //mp fmt - format a character for display
     /// Display the character as either the character itself, or '<EOF>'
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -130,9 +130,9 @@ impl std::fmt::Display for StylableType {
     }
 }
 
-//tp StylableValue
+//tp StyleValue
 #[derive(Debug, Clone, PartialEq)]
-pub enum StylableValue {
+pub enum StyleValue {
     FloatArray (Vec<f64>),
     Floats     (usize, Vec<f64>),
     Float      (Option<f64>),
@@ -145,8 +145,8 @@ pub enum StylableValue {
     TokenList  (Vec<String>)
 }    
 
-//ti StylableValue
-impl StylableValue {
+//ti StyleValue
+impl StyleValue {
 
     //fp floats
     pub fn floats(n:usize) -> Self { Self::Floats(n,Vec::new()) }
@@ -183,128 +183,128 @@ impl StylableValue {
     pub fn token_list() -> Self { Self::TokenList(Vec::new()) }
     
     //mp get_type
-    /// Get the type of the `StylableValue`
+    /// Get the type of the `StyleValue`
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
+    ///  use stylesheet::StyleValue;
     /// ```
-    pub fn get_type(&self) -> StylableType {
+    pub fn get_type(&self) -> StyleType {
         match self {
-            StylableValue::FloatArray(_) => StylableType::FloatArray,
-            StylableValue::Floats(n, _)  => StylableType::Floats(*n),
-            StylableValue::Float(_)      => StylableType::Float,
-            StylableValue::IntArray(_)   => StylableType::IntArray,
-            StylableValue::Ints(n, _)    => StylableType::Ints(*n),
-            StylableValue::Int(_)        => StylableType::Int,
-            StylableValue::Rgb(_)        => StylableType::Rgb,
-            StylableValue::String(_)     => StylableType::String,
-            StylableValue::TokenList(_)  => StylableType::TokenList,
+            StyleValue::FloatArray(_) => StyleType::FloatArray,
+            StyleValue::Floats(n, _)  => StyleType::Floats(*n),
+            StyleValue::Float(_)      => StyleType::Float,
+            StyleValue::IntArray(_)   => StyleType::IntArray,
+            StyleValue::Ints(n, _)    => StyleType::Ints(*n),
+            StyleValue::Int(_)        => StyleType::Int,
+            StyleValue::Rgb(_)        => StyleType::Rgb,
+            StyleValue::String(_)     => StyleType::String,
+            StyleValue::TokenList(_)  => StyleType::TokenList,
         }
     }
 
     //mp is_none
-    /// Determine if the StylableValue is not set
+    /// Determine if the StyleValue is not set
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
+    ///  use stylesheet::StyleValue;
     /// ```
     pub fn is_none(&self) -> bool {
         match self {
-            StylableValue::FloatArray(v) => v.len()==0,
-            StylableValue::Floats(_, v)  => v.len()==0,
-            StylableValue::IntArray(v)   => v.len()==0,
-            StylableValue::Ints(_, v)    => v.len()==0,
-            StylableValue::Rgb(v)        => v.len()==0,
-            StylableValue::Float(None)   => true,
-            StylableValue::Int(None)     => true,
-            StylableValue::String(None)  => true,
-            StylableValue::TokenList(v)  => v.len()==0,
+            StyleValue::FloatArray(v) => v.len()==0,
+            StyleValue::Floats(_, v)  => v.len()==0,
+            StyleValue::IntArray(v)   => v.len()==0,
+            StyleValue::Ints(_, v)    => v.len()==0,
+            StyleValue::Rgb(v)        => v.len()==0,
+            StyleValue::Float(None)   => true,
+            StyleValue::Int(None)     => true,
+            StyleValue::String(None)  => true,
+            StyleValue::TokenList(v)  => v.len()==0,
             _ => false,
         }
     }
 
     //mp as_int
-    /// Try to get an int from the `StylableValue` - the first of an array,
+    /// Try to get an int from the `StyleValue` - the first of an array,
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
+    ///  use stylesheet::StyleValue;
     /// ```
     pub fn as_int(&self, default:Option<isize>) -> Option<isize> {
         match self {
-            StylableValue::FloatArray(v)  => { if v.len()==0 {default} else {Some(v[0] as isize)} },
-            StylableValue::Floats(_, v)   => { if v.len()==0 {default} else {Some(v[0] as isize)} },
-            StylableValue::Float(Some(n)) => Some(*n as isize),
-            StylableValue::IntArray(v)    => { if v.len()==0 {default} else {Some(v[0])} },
-            StylableValue::Ints(_, v)     => { if v.len()==0 {default} else {Some(v[0])} },
-            StylableValue::Int(Some(n))   => Some(*n),
-            StylableValue::Rgb(v)         => { if v.len()==0 {default} else {Some(v[0] as isize)} },
+            StyleValue::FloatArray(v)  => { if v.len()==0 {default} else {Some(v[0] as isize)} },
+            StyleValue::Floats(_, v)   => { if v.len()==0 {default} else {Some(v[0] as isize)} },
+            StyleValue::Float(Some(n)) => Some(*n as isize),
+            StyleValue::IntArray(v)    => { if v.len()==0 {default} else {Some(v[0])} },
+            StyleValue::Ints(_, v)     => { if v.len()==0 {default} else {Some(v[0])} },
+            StyleValue::Int(Some(n))   => Some(*n),
+            StyleValue::Rgb(v)         => { if v.len()==0 {default} else {Some(v[0] as isize)} },
             _ => default,
         }
     }
 
     //mp as_ints
-    /// Borrow a reference to Vec<isize>, using a default if the `StylableValue` is not set or is of the incorrect type
+    /// Borrow a reference to Vec<isize>, using a default if the `StyleValue` is not set or is of the incorrect type
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true,  StylableValue::Ints(3,vec![]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(true,  StylableValue::Ints(3,vec![0,1]).as_ints(Some(&vec![2,3])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(false, StylableValue::Ints(3,vec![2,3]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(true,  StylableValue::IntArray(vec![]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(true,  StylableValue::IntArray(vec![0,1]).as_ints(Some(&vec![2,3])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(false, StylableValue::IntArray(vec![2,3]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(true, StylableValue::String(Some("banana".to_string())).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
-    ///  assert_eq!(true, StylableValue::String(Some("banana".to_string())).as_ints(None).is_none());
-    ///  assert_eq!(true, StylableValue::Ints(3,vec![]).as_ints(None).is_none());
-    ///  assert_eq!(true, StylableValue::IntArray(vec![]).as_ints(None).is_none());
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true,  StyleValue::Ints(3,vec![]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(true,  StyleValue::Ints(3,vec![0,1]).as_ints(Some(&vec![2,3])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(false, StyleValue::Ints(3,vec![2,3]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(true,  StyleValue::IntArray(vec![]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(true,  StyleValue::IntArray(vec![0,1]).as_ints(Some(&vec![2,3])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(false, StyleValue::IntArray(vec![2,3]).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(true, StyleValue::String(Some("banana".to_string())).as_ints(Some(&vec![0,1])).unwrap() == &vec![0,1]);
+    ///  assert_eq!(true, StyleValue::String(Some("banana".to_string())).as_ints(None).is_none());
+    ///  assert_eq!(true, StyleValue::Ints(3,vec![]).as_ints(None).is_none());
+    ///  assert_eq!(true, StyleValue::IntArray(vec![]).as_ints(None).is_none());
     /// ```
     pub fn as_ints<'a> (&'a self, default:Option<&'a Vec<isize>>) -> Option<&'a Vec<isize>> {
         match &self {
-            StylableValue::IntArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
-            StylableValue::Ints(_, ref v)  => { if v.len()==0 {default} else {Some(v)} },
+            StyleValue::IntArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
+            StyleValue::Ints(_, ref v)  => { if v.len()==0 {default} else {Some(v)} },
             _ => default,
         }
     }
 
     //mp as_float
-    /// Try to get a float from the `StylableValue` - the first of an array,
+    /// Try to get a float from the `StyleValue` - the first of an array,
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
+    ///  use stylesheet::StyleValue;
     /// ```
     pub fn as_float(&self, default:Option<f64>) -> Option<f64> {
         match self {
-            StylableValue::FloatArray(v)  => { if v.len()==0 {default} else {Some(v[0])} },
-            StylableValue::Floats(_, v)   => { if v.len()==0 {default} else {Some(v[0])} },
-            StylableValue::Float(Some(n)) => Some(*n),
-            StylableValue::IntArray(v)    => { if v.len()==0 {default} else {Some(v[0] as f64)} },
-            StylableValue::Ints(_, v)     => { if v.len()==0 {default} else {Some(v[0] as f64)} },
-            StylableValue::Int(Some(n))   => Some(*n as f64),
-            StylableValue::Rgb(v)         => { if v.len()==0 {default} else {Some(v[0])} },
+            StyleValue::FloatArray(v)  => { if v.len()==0 {default} else {Some(v[0])} },
+            StyleValue::Floats(_, v)   => { if v.len()==0 {default} else {Some(v[0])} },
+            StyleValue::Float(Some(n)) => Some(*n),
+            StyleValue::IntArray(v)    => { if v.len()==0 {default} else {Some(v[0] as f64)} },
+            StyleValue::Ints(_, v)     => { if v.len()==0 {default} else {Some(v[0] as f64)} },
+            StyleValue::Int(Some(n))   => Some(*n as f64),
+            StyleValue::Rgb(v)         => { if v.len()==0 {default} else {Some(v[0])} },
             _ => default,
         }
     }
 
     //mp as_floats
-    /// Borrow a reference to Vec<f64>, using a default if the `StylableValue` is not set or is of the incorrect type
+    /// Borrow a reference to Vec<f64>, using a default if the `StyleValue` is not set or is of the incorrect type
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true,  StylableValue::Floats(3,vec![]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(true,  StylableValue::Floats(3,vec![0.,1.]).as_floats(Some(&vec![2.,3.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(false, StylableValue::Floats(3,vec![2.,3.]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(true,  StylableValue::FloatArray(vec![]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(true,  StylableValue::FloatArray(vec![0.,1.]).as_floats(Some(&vec![2.,3.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(false, StylableValue::FloatArray(vec![2.,3.]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(true, StylableValue::String(Some("banana".to_string())).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
-    ///  assert_eq!(true, StylableValue::String(Some("banana".to_string())).as_floats(None).is_none());
-    ///  assert_eq!(true, StylableValue::Floats(3,vec![]).as_floats(None).is_none());
-    ///  assert_eq!(true, StylableValue::FloatArray(vec![]).as_floats(None).is_none());
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true,  StyleValue::Floats(3,vec![]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(true,  StyleValue::Floats(3,vec![0.,1.]).as_floats(Some(&vec![2.,3.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(false, StyleValue::Floats(3,vec![2.,3.]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(true,  StyleValue::FloatArray(vec![]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(true,  StyleValue::FloatArray(vec![0.,1.]).as_floats(Some(&vec![2.,3.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(false, StyleValue::FloatArray(vec![2.,3.]).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(true, StyleValue::String(Some("banana".to_string())).as_floats(Some(&vec![0.,1.])).unwrap() == &vec![0.,1.]);
+    ///  assert_eq!(true, StyleValue::String(Some("banana".to_string())).as_floats(None).is_none());
+    ///  assert_eq!(true, StyleValue::Floats(3,vec![]).as_floats(None).is_none());
+    ///  assert_eq!(true, StyleValue::FloatArray(vec![]).as_floats(None).is_none());
     /// ```
     pub fn as_floats<'a> (&'a self, default:Option<&'a Vec<f64>>) -> Option<&'a Vec<f64>> {
         match &self {
-            StylableValue::FloatArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
-            StylableValue::Floats(_, ref v)  => { if v.len()==0 {default} else {Some(v)} },
+            StyleValue::FloatArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
+            StyleValue::Floats(_, ref v)  => { if v.len()==0 {default} else {Some(v)} },
             _ => default,
         }
     }
@@ -313,16 +313,16 @@ impl StylableValue {
     /// Generate a color string from an RGB 
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true,  StylableValue::rgb(Some((1.,1.,1.))).as_color_string(None).unwrap() == "white");
-    ///  assert_eq!(true,  StylableValue::rgb(Some((0.,0.,0.))).as_color_string(None).unwrap() == "black");
-    ///  assert_eq!(true,  StylableValue::rgb(None).as_color_string(None).is_none());
-    ///  assert_eq!(true,  StylableValue::rgb(None).as_color_string(Some("None".to_string())).unwrap() == "None");
-    ///  assert_eq!(true,  StylableValue::int(None).as_color_string(Some("None".to_string())).unwrap() == "None");
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true,  StyleValue::rgb(Some((1.,1.,1.))).as_color_string(None).unwrap() == "white");
+    ///  assert_eq!(true,  StyleValue::rgb(Some((0.,0.,0.))).as_color_string(None).unwrap() == "black");
+    ///  assert_eq!(true,  StyleValue::rgb(None).as_color_string(None).is_none());
+    ///  assert_eq!(true,  StyleValue::rgb(None).as_color_string(Some("None".to_string())).unwrap() == "None");
+    ///  assert_eq!(true,  StyleValue::int(None).as_color_string(Some("None".to_string())).unwrap() == "None");
     /// ```
     pub fn as_color_string (&self, default:Option<String>) -> Option<String> {
         match &self {
-            StylableValue::Rgb(v) => {
+            StyleValue::Rgb(v) => {
                 if v.len()<3 {
                     default
                 } else {
@@ -341,15 +341,15 @@ impl StylableValue {
     /// Test if the value contains a particular string. This can only return `true` if the value is a TokenList
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true, StylableValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
-    ///  assert_eq!(true, StylableValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
-    ///  assert_eq!(false, StylableValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
-    ///  assert_eq!(false, StylableValue::Int(Some(0)).has_token("another_string"));
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
+    ///  assert_eq!(true, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
+    ///  assert_eq!(false, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
+    ///  assert_eq!(false, StyleValue::Int(Some(0)).has_token("another_string"));
     /// ```
     pub fn has_token(&self, value:&str) -> bool {
         match self {
-            StylableValue::TokenList(sv) => {
+            StyleValue::TokenList(sv) => {
                 for s in sv { if s==value {return true;} }
                 false
             }
@@ -361,14 +361,14 @@ impl StylableValue {
     /// Test if the value is the same as a string. This can only return `true` if the value is a String
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true, StylableValue::String(Some("string".to_string())).equals_string("string"));
-    ///  assert_eq!(false, StylableValue::Int(Some(0)).equals_string("string"));
-    ///  assert_eq!(false, StylableValue::String(Some("not that string".to_string())).equals_string("string"));
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true, StyleValue::String(Some("string".to_string())).equals_string("string"));
+    ///  assert_eq!(false, StyleValue::Int(Some(0)).equals_string("string"));
+    ///  assert_eq!(false, StyleValue::String(Some("not that string".to_string())).equals_string("string"));
     /// ```
     pub fn equals_string(&self, value:&str) -> bool {
         match self {
-            StylableValue::String(Some(s)) => (s==value),
+            StyleValue::String(Some(s)) => (s==value),
             _ => false,
         }
     }
@@ -377,28 +377,28 @@ impl StylableValue {
     /// Display the character as either the character itself, or '<EOF>'
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::StylableValue;
-    ///  assert_eq!(true,  StylableValue::rgb(Some((1.,1.,1.))).as_string().unwrap() == "white");
-    ///  assert_eq!(true,  StylableValue::rgb(Some((0.,0.,0.))).as_string().unwrap() == "black");
-    ///  assert_eq!(true,  StylableValue::rgb(None).as_string().is_none());
-    ///  assert_eq!(true,  StylableValue::int(None).as_string().is_none());
-    ///  assert_eq!(true,  StylableValue::int(Some(1)).as_string().unwrap() == "1");
-    ///  assert_eq!(true,  StylableValue::string(Some("banana".to_string())).as_string().unwrap() == "banana");
+    ///  use stylesheet::StyleValue;
+    ///  assert_eq!(true,  StyleValue::rgb(Some((1.,1.,1.))).as_string().unwrap() == "white");
+    ///  assert_eq!(true,  StyleValue::rgb(Some((0.,0.,0.))).as_string().unwrap() == "black");
+    ///  assert_eq!(true,  StyleValue::rgb(None).as_string().is_none());
+    ///  assert_eq!(true,  StyleValue::int(None).as_string().is_none());
+    ///  assert_eq!(true,  StyleValue::int(Some(1)).as_string().unwrap() == "1");
+    ///  assert_eq!(true,  StyleValue::string(Some("banana".to_string())).as_string().unwrap() == "banana");
     /// ```
     pub fn as_string(&self) -> Option<String> {
         if self.is_none() {
             None
         } else {
             match self {
-                StylableValue::FloatArray(v)   => Some(format!("{:?}",v)),
-                StylableValue::Floats(_, v)    => Some(format!("{:?}",v)),
-                StylableValue::Float(Some(v))  => Some(format!("{}",v)),
-                StylableValue::IntArray(v)     => Some(format!("{:?}",v)),
-                StylableValue::Ints(_, v)      => Some(format!("{:?}",v)),
-                StylableValue::Int(Some(v))    => Some(format!("{}",v)),
-                StylableValue::Rgb(_)          => self.as_color_string(None),
-                StylableValue::String(Some(v)) => Some(v.clone()),
-                StylableValue::TokenList(v)    => Some(format!("{:?}",v)),
+                StyleValue::FloatArray(v)   => Some(format!("{:?}",v)),
+                StyleValue::Floats(_, v)    => Some(format!("{:?}",v)),
+                StyleValue::Float(Some(v))  => Some(format!("{}",v)),
+                StyleValue::IntArray(v)     => Some(format!("{:?}",v)),
+                StyleValue::Ints(_, v)      => Some(format!("{:?}",v)),
+                StyleValue::Int(Some(v))    => Some(format!("{}",v)),
+                StyleValue::Rgb(_)          => self.as_color_string(None),
+                StyleValue::String(Some(v)) => Some(v.clone()),
+                StyleValue::TokenList(v)    => Some(format!("{:?}",v)),
                 _ => None,
             }
         }
@@ -406,8 +406,8 @@ impl StylableValue {
     //zz All done
 }
 
-//ti Display for StylableValue
-impl std::fmt::Display for StylableValue {
+//ti Display for StyleValue
+impl std::fmt::Display for StyleValue {
     //mp fmt - format a character for display
     /// Display the character as either the character itself, or '<EOF>'
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

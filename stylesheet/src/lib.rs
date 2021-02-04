@@ -3,5 +3,5 @@ extern crate regex;
 extern crate lazy_static;
 
 mod style;
-pub use style::{StylableValue, StylableType, StylableNode, RrcStylableNode, StylableDescriptor, StylableDescriptorBuild};
+pub use style::{StyleValue, StyleType, StylableNode, RrcStylableNode, StylableDescriptor, StylableDescriptorBuild};
 
