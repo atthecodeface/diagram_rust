@@ -276,7 +276,10 @@ impl StyleValue {
                 *f = parse_str_as_ints(s, None)?;
             },
             StyleValue::Rgb(ref mut f)       => {
-                *f = parse_str_as_floats(s, Some(3))?;
+                match color::of_string(s) {
+                    Some(rgb) => { color::as_floats(rgb, f); },
+                    None      => { *f = parse_str_as_floats(s, Some(3))?; },
+                }
             },
             StyleValue::String(ref mut f)       => {
                 *f = Some(s.to_string());
@@ -447,11 +450,7 @@ impl StyleValue {
                 if v.len()<3 {
                     default
                 } else {
-                    let rgb:u32 = (((v[0]*255.) as u32) << 0) | (((v[1]*255.) as u32) << 8) | (((v[2]*255.) as u32) << 16);
-                    match color::name_of_rgb(rgb) {
-                        Some(s) => Some(s.to_string()),
-                        None    => Some(format!("#{:06x}",rgb)),
-                    }
+                    Some(color::as_string(color::as_u32(v)))
                 }
             },
             _ => default,
@@ -554,171 +553,3 @@ impl std::fmt::Display for StyleValue {
     //zz All done
 }
 
-/*
-//f fill_out_array : 'a array -> size -> source_valid -> index_to_fill -> index_source -> 'a array
-//  Fills out the array so that elements 0 to size-1 contain valid data, assuming that 0 to n-1 initially
-//  contain valid data, replicating this data across the whole array as required.
- 
-let rec fill_out_array a num n i j =
-  if (i=num) then
-    a
-  else
-    (
-      a.(i) <- a.(j);
-      let next_j = if (j+1=n) then 0 else (j+1) in
-      fill_out_array a num n (i+1) next_j
-    )
-
-//f read_floats_from_n : float_array -> max -> string -> number -> (number, remaining_string)
-//  the float array will be completely valid, even if the string supplies fewer values
- 
-let rec read_floats_from_n floats max string = function
-  | n when (n=max) -> (max, string)
-  | n -> (
-    match extract_first_and_rest string_as_float_rex string with
-    | None -> (n, "")
-    | Some (s1, s2) -> 
-       (
-         floats.(n) <- float_of_string s1;
-         read_floats_from_n floats max s2 (n+1)
-       )
-  )
-
-//f read_floats : string -> number -> float array
-  the float array will be completely valid, even if the string supplies fewer values
- 
-let read_floats string num = 
-  let floats = Array.make num 0. in
-  let (n,_) = read_floats_from_n floats num string 0 in
-  fill_out_array floats num (max n 1) n 0
-
-//f read_float_arr : string  -> float array
-  read a float array from the string, as many floats as possible
- 
-let read_float_arr string = 
-  let rec acc_float_arrays acc s =
-    let max = 10 in
-    if (String.length s)=0 then acc else (
-      let floats = Array.make max 0. in
-      let (n,s) = read_floats_from_n floats max s 0 in
-      let (total,arrs) = acc in
-      let acc = (total+n,floats::arrs) in
-      acc_float_arrays acc s
-    )
-  in
-  let (total, arrs) = acc_float_arrays (0,[]) string in
-  (total, Array.(sub (concat arrs) 0 total))
-
-//f read_ints_from_n : int array -> max -> string -> number -> (number,remaining_string)   
-let rec read_ints_from_n ints max string = function
-  | n when (n=max) -> (max, string)
-  | n -> (
-    match extract_first_and_rest string_as_int_rex string with
-    | None -> (n,"")
-    | Some (s1,s2) -> 
-       (
-         ints.(n) <- int_of_string s1;
-         read_ints_from_n ints max s2 (n+1)
-       )
-  )
-
-//f read_int_arr : string  -> int array
-  read a int array from the string, as many ints as possible
- 
-let read_int_arr string = 
-  let rec acc_int_arrays acc s =
-    let max = 10 in
-    if (String.length s)=0 then acc else (
-      let ints = Array.make max 0 in
-      let (n,s) = read_ints_from_n ints max s 0 in
-      let (total,arrs) = acc in
-      let acc = (total+n,ints::arrs) in
-      acc_int_arrays acc s
-    )
-  in
-  let (total, arrs) = acc_int_arrays (0,[]) string in
-  (total, Array.(sub (concat arrs) 0 total))
-
-//f read_ints 
-let read_ints string num = 
-  let ints = Array.make num 0 in
-  let (n,_) = read_ints_from_n ints num string 0 in
-  fill_out_array ints num (max n 1) n 0
-
-//f read_color 
-let read_color string = 
-    match Color.from_name string with
-    | Some f -> f
-    | None -> read_floats string 3
-
-//f string_is_none - return True if string is none 
-let string_is_none string =
-  match (Re.exec_opt string_is_none_rex string) with
-  | None -> true
-  | _ -> false
-
-//f read_tokens 
-let read_tokens string =
-  let n = String.length string in
-  let rec read_next_token rtl i t nt =
-    if (i>=n) then (rtl, t, nt) else (
-      let ch = String.get string i in
-      if (ch==' ') then (
-        if nt then (
-          read_next_token rtl (i+1) t nt
-        ) else (
-          read_next_token (t::rtl) (i+1) "" true
-        )
-      ) else (
-        let s = String.make 1 ch in
-        if nt then (
-          read_next_token rtl (i+1) s false
-        ) else (
-          read_next_token rtl (i+1) (t^s) false
-        )
-      )
-    )
-  in
-  let (rtl, last_token, no_last_token) = read_next_token [] 0 "" true in
-  let rtl = if no_last_token then rtl else last_token::rtl in
-  List.rev rtl
-
-//f from_string 
-let rec from_string stype value =
-  if (string_is_none value) then (
-    match stype with
-    | St_ints n     -> sv_none_ints
-    | St_floats n   -> sv_none_floats
-    | St_float_arr  -> sv_none_float_arr
-    | St_int_arr    -> sv_none_int_arr
-    | St_rgb        -> sv_none_rgb
-    | St_int        -> sv_none_int
-    | St_float      -> sv_none_float
-    | St_string     -> sv_none_string
-    | St_token_list -> sv_none_token_list
-  ) else (
-    match stype with
-    | St_ints n     -> ( let ints   = read_ints   value n in Sv_ints (n,ints) )
-    | St_floats n   -> ( let floats = read_floats value n in Sv_floats (n,floats) )
-    | St_float_arr  -> ( let (n,floats) = read_float_arr value in Sv_float_arr (n,floats) )
-    | St_int_arr    -> ( let (n,ints)   = read_int_arr   value in Sv_int_arr   (n,ints) )
-    | St_rgb        -> Sv_rgb (read_color value)
-    | St_int        -> ( let ints   = read_ints   value 1 in Sv_int (Some ints.(0)) )
-    | St_float      -> ( let floats = read_floats value 1 in Sv_float (Some floats.(0)) )
-    | St_string     -> Sv_string (Some value)
-    | St_token_list -> ( let tokens = read_tokens value in Sv_token_list tokens)
-  )
-
-//f as_string - get a string an svalue 
-let as_string ?default svalue =
-  if (is_none svalue) then (
-    match default with | Some f -> f | None -> raise (Bad_value "No default value provided when getting value as_string")
-  ) else (
-  match svalue with
-  | Sv_string (Some s) -> s
-  | Sv_token_list l -> String.concat " " l
-  | _ -> str svalue
-  )
-
-
- */
