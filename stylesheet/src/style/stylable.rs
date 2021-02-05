@@ -1,3 +1,22 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    stylable.rs
+@brief   A stylable node and its descriptor
+ */
+
+//a Imports
 use std::cell::RefCell;
 use std::rc::Rc;
 use super::value::StyleValue;
@@ -13,9 +32,46 @@ pub struct StylableDescriptor {
     pub styles : Vec<(String, StyleValue /* as type and default value */, bool /* inheritable? */)>,
 }
 
+//ti StylableDescriptor
+impl StylableDescriptor {
+    //fp new
+    pub fn new() -> Self {
+        Self { state_classes:Vec::new(), styles:Vec::new() }
+    }
+
+    //cp add_style
+    pub fn add_style<'a>(&'a mut self, name:&str, value:&StyleValue, inheritable:bool ) -> &'a mut Self {
+        self.styles.push( (name.to_string(), value.as_type(), inheritable) );
+        self
+    }
+
+    //mp build_style_array
+    pub fn build_style_array(&self) -> Vec<StyleValue> {
+        let mut result = Vec::new();
+        for (_, v, _) in &self.styles {
+            result.push(v.new_value());
+        }
+        result
+    }
+
+    //zz All done
+}
+
 //tp StylableNode
 /// A `StylableNode` is an element that is part of a hierarchy of elements, which
 /// are styled by a stylesheet
+/// ```
+///  extern crate stylesheet;
+///  use stylesheet::{StyleValue, StylableNode, StylableDescriptor};
+///  let mut d = StylableDescriptor::new();
+///  d.add_style("width",  &StyleValue::int(None), true)
+///   .add_style("height", &StyleValue::int(None), true);
+///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
+///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
+///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
+///  let child_11 = StylableNode::new(Some(child_1.clone()), "line", &d, vec![]);
+///
+/// ```
 pub struct StylableNode<'a>{
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values
@@ -30,8 +86,8 @@ pub struct StylableNode<'a>{
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
-    /// type_name is the type of the element, such as 'line' or 'circle'; it may be used in rules.
-    type_name             : String,
+    /// node_type is the type of the element, such as 'line' or 'circle'; it may be used in rules.
+    node_type             : String,
     /// classes is an array of class names that the element belongs to, the styles of all 
     /// of which may be used to specify style values; it may be used in rules.
     classes               : Vec<String>,
@@ -39,7 +95,8 @@ pub struct StylableNode<'a>{
     /// belong to the node, but may be inherited by children of the
     /// node
     extra_sids            : Vec<(String, StyleValue)>,
-    /// `values` contains the nodes values for each of the styles in the descriptor; it is in 1-to-1 correspondence with descriptor.styles
+    /// `values` contains the nodes values for each of the styles in the descriptor; it is in 1-to-1 correspondence with descriptor.styles + extra_sids
+    /// `values` is supposed to be a set of ValueRefs
     values                : Vec<StyleValue>,
     /// state is a vector the same length as the descriptor.state_classes
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
@@ -48,101 +105,89 @@ pub struct StylableNode<'a>{
     // style_change_callback : t_style_change_callback,
 }
 
-pub type NameValues = Vec<(String,String)>;
+pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
 pub type RrcStylableNode<'a> = Rc<RefCell<StylableNode<'a>>>;
 impl <'a> StylableNode<'a> {
-    /// ```
-    ///  extern crate stylesheet;
-    ///  use stylesheet::{StylableNode, StylableDescriptor};
-    ///  let d = StylableDescriptor { state_classes:Vec::new(), styles:Vec::new(), };
-    ///  let name_values = Vec::new();
-    ///  let root = StylableNode::new(None, &d, name_values);
-    ///  let name_values = Vec::new();
-    ///  let child_1 = StylableNode::new(Some(root.clone()),     &d, name_values);
-    ///  let name_values = Vec::new();
-    ///  let child_2 = StylableNode::new(Some(root.clone()),     &d, name_values);
-    ///  let name_values = Vec::new();
-    ///  let child_11 = StylableNode::new(Some(child_1.clone()), &d, name_values);
+    //fp new
+    /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
+    /// any name_values that are not specific to the node descriptor, but that are permitted by the stylesheet, are added as 'extra_value's
+    /// to the node
     ///
-    /// ```
-    ///
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, descriptor:&'b StylableDescriptor, mut name_values:NameValues) -> RrcStylableNode<'b> {
+    /// The name of 'id' is special; it defines the (document-unique) id of the node
+    /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
+    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, node_type:&str, descriptor:&'b StylableDescriptor, name_values:NameValues) -> RrcStylableNode<'b> {
         let mut extra_sids = Vec::new();
         let mut classes    = Vec::new();
+        let mut values     = descriptor.build_style_array();
         let mut id_name    = None;
-        while name_values.len()>0 {
-            let (name,value) = name_values.pop().unwrap();
+        for (name, value) in name_values {
             if name=="id" {
-                id_name = Some(value);
+                id_name = Some(value.to_string());
             } else if name=="class" {
                 for s in value.split_whitespace() {
                     classes.push(s.to_string());
                 }
-            } // else if it is in the desc_built then add it to extra_sids
+            } else {
+                /*
+                match stylesheet.style_id_of_name(name) {
+                    None => (),
+                    Some sid => {
+                        match descriptor.find_sid_index(sid) {
+                            Some(sid_index) => (),
+                            None => {
+                                self.extra_sids.push(name);
+                                self.values.push();
+                            },
+                        },
+                    }
+                }
+*/
+            }
         }
-        Rc::new(RefCell::new(StylableNode {
+        let parent_clone = match (parent) { None => None, Some(ref p)=> Some(p.clone()) };
+        let node = Rc::new(RefCell::new(StylableNode {
             parent,
             children : Vec::new(),
             descriptor,
             extra_sids,
-            values:      Vec::new(),
+            values,
             state:       Vec::new(),
             id_name:     id_name,
-            type_name : "".to_string(),
+            node_type:   node_type.to_string(),
             classes,
-        }))
+        }));
+        parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
+        node
     }
+
+    //fp delete_children
+    /// ```
+    ///  extern crate stylesheet;
+    ///  use std::rc::Rc;
+    ///  use stylesheet::{StyleValue, StylableNode, StylableDescriptor};
+    ///  let mut d = StylableDescriptor::new();
+    ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
+    ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
+    ///  assert_eq!(2, Rc::strong_count(&child_1));
+    ///  assert_eq!(2, Rc::strong_count(&root));
+    ///  root.borrow_mut().delete_children();
+    ///  assert_eq!(1, Rc::strong_count(&root));    // only root
+    ///  assert_eq!(1, Rc::strong_count(&child_1)); // only child_1
+    ///
+    /// ```
+    pub fn delete_children(&mut self) -> () {
+        while self.children.len()>0 {
+            let c = self.children.pop().unwrap();
+            c.borrow_mut().parent = None;
+            c.borrow_mut().delete_children();
+        }
+    }
+
+    //zz All done
 }
 /*
-  // let desc_built = build_desc desc sheet in
-  let id_name = 
-    if (List.mem_assoc "id" name_values) then (List.assoc "id" name_values) else "no_id"
-  in
-  let classes = 
-    let class_str = if (List.mem_assoc "class" name_values) then (List.assoc "class" name_values) else "" in
-    let class_list = String.split_on_char ' ' class_str in
-    List.filter (fun x->(x<>"")) class_list
-  in
-  let count_extra_styles acc nv =
-    let (name,_) = nv in
-    match style_id_of_name name sheet with
-      None -> acc
-    | Some sid -> (
-      match Styleable_desc_built.find_sid_index sid desc_built with
-        None -> (acc+1)
-      | Some sid_index -> acc
-    )
-  in
-  let num_extra_styles = List.fold_left count_extra_styles 0 name_values in
-  let num_base_styles = (Array.length desc_built.sids) in
-  let num_styles = (num_base_styles+num_extra_styles) in
-  let t = {
-      desc_built;
-      num_base_styles;
-      num_styles;
-      children;
-      style_change_callback;
-      id_name;
-      parent = None;
-      type_name;
-      classes;
-      extra_sids = Array.make num_extra_styles Style_id.dummy;
-      state      = Array.make (List.length desc.state_descriptor) 0;
-      values     = Array.init num_styles (fun i -> Value_ref.create ());
-    }
   in
   add_styleable t sheet;
-  let add_extra_style acc nv =
-    let (name,_) = nv in
-    match style_id_of_name name sheet with
-      None -> acc
-    | Some sid -> (
-      match Styleable_desc_built.find_sid_index sid t.desc_built with
-        Some sid_index -> acc
-      | None -> (t.extra_sids.(acc) <- sid; acc+1)
-    )
-  in
-  ignore (List.fold_left add_extra_style 0 name_values);
   let set_default_value nv =
     let (name,value) = nv in
     match style_id_of_name name sheet with

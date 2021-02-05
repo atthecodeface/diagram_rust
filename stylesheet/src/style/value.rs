@@ -23,17 +23,24 @@ use regex::Regex;
 use super::color;
 
 //a Helper functions and modules 
-//vi string_is_none_rex - regexp that is true if the string is only whitespace
-const STRING_IS_NONE_REX : &str = r"^\s*$";
+//vi STRING_IS_NONE - regexp that is true if the string is only whitespace
+const STRING_IS_NONE : &str = r"^\s*$";
 
-//vi string_as_float_rex  - float with optional whitespace / comma in front of it and a 'rest' overflow
+//vi STRING_AS_FLOAT  - float with optional whitespace / comma in front of it and a 'rest' overflow
 /// <whitespace> [, <whitespace>] [-] <0-9>+ [.<0-9>*] [.*]
-const STRING_AS_FLOAT_REX : &str = r"^\s*,?\s*(-?\d+\.?\d*)(.*)$";
+const STRING_AS_FLOAT : &str = r"^\s*,?\s*(-?\d+\.?\d*)(.*)$";
 
-//f string_as_int_rex - decimal or hex with optional whitespace / comma in front of it and a 'rest' overflow
-const STRING_AS_INT_REX : &str = r"^\s*,?\s*(0x[0-9a-fA-F]+|\d+)(.*)$";
+//vi STRING_AS_INT - decimal or hex with optional whitespace / comma in front of it and a 'rest' overflow
+const STRING_AS_INT : &str = r"^\s*,?\s*(0x[0-9a-fA-F]+|\d+)(.*)$";
 
-//f extract_first_and_rest
+//vi Static versions thereof
+lazy_static!{
+    static ref STRING_IS_NONE_REX:  Regex = Regex::new(STRING_IS_NONE).unwrap();
+    static ref STRING_AS_FLOAT_REX: Regex = Regex::new(STRING_AS_FLOAT).unwrap();
+    static ref STRING_AS_INT_REX:   Regex = Regex::new(STRING_AS_INT).unwrap();
+}
+
+//fi extract_first_and_rest
 fn extract_first_and_rest<'a> (rex:&Regex, s:&'a str) -> Option<(&'a str, &'a str)> {
     match rex.captures(s) {
         None => None,
@@ -41,24 +48,58 @@ fn extract_first_and_rest<'a> (rex:&Regex, s:&'a str) -> Option<(&'a str, &'a st
     }
 }
 
-//f extract_vec_re_first_and_rest
-fn extract_vec_first_and_rest<'a, R:FromStr> (rex:&Regex, max_len:usize, v:&'a mut Vec<R>, s:&'a str) -> (usize, &'a str) {
+//fi extract_vec_re_first_and_rest
+fn extract_vec_first_and_rest<'a, R:FromStr> (rex:&Regex, max_len:usize, v:&'a mut Vec<R>, s:&'a str) -> Result<(usize, &'a str), ValueError> {
     if v.len()>=max_len {
-        (v.len(), s)
+        Ok((v.len(), s))
     } else {
         match rex.captures(s) {
-            None => (v.len(), s),
+            None => Ok((v.len(), s)),
             Some(caps) => {
                 match caps.get(1).unwrap().as_str().parse::<R>() {
                     Ok(value) => {
                         v.push(value);
                         extract_vec_first_and_rest(rex, max_len, v, caps.get(2).unwrap().as_str())
                     },
-                    _e => (v.len(), s),
+                    _e => Ok((v.len(), s)),
                 }
             }
         }
     }
+}
+fn parse_str_as_floats(s:&str, len:Option<usize>) -> Result<Vec<f64>, ValueError> {
+    let mut v = Vec::new();
+    let max_len = len.unwrap_or(10000);
+    let (actual_len, _) = extract_vec_first_and_rest(&STRING_AS_FLOAT_REX, max_len, &mut v, s)?;
+    match len {
+        None => (),
+        Some(len) => {
+            if actual_len==0 {v.push(0.0);}
+            let mut i=0;
+            while v.len()<len {
+                v.push(v[i]);
+                i+=1;
+            }
+        }
+    }
+    Ok(v)
+}
+fn parse_str_as_ints(s:&str, len:Option<usize>) -> Result<Vec<isize>, ValueError> {
+    let mut v = Vec::new();
+    let max_len = len.unwrap_or(10000);
+    let (actual_len, _) = extract_vec_first_and_rest(&STRING_AS_INT_REX, max_len, &mut v, s)?;
+    match len {
+        None => (),
+        Some(len) => {
+            if actual_len==0 {v.push(0);}
+            let mut i=0;
+            while v.len()<len {
+                v.push(v[i]);
+                i+=1;
+            }
+        }
+    }
+    Ok(v)
 }
 
 //t Test regular expressions
@@ -67,31 +108,53 @@ mod test_res {
     use super::*;
     #[test]
     fn test_extract_ints() {
-        let rex = Regex::new(STRING_AS_INT_REX).unwrap();
+        let rex = Regex::new(STRING_AS_INT).unwrap();
         assert_eq!(extract_first_and_rest(&rex, "1 2 3"),Some(("1"," 2 3")));
         assert_eq!(extract_first_and_rest(&rex, "0x123 2 3"),Some(("0x123"," 2 3")));
     }
-    fn test_extract_vec<R:FromStr+Debug+PartialEq>(rex_str:&str, s:&str, max_len:usize, expected:Vec<R>, rest:&str) {
-        let rex = Regex::new(rex_str).unwrap();
+    fn test_extract_vec<R:FromStr+Debug+PartialEq>(rex:&Regex, s:&str, max_len:usize, expected:Vec<R>, rest:&str) {
         let mut v = Vec::new();
-        assert_eq!(extract_vec_first_and_rest::<R>(&rex, max_len, &mut v, s),(expected.len(),rest));
+        assert_eq!(extract_vec_first_and_rest::<R>(rex, max_len, &mut v, s).unwrap(),(expected.len(),rest));
         assert_eq!(v,expected);
     }
     #[test]
     fn test_extract_vec_int() {
-        test_extract_vec::<isize>(STRING_AS_INT_REX, "1 2 3", 10, vec![1,2,3], "");
-        test_extract_vec::<isize>(STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
-        test_extract_vec::<usize>(STRING_AS_INT_REX, "1 2 3", 10, vec![1,2,3], "");
-        test_extract_vec::<usize>(STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
+        test_extract_vec::<isize>(&STRING_AS_INT_REX, "1 2 3", 10, vec![1,2,3], "");
+        test_extract_vec::<isize>(&STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
+        test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 2 3", 10, vec![1,2,3], "");
+        test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
     }
     #[test]
     fn test_extract_vec_float() {
-        test_extract_vec::<f32>(STRING_AS_FLOAT_REX, "1 -2 3.14 4.56", 10, vec![1.,-2.,3.14,4.56], "");
-        test_extract_vec::<f64>(STRING_AS_FLOAT_REX, "1 -2 3.14 4.56", 1, vec![1.,], " -2 3.14 4.56");
+        test_extract_vec::<f32>(&STRING_AS_FLOAT_REX, "1 -2 3.14 4.56", 10, vec![1.,-2.,3.14,4.56], "");
+        test_extract_vec::<f64>(&STRING_AS_FLOAT_REX, "1 -2 3.14 4.56", 1, vec![1.,], " -2 3.14 4.56");
     }
 }
 
 //a Style values
+//tp ValueError
+#[derive(Debug)]
+pub enum ValueError {
+    BadValue(String),
+}
+impl ValueError {
+    pub fn bad_value(s:&str) -> Self {
+        Self::BadValue(s.to_string())
+    }
+}
+
+//ti Display for ValueError
+//ip std::fmt::Display for ValueError
+impl std::fmt::Display for ValueError {
+    //mp fmt - format a ValueError for display
+    /// Display the ValueError
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::BadValue(s) => write!(f, "Bad value '{}'", s)
+        }
+    }
+}
+
 //tp StyleValue
 /// `StyleValue` is used in descriptors of stylesheets to define the
 /// styles that are expected within the stylesheet. This is an
@@ -146,6 +209,20 @@ pub enum StyleValue {
 impl StyleValue {
 
     //fp new_value
+    /// Create a new value from a current value - which likely will be
+    /// unset, and hence is basically used as a 'type' of that value
+    ///
+    /// ```
+    ///  extern crate stylesheet;
+    ///  use stylesheet::{StyleValue};
+    ///  let type_int = StyleValue::int(None);
+    ///  let mut x = type_int.new_value();
+    ///  assert!(x.is_none(), "Value of X must be none before it is set");
+    ///  x.from_string("2");
+    ///  assert_eq!(2, x.as_int(None).unwrap());
+    ///  x.from_string("17 5");
+    ///  assert_eq!(17, x.as_int(None).unwrap());
+    /// ```
     pub fn new_value(&self) -> Self {
         match self {
             StyleValue::Float(_)       => Self::float(None),
@@ -158,6 +235,57 @@ impl StyleValue {
             StyleValue::String(_)      => Self::string(None),
             StyleValue::StringArray(_) => Self::string_array(),
         }
+    }
+
+    //mp as_type
+    /// Create an unset `StyleValue` of the same type
+    /// ```
+    ///  extern crate stylesheet;
+    ///  use stylesheet::{StyleValue};
+    ///  let type_int = StyleValue::int(None);
+    ///  let x = type_int.new_value();
+    ///  let type_x = x.as_type();
+    ///  assert_eq!(type_int, type_x);
+    /// 
+    /// ```
+    pub fn as_type(&self) -> Self {
+        self.new_value()
+    }
+
+    //mp from_string
+    /// Set the value from a string
+    pub fn from_string<'a>(&'a mut self, s:&str) -> Result<&'a mut Self,ValueError> {
+        match self {
+            StyleValue::Float(ref mut f)       => {
+                *f = Some( parse_str_as_floats(s, Some(1))? [0] );
+            },
+            StyleValue::Floats(n, ref mut f)       => {
+                *f = parse_str_as_floats(s, Some(*n))?;
+            },
+            StyleValue::FloatArray(ref mut f)       => {
+                *f = parse_str_as_floats(s, None)?;
+            },
+            StyleValue::Int(ref mut f)       => {
+                let fa = parse_str_as_ints(s, Some(1))?;
+                *f=Some(fa[0]);
+            },
+            StyleValue::Ints(n, ref mut f)       => {
+                *f = parse_str_as_ints(s, Some(*n))?;
+            },
+            StyleValue::IntArray(ref mut f)       => {
+                *f = parse_str_as_ints(s, None)?;
+            },
+            StyleValue::Rgb(ref mut f)       => {
+                *f = parse_str_as_floats(s, Some(3))?;
+            },
+            StyleValue::String(ref mut f)       => {
+                *f = Some(s.to_string());
+            },
+            StyleValue::StringArray(ref mut f)       => {
+                *f = s.split_whitespace().map(|s| s.to_string()).collect();
+            },
+        }
+        Ok(self)
     }
     
     //fp floats
