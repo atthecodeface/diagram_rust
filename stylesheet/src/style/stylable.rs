@@ -1,43 +1,32 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::value::{StyleValue, StyleType};
+use super::value::StyleValue;
 use super::style::{StyleTypeInstance};
 
 //tp StylableDescriptor
-/// A `StylableDescriptor` is used to construct
+/// A `StylableDescriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 pub struct StylableDescriptor {
-    //   each entry is a state_class -> (list of state_name of state_class->int) mappings
-    // state_descriptor : Vec<(String,  Vec<(String,int)>)>,
+    /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
+    /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
+    pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
-    pub styles : Vec<(String, StyleType, StyleValue, bool)>,
-}
-
-//tp StylableDescriptorBuild
-/// A `StylableDescriptorBuild` is the constructed form
-pub struct StylableDescriptorBuild<'a> {
-    /// descriptor is that which this is built from
-    pub descriptor : &'a StylableDescriptor,
-    /// sids is, e.g. color:Rgb, width:float, built from the descriptor
-    pub sids       : Vec<StyleTypeInstance>,
+    pub styles : Vec<(String, StyleValue /* as type and default value */, bool /* inheritable? */)>,
 }
 
 //tp StylableNode
 /// A `StylableNode` is an element that is part of a hierarchy of elements, which
 /// are styled by a stylesheet
 pub struct StylableNode<'a>{
+    /// The `parent` of a node is the parent in the hierarchy; this is
+    /// required to provide inheritance by a child of style values
+    /// from its parent
     parent                : Option<RrcStylableNode<'a>>,
+    /// The `children` of a node are those which have the node as a
+    /// parent; this is used to propagate the stylesheet through the
+    /// hierarchy.
     children              : Vec<RrcStylableNode<'a>>,
-    desc_built            : &'a StylableDescriptorBuild<'a>,
-    // num_styles            : usize, // size of desc_build.sids + extra_sids
-    // num_base_styles       : usize, // size of desc_build.sids
-    extra_sids            : Vec<StyleTypeInstance>, // ?
-    /// values is in 1-to-1 correspondence with desc_built.sids
-    values                : Vec<StyleValue>,
-    /// state is a vector the same length as the start_descriptor
-    /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
-    /// this has a 1-to-1 correspondence with desc_built.state_descriptor
-    state                 : Vec<isize>, // ?
-    // style_change_callback : t_style_change_callback,
+    /// The descriptor provides the description of the styles required by the node
+    descriptor            : &'a StylableDescriptor,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -46,6 +35,17 @@ pub struct StylableNode<'a>{
     /// classes is an array of class names that the element belongs to, the styles of all 
     /// of which may be used to specify style values; it may be used in rules.
     classes               : Vec<String>,
+    /// `extra_sids` provides values for a stylesheet that do *not*
+    /// belong to the node, but may be inherited by children of the
+    /// node
+    extra_sids            : Vec<(String, StyleValue)>,
+    /// `values` contains the nodes values for each of the styles in the descriptor; it is in 1-to-1 correspondence with descriptor.styles
+    values                : Vec<StyleValue>,
+    /// state is a vector the same length as the descriptor.state_classes
+    /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
+    /// this has a 1-to-1 correspondence with descriptor.state_classes
+    state                 : Vec<isize>,
+    // style_change_callback : t_style_change_callback,
 }
 
 pub type NameValues = Vec<(String,String)>;
@@ -53,21 +53,20 @@ pub type RrcStylableNode<'a> = Rc<RefCell<StylableNode<'a>>>;
 impl <'a> StylableNode<'a> {
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::{StylableNode, StylableDescriptor, StylableDescriptorBuild};
-    ///  let d = StylableDescriptor { styles:Vec::new(), };
-    ///  let db = StylableDescriptorBuild { descriptor:&d, sids:Vec::new() };
+    ///  use stylesheet::{StylableNode, StylableDescriptor};
+    ///  let d = StylableDescriptor { state_classes:Vec::new(), styles:Vec::new(), };
     ///  let name_values = Vec::new();
-    ///  let root = StylableNode::new(None, &db, name_values);
+    ///  let root = StylableNode::new(None, &d, name_values);
     ///  let name_values = Vec::new();
-    ///  let child_1 = StylableNode::new(Some(root.clone()),     &db, name_values);
+    ///  let child_1 = StylableNode::new(Some(root.clone()),     &d, name_values);
     ///  let name_values = Vec::new();
-    ///  let child_2 = StylableNode::new(Some(root.clone()),     &db, name_values);
+    ///  let child_2 = StylableNode::new(Some(root.clone()),     &d, name_values);
     ///  let name_values = Vec::new();
-    ///  let child_11 = StylableNode::new(Some(child_1.clone()), &db, name_values);
+    ///  let child_11 = StylableNode::new(Some(child_1.clone()), &d, name_values);
     ///
     /// ```
     ///
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, desc_built:&'b StylableDescriptorBuild, mut name_values:NameValues) -> RrcStylableNode<'b> {
+    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, descriptor:&'b StylableDescriptor, mut name_values:NameValues) -> RrcStylableNode<'b> {
         let mut extra_sids = Vec::new();
         let mut classes    = Vec::new();
         let mut id_name    = None;
@@ -84,7 +83,7 @@ impl <'a> StylableNode<'a> {
         Rc::new(RefCell::new(StylableNode {
             parent,
             children : Vec::new(),
-            desc_built,
+            descriptor,
             extra_sids,
             values:      Vec::new(),
             state:       Vec::new(),

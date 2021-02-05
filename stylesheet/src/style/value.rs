@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 @file    value.rs
-@brief   Stylable values
+@brief   Style type and values
  */
 
 //a Imports
@@ -91,64 +91,77 @@ mod test_res {
     }
 }
 
-//a Stylesheet values and value types
-//tp StyleType
-/// `StyleType` is used in descriptors of stylesheets to define
-/// the styles that are expected within the stylesheet.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum StyleType {
-    /// `Float` indicates that the style should be one float value
-    Float,
-    /// `FloatArray` indicates that the style should be a list of float values
-    FloatArray,
-    /// `Floats(n)` indicates that the style should be 'n' float values
-    Floats(usize),
-    Int,
-    IntArray,
-    Ints(usize),
-    Rgb,
-    String,
-    TokenList
-}
-
-//ti std::fmt::Display for StyleType
-impl std::fmt::Display for StyleType {
-    //mp fmt - format a character for display
-    /// Display the character as either the character itself, or '<EOF>'
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Float      => write!(f, "flt"),
-            Self::FloatArray => write!(f, "fa"),
-            Self::Floats(n)  => write!(f, "f{}", n),
-            Self::Int        => write!(f, "int"),
-            Self::IntArray   => write!(f, "ia"),
-            Self::Ints(n)    => write!(f, "i{}", n),
-            Self::Rgb        => write!(f, "rgb"),
-            Self::String     => write!(f, "str"),
-            Self::TokenList  => write!(f, "tkn"),
-        }
-    }
-}
-
+//a Style values
 //tp StyleValue
+/// `StyleValue` is used in descriptors of stylesheets to define the
+/// styles that are expected within the stylesheet. This is an
+/// enumeration that provides for single or sets of ints or floats,
+/// colors, strings or lists of strings.
+///
+/// Instances of a `StyleValue` may be undefined - these are used both as not-yet-set values, and also as 'type descriptors'.
+///
 #[derive(Debug, Clone, PartialEq)]
 pub enum StyleValue {
-    FloatArray (Vec<f64>),
-    Floats     (usize, Vec<f64>),
+    /// A `Float` value contains either a single float value or an
+    /// indication that the value is not set. As an unset value it may be used to indicate style value should be a single float value, such as for a line width
     Float      (Option<f64>),
-    IntArray   (Vec<isize>),
-    Ints       (usize, Vec<isize>),
+    /// A `FloatArray` value contains a number of double-precision
+    /// floats; if the value is not set then the length of the vec is
+    /// 0
+    /// indicates that the style value should be a list of float values, of any size; this could be a list of element weights, for example
+    FloatArray (Vec<f64>),
+    /// A `Floats(n)` value contains a vector with either 0 or n
+    /// double-precision floats
+    /// indicates that the style value should be 'n' float values; this might be used for points (two floats for a 2-dimensional point), for example.
+    Floats     (usize, Vec<f64>),
+    /// An `Int` value contains either a single signed integer value
+    /// or an indication that the value is not set
+    /// `Int` makes the style value a single signed integer (`isize`), such as may be used to indicate a row or column that an element may be placed within a table.
     Int        (Option<isize>),
-    /// Rgb should be a 3-element vector; if it has 0 size then it is 'None'
+    /// An `IntArray` value contains a number of signed integers; if
+    /// the value is not set then the length of the vec is 0
+    /// `IntArray` makes the style value a list of signed integers.
+    IntArray   (Vec<isize>),
+    /// An `Ints(n)` value contains a vector with either 0 or n signed
+    /// integers
+    /// `Ints(n)` requires the style value to be 'n' signed integers; this could indicate a width-height pair or rows/columns that a cell may be spread out over within a table.
+    Ints       (usize, Vec<isize>),
+    /// An `Rgb` value will be either a 3-element vector or a
+    /// 0-element vector if it is not set. When set from a string it
+    /// will utilize the colors database to permit a named color to be
+    /// used to produce an RGB value.
+    /// `Rgb` requires the style value to be three floats with a value of 0 to 1 (inclusive); this corresponds to an RGB value. 
     Rgb        (Vec<f64>),
+    /// A `String` value contains either a single string or an
+    /// indication that the value is not set
+    /// `String` requires the style value to be a single string.
     String     (Option<String>),
-    TokenList  (Vec<String>)
+    /// A `StringArray` value contains a number of strings; if the
+    /// value is not set then the length of the vec is 0
+    /// `StringArray` requires the style value to be a list of strings.
+    StringArray  (Vec<String>)
 }    
 
 //ti StyleValue
 impl StyleValue {
 
+    //fp new_value
+    pub fn new_value(&self) -> Self {
+        match self {
+            StyleValue::Float(_)       => Self::float(None),
+            StyleValue::Floats(n,_)    => Self::floats(*n),
+            StyleValue::FloatArray(_)  => Self::float_array(),
+            StyleValue::Int(_)         => Self::int(None),
+            StyleValue::Ints(n, _)     => Self::ints(*n),
+            StyleValue::IntArray(_)    => Self::int_array(),
+            StyleValue::Rgb(_)         => Self::rgb(None),
+            StyleValue::String(_)      => Self::string(None),
+            StyleValue::StringArray(_) => Self::string_array(),
+        }
+    }
+    
     //fp floats
+    /// Create a new floats value
     pub fn floats(n:usize) -> Self { Self::Floats(n,Vec::new()) }
     
     //fp float_array
@@ -179,29 +192,9 @@ impl StyleValue {
     //fp string
     pub fn string(s:Option<String>) -> Self { Self::String(s) }
     
-    //fp token_list
-    pub fn token_list() -> Self { Self::TokenList(Vec::new()) }
+    //fp string_array
+    pub fn string_array() -> Self { Self::StringArray(Vec::new()) }
     
-    //mp get_type
-    /// Get the type of the `StyleValue`
-    /// ```
-    ///  extern crate stylesheet;
-    ///  use stylesheet::StyleValue;
-    /// ```
-    pub fn get_type(&self) -> StyleType {
-        match self {
-            StyleValue::FloatArray(_) => StyleType::FloatArray,
-            StyleValue::Floats(n, _)  => StyleType::Floats(*n),
-            StyleValue::Float(_)      => StyleType::Float,
-            StyleValue::IntArray(_)   => StyleType::IntArray,
-            StyleValue::Ints(n, _)    => StyleType::Ints(*n),
-            StyleValue::Int(_)        => StyleType::Int,
-            StyleValue::Rgb(_)        => StyleType::Rgb,
-            StyleValue::String(_)     => StyleType::String,
-            StyleValue::TokenList(_)  => StyleType::TokenList,
-        }
-    }
-
     //mp is_none
     /// Determine if the StyleValue is not set
     /// ```
@@ -218,7 +211,7 @@ impl StyleValue {
             StyleValue::Float(None)   => true,
             StyleValue::Int(None)     => true,
             StyleValue::String(None)  => true,
-            StyleValue::TokenList(v)  => v.len()==0,
+            StyleValue::StringArray(v)  => v.len()==0,
             _ => false,
         }
     }
@@ -338,18 +331,18 @@ impl StyleValue {
     }
 
     //mp has_token
-    /// Test if the value contains a particular string. This can only return `true` if the value is a TokenList
+    /// Test if the value contains a particular string. This can only return `true` if the value is a StringArray
     /// ```
     ///  extern crate stylesheet;
     ///  use stylesheet::StyleValue;
-    ///  assert_eq!(true, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
-    ///  assert_eq!(true, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
-    ///  assert_eq!(false, StyleValue::TokenList(vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
+    ///  assert_eq!(true, StyleValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
+    ///  assert_eq!(true, StyleValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
+    ///  assert_eq!(false, StyleValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
     ///  assert_eq!(false, StyleValue::Int(Some(0)).has_token("another_string"));
     /// ```
     pub fn has_token(&self, value:&str) -> bool {
         match self {
-            StyleValue::TokenList(sv) => {
+            StyleValue::StringArray(sv) => {
                 for s in sv { if s==value {return true;} }
                 false
             }
@@ -398,9 +391,24 @@ impl StyleValue {
                 StyleValue::Int(Some(v))    => Some(format!("{}",v)),
                 StyleValue::Rgb(_)          => self.as_color_string(None),
                 StyleValue::String(Some(v)) => Some(v.clone()),
-                StyleValue::TokenList(v)    => Some(format!("{:?}",v)),
+                StyleValue::StringArray(v)  => Some(format!("{:?}",v)),
                 _ => None,
             }
+        }
+    }
+    //mp fmt_type - format the type of the `StyleValue`
+    /// Display the character as either the character itself, or '<EOF>'
+    fn fmt_type(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Float(_)       => write!(f, "flt"),
+            Self::FloatArray(_)  => write!(f, "fa"),
+            Self::Floats(n, _)   => write!(f, "f{}", n),
+            Self::Int(_)         => write!(f, "int"),
+            Self::IntArray(_ )   => write!(f, "ia"),
+            Self::Ints(n, _)     => write!(f, "i{}", n),
+            Self::Rgb(_)         => write!(f, "rgb"),
+            Self::String(_)      => write!(f, "str"),
+            Self::StringArray(_) => write!(f, "tkn"),
         }
     }
     //zz All done
@@ -411,7 +419,8 @@ impl std::fmt::Display for StyleValue {
     //mp fmt - format a character for display
     /// Display the character as either the character itself, or '<EOF>'
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}:{}", self.get_type(), self.as_string().unwrap_or("<None>".to_string()))
+        self.fmt_type(f)?;
+        write!(f, ":{}", self.as_string().unwrap_or("<None>".to_string()))
     }
 
     //zz All done

@@ -18,23 +18,23 @@ limitations under the License.
 
 //a Imports
 use std::collections::HashMap;
-use super::value::{StyleValue, StyleType};
+use super::value::StyleValue;
 
 //tp StyleTypeInstance
 /// A `StyleTypeInstance` is used for everything that may belong to a style; it
 /// has an ID, and a type (such as rgb or int etc)
 pub struct StyleTypeInstance {// from types    
     name  : String,
-    stype : StyleType,
+    stype : StyleValue, // always an undefined value
 }
 
 impl StyleTypeInstance {
-    pub fn new(name:String, stype:StyleType) -> Self {
+    pub fn new(name:String, stype:StyleValue) -> Self {
         Self { name, stype }
     }
-    pub fn get_type(&self) -> StyleType {
-        self.stype
-    }
+    //pub fn get_type(&self) -> StyleValue {
+    //    self.stype
+    //}
 }
 
 //ti std::fmt::Display for StyleTypeInstance
