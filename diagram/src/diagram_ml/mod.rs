@@ -7,11 +7,11 @@ pub enum Error {
 }
 
 pub struct DiagramML<'a> {
-    diagram: &'a mut Diagram,
+    diagram: &'a mut Diagram<'a>,
     
 }
 impl <'a> DiagramML<'a> {
-    pub fn new<'b>(d:&'b mut Diagram) -> DiagramML<'b> {
+    pub fn new<'b>(d:&'b mut Diagram<'b>) -> DiagramML<'b> {
         DiagramML { diagram:d }
     }
     pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),Error> {
