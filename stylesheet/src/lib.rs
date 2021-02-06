@@ -30,6 +30,7 @@ extern crate lazy_static;
 
 mod style;
 pub use style::{TypeValue, ValueError, BaseValue};
+pub use style::{NamedTypeSet};
 pub use style::{StylableNode, RrcStylableNode};
 pub use style::{Descriptor};
 

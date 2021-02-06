@@ -41,12 +41,21 @@ impl <V:TypeValue> std::fmt::Display for NamedTypeSet< V> {
 
 //ti NamedTypeSet
 impl < V:TypeValue> NamedTypeSet< V> {
-    pub fn add_type(&mut self, s:&str, value:V, inheritable:bool) -> () {
+    pub fn new() -> Self {
+        Self {
+            set : HashMap::new(),
+        }
+    }
+    pub fn add_type(mut self, s:&str, value:V, inheritable:bool) -> Self {
         self.set.insert(s.to_string(), (value, inheritable));
+        self
     }
     
-    pub fn get_type(&self, s:&str) -> Option<(V, bool)> {
-        None
+    pub fn get_type(&self, s:&str) -> Option<(&V, bool)> {
+        match (self.set.get(s)) {
+            Some((value, inheritable)) => Some((value, *inheritable)),
+            _ => None,
+        }
     }
 
     //zz All done

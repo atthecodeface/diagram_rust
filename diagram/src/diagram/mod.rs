@@ -1,7 +1,8 @@
-use stylesheet::{BaseValue, TypeValue};
+use stylesheet::{BaseValue, TypeValue, NamedTypeSet};
 use stylesheet::{Descriptor};
 type StyleValue = BaseValue;
 type StyleDescriptor = Descriptor<StyleValue>;
+type StyleSet = NamedTypeSet<StyleValue>;
 
 pub enum ElementStyle {
     Grid(StyleValue), // 2 or 4 ints
@@ -45,11 +46,11 @@ impl ElementHeader {
         }
         (hdr, unused_nv)
     }
-    pub fn get_descriptor() -> StyleDescriptor {
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         StyleDescriptor::new()
-            .add_style("bbox",      &StyleValue::float_array(), false)
-            .add_style("grid",      &StyleValue::int_array(),   false)
-            .add_style("transform", &StyleValue::floats(9),     false)
+            .add_style(nts, "bbox")
+            .add_style(nts, "grid")
+            .add_style(nts, "transform")
     }
 }
 
@@ -59,8 +60,8 @@ pub struct Group {
     content : Vec<Element>
 }
 impl Group {
-    pub fn get_descriptor() -> StyleDescriptor {
-        ElementHeader::get_descriptor()
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+        ElementHeader::get_descriptor(nts)
     }
 }
 
@@ -69,13 +70,13 @@ pub struct Text {
     text    : Vec<String>,
 }
 impl Text {
-    pub fn get_descriptor() -> StyleDescriptor {
-        ElementHeader::get_descriptor()
-            .add_style("fill",       &StyleValue::rgb(None),  true)
-            .add_style("font",       &StyleValue::string(None), true)
-            .add_style("fontsize",   &StyleValue::float(None),  true)
-            .add_style("fontweight", &StyleValue::string(None),  true)
-            .add_style("fontstyle",  &StyleValue::string(None),  true)
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+        ElementHeader::get_descriptor(nts)
+            .add_style(nts, "fill")
+            .add_style(nts, "font")
+            .add_style(nts, "fontsize")
+            .add_style(nts, "fontweight")
+            .add_style(nts, "fontstyle")
     }
 }
 
@@ -86,13 +87,13 @@ pub struct Shape {
 }
 
 impl Shape {
-    pub fn get_descriptor() -> StyleDescriptor {
-        ElementHeader::get_descriptor()
-            .add_style("fill",         &StyleValue::rgb(None),  true)
-            .add_style("stroke",       &StyleValue::rgb(None),  true)
-            .add_style("strokewidth",  &StyleValue::float(None),  true)
-            .add_style("round",        &StyleValue::float(None),  true)
-            .add_style("markers",      &StyleValue::string_array(),  true)
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+        ElementHeader::get_descriptor(nts)
+            .add_style(nts, "fill")
+            .add_style(nts, "stroke")
+            .add_style(nts, "strokewidth")
+            .add_style(nts, "round")
+            .add_style(nts, "markers")
     }
 }
 
@@ -124,6 +125,22 @@ impl Diagram {
         Self { definitions:Vec::new(),
                elements:Vec::new(),
         }
+    }
+    pub fn get_style_set() -> StyleSet {
+        StyleSet::new()
+            .add_type("bbox",       StyleValue::float_array(), false)            
+            .add_type("grid",       StyleValue::int_array(),   false)
+            .add_type("transform",  StyleValue::floats(9),     false)
+            .add_type("fill",       StyleValue::rgb(None),  true)
+            .add_type("stroke",     StyleValue::rgb(None),  true)
+            .add_type("strokewidth",StyleValue::float(None),  true)
+            .add_type("round",      StyleValue::float(None),  true)
+            .add_type("markers",    StyleValue::string_array(),  true)
+            .add_type("font",       StyleValue::string(None), true)
+            .add_type("fontsize",   StyleValue::float(None),  true)
+            .add_type("fontweight", StyleValue::string(None),  true)
+            .add_type("fontstyle",  StyleValue::string(None),  true)
+        
     }
 }
     

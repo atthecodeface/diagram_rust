@@ -20,7 +20,7 @@ limitations under the License.
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::TypeValue;
-// use super::style::{StyleTypeInstance};
+use crate::NamedTypeSet;
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
@@ -77,7 +77,9 @@ impl <V:TypeValue> Descriptor<V> {
     }
 
     //cp add_style
-    pub fn add_style(mut self, name:&str, value:&V, inheritable:bool ) -> Self {
+    pub fn add_style(mut self, nts:&NamedTypeSet<V>, name:&str ) -> Self {
+        println!("Get style {} from {}",name,nts);
+        let (value, inheritable) = nts.get_type(name).unwrap();
         self.styles.push( (name.to_string(), value.as_type(), inheritable) );
         self
     }
@@ -109,10 +111,11 @@ impl <V:TypeValue> Descriptor<V> {
 /// are styled by a stylesheet
 /// ```
 ///  extern crate stylesheet;
-///  use stylesheet::{TypeValue, BaseValue, StylableNode, Descriptor};
-///  let d = Descriptor::<BaseValue>::new()
-///       .add_style("width",  &BaseValue::int(None), true)
-///       .add_style("height", &BaseValue::int(None), true);
+///  use stylesheet::{TypeValue, BaseValue, NamedTypeSet, StylableNode, Descriptor};
+///  let nts = NamedTypeSet::<BaseValue>::new()
+///       .add_type("width",  BaseValue::int(None), true)
+///       .add_type("height", BaseValue::int(None), true);
+///  let d = Descriptor::<BaseValue>::new().add_style(&nts, "width").add_style(&nts, "height");
 ///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
 ///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
 ///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
@@ -211,8 +214,11 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     /// ```
     ///  extern crate stylesheet;
     ///  use std::rc::Rc;
-    ///  use stylesheet::{TypeValue, BaseValue, StylableNode, Descriptor};
-    ///  let mut d = Descriptor::<BaseValue>::new();
+    ///  use stylesheet::{TypeValue, BaseValue, NamedTypeSet, StylableNode, Descriptor};
+    ///  let nts = NamedTypeSet::<BaseValue>::new()
+    ///       .add_type("width",  BaseValue::int(None), true)
+    ///       .add_type("height", BaseValue::int(None), true);
+    ///  let d = Descriptor::<BaseValue>::new().add_style(&nts, "width").add_style(&nts, "height");
     ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
     ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
     ///  assert_eq!(2, Rc::strong_count(&child_1));
