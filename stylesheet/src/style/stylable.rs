@@ -19,12 +19,12 @@ limitations under the License.
 //a Imports
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::value::StyleValue;
+use crate::TypeValue;
 // use super::style::{StyleTypeInstance};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
-pub struct Descriptor<V:StyleValue> {
+pub struct Descriptor<V:TypeValue> {
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
@@ -70,7 +70,7 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-impl <V:StyleValue> Descriptor<V> {
+impl <V:TypeValue> Descriptor<V> {
     //fp new
     pub fn new() -> Self {
         Self { state_classes:Vec::new(), styles:Vec::new() }
@@ -109,7 +109,7 @@ impl <V:StyleValue> Descriptor<V> {
 /// are styled by a stylesheet
 /// ```
 ///  extern crate stylesheet;
-///  use stylesheet::{StyleValue, BaseValue, StylableNode, Descriptor};
+///  use stylesheet::{TypeValue, BaseValue, StylableNode, Descriptor};
 ///  let mut d = Descriptor::<BaseValue>::new();
 ///  d.add_style("width",  &BaseValue::int(None), true)
 ///   .add_style("height", &BaseValue::int(None), true);
@@ -119,7 +119,7 @@ impl <V:StyleValue> Descriptor<V> {
 ///  let child_11 = StylableNode::new(Some(child_1.clone()), "line", &d, vec![]);
 ///
 /// ```
-pub struct StylableNode<'a, V:StyleValue>{
+pub struct StylableNode<'a, V:TypeValue>{
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values
     /// from its parent
@@ -153,8 +153,8 @@ pub struct StylableNode<'a, V:StyleValue>{
 }
 
 pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
-pub type RrcStylableNode<'a, V:StyleValue> = Rc<RefCell<StylableNode<'a, V>>>;
-impl <'a, V:StyleValue> StylableNode<'a, V> {
+pub type RrcStylableNode<'a, V:TypeValue> = Rc<RefCell<StylableNode<'a, V>>>;
+impl <'a, V:TypeValue> StylableNode<'a, V> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
     /// any name_values that are not specific to the node descriptor, but that are permitted by the stylesheet, are added as 'extra_value's
@@ -211,7 +211,7 @@ impl <'a, V:StyleValue> StylableNode<'a, V> {
     /// ```
     ///  extern crate stylesheet;
     ///  use std::rc::Rc;
-    ///  use stylesheet::{StyleValue, BaseValue, StylableNode, Descriptor};
+    ///  use stylesheet::{TypeValue, BaseValue, StylableNode, Descriptor};
     ///  let mut d = Descriptor::<BaseValue>::new();
     ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
     ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);

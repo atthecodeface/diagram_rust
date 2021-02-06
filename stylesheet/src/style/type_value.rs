@@ -45,9 +45,9 @@ impl std::fmt::Display for ValueError {
 }
 
 
-//a StyleValue trait
-//tp StyleValue
-/// The `StyleValue` trait is used in descriptors of stylesheets to define the
+//a TypeValue trait
+//tp TypeValue
+/// The `TypeValue` trait is used in descriptors of stylesheets to define the
 /// styles that are expected within the stylesheet. They are expected to have
 /// a concept of 'no value', which is used also as the *type* of the value
 ///
@@ -56,7 +56,7 @@ impl std::fmt::Display for ValueError {
 /// the other direction, creating a new value from an actual (possibly
 /// unset, or 'no value') value.
 ///
-pub trait StyleValue : std::fmt::Display+std::fmt::Debug+Clone+PartialEq {
+pub trait TypeValue : std::fmt::Display+std::fmt::Debug+Clone+PartialEq {
     fn new_value(&self) -> Self;
     fn as_type(&self) -> Self;
     //mp from_string

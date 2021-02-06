@@ -29,7 +29,7 @@ extern crate regex;
 extern crate lazy_static;
 
 mod style;
-pub use style::{StyleValue, BaseValue};
+pub use style::{TypeValue, ValueError, BaseValue};
 pub use style::{StylableNode, RrcStylableNode};
 pub use style::{Descriptor};
 

@@ -21,7 +21,7 @@ use std::str::FromStr;
 use std::fmt::Debug;
 use regex::Regex;
 use super::color;
-use super::value::{ValueError, StyleValue};
+use crate::{ValueError, TypeValue};
 
 //a Helper functions and modules 
 //vi STRING_IS_NONE - regexp that is true if the string is only whitespace
@@ -134,7 +134,7 @@ mod test_res {
 
 //a Style values
 //tp BaseValue
-/// `BaseValue` is an implementation of a StyleValue which provides for
+/// `BaseValue` is an implementation of a TypeValue which provides for
 /// the basic requirements of (e.g.) HTML
 ///
 /// It supports types of integers and floats (singles, vectors and arrays),
@@ -448,15 +448,15 @@ impl std::fmt::Display for BaseValue {
 }
 
 
-//ti StyleValue for BaseValue
-impl StyleValue for BaseValue {
+//ti TypeValue for BaseValue
+impl TypeValue for BaseValue {
     //fp new_value
     /// Create a new value from a current value - which likely will be
     /// unset, and hence is basically used as a 'type' of that value
     ///
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::{BaseValue, StyleValue};
+    ///  use stylesheet::{BaseValue, TypeValue};
     ///  let type_int = BaseValue::int(None);
     ///  let mut x = type_int.new_value();
     ///  assert!(x.is_none(), "Value of X must be none before it is set");
@@ -480,10 +480,10 @@ impl StyleValue for BaseValue {
     }
 
     //mp as_type
-    /// Create an unset `StyleValue` of the same type
+    /// Create an unset `TypeValue` of the same type
     /// ```
     ///  extern crate stylesheet;
-    ///  use stylesheet::{BaseValue, StyleValue};
+    ///  use stylesheet::{BaseValue, TypeValue};
     ///  let type_int = BaseValue::int(None);
     ///  let x = type_int.new_value();
     ///  let type_x = x.as_type();
