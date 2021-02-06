@@ -22,18 +22,55 @@ use std::rc::Rc;
 use super::value::StyleValue;
 use super::style::{StyleTypeInstance};
 
-//tp StylableDescriptor
-/// A `StylableDescriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
-pub struct StylableDescriptor {
+//tp Descriptor
+/// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
+pub struct Descriptor {
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
-    pub styles : Vec<(String, StyleValue /* as type and default value */, bool /* inheritable? */)>,
+    pub styles : Vec<(String, StyleValue /* as type and default value */, bool /* is inheritable by default? */)>,
 }
 
-//ti StylableDescriptor
-impl StylableDescriptor {
+/* styles was this:
+styles:
+// HashMap name:str => (value, bool)
+fn add_styling(name, value, bool)
+fn get_default_value === fn get_value(name) => value
+fn is_default_inherit === fn get_opt(name) => bool
+
+styled_ids: - used in a stylesheet as its 'ids'
+style_set: HashMap name:str => StyleType
+fn style_id_of_name(name) -> Option<(name,StyleType)>
+fn style_id_of_name_exn(name) -> Result<(name,StyleType)>
+
+Stylesheet:
+    ids                   : style_set
+    default_style         : map of (name,StyleType) => (value, default of inheritable)
+    mutable rules         : t_style_rule list;
+    mutable built_descs   : Vec<Descriptors>
+
+plus
+    mutable entity_list   : Vec<RrcStylableNode>
+    mutable roots         : Vec<RrcStylableNode>
+  }
+pub fn add_styleable(&mut self, s:StylableNode) -> () { self.entity_list.push(s) }
+pub fn add_style_default(&mut self, ntvi:(name,type,value,default_inheritable)) -> () {
+ self.ids.add(name,type);
+ self.default_style.add((name,type), (value,default_inheritable)
+}
+pub fn add_style_defaults(&mut, ...) adds vec
+
+*f build_desc *)
+let build_desc desc t =
+  if (not (List.mem_assoc desc t.built_descs)) then
+    (t.built_descs <- (desc,Styleable_desc_built.create desc t.ids)::t.built_descs);
+  List.assoc desc t.built_descs
+
+*/
+
+//ti Descriptor
+impl Descriptor {
     //fp new
     pub fn new() -> Self {
         Self { state_classes:Vec::new(), styles:Vec::new() }
@@ -54,6 +91,16 @@ impl StylableDescriptor {
         result
     }
 
+    //mp find_style_index -- was find_sid_index(_exn)
+    pub fn find_style_index(&self, s:&str, t:&StyleValue) -> Option<usize> {
+        let mut n=0;
+        for (sn, st, _) in &self.styles {
+            if sn==s && st==t { return Some(n); }
+            n += 1
+        }
+        None
+    }
+
     //zz All done
 }
 
@@ -62,8 +109,8 @@ impl StylableDescriptor {
 /// are styled by a stylesheet
 /// ```
 ///  extern crate stylesheet;
-///  use stylesheet::{StyleValue, StylableNode, StylableDescriptor};
-///  let mut d = StylableDescriptor::new();
+///  use stylesheet::{StyleValue, StylableNode, Descriptor};
+///  let mut d = Descriptor::new();
 ///  d.add_style("width",  &StyleValue::int(None), true)
 ///   .add_style("height", &StyleValue::int(None), true);
 ///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
@@ -82,7 +129,7 @@ pub struct StylableNode<'a>{
     /// hierarchy.
     children              : Vec<RrcStylableNode<'a>>,
     /// The descriptor provides the description of the styles required by the node
-    descriptor            : &'a StylableDescriptor,
+    descriptor            : &'a Descriptor,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -115,7 +162,7 @@ impl <'a> StylableNode<'a> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, node_type:&str, descriptor:&'b StylableDescriptor, name_values:NameValues) -> RrcStylableNode<'b> {
+    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, node_type:&str, descriptor:&'b Descriptor, name_values:NameValues) -> RrcStylableNode<'b> {
         let mut extra_sids = Vec::new();
         let mut classes    = Vec::new();
         let mut values     = descriptor.build_style_array();
@@ -164,8 +211,8 @@ impl <'a> StylableNode<'a> {
     /// ```
     ///  extern crate stylesheet;
     ///  use std::rc::Rc;
-    ///  use stylesheet::{StyleValue, StylableNode, StylableDescriptor};
-    ///  let mut d = StylableDescriptor::new();
+    ///  use stylesheet::{StyleValue, StylableNode, Descriptor};
+    ///  let mut d = Descriptor::new();
     ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
     ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
     ///  assert_eq!(2, Rc::strong_count(&child_1));
@@ -182,6 +229,34 @@ impl <'a> StylableNode<'a> {
             c.borrow_mut().delete_children();
         }
     }
+
+    //mp find_style_index -- was find_sid_index(_exn)
+    pub fn find_style_index(&self, s:&str, t:&StyleValue) -> Option<usize> {
+        match self.descriptor.find_style_index(s, t) {
+            Some(n) => Some(n),
+            None => {
+                let mut n=self.descriptor.styles.len();
+                for (sn,st) in &self.extra_sids {
+                    if sn==s && st==t { return Some(n); }
+                    n += 1
+                }
+                None
+            },
+        }
+    }
+
+    /*
+    //mp get_value_ref
+    pub fn get_value_ref(&self, sheet, s:&str) ->  {
+        let sid = style_id_of_name_exn s sheet in
+            let sindex = find_sid_index_exn sid t in
+            t.values.(sindex)
+    }
+
+    (*f get_value *)
+        let get_value t sheet (s:string) =
+        Value_ref.get_value (get_value_ref t sheet s)
+*/
 
     //zz All done
 }

@@ -31,5 +31,5 @@ extern crate lazy_static;
 mod style;
 pub use style::{StyleValue};
 pub use style::{StylableNode, RrcStylableNode};
-pub use style::{StylableDescriptor};
+pub use style::{Descriptor};
 
