@@ -18,64 +18,13 @@ limitations under the License.
 
 //a Imports
 use std::collections::HashMap;
-use stylesheet::{BaseValue, TypeValue, NamedTypeSet};
+pub use stylesheet::{BaseValue, TypeValue, ValueError, NamedTypeSet};
 use stylesheet::{Descriptor};
 type StyleValue = BaseValue;
 type StyleDescriptor = Descriptor<StyleValue>;
 type StyleSet = NamedTypeSet<StyleValue>;
 
-pub enum ElementStyle {
-    Grid(StyleValue), // 2 or 4 ints
-    Bbox(StyleValue), // 2 or 4 floats
-    Transform(StyleValue), // 9 floats
-    Fill(StyleValue),   // color
-    Stroke(StyleValue), // color
-    StrokeWidth(StyleValue), // float
-    Markers(StyleValue), // 1-3 strings
-    Font(StyleValue), // string
-    FontSize(StyleValue), // float
-    FontStyle(StyleValue), // string
-    FontWeight(StyleValue), // string
-}
-
-//tp ElementHeader
-pub struct ElementHeader {
-    id           : StyleValue,
-    classes      : StyleValue,
-    styles       : Vec<ElementStyle>,
-}
-
-//ti ElementHeader
-impl ElementHeader {
-    pub fn new(name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
-        let mut unused_nv = Vec::new();
-        let mut hdr = 
-            ElementHeader{ id      : StyleValue::string(None),
-                           classes : StyleValue::string_array(),
-                           styles  : Vec::new(),
-            };
-        for (n,v) in name_values {
-            if n=="id" {
-                hdr.id.from_string(&v);
-            }
-            else if n=="class" {
-                for s in v.split_whitespace() {
-                    hdr.classes.add_string(s.to_string());
-                }
-            } else { // if in base elementstyle then do that else
-                unused_nv.push((n,v));
-            }
-        }
-        (hdr, unused_nv)
-    }
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
-        StyleDescriptor::new()
-            .add_style(nts, "bbox")
-            .add_style(nts, "grid")
-            .add_style(nts, "transform")
-    }
-}
-
+//a Element types
 //tp Group - an Element that contains just other Elements
 pub struct Group {
     // requires no styles
@@ -111,9 +60,18 @@ pub struct Shape {
     // Possibly polygon
     // has Fill, Stroke, StrokeWidth, Markers
     header  : ElementHeader,
+    vertices : usize, // 0 for circle?
 }
 
 impl Shape {
+    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+        let (header, name_values) = Element::new_header(styles, name_values);
+        let vertices = Element::value_of_name(name_values, "vertices", StyleValue::int(Some(4)))?.as_int(Some(4)).unwrap() as usize;
+        Ok( Self {
+            header,
+            vertices,
+        } )
+    }
     pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         ElementHeader::get_descriptor(nts)
             .add_style(nts, "fill")
@@ -136,6 +94,64 @@ impl Use {
     }
 }
 
+//a ElementHeader and Element
+//tp ElementStyle
+pub enum ElementStyle {
+    Grid(StyleValue), // 2 or 4 ints
+    Bbox(StyleValue), // 2 or 4 floats
+    Transform(StyleValue), // 9 floats
+    Fill(StyleValue),   // color
+    Stroke(StyleValue), // color
+    StrokeWidth(StyleValue), // float
+    Markers(StyleValue), // 1-3 strings
+    Font(StyleValue), // string
+    FontSize(StyleValue), // float
+    FontStyle(StyleValue), // string
+    FontWeight(StyleValue), // string
+}
+
+//tp ElementHeader
+pub struct ElementHeader {
+    id           : StyleValue,
+    classes      : StyleValue,
+    styles       : Vec<ElementStyle>,
+}
+
+//ti ElementHeader
+impl ElementHeader {
+    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
+        let mut unused_nv = Vec::new();
+        let mut hdr = 
+            ElementHeader{ id      : StyleValue::string(None),
+                           classes : StyleValue::string_array(),
+                           styles  : Vec::new(),
+            };
+        for (n,v) in name_values {
+            if n=="id" {
+                hdr.id.from_string(&v);
+            } else if n=="class" {
+                for s in v.split_whitespace() {
+                    hdr.classes.add_string(s.to_string());
+                }
+            } else {
+                //match styles.find_style_index(n) {
+                //    None => unused_nv.push((n,v));
+                //}
+            }
+        }
+        (hdr, unused_nv)
+    }
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+        StyleDescriptor::new()
+            .add_style(nts, "bbox")
+            .add_style(nts, "grid")
+            .add_style(nts, "transform")
+            .add_style(nts, "padding")
+            .add_style(nts, "margin")
+            .add_style(nts, "border")
+    }
+}
+
 
 //tp Element - the enumeration of the above
 pub enum Element {
@@ -145,6 +161,21 @@ pub enum Element {
     Use(Use), // use of a definition
 }
 
+impl Element {
+    pub fn new_header(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
+        ElementHeader::new(styles, name_values)
+    }
+    pub fn value_of_name(name_values:Vec<(String,String)>, name:&str, value:StyleValue) -> Result<StyleValue,ValueError> {
+        for (n,v) in name_values {
+            if n==name {
+                value.from_string(&v)?;
+            }
+        }
+        Ok(value)
+    }
+}
+
+//a Diagram Definition
 //tp Definition - item with a Diagram that is not displayed, but may be 'used'
 pub struct Definition {
     name    : String,

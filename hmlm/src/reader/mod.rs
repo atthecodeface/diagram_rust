@@ -6,7 +6,7 @@ pub mod lexer;
 pub mod parser;
 
 use xml::reader::XmlEvent;
-use self::parser::ParseError;
+pub use self::parser::ParseError;
 
 pub struct EventReader<R: Read> {
     reader : char::Reader<R>,

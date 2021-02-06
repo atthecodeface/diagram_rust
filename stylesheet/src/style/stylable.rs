@@ -94,10 +94,10 @@ impl <V:TypeValue> Descriptor<V> {
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str, t:&V) -> Option<usize> {
+    pub fn find_style_index(&self, s:&str) -> Option<usize> {
         let mut n=0;
-        for (sn, st, _) in &self.styles {
-            if sn==s && st==t { return Some(n); }
+        for (sn, _, _) in &self.styles {
+            if sn==s { return Some(n); }
             n += 1
         }
         None
@@ -156,7 +156,7 @@ pub struct StylableNode<'a, V:TypeValue>{
 }
 
 pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
-pub type RrcStylableNode<'a, V:TypeValue> = Rc<RefCell<StylableNode<'a, V>>>;
+pub type RrcStylableNode<'a, V> = Rc<RefCell<StylableNode<'a, V>>>;
 impl <'a, V:TypeValue> StylableNode<'a, V> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
@@ -166,7 +166,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
     pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&'b Descriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
-        let mut extra_sids = Vec::new();
+        let extra_sids = Vec::new();
         let mut classes    = Vec::new();
         let mut values     = descriptor.build_style_array();
         let mut id_name    = None;
@@ -178,20 +178,17 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                     classes.push(s.to_string());
                 }
             } else {
-                /*
-                match stylesheet.style_id_of_name(name) {
-                    None => (),
-                    Some sid => {
-                        match descriptor.find_sid_index(sid) {
-                            Some(sid_index) => (),
-                            None => {
-                                self.extra_sids.push(name);
-                                self.values.push();
-                            },
-                        },
+                match descriptor.find_style_index(name) {
+                    Some(n) => {
+                        values[n].from_string(value).unwrap();
+                    },
+                    None => {
+                        // let v = stylesheet.get_style_value(name);
+                        // let v = v.new_value().from_string(value).unwrap();
+                        // extra_sids.push(name);
+                        // values.push(v)
                     }
                 }
-*/
             }
         }
         let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
@@ -237,13 +234,13 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str, t:&V) -> Option<usize> {
-        match self.descriptor.find_style_index(s, t) {
+    pub fn find_style_index(&self, s:&str) -> Option<usize> {
+        match self.descriptor.find_style_index(s) {
             Some(n) => Some(n),
             None => {
                 let mut n=self.descriptor.styles.len();
-                for (sn,st) in &self.extra_sids {
-                    if sn==s && st==t { return Some(n); }
+                for (sn, _) in &self.extra_sids {
+                    if sn==s { return Some(n); }
                     n += 1
                 }
                 None

@@ -1,3 +1,4 @@
+extern crate xml;
 extern crate hmlm;
 extern crate stylesheet;
 

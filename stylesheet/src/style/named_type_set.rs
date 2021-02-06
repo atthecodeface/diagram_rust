@@ -52,7 +52,7 @@ impl < V:TypeValue> NamedTypeSet< V> {
     }
     
     pub fn get_type(&self, s:&str) -> Option<(&V, bool)> {
-        match (self.set.get(s)) {
+        match self.set.get(s) {
             Some((value, inheritable)) => Some((value, *inheritable)),
             _ => None,
         }

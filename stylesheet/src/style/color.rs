@@ -242,6 +242,7 @@ pub fn of_string(s:&str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
     fn test_of_string() {
         assert_eq!( Some(0x000000), of_string("black") );
         assert_eq!( Some(0x000000), of_string("#0") );
@@ -255,6 +256,7 @@ mod tests {
         assert_eq!( Some(0x00ff00), of_string("green") );
         assert_eq!( Some(0xff0000), of_string("blue") );
     }
+    #[test]
     fn test_as_string() {
         assert_eq!( "black", as_string(0x000000) );
         assert_eq!( "coral", as_string(0x507fff) );
