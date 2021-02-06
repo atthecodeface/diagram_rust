@@ -6,22 +6,25 @@ use xml::reader::XmlEvent;
 
 type Attributes = Vec<xml::attribute::OwnedAttribute>;
 
-pub enum Error {
+fn to_nv(attributes:&Attributes) -> Vec<(String,String)> {
+    attributes.iter().map(|a| (a.name.local_name.clone(), a.value.clone())).collect()
+}
+pub enum MLError {
     Blob(usize)
 }
-impl Error {
+impl MLError {
     fn no_more_events() -> Self {
         Self::Blob(0)
     }
 }
-impl From<crate::diagram::ValueError> for Error {
-    fn from(e: crate::diagram::ValueError) -> Error {
-        Error::Blob(0)
+impl From<crate::diagram::ValueError> for MLError {
+    fn from(e: crate::diagram::ValueError) -> MLError {
+        MLError::Blob(0)
     }
 }
-impl From<hmlm::reader::ParseError> for Error {
-    fn from(e: hmlm::reader::ParseError) -> Error {
-        Error::Blob(0)
+impl From<hmlm::reader::ParseError> for MLError {
+    fn from(e: hmlm::reader::ParseError) -> MLError {
+        MLError::Blob(0)
     }
 }
 
@@ -30,44 +33,47 @@ pub struct DiagramML<'a> {
     diagram: &'a mut Diagram<'a>,
 }
 
-struct MLReader<R:Read> {
-    reader: hmlm::reader::EventReader<R>,
+struct MLReader<'a, R:Read> {
+    pub diagram : &'a Diagram<'a>,
+    pub reader  : hmlm::reader::EventReader<R>,
 }
 
-impl <R:Read> MLReader<R> {
-    fn new(reader:hmlm::reader::EventReader<R>) -> Self {
-        Self {
+impl <'a, R:Read> MLReader<'a, R> {
+    fn new<'b> (diagram:&'b Diagram<'b>, reader:hmlm::reader::EventReader<R>) -> MLReader<'b, R> {
+        MLReader {
+            diagram,
             reader,
         }
     }
-    fn next_event(&mut self) -> Result<XmlEvent,Error> {
+    fn next_event(&mut self) -> Result<XmlEvent,MLError> {
         match self.reader.next() {
-            None => Err(Error::no_more_events()),
-            Some(Err(e)) => Err(from(e)),
+            None => Err(MLError::no_more_events()),
+            Some(Err(e)) => Err(MLError::from(e)),
             Some(Ok(x))  => Ok(x),
         }
     }
 }
 trait MLEvent : Sized {
     /// ml_new is invoked from StartElement(<element type>, <atttributes>, _<namespace>)
-    fn ml_new<R:Read> (reader:&mut MLReader<R>, attributes:&Attributes) -> Result<Self, Error>;
+    fn ml_new<R:Read> (reader:&mut MLReader<R>, attributes:&Attributes) -> Result<Self, MLError>;
     /// ml_event is invoked after an object is created
-    fn ml_event<R:Read> (&mut self, reader:&mut MLReader<R>) -> Result<Self, Error>;
+    fn ml_event<R:Read> (self, reader:&mut MLReader<R>) -> Result<Self, MLError>;
 }
 
 impl MLEvent for crate::diagram::Shape {
-    fn ml_new<R:Read> (reader:&mut MLReader<R>, attributes:&Attributes) -> Result<Self, Error> {
-        let shape = crate::diagram::Shape::new(styles, attributes.iter().map(|a| (a.name.local_name, a.value)))?;
+    fn ml_new<R:Read> (reader:&mut MLReader<R>, attributes:&Attributes) -> Result<Self, MLError> {
+        let styles = reader.diagram.styles("shape").unwrap();
+        let shape = crate::diagram::Shape::new(styles, to_nv(attributes))?;
         shape.ml_event(reader)
     }
-    fn ml_event<R:Read> (&mut self, reader:&mut MLReader<R>) -> Result<Self, Error> {
-        match reader.next_event().unwrap() {
+    fn ml_event<R:Read> (mut self, reader:&mut MLReader<R>) -> Result<Self, MLError> {
+        match reader.next_event()? {
             XmlEvent::Comment(_) => (),
             XmlEvent::EndElement{..} => {
                 return Ok(self);
             },
             _ => {
-                return Err();
+                return Err(MLError::no_more_events());
             },
         }
         self.ml_event(reader)
@@ -125,8 +131,9 @@ impl <'a> DiagramML<'a> {
     pub fn new<'b>(d:&'b mut Diagram<'b>) -> DiagramML<'b> {
         DiagramML { diagram:d }
     }
-    pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),Error> {
+    pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLError> {
         let event_reader = hmlm::reader::EventReader::new(f); // Can use an xml::reader
+        Ok(())
         // ml_event_file(&mut d, event_reader.iter())?
     }
 }

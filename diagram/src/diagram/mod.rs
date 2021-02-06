@@ -165,7 +165,7 @@ impl Element {
     pub fn new_header(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
         ElementHeader::new(styles, name_values)
     }
-    pub fn value_of_name(name_values:Vec<(String,String)>, name:&str, value:StyleValue) -> Result<StyleValue,ValueError> {
+    pub fn value_of_name(name_values:Vec<(String,String)>, name:&str, mut value:StyleValue) -> Result<StyleValue,ValueError> {
         for (n,v) in name_values {
             if n==name {
                 value.from_string(&v)?;
@@ -218,6 +218,9 @@ impl <'a> DiagramDescriptor<'a> {
             descriptors
         }
     }
+    pub fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
+        self.descriptors.get(tag)
+    }
 }
 
 //tp Diagram
@@ -234,6 +237,9 @@ impl <'a> Diagram <'a> {
                definitions:Vec::new(),
                elements:Vec::new(),
         }
+    }
+    pub fn styles(&self, tag:&str) -> Option<&StyleDescriptor> {
+        self.descriptor.get(tag)
     }
 }
     

@@ -229,7 +229,7 @@ pub fn of_string(s:&str) -> Option<u32> {
             if s.bytes().nth(0)!=Some(35) {
                 None
             } else {
-                match u32::from_str_radix(s,16) {
+                match u32::from_str_radix(s.split_at(1).1,16) {
                     Ok(rgb) => Some(rgb & 0xffffff),
                     _ => None,
                 }
@@ -244,17 +244,17 @@ mod tests {
     use super::*;
     #[test]
     fn test_of_string() {
-        assert_eq!( Some(0x000000), of_string("black") );
-        assert_eq!( Some(0x000000), of_string("#0") );
-        assert_eq!( Some(0x000000), of_string("#0000000") );
-        assert_eq!( Some(0x000000), of_string("#000000000") );
-        assert_eq!( Some(0xffffff), of_string("white") );
-        assert_eq!( Some(0x012345), of_string("#012345") );
-        assert_eq!( Some(0x234567), of_string("#01234567") );
-        assert_eq!( Some(0x456789), of_string("#0123456789") );
-        assert_eq!( Some(0x0000ff), of_string("red") );
-        assert_eq!( Some(0x00ff00), of_string("green") );
-        assert_eq!( Some(0xff0000), of_string("blue") );
+        assert_eq!( Some(0x000000), of_string("black")       ,"mismatch in black");
+        assert_eq!( Some(0x000000), of_string("#0")          ,"mismatch in #0");
+        assert_eq!( Some(0x000000), of_string("#0000000")    ,"mismatch in #0000000");
+        assert_eq!( Some(0x000000), of_string("#000000000")  ,"mismatch in #000000000");
+        assert_eq!( Some(0xffffff), of_string("white")       ,"mismatch in white");
+        assert_eq!( Some(0x012345), of_string("#012345")     ,"mismatch in #012345");
+        assert_eq!( Some(0x234567), of_string("#01234567")   ,"mismatch in #01234567");
+        assert_eq!( None,           of_string("#0123456789") ,"mismatch in #0123456789");
+        assert_eq!( Some(0x0000ff), of_string("red")         ,"mismatch in red");
+        assert_eq!( Some(0x00ff00), of_string("lime")        ,"mismatch in lime");
+        assert_eq!( Some(0xff0000), of_string("blue")        ,"mismatch in blue");
     }
     #[test]
     fn test_as_string() {
