@@ -20,16 +20,16 @@ limitations under the License.
 use std::cell::RefCell;
 use std::rc::Rc;
 use super::value::StyleValue;
-use super::style::{StyleTypeInstance};
+// use super::style::{StyleTypeInstance};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
-pub struct Descriptor {
+pub struct Descriptor<V:StyleValue> {
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
-    pub styles : Vec<(String, StyleValue /* as type and default value */, bool /* is inheritable by default? */)>,
+    pub styles : Vec<(String, V /* as type and default value */, bool /* is inheritable by default? */)>,
 }
 
 /* styles was this:
@@ -70,20 +70,20 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-impl Descriptor {
+impl <V:StyleValue> Descriptor<V> {
     //fp new
     pub fn new() -> Self {
         Self { state_classes:Vec::new(), styles:Vec::new() }
     }
 
     //cp add_style
-    pub fn add_style<'a>(&'a mut self, name:&str, value:&StyleValue, inheritable:bool ) -> &'a mut Self {
+    pub fn add_style<'a>(&'a mut self, name:&str, value:&V, inheritable:bool ) -> &'a mut Self {
         self.styles.push( (name.to_string(), value.as_type(), inheritable) );
         self
     }
 
     //mp build_style_array
-    pub fn build_style_array(&self) -> Vec<StyleValue> {
+    pub fn build_style_array(&self) -> Vec<V> {
         let mut result = Vec::new();
         for (_, v, _) in &self.styles {
             result.push(v.new_value());
@@ -92,7 +92,7 @@ impl Descriptor {
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str, t:&StyleValue) -> Option<usize> {
+    pub fn find_style_index(&self, s:&str, t:&V) -> Option<usize> {
         let mut n=0;
         for (sn, st, _) in &self.styles {
             if sn==s && st==t { return Some(n); }
@@ -109,27 +109,27 @@ impl Descriptor {
 /// are styled by a stylesheet
 /// ```
 ///  extern crate stylesheet;
-///  use stylesheet::{StyleValue, StylableNode, Descriptor};
-///  let mut d = Descriptor::new();
-///  d.add_style("width",  &StyleValue::int(None), true)
-///   .add_style("height", &StyleValue::int(None), true);
+///  use stylesheet::{StyleValue, BaseValue, StylableNode, Descriptor};
+///  let mut d = Descriptor::<BaseValue>::new();
+///  d.add_style("width",  &BaseValue::int(None), true)
+///   .add_style("height", &BaseValue::int(None), true);
 ///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
 ///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
 ///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
 ///  let child_11 = StylableNode::new(Some(child_1.clone()), "line", &d, vec![]);
 ///
 /// ```
-pub struct StylableNode<'a>{
+pub struct StylableNode<'a, V:StyleValue>{
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values
     /// from its parent
-    parent                : Option<RrcStylableNode<'a>>,
+    parent                : Option<RrcStylableNode<'a, V>>,
     /// The `children` of a node are those which have the node as a
     /// parent; this is used to propagate the stylesheet through the
     /// hierarchy.
-    children              : Vec<RrcStylableNode<'a>>,
+    children              : Vec<RrcStylableNode<'a, V>>,
     /// The descriptor provides the description of the styles required by the node
-    descriptor            : &'a Descriptor,
+    descriptor            : &'a Descriptor<V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -141,10 +141,10 @@ pub struct StylableNode<'a>{
     /// `extra_sids` provides values for a stylesheet that do *not*
     /// belong to the node, but may be inherited by children of the
     /// node
-    extra_sids            : Vec<(String, StyleValue)>,
+    extra_sids            : Vec<(String, V)>,
     /// `values` contains the nodes values for each of the styles in the descriptor; it is in 1-to-1 correspondence with descriptor.styles + extra_sids
     /// `values` is supposed to be a set of ValueRefs
-    values                : Vec<StyleValue>,
+    values                : Vec<V>,
     /// state is a vector the same length as the descriptor.state_classes
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
     /// this has a 1-to-1 correspondence with descriptor.state_classes
@@ -153,8 +153,8 @@ pub struct StylableNode<'a>{
 }
 
 pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
-pub type RrcStylableNode<'a> = Rc<RefCell<StylableNode<'a>>>;
-impl <'a> StylableNode<'a> {
+pub type RrcStylableNode<'a, V:StyleValue> = Rc<RefCell<StylableNode<'a, V>>>;
+impl <'a, V:StyleValue> StylableNode<'a, V> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
     /// any name_values that are not specific to the node descriptor, but that are permitted by the stylesheet, are added as 'extra_value's
@@ -162,7 +162,7 @@ impl <'a> StylableNode<'a> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b>>, node_type:&str, descriptor:&'b Descriptor, name_values:NameValues) -> RrcStylableNode<'b> {
+    pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&'b Descriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
         let mut extra_sids = Vec::new();
         let mut classes    = Vec::new();
         let mut values     = descriptor.build_style_array();
@@ -191,7 +191,7 @@ impl <'a> StylableNode<'a> {
 */
             }
         }
-        let parent_clone = match (parent) { None => None, Some(ref p)=> Some(p.clone()) };
+        let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
         let node = Rc::new(RefCell::new(StylableNode {
             parent,
             children : Vec::new(),
@@ -211,8 +211,8 @@ impl <'a> StylableNode<'a> {
     /// ```
     ///  extern crate stylesheet;
     ///  use std::rc::Rc;
-    ///  use stylesheet::{StyleValue, StylableNode, Descriptor};
-    ///  let mut d = Descriptor::new();
+    ///  use stylesheet::{StyleValue, BaseValue, StylableNode, Descriptor};
+    ///  let mut d = Descriptor::<BaseValue>::new();
     ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
     ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
     ///  assert_eq!(2, Rc::strong_count(&child_1));
@@ -231,7 +231,7 @@ impl <'a> StylableNode<'a> {
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str, t:&StyleValue) -> Option<usize> {
+    pub fn find_style_index(&self, s:&str, t:&V) -> Option<usize> {
         match self.descriptor.find_style_index(s, t) {
             Some(n) => Some(n),
             None => {
