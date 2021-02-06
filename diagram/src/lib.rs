@@ -1,4 +1,5 @@
 extern crate hmlm;
+extern crate stylesheet;
 
 mod diagram;
 mod diagram_ml;

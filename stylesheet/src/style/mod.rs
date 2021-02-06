@@ -1,7 +1,7 @@
 mod type_value;
 mod value_base;
 mod color;
-// mod style;
+mod named_type_set;
 mod stylable;
 pub use self::type_value::{TypeValue, ValueError};
 pub use self::value_base::{BaseValue};

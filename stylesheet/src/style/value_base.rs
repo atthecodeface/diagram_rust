@@ -417,6 +417,14 @@ impl BaseValue {
             }
         }
     }
+    //mp add_string - add a string (to a string array)
+    /// Add a string (to a string array)
+    pub fn add_string(&mut self, s:String) -> () {
+        match self {
+            Self::StringArray(v)  => {v.push(s);}
+            _ => (),
+        }
+    }
     //mp fmt_type - format the type of the `BaseValue`
     /// Display the character as either the character itself, or '<EOF>'
     fn fmt_type(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

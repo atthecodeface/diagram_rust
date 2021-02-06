@@ -77,7 +77,7 @@ impl <V:TypeValue> Descriptor<V> {
     }
 
     //cp add_style
-    pub fn add_style<'a>(&'a mut self, name:&str, value:&V, inheritable:bool ) -> &'a mut Self {
+    pub fn add_style(mut self, name:&str, value:&V, inheritable:bool ) -> Self {
         self.styles.push( (name.to_string(), value.as_type(), inheritable) );
         self
     }
@@ -110,9 +110,9 @@ impl <V:TypeValue> Descriptor<V> {
 /// ```
 ///  extern crate stylesheet;
 ///  use stylesheet::{TypeValue, BaseValue, StylableNode, Descriptor};
-///  let mut d = Descriptor::<BaseValue>::new();
-///  d.add_style("width",  &BaseValue::int(None), true)
-///   .add_style("height", &BaseValue::int(None), true);
+///  let d = Descriptor::<BaseValue>::new()
+///       .add_style("width",  &BaseValue::int(None), true)
+///       .add_style("height", &BaseValue::int(None), true);
 ///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
 ///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
 ///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
