@@ -34,9 +34,12 @@ fn main() {
             let mut diagram_ml = DiagramML::new(&mut diagram);
             for filename in vf {
                 let file = File::open(filename).unwrap();
-                diagram_ml.read_file(file);
+                diagram_ml.read_file(file).unwrap();
             }
         },
+    }
+    for e in diagram.iter_elements() {
+        println!("{:?}", e);
     }
 /*
     let input_file  = 

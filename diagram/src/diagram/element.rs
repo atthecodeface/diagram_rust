@@ -23,6 +23,7 @@ use super::types::*;
 
 //a Element types
 //tp Group - an Element that contains just other Elements
+#[derive(Debug)]
 pub struct Group {
     // requires no styles
     content : Vec<Element>
@@ -51,6 +52,7 @@ impl Group {
 }
 
 //tp Text - an Element that contains text
+#[derive(Debug)]
 pub struct Text {
     text    : Vec<String>,
 }
@@ -66,6 +68,7 @@ impl Text {
 }
 
 //tp Shape - an Element that contains a polygon (or path?)
+#[derive(Debug)]
 pub struct Shape {
     // Possibly polygon
     // has Fill, Stroke, StrokeWidth, Markers
@@ -96,6 +99,7 @@ impl Shape {
 }
 
 //tp Use - an Element that is a reference to a group or other element
+#[derive(Debug)]
 pub struct Use {
     // has Transform - to put it somewhere!
     id_ref  : String,
@@ -111,6 +115,7 @@ impl Use {
 
 //a ElementHeader and Element
 //tp ElementStyle
+#[derive(Debug)]
 pub enum ElementStyle {
     Grid(StyleValue), // 2 or 4 ints
     Bbox(StyleValue), // 2 or 4 floats
@@ -126,6 +131,7 @@ pub enum ElementStyle {
 }
 
 //tp ElementHeader
+#[derive(Debug)]
 pub struct ElementHeader {
     pub id           : StyleValue,
     pub classes      : StyleValue,
@@ -170,6 +176,7 @@ impl ElementHeader {
 
 
 //tp Element - the enumeration of the above
+#[derive(Debug)]
 pub enum ElementContent {
     Group(Group),
     Text(Text),
@@ -177,6 +184,7 @@ pub enum ElementContent {
     Use(Use), // use of a definition
 }
 
+#[derive(Debug)]
 pub struct Element {
     header  : ElementHeader,
     content : ElementContent,
