@@ -61,8 +61,23 @@ impl <'a> Diagram <'a> {
     pub fn geometry(&mut self) -> Result<(),()> {
         Ok(())
     }
-    pub fn iter_elements(&mut self) -> Result<(),()> {
-        Ok(())
+    pub fn iter_elements(&'b self) -> DiagramElements<'a,'b> {
+        DiagramElements { diagram:self, n: 0 }
     }
 }
-    
+pub struct DiagramElements<'a, 'b> {
+    diagram : &'a Diagram<'b>,
+    n : usize,
+}
+impl <'a, 'b> Iterator for DiagramElements<'a, 'b> {
+    type Item = &Element;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.n>=self.diagram.elements.len() {
+            None
+        } else {
+            let i=self.n;
+            self.n = self.n + 1;
+            Some(&self.diagram.elements[i])
+        }
+    }
+}
