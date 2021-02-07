@@ -23,16 +23,10 @@ use super::DiagramDescriptor;
 use super::Element;
 
 //a Diagram Definition
-//tp Definition - item with a Diagram that is not displayed, but may be 'used'
-pub struct Definition {
-    name    : String,
-    elements : Vec<Element>,
-}
-
 //tp Diagram
 pub struct Diagram<'a> {
     pub descriptor  : DiagramDescriptor<'a>,
-    pub definitions : Vec<Definition>,
+    pub definitions : Vec<Element>,
     pub elements    : Vec<Element>,
 }
 
@@ -46,6 +40,14 @@ impl <'a> Diagram <'a> {
     }
     pub fn styles(&self, tag:&str) -> Option<&StyleDescriptor> {
         self.descriptor.get(tag)
+    }
+    pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element> {
+        for i in &self.definitions {
+            if i.has_id(name) {
+                return Some(i);
+            }
+        }
+        None
     }
     pub fn uniquify(&mut self) -> Result<(),()> {
         Ok(())

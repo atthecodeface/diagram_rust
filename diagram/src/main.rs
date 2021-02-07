@@ -26,7 +26,7 @@ fn main() {
         .get_matches();
 
     let mut diagram = Diagram::new();
-    match (matches.values_of("file")) {
+    match matches.values_of("file") {
         None => {
             println!("Should read stdin");
         },

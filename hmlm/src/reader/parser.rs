@@ -11,6 +11,7 @@ use xml::common::XmlVersion;
 
 use super::char::FilePosition;
 use super::lexer::{Token, TokenWithPos, TokenError, NamespaceName};
+pub type XmlEventWithPos = (FilePosition, FilePosition, XmlEvent);
 
 //a Conversion functions
 fn owned_of_ns_name (ns_name:&NamespaceName) -> OwnedName {
@@ -77,26 +78,32 @@ struct StackElement {
     boxed        : bool, // if true, expects a close
     ns_name      : OwnedName,
     attributes   : Vec<OwnedAttribute>,
+    token_start  : FilePosition,
+    token_end    : FilePosition,
 }
 
 impl StackElement {
-    pub fn new(parent_depth:usize, depth:usize, boxed:bool, ns_name:&NamespaceName) -> StackElement {
+    pub fn new(parent_depth:usize, depth:usize, boxed:bool, ns_name:&NamespaceName,
+               token_start:FilePosition, token_end:FilePosition) -> StackElement {
         StackElement {
             parent_depth, depth, boxed,
             ns_name      : owned_of_ns_name(ns_name),
             attributes   : Vec::new(),
+            token_start, token_end,
         }
     }
-    pub fn as_start_element(&mut self, namespace:Namespace) -> XmlEvent {
+    pub fn as_start_element(&mut self, namespace:Namespace) -> XmlEventWithPos {
         let mut attributes = Vec::new();
         attributes.append(&mut self.attributes);
-        XmlEvent::StartElement{name       : self.ns_name.clone(),
+        ( self.token_start,
+          self.token_end,
+          XmlEvent::StartElement{name       : self.ns_name.clone(),
                                attributes : attributes,
                                namespace  : namespace,
-        }
+        })
     }        
-    pub fn as_end_element(&self) -> (XmlEvent, usize) {
-        (XmlEvent::EndElement{name:self.ns_name.clone()}, self.parent_depth)
+    pub fn as_end_element(&self) -> (XmlEventWithPos, usize) {
+        ((self.token_start, self.token_end, XmlEvent::EndElement{name:self.ns_name.clone()}), self.parent_depth)
     }
 }
 
@@ -146,7 +153,7 @@ impl Parser {
     //mi pop_tag_stack
     /// pop_tag_stack
     // Pops the tag stack and returns an XmlEvent of an end of that element
-    fn pop_tag_stack(&mut self) -> Result<XmlEvent,ParseError> {
+    fn pop_tag_stack(&mut self) -> Result<XmlEventWithPos,ParseError> {
         assert!(self.tag_stack.len()>0);
         self.ns_stack.pop();
         let (e, depth) = self.tag_stack.pop().unwrap().as_end_element();
@@ -160,7 +167,7 @@ impl Parser {
     /// pushes self.pending_open_tag on to stack
     fn push_tag_stack(&mut self) -> () {
         let (depth, ns_name, boxed) = self.pending_open_tag.pop().unwrap();
-        self.tag_stack.push(StackElement::new(self.tag_depth, depth, boxed, &ns_name));
+        self.tag_stack.push(StackElement::new(self.tag_depth, depth, boxed, &ns_name, self.token_start, self.token_end));
         self.ns_stack.push_empty();
         self.start_element_building = true;
         self.tag_depth += 1;
@@ -172,7 +179,7 @@ impl Parser {
     //mi start_element_event
     /// If no start_element being built then return None, otherwise the StartElement
     /// for the top of the tag stack
-    fn start_element_event(&mut self) -> XmlEvent {
+    fn start_element_event(&mut self) -> XmlEventWithPos {
         let n = self.tag_stack.len()-1;
         self.tag_stack[n].as_start_element(self.ns_stack.squash())
     }
@@ -206,17 +213,17 @@ impl Parser {
     }
     
     /// next_event
-    pub fn next_event<T> (&mut self, mut get_token:T) -> Result<XmlEvent,ParseError>
+    pub fn next_event<T> (&mut self, mut get_token:T) -> Result<XmlEventWithPos,ParseError>
         where T: FnMut () -> Result<TokenWithPos, TokenError>
     {
         if !self.start_emitted {
             self.start_emitted = true;
-            Ok(XmlEvent::StartDocument { version:XmlVersion::Version10, encoding:"UTF-8".to_string(), standalone:None })
+            Ok((self.token_start, self.token_end, XmlEvent::StartDocument { version:XmlVersion::Version10, encoding:"UTF-8".to_string(), standalone:None }))
         } else if self.finished {
             Err(ParseError::no_more_events())
         } else if self.end_emitted {
             self.finished = true;
-            Ok(XmlEvent::EndDocument)
+            Ok((self.token_start, self.token_end, XmlEvent::EndDocument))
         } else if self.pending_eof {
             if self.tag_stack.len()>0 {
                 self.pop_tag_stack()
@@ -263,7 +270,14 @@ impl Parser {
                 self.token_end   = token.1;
                 match token.2 {
                     Token::Comment(string_list)  => {
-                        Ok(XmlEvent::Comment(string_list[0].clone())) // BUG - must concat the strings
+                        let mut comment = String::new();
+                        let mut first = true;
+                        for s in &string_list {
+                            if !first {comment.push('\n');}
+                            first = false;
+                            comment.push_str(s);
+                        }
+                        Ok((token.0, token.1, XmlEvent::Comment(comment)))
                     },
                     Token::TagOpen(ns_name, depth, boxed)  => {
                         self.add_pending_open_tag(ns_name, depth, boxed);
@@ -278,7 +292,7 @@ impl Parser {
                         self.next_event(get_token)
                     },
                     Token::Characters(s)  => {
-                        Ok(XmlEvent::Characters(s))
+                        Ok((token.0, token.1, XmlEvent::Characters(s)))
                     },
                     Token::EndOfFile  => {
                         self.pending_eof = true;
@@ -318,7 +332,7 @@ mod tests {
             assert_eq!( t.is_err(), false, "T should not be an error {:?}", t);
             let t = t.unwrap();
             println!("{:?}, {:?}", t, exp[i]);
-            assert_eq!( t, exp[i] );
+            assert_eq!( t.2, exp[i] );
         }
     }
     #[test]

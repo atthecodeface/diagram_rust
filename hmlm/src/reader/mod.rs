@@ -7,6 +7,7 @@ pub mod parser;
 
 use xml::reader::XmlEvent;
 pub use self::parser::ParseError;
+pub use self::parser::XmlEventWithPos;
 
 pub struct EventReader<R: Read> {
     reader : char::Reader<R>,
@@ -29,7 +30,7 @@ impl <R: Read> EventReader<R> {
 //ip Iterator for EventReader - iterate over events
 impl <R:Read> Iterator for EventReader<R> {
     // we will be counting with usize
-    type Item = Result<XmlEvent,ParseError>;
+    type Item = Result<XmlEventWithPos, ParseError>;
 
     //mp next - return next character or None if end of file
     fn next(&mut self) -> Option<Self::Item> {
@@ -40,7 +41,7 @@ impl <R:Read> Iterator for EventReader<R> {
              {
             let e = p.next_event(|| l.next_token_with_pos(r));
             match e {
-                Ok(XmlEvent::EndDocument) | Err(_) => self.finished = true,
+                Ok((_,_,XmlEvent::EndDocument)) | Err(_) => self.finished = true,
                 _ => (),
             }
                  Some(e)

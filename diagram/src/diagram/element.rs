@@ -25,20 +25,33 @@ use super::types::*;
 //tp Group - an Element that contains just other Elements
 pub struct Group {
     // requires no styles
-    header : ElementHeader,
     content : Vec<Element>
 }
 
 //ti Group
 impl Group {
+    //fp new
+    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+        Ok( Self {
+            content:Vec::new(),
+        } )
+    }
+
+    //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
+
+    //mp add_element
+    pub fn add_element(&mut self, element:Element) -> () {
+        self.content.push(element);
+    }
+    
+    //zz All done
 }
 
 //tp Text - an Element that contains text
 pub struct Text {
-    header  : ElementHeader,
     text    : Vec<String>,
 }
 impl Text {
@@ -56,20 +69,20 @@ impl Text {
 pub struct Shape {
     // Possibly polygon
     // has Fill, Stroke, StrokeWidth, Markers
-    header  : ElementHeader,
     vertices : usize, // 0 for circle?
 }
 
 //ti Shape
 impl Shape {
-    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
-        let (header, name_values) = Element::new_header(styles, name_values);
+    //fp new
+    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
         let vertices = Element::value_of_name(name_values, "vertices", StyleValue::int(Some(4)))?.as_int(Some(4)).unwrap() as usize;
         Ok( Self {
-            header,
             vertices,
         } )
     }
+
+    //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         ElementHeader::get_descriptor(nts)
             .add_style(nts, "fill")
@@ -78,15 +91,19 @@ impl Shape {
             .add_style(nts, "round")
             .add_style(nts, "markers")
     }
+
+    //zz All done
 }
 
 //tp Use - an Element that is a reference to a group or other element
 pub struct Use {
     // has Transform - to put it somewhere!
-    header  : ElementHeader,
     id_ref  : String,
 }
+
+//ti Use
 impl Use {
+    //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
@@ -110,14 +127,14 @@ pub enum ElementStyle {
 
 //tp ElementHeader
 pub struct ElementHeader {
-    id           : StyleValue,
-    classes      : StyleValue,
+    pub id           : StyleValue,
+    pub classes      : StyleValue,
     styles       : Vec<ElementStyle>,
 }
 
 //ti ElementHeader
 impl ElementHeader {
-    pub fn new(_styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
+    pub fn new(_styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader, Vec<(String,String)>), ValueError> {
         // let mut unused_nv = Vec::new();
         let unused_nv = Vec::new();
         let mut hdr = 
@@ -127,7 +144,7 @@ impl ElementHeader {
             };
         for (n,v) in name_values {
             if n=="id" {
-                hdr.id.from_string(&v);
+                hdr.id.from_string(&v)?;
             } else if n=="class" {
                 for s in v.split_whitespace() {
                     hdr.classes.add_string(s.to_string());
@@ -138,7 +155,7 @@ impl ElementHeader {
                 //}
             }
         }
-        (hdr, unused_nv)
+        Ok((hdr, unused_nv))
     }
     pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
         StyleDescriptor::new()
@@ -153,23 +170,35 @@ impl ElementHeader {
 
 
 //tp Element - the enumeration of the above
-pub enum Element {
+pub enum ElementContent {
     Group(Group),
     Text(Text),
     Shape(Shape),
     Use(Use), // use of a definition
 }
 
+pub struct Element {
+    header  : ElementHeader,
+    content : ElementContent,
+}
+
 //ti Element
 impl Element {
-    //fp new_shape
-    pub fn new_shape(shape:Shape) -> Self {
-        Self::Shape(shape)
+    //mp has_id
+    pub fn has_id(&self, name:&str) -> bool {
+        self.header.id.eq_string(name)
     }
-    
-    //fp new_header
-    pub fn new_header(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
-        ElementHeader::new(styles, name_values)
+
+    //fp new_shape
+    pub fn new_shape(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Element, ValueError> {
+        let (header, name_values) = ElementHeader::new(styles, name_values)?;
+        Ok(Self { header, content:ElementContent::Shape(Shape::new(name_values)?) })
+    }
+
+    //fp new_group
+    pub fn new_group(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Element, ValueError> {
+        let (header, name_values) = ElementHeader::new(styles, name_values)?;
+        Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
     }
 
     //fp value_of_name

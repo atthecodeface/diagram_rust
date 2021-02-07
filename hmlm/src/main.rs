@@ -33,7 +33,7 @@ fn main() {
     let mut writer = xml::writer::EventWriter::new(file_out);
     for e in event_reader {
         match e {
-            Ok(e) => {
+            Ok((_,_,e)) => {
                 match e.as_writer_event() {
                     None => (),
                     Some(we) => writer.write(we).unwrap(),

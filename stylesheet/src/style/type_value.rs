@@ -62,6 +62,7 @@ pub trait TypeValue : std::fmt::Display+std::fmt::Debug+Clone+PartialEq {
     //mp from_string
     /// Set the value from a string
     fn from_string<'a>(&'a mut self, s:&str) -> Result<&'a mut Self,ValueError>;
+    fn eq_string(&self, s:&str) -> bool;
     
 }
 

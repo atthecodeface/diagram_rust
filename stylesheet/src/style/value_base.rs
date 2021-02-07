@@ -541,6 +541,15 @@ impl TypeValue for BaseValue {
         Ok(self)
     }
     
+    //mp eq_string
+    /// Return true if the value is a string
+    fn eq_string(&self, s:&str) -> bool {
+        match self {
+            Self::String(Some(f)) => f==s,
+            _ => false,
+        }
+    }
+    
     //zz All done
 }
 
