@@ -78,8 +78,14 @@ impl <V:TypeValue> Descriptor<V> {
 
     //cp add_style
     pub fn add_style(mut self, nts:&NamedTypeSet<V>, name:&str ) -> Self {
-        println!("Get style {} from {}",name,nts);
-        let (value, inheritable) = nts.get_type(name).unwrap();
+        let (value, inheritable) = {
+            match nts.get_type(name) {
+                None     => {
+                    panic!("Failed to add style {} as it is not in NamedTypeSet  {}\n",name,nts);
+                },
+                Some(vi) => vi,
+            }
+        };
         self.styles.push( (name.to_string(), value.as_type(), inheritable) );
         self
     }

@@ -31,7 +31,7 @@ impl <V:TypeValue> std::fmt::Display for NamedTypeSet< V> {
     /// Display the style id
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for (name,(value,inheritable)) in self.set.iter() {
-            write!(f, "{} => {}:{}", name, inheritable, value.as_type())?;
+            write!(f, "   {} => {}:{}\n", name, inheritable, value.as_type())?;
         }
         Ok(())
     }

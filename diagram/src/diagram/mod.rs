@@ -119,8 +119,9 @@ pub struct ElementHeader {
 
 //ti ElementHeader
 impl ElementHeader {
-    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
-        let mut unused_nv = Vec::new();
+    pub fn new(_styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> (ElementHeader, Vec<(String,String)>) {
+        // let mut unused_nv = Vec::new();
+        let unused_nv = Vec::new();
         let mut hdr = 
             ElementHeader{ id      : StyleValue::string(None),
                            classes : StyleValue::string_array(),
@@ -146,7 +147,7 @@ impl ElementHeader {
             .add_style(nts, "bbox")
             .add_style(nts, "grid")
             .add_style(nts, "transform")
-            .add_style(nts, "padding")
+            .add_style(nts, "pad")
             .add_style(nts, "margin")
             .add_style(nts, "border")
     }
@@ -225,9 +226,9 @@ impl <'a> DiagramDescriptor<'a> {
 
 //tp Diagram
 pub struct Diagram<'a> {
-    descriptor  : DiagramDescriptor<'a>,
-    definitions : Vec<Definition>,
-    elements    : Vec<Element>,
+    pub descriptor  : DiagramDescriptor<'a>,
+    pub definitions : Vec<Definition>,
+    pub elements    : Vec<Element>,
 }
 
 //ti Diagram
@@ -240,6 +241,16 @@ impl <'a> Diagram <'a> {
     }
     pub fn styles(&self, tag:&str) -> Option<&StyleDescriptor> {
         self.descriptor.get(tag)
+    }
+    pub fn uniquify(&mut self) -> Result<(),()> {
+    }
+    pub fn style(&mut self) -> Result<(),()> {
+    }
+    pub fn layout(&mut self) -> Result<(),()> {
+    }
+    pub fn geometry(&mut self) -> Result<(),()> {
+    }
+    pub fn iter_elements(&mut self) -> Result<(),()> {
     }
 }
     
