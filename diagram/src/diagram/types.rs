@@ -12,16 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    mod.rs
-@brief   Diagram module
+@file    types.rs
+@brief   Types derived from other libraries used throughout the diagram
  */
 
 //a Imports
-mod types;
-mod descriptor;
-mod element;
-mod diagram;
-pub use self::types::*;
-pub use self::descriptor::DiagramDescriptor;
-pub use self::element::{Element, Shape, Group, Text, Use};
-pub use self::diagram::Diagram;
+use stylesheet;
+pub type StyleValue      = stylesheet::BaseValue;
+pub type StyleDescriptor = stylesheet::Descriptor<StyleValue>;
+pub type StyleSet        = stylesheet::NamedTypeSet<StyleValue>;
+pub type ValueError      = stylesheet::ValueError;
+

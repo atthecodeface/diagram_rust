@@ -4,6 +4,8 @@ use crate::Diagram;
 use xml;
 use xml::reader::XmlEvent;
 
+use crate::diagram::{ValueError, Element, Use, Group, Text, Shape};
+
 type Attributes = Vec<xml::attribute::OwnedAttribute>;
 
 fn to_nv(attributes:&Attributes) -> Vec<(String,String)> {
@@ -40,8 +42,8 @@ impl std::fmt::Display for MLError {
     }
 }
 
-impl From<crate::diagram::ValueError> for MLError {
-    fn from(e: crate::diagram::ValueError) -> MLError {
+impl From<ValueError> for MLError {
+    fn from(e: ValueError) -> MLError {
         MLError::Blob(0)
     }
 }
@@ -95,7 +97,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
             },
             XmlEvent::StartElement{name, attributes, ..} => {
                 // if name.local_name=="defs"
-                let element = crate::diagram::Element::ml_new(self, &name.local_name, &attributes)?;
+                let element = Element::ml_new(self, &name.local_name, &attributes)?;
                 println!("Added element!");
                 self.diagram.elements.push(element)
             },
@@ -120,10 +122,10 @@ trait MLEvent : Sized {
     fn ml_event<R:Read> (self, reader:&mut MLReader<R>) -> Result<Self, MLError>;
 }
 
-impl MLEvent for crate::diagram::Shape {
+impl MLEvent for Shape {
     fn ml_new<R:Read> (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         let styles = reader.diagram.styles("shape").unwrap();
-        let shape = crate::diagram::Shape::new(styles, to_nv(attributes))?;
+        let shape = Shape::new(styles, to_nv(attributes))?;
         shape.ml_event(reader)
     }
     fn ml_event<R:Read> (self, reader:&mut MLReader<R>) -> Result<Self, MLError> {
@@ -187,10 +189,10 @@ fn file_handle_event(d:&mut Diagram, e:XmlEvent, ei:Iter<XmlEvent>) -> {
 }
  */
 
-impl MLEvent for crate::diagram::Element {
+impl MLEvent for Element {
     fn ml_new<R:Read> (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
-            "shape" => Ok(crate::diagram::Element::Shape(crate::diagram::Shape::ml_new(reader, name, attributes)?)),
+            "shape" => Ok(Element::new_shape(Shape::ml_new(reader, name, attributes)?)),
             _ => return Err(MLError::bad_element_name(name))
         }
     }
