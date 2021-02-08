@@ -18,6 +18,8 @@ limitations under the License.
 
 //a Imports
 use crate::GridLayout;
+use crate::Diagram;
+use crate::DiagramDescriptor;
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, RrcStylableNode};
 use super::types::*;
@@ -40,7 +42,7 @@ impl <'a> Group<'a> {
     }
 
     //fp get_descriptor
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
 
@@ -58,13 +60,10 @@ pub struct Text {
     text    : Vec<String>,
 }
 impl Text {
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
-        ElementHeader::get_descriptor(nts)
-            .add_style(nts, "fill")
-            .add_style(nts, "font")
-            .add_style(nts, "fontsize")
-            .add_style(nts, "fontweight")
-            .add_style(nts, "fontstyle")
+    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
+        let desc = ElementHeader::get_descriptor(nts);
+        desc.borrow_mut().add_styles(nts, vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]);
+        desc
     }
 }
 
@@ -87,13 +86,10 @@ impl Shape {
     }
 
     //fp get_descriptor
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
-        ElementHeader::get_descriptor(nts)
-            .add_style(nts, "fill")
-            .add_style(nts, "stroke")
-            .add_style(nts, "strokewidth")
-            .add_style(nts, "round")
-            .add_style(nts, "markers")
+    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
+        let desc = ElementHeader::get_descriptor(nts);
+        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers"]);
+        desc
     }
 
     //zz All done
@@ -109,7 +105,7 @@ pub struct Use {
 //ti Use
 impl Use {
     //fp get_descriptor
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
 }
@@ -142,14 +138,14 @@ pub struct ElementHeader<'a> {
 
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
-    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<(Self, Vec<(String,String)>), ValueError> {
+    pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader<'b>, Vec<(String,String)>), ValueError> {
         // let mut unused_nv = Vec::new();
         let unused_nv = Vec::new();
         let mut hdr = 
             ElementHeader{ id      : StyleValue::string(None),
                            classes : StyleValue::string_array(),
                            styles  : Vec::new(),
-                           stylable: StylableNode::new(None, "node_type", styles, name_values),
+                           stylable: StylableNode::new(None, "node_type", styles, Vec::new()/*name_values*/),
             };
         for (n,v) in name_values {
             if n=="id" {
@@ -166,14 +162,10 @@ impl <'a> ElementHeader <'a> {
         }
         Ok((hdr, unused_nv))
     }
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
-        StyleDescriptor::new()
-            .add_style(nts, "bbox")
-            .add_style(nts, "grid")
-            .add_style(nts, "transform")
-            .add_style(nts, "pad")
-            .add_style(nts, "margin")
-            .add_style(nts, "border")
+    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
+        let desc = StyleDescriptor::new();
+        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "transform", "pad", "margin", "border"]);
+        desc
     }
 }
 
@@ -201,14 +193,16 @@ impl <'a> Element <'a> {
     }
 
     //fp new_shape
-    pub fn new_shape(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
-        let (header, name_values) = ElementHeader::new(styles, name_values)?;
+    pub fn new_shape(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
+        let styles = descriptor.get("shape").unwrap();
+        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
         Ok(Self { header, content:ElementContent::Shape(Shape::new(name_values)?) })
     }
 
     //fp new_group
-    pub fn new_group(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
-        let (header, name_values) = ElementHeader::new(styles, name_values)?;
+    pub fn new_group(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
+        let styles = descriptor.get("group").unwrap();
+        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
         Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
     }
 

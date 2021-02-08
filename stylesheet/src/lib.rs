@@ -32,5 +32,5 @@ mod style;
 pub use style::{TypeValue, ValueError, BaseValue};
 pub use style::{NamedTypeSet};
 pub use style::{StylableNode, RrcStylableNode};
-pub use style::{Descriptor};
+pub use style::{Descriptor, RrcDescriptor};
 

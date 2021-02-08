@@ -7,5 +7,5 @@ pub use layout::{Polygon};
 pub use layout::{GridLayout};
 mod diagram;
 mod diagram_ml;
-pub use diagram::{Diagram};
+pub use diagram::{Diagram, DiagramContents, DiagramDescriptor};
 pub use diagram_ml::{DiagramML};

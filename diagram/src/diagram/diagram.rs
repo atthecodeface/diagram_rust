@@ -24,25 +24,26 @@ use crate::GridLayout;
 
 //a Diagram Definition
 //tp Diagram
-pub struct Diagram<'a> {
-    pub descriptor  : DiagramDescriptor<'a>,
+pub struct DiagramContents<'a> {
     pub definitions : Vec<Element<'a>>,
     pub elements    : Vec<Element<'a>>,
+}
+pub struct Diagram<'a> {
+    pub descriptor  : DiagramDescriptor<'a>,
+    pub contents    : DiagramContents<'a>,
 }
 
 //ti Diagram
 impl <'a> Diagram <'a> {
     pub fn new() -> Self {
         Self { descriptor: DiagramDescriptor::new(),
-               definitions:Vec::new(),
-               elements:Vec::new(),
+               contents: DiagramContents{ definitions:Vec::new(),
+                                          elements:Vec::new(),
+               },
         }
     }
-    pub fn styles(&self, tag:&str) -> Option<&StyleDescriptor> {
-        self.descriptor.get(tag)
-    }
-    pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element> {
-        for i in &self.definitions {
+    pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
+        for i in &self.contents.definitions {
             if i.has_id(name) {
                 return Some(i);
             }
@@ -66,22 +67,22 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
     pub fn iter_elements<'b> (&'b self) -> DiagramElements<'a,'b> {
-        DiagramElements { diagram:self, n: 0 }
+        DiagramElements { contents:&self.contents, n: 0 }
     }
 }
 pub struct DiagramElements<'a, 'b> {
-    diagram : &'a Diagram<'b>,
+    contents : &'b DiagramContents<'a>,
     n : usize,
 }
 impl <'a, 'b> Iterator for DiagramElements<'a, 'b> {
-    type Item = &'a Element<'b>;
+    type Item = &'b Element<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.n>=self.diagram.elements.len() {
+        if self.n>=self.contents.elements.len() {
             None
         } else {
             let i=self.n;
             self.n = self.n + 1;
-            Some(&self.diagram.elements[i])
+            Some(&self.contents.elements[i])
         }
     }
 }

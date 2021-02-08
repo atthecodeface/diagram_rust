@@ -24,4 +24,4 @@ mod diagram;
 pub use self::types::*;
 pub use self::descriptor::DiagramDescriptor;
 pub use self::element::{Element, Shape, Group, Text, Use};
-pub use self::diagram::Diagram;
+pub use self::diagram::{Diagram, DiagramContents};

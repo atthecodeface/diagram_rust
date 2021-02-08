@@ -71,14 +71,15 @@ let build_desc desc t =
 */
 
 //ti Descriptor
+pub type RrcDescriptor<V> = Rc<RefCell<Descriptor<V>>>;
 impl <V:TypeValue> Descriptor<V> {
     //fp new
-    pub fn new() -> Self {
-        Self { state_classes:Vec::new(), styles:Vec::new() }
+    pub fn new() -> RrcDescriptor<V> {
+        Rc::new(RefCell::new(Self { state_classes:Vec::new(), styles:Vec::new() }))
     }
 
     //cp add_style
-    pub fn add_style(mut self, nts:&NamedTypeSet<V>, name:&str ) -> Self {
+    pub fn add_style(&mut self, nts:&NamedTypeSet<V>, name:&str ) -> () {
         let (value, inheritable) = {
             match nts.get_type(name) {
                 None     => {
@@ -88,7 +89,13 @@ impl <V:TypeValue> Descriptor<V> {
             }
         };
         self.styles.push( (name.to_string(), value.as_type(), inheritable) );
-        self
+    }
+
+    //mp add_styles
+    pub fn add_styles(&mut self, nts:&NamedTypeSet<V>, names:Vec<&str> ) -> () {
+        for name in names {
+            self.add_style(nts, name);
+        }
     }
 
     //mp build_style_array
@@ -122,7 +129,8 @@ impl <V:TypeValue> Descriptor<V> {
 ///  let nts = NamedTypeSet::<BaseValue>::new()
 ///       .add_type("width",  BaseValue::int(None), true)
 ///       .add_type("height", BaseValue::int(None), true);
-///  let d = Descriptor::<BaseValue>::new().add_style(&nts, "width").add_style(&nts, "height");
+///  let d = Descriptor::<BaseValue>::new();
+///  d.borrow_mut().add_styles(&nts, vec!["width", "height"]);
 ///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
 ///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
 ///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
@@ -140,7 +148,7 @@ pub struct StylableNode<'a, V:TypeValue>{
     /// hierarchy.
     children              : Vec<RrcStylableNode<'a, V>>,
     /// The descriptor provides the description of the styles required by the node
-    descriptor            : &'a Descriptor<V>,
+    descriptor            : RrcDescriptor<V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -173,10 +181,11 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&'b Descriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
+    pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&RrcDescriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
+        let descriptor = descriptor.clone();
         let extra_sids = Vec::new();
         let mut classes    = Vec::new();
-        let mut values     = descriptor.build_style_array();
+        let mut values     = descriptor.borrow().build_style_array();
         let mut id_name    = None;
         for (name, value) in name_values {
             if name=="id" {
@@ -186,7 +195,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                     classes.push(s.to_string());
                 }
             } else {
-                match descriptor.find_style_index(name) {
+                match descriptor.borrow().find_style_index(name) {
                     Some(n) => {
                         values[n].from_string(value).unwrap();
                     },
@@ -223,8 +232,9 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///  let nts = NamedTypeSet::<BaseValue>::new()
     ///       .add_type("width",  BaseValue::int(None), true)
     ///       .add_type("height", BaseValue::int(None), true);
-    ///  let d = Descriptor::<BaseValue>::new().add_style(&nts, "width").add_style(&nts, "height");
-    ///  let root = StylableNode::new(None,                  "graph",  &d, vec![]);
+    ///  let d = Descriptor::<BaseValue>::new();
+    ///  d.borrow_mut().add_styles(&nts, vec!["width", "height"]);
+    ///  let root    = StylableNode::new(None,               "graph", &d, vec![]);
     ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
     ///  assert_eq!(2, Rc::strong_count(&child_1));
     ///  assert_eq!(2, Rc::strong_count(&root));
@@ -243,10 +253,11 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
 
     //mp find_style_index -- was find_sid_index(_exn)
     pub fn find_style_index(&self, s:&str) -> Option<usize> {
-        match self.descriptor.find_style_index(s) {
+        let descriptor = self.descriptor.borrow();
+        match descriptor.find_style_index(s) {
             Some(n) => Some(n),
             None => {
-                let mut n=self.descriptor.styles.len();
+                let mut n=descriptor.styles.len();
                 for (sn, _) in &self.extra_sids {
                     if sn==s { return Some(n); }
                     n += 1

@@ -20,6 +20,7 @@ limitations under the License.
 use stylesheet;
 pub type StyleValue      = stylesheet::BaseValue;
 pub type StyleDescriptor = stylesheet::Descriptor<StyleValue>;
+pub type RrcStyleDescriptor = stylesheet::RrcDescriptor<StyleValue>;
 pub type StyleSet        = stylesheet::NamedTypeSet<StyleValue>;
 pub type ValueError      = stylesheet::ValueError;
 

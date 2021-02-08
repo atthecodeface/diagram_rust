@@ -1,6 +1,6 @@
 use hmlm;
 use std::io::prelude::{Read};
-use crate::Diagram;
+use crate::{Diagram, DiagramContents, DiagramDescriptor};
 use xml;
 use xml::reader::XmlEvent;
 use hmlm::XmlEventWithPos;
@@ -57,14 +57,18 @@ impl From<hmlm::reader::ParseError> for MLError {
 
 
 struct MLReader<'a, 'b, R:Read> {
-    pub diagram : &'a mut Diagram<'b>,
+    pub descriptor  : &'b DiagramDescriptor<'a>,
+    pub contents    : &'b mut DiagramContents<'a>,
     pub reader  : hmlm::reader::EventReader<R>,
 }
 
 impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
-    pub fn new<'c, 'd> (diagram:&'c mut Diagram<'d>, reader:hmlm::reader::EventReader<R>) -> MLReader<'c, 'd, R> {
+    pub fn new<'c, 'd> ( descriptor: &'d DiagramDescriptor<'c>,
+                         contents:   &'d mut DiagramContents<'c>,
+                         reader:hmlm::reader::EventReader<R> ) -> MLReader<'c, 'd, R> {
         MLReader {
-            diagram,
+            descriptor,
+            contents,
             reader,
         }
     }
@@ -100,7 +104,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
                 // if name.local_name=="defs"
                 let element = Element::ml_new(self, &name.local_name, &attributes)?;
                 println!("Added element!");
-                self.diagram.elements.push(element)
+                self.contents.elements.push(element)
             },
             ewp => { return Err(self.bad_ml_event(ewp)); },
         }
@@ -116,18 +120,17 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
 }
 
 //tt MLEvent - internal trait to enable extension of type implementations
-trait MLEvent <R:Read, S:Sized> {
+trait MLEvent <'a, R:Read, S:Sized> {
     /// ml_new is invoked from StartElement(<element type>, <atttributes>, _<namespace>)
-    fn ml_new (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<S, MLError>;
+    fn ml_new(reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<S, MLError>;
     /// ml_event is invoked after an object is created
     fn ml_event (mut s:S, reader:&mut MLReader<R>) -> Result<S, MLError> { Ok(s) }
 }
 
 //ti MLEvent for Group
-impl <'a, R:Read> MLEvent <R, Element<'a>> for Group<'a> {
-    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let styles = reader.diagram.styles("group").unwrap();
-        let group = Element::new_group(styles, to_nv(attributes))?;
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
+    fn ml_new(reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
+        let group = Element::new_group(reader.descriptor, name, to_nv(attributes))?;
         Self::ml_event(group, reader)
     }
     fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
@@ -145,10 +148,9 @@ impl <'a, R:Read> MLEvent <R, Element<'a>> for Group<'a> {
 }
 
 //ti MLEvent for Shape
-impl <'a, R:Read> MLEvent <R, Element<'a>> for Shape {
-    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let styles = reader.diagram.styles("shape").unwrap();
-        let shape = Element::new_shape(styles, to_nv(attributes))?;
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
+    fn ml_new (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
+        let shape = Element::new_shape(reader.descriptor, name, to_nv(attributes))?;
         Self::ml_event(shape, reader)
     }
     fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
@@ -162,7 +164,7 @@ impl <'a, R:Read> MLEvent <R, Element<'a>> for Shape {
 }
 
 //ti MLEvent for Element
-impl <'a, R:Read> MLEvent <R, Element<'a>> for Element<'a> {
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
     fn ml_new (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
             "shape" => Ok(Shape::ml_new(reader, name, attributes)?),
@@ -182,8 +184,8 @@ pub struct DiagramML<'a, 'b> {
 /// let mut d = Diagram::new();
 /// let mut dml = DiagramML::new(&mut d);
 /// dml.read_file("#diagram ##shape ##g ###shape ##shape".as_bytes()).unwrap();
-/// assert_eq!(0, d.definitions.len());
-/// assert_eq!(3, d.elements.len());
+/// assert_eq!(0, d.contents.definitions.len());
+/// assert_eq!(3, d.contents.elements.len());
 /// ```
 impl <'a, 'b> DiagramML<'a, 'b> {
     pub fn new<'c, 'd>(d:&'c mut Diagram<'d>) -> DiagramML<'c, 'd> {
@@ -191,7 +193,7 @@ impl <'a, 'b> DiagramML<'a, 'b> {
     }
     pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLError> {
         let event_reader = hmlm::reader::EventReader::new(f); // Can use an xml::reader
-        MLReader::new(&mut self.diagram, event_reader).read_file()
+        MLReader::new(&self.diagram.descriptor, &mut self.diagram.contents, event_reader).read_file()
     }
 }
 
@@ -204,7 +206,7 @@ mod tests {
         let mut d = Diagram::new();
         let mut dml = DiagramML::new(&mut d);
         dml.read_file("#blob".as_bytes());
-        assert_eq!(0, d.definitions.len());
-        assert_eq!(0, d.elements.len());
+        assert_eq!(0, d.contents.definitions.len());
+        assert_eq!(0, d.contents.elements.len());
     }
 }

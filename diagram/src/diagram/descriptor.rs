@@ -25,7 +25,7 @@ use super::element;
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
 pub struct DiagramDescriptor<'a> {
     style_set   : StyleSet,
-    descriptors : HashMap<&'a str, StyleDescriptor>,
+    descriptors : HashMap<&'a str, RrcStyleDescriptor>,
 }
 
 //ti DiagramDescriptor
@@ -58,7 +58,8 @@ impl <'a> DiagramDescriptor<'a> {
             descriptors
         }
     }
-    pub fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
-        self.descriptors.get(tag)
+    pub fn get(&self, tag:&str) -> Option<RrcStyleDescriptor> {
+        match self.descriptors.get(tag)
+        { Some(rrc) => Some(rrc.clone()), None => None}
     }
 }
