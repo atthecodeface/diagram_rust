@@ -4,6 +4,7 @@ extern crate stylesheet;
 
 mod layout;
 pub use layout::{Polygon};
+pub use layout::{GridLayout};
 mod diagram;
 mod diagram_ml;
 pub use diagram::{Diagram};

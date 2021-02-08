@@ -1,6 +1,5 @@
 use super::Point;
 use super::Rectangle;
-use super::Bezier;
 use super::Polygon;
 
 pub struct LayoutBox {

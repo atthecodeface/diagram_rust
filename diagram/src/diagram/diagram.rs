@@ -17,17 +17,17 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::HashMap;
 use super::types::*;
 use super::DiagramDescriptor;
 use super::Element;
+use crate::GridLayout;
 
 //a Diagram Definition
 //tp Diagram
 pub struct Diagram<'a> {
     pub descriptor  : DiagramDescriptor<'a>,
-    pub definitions : Vec<Element>,
-    pub elements    : Vec<Element>,
+    pub definitions : Vec<Element<'a>>,
+    pub elements    : Vec<Element<'a>>,
 }
 
 //ti Diagram
@@ -56,6 +56,10 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
     pub fn layout(&mut self) -> Result<(),()> {
+        let mut grid_layout = GridLayout::new();
+        for e in self.iter_elements() {
+            e.set_grid_layout(&mut grid_layout);
+        }
         Ok(())
     }
     pub fn geometry(&mut self) -> Result<(),()> {
@@ -70,7 +74,7 @@ pub struct DiagramElements<'a, 'b> {
     n : usize,
 }
 impl <'a, 'b> Iterator for DiagramElements<'a, 'b> {
-    type Item = &'a Element;
+    type Item = &'a Element<'b>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.n>=self.diagram.elements.len() {
             None

@@ -24,6 +24,7 @@ use crate::NamedTypeSet;
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
+#[derive(Debug)]
 pub struct Descriptor<V:TypeValue> {
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
@@ -128,6 +129,7 @@ impl <V:TypeValue> Descriptor<V> {
 ///  let child_11 = StylableNode::new(Some(child_1.clone()), "line", &d, vec![]);
 ///
 /// ```
+#[derive(Debug)]
 pub struct StylableNode<'a, V:TypeValue>{
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values

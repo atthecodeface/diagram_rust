@@ -33,44 +33,42 @@ impl Bezier {
         Self::Linear(p0.clone(), p1.clone())
     }
     pub fn scale_xy(mut self, sx:f64, sy:f64) -> Self {
-        match &self {
-            Self::Linear(ref p0, ref p1) => {
-                p0.scale_xy(sx,sy);
-                p1.scale_xy(sx,sy);
+        match &mut self {
+            Self::Linear(ref mut p0, ref mut p1) => {
+                *p0 = p0.scale_xy(sx,sy);
+                *p1 = p1.scale_xy(sx,sy);
             },
-            Self::Quadratic(ref p0, ref c, ref p1) => {
-                p0.scale_xy(sx,sy);
-                c.scale_xy(sx,sy);
-                p1.scale_xy(sx,sy);
+            Self::Quadratic(ref mut p0, ref mut c, ref mut p1) => {
+                *p0 = p0.scale_xy(sx,sy);
+                *c  = c.scale_xy(sx,sy);
+                *p1 = p1.scale_xy(sx,sy);
             },
-            Self::Cubic(ref p0, ref c0, ref c1, ref p1) => {
-                p0.scale_xy(sx,sy);
-                c0.scale_xy(sx,sy);
-                c1.scale_xy(sx,sy);
-                p1.scale_xy(sx,sy);
+            Self::Cubic(ref mut p0, ref mut c0, ref mut c1, ref mut p1) => {
+                *p0 = p0.scale_xy(sx,sy);
+                *c0 = c0.scale_xy(sx,sy);
+                *c1 = c1.scale_xy(sx,sy);
+                *p1 = p1.scale_xy(sx,sy);
             },
-            _ => { panic!("Argh");},
         }
         self
     }
     pub fn rotate(mut self, degrees:f64) -> Self {
-        match &self {
-            Self::Linear(ref p0, ref p1) => {
-                p0.rotate(degrees);
-                p1.rotate(degrees);
+        match &mut self {
+            Self::Linear(ref mut p0, ref mut p1) => {
+                *p0 = p0.rotate(degrees);
+                *p1 = p1.rotate(degrees);
             },
-            Self::Quadratic(ref p0, ref c, ref p1) => {
-                p0.rotate(degrees);
-                c.rotate(degrees);
-                p1.rotate(degrees);
+            Self::Quadratic(ref mut p0, ref mut c, ref mut p1) => {
+                *p0 = p0.rotate(degrees);
+                *c =  c.rotate(degrees);
+                *p1 = p1.rotate(degrees);
             },
-            Self::Cubic(ref p0, ref c0, ref c1, ref p1) => {
-                p0.rotate(degrees);
-                c0.rotate(degrees);
-                c1.rotate(degrees);
-                p1.rotate(degrees);
+            Self::Cubic(ref mut p0, ref mut c0, ref mut c1, ref mut p1) => {
+                *p0 = p0.rotate(degrees);
+                *c0 = c0.rotate(degrees);
+                *c1 = c1.rotate(degrees);
+                *p1 = p1.rotate(degrees);
             },
-            _ => { panic!("Argh");},
         }
         self
     }
@@ -87,7 +85,7 @@ impl Bezier {
         let center = Point::new( corner.x-k*(v0u.x+v1u.x), corner.y-k*(v0u.y+v1u.y) );
         let normal_diff = Point::new(n0u.x-n1u.x, n0u.y-n1u.y);
         let vector_sum  = Point::new(v0u.x+v1u.x, v0u.y+v1u.y);
-        let l2 = (vector_sum.x*vector_sum.x + vector_sum.y*vector_sum.y);
+        let l2 = vector_sum.x*vector_sum.x + vector_sum.y*vector_sum.y;
         let l = l2.sqrt();
         let lambda = 4.0*radius/(3.*l2) * (2.*l + (normal_diff.x*vector_sum.x + normal_diff.y*vector_sum.y));
         println!("{:?} {:?} {:?} {:?} {:?}",center,v0,normal_diff,vector_sum, lambda);

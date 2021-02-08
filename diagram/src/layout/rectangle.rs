@@ -132,7 +132,9 @@ impl Rectangle {
 
     //mp shrink
     /// shrink in-place by expansion scaled by 'scale'
-    pub fn shrink(mut self, other:&Self, scale:f64) -> Self {
+    // note that self is not mut as this does not modify it - but it consumes it,
+    // and returns that from expand
+    pub fn shrink(self, other:&Self, scale:f64) -> Self {
         self.expand(other, -scale)
     }
 

@@ -17,20 +17,21 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::HashMap;
-use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
+use crate::GridLayout;
+use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
+use stylesheet::{StylableNode, RrcStylableNode};
 use super::types::*;
 
 //a Element types
 //tp Group - an Element that contains just other Elements
 #[derive(Debug)]
-pub struct Group {
+pub struct Group<'a> {
     // requires no styles
-    content : Vec<Element>
+    content : Vec<Element<'a>>
 }
 
 //ti Group
-impl Group {
+impl <'a> Group<'a> {
     //fp new
     pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
         Ok( Self {
@@ -44,7 +45,7 @@ impl Group {
     }
 
     //mp add_element
-    pub fn add_element(&mut self, element:Element) -> () {
+    pub fn add_element(&mut self, element:Element<'a>) -> () {
         self.content.push(element);
     }
     
@@ -132,21 +133,23 @@ pub enum ElementStyle {
 
 //tp ElementHeader
 #[derive(Debug)]
-pub struct ElementHeader {
+pub struct ElementHeader<'a> {
     pub id           : StyleValue,
     pub classes      : StyleValue,
-    styles       : Vec<ElementStyle>,
+    styles           : Vec<ElementStyle>,
+    stylable         : RrcStylableNode<'a, StyleValue>,
 }
 
 //ti ElementHeader
-impl ElementHeader {
-    pub fn new(_styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader, Vec<(String,String)>), ValueError> {
+impl <'a> ElementHeader <'a> {
+    pub fn new(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<(Self, Vec<(String,String)>), ValueError> {
         // let mut unused_nv = Vec::new();
         let unused_nv = Vec::new();
         let mut hdr = 
             ElementHeader{ id      : StyleValue::string(None),
                            classes : StyleValue::string_array(),
                            styles  : Vec::new(),
+                           stylable: StylableNode::new(None, "node_type", styles, name_values),
             };
         for (n,v) in name_values {
             if n=="id" {
@@ -177,34 +180,34 @@ impl ElementHeader {
 
 //tp Element - the enumeration of the above
 #[derive(Debug)]
-pub enum ElementContent {
-    Group(Group),
+pub enum ElementContent<'a> {
+    Group(Group<'a>),
     Text(Text),
     Shape(Shape),
     Use(Use), // use of a definition
 }
 
 #[derive(Debug)]
-pub struct Element {
-    header  : ElementHeader,
-    content : ElementContent,
+pub struct Element<'a> {
+    header  : ElementHeader<'a>,
+    content : ElementContent<'a>,
 }
 
 //ti Element
-impl Element {
+impl <'a> Element <'a> {
     //mp has_id
     pub fn has_id(&self, name:&str) -> bool {
         self.header.id.eq_string(name)
     }
 
     //fp new_shape
-    pub fn new_shape(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Element, ValueError> {
+    pub fn new_shape(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let (header, name_values) = ElementHeader::new(styles, name_values)?;
         Ok(Self { header, content:ElementContent::Shape(Shape::new(name_values)?) })
     }
 
     //fp new_group
-    pub fn new_group(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Element, ValueError> {
+    pub fn new_group(styles:&StyleDescriptor, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let (header, name_values) = ElementHeader::new(styles, name_values)?;
         Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
     }
@@ -218,5 +221,10 @@ impl Element {
         }
         Ok(value)
     }
+
+    //fp set_grid_layout
+    pub fn set_grid_layout(&self, grid:&mut GridLayout) {
+    }
+                           
 }
 

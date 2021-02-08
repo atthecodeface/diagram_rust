@@ -124,13 +124,13 @@ trait MLEvent <R:Read, S:Sized> {
 }
 
 //ti MLEvent for Group
-impl <R:Read> MLEvent <R, Element> for Group {
-    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element, MLError> {
+impl <'a, R:Read> MLEvent <R, Element<'a>> for Group<'a> {
+    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
         let styles = reader.diagram.styles("group").unwrap();
         let group = Element::new_group(styles, to_nv(attributes))?;
         Self::ml_event(group, reader)
     }
-    fn ml_event (mut s:Element, reader:&mut MLReader<R>) -> Result<Element, MLError> {
+    fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
             (_,_,XmlEvent::Comment(_))     => (), // continue
@@ -145,13 +145,13 @@ impl <R:Read> MLEvent <R, Element> for Group {
 }
 
 //ti MLEvent for Shape
-impl <R:Read> MLEvent <R, Element> for Shape {
-    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element, MLError> {
+impl <'a, R:Read> MLEvent <R, Element<'a>> for Shape {
+    fn ml_new (reader:&mut MLReader<R>, _name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
         let styles = reader.diagram.styles("shape").unwrap();
         let shape = Element::new_shape(styles, to_nv(attributes))?;
         Self::ml_event(shape, reader)
     }
-    fn ml_event (mut s:Element, reader:&mut MLReader<R>) -> Result<Element, MLError> {
+    fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
             (_,_,XmlEvent::Comment(_))     => (), // continue
@@ -162,8 +162,8 @@ impl <R:Read> MLEvent <R, Element> for Shape {
 }
 
 //ti MLEvent for Element
-impl <R:Read> MLEvent <R, Element> for Element {
-    fn ml_new (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Element, MLError> {
+impl <'a, R:Read> MLEvent <R, Element<'a>> for Element<'a> {
+    fn ml_new (reader:&mut MLReader<R>, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
             "shape" => Ok(Shape::ml_new(reader, name, attributes)?),
             "g"     => Ok(Group::ml_new(reader, name, attributes)?),
