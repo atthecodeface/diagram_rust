@@ -1,5 +1,8 @@
+//a Imports
 use super::Point;
 
+//t Rectangle
+//tp Rectangle
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rectangle {
     pub x0 : f64,
@@ -8,6 +11,19 @@ pub struct Rectangle {
     pub y1 : f64,
 }
 
+//ti Display for Rectangle
+impl std::fmt::Display for Rectangle {
+
+    //mp fmt - format a `CharError` for display
+    /// Display the `Point' as (x,y)
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "[({},{}):({},{})]", self.x0, self.y0, self.x1, self.y1)
+    }
+
+    //zz All done
+}
+
+//ti Rectangle
 impl Rectangle {
     //fp zeros
     /// Create an empty rectangle at 0,0
@@ -23,9 +39,23 @@ impl Rectangle {
         Self {x0, x1, y0, y1}
     }
 
+    //fp of_cwh
+    pub fn of_cwh(centre:Point, width:f64, height:f64) -> Self {
+        Self::new( centre.x-width/2.,
+                  centre.y-height/2.,
+                  centre.x+width/2.,
+                  centre.y+height/2. )
+    }
+
+    //mp pt_within
+    pub fn pt_within(&self, mut pt:Point) -> Point {
+        pt = pt.add( &Point::new(self.x0,self.y0), -1.);
+        pt.scale_xy( 1./(self.x1-self.x0),  1./(self.y1-self.y0) )
+    }
+
     //mp is_zero
     pub fn is_zero(&self) -> bool {
-        self.x0==0. && self.x1==1. && self.y0==0. && self.y1==1.
+        self.x0==0. && self.x1==0. && self.y0==0. && self.y1==0.
     }
 
     //mp as_points
@@ -39,20 +69,71 @@ impl Rectangle {
         v
     }
 
+    //mp get_wh
+    pub fn get_wh(&self) -> Point {
+        Point::new(self.x1-self.x0, self.y1-self.y0)
+    }
+
+    //mp get_center
+    pub fn get_center(&self) -> Point {
+        Point::new((self.x1+self.x0)/2., (self.y1+self.y0)/2.)
+    }
+
+    //mp xrange
+    pub fn xrange(&self) -> Point {
+        Point::new(self.x0, self.x1)
+    }
+
+    //mp yrange
+    pub fn yrange(&self) -> Point {
+        Point::new(self.y0, self.y1)
+    }
+
+    //mp width
+    pub fn width(&self) -> f64 {self.x1-self.x0}
+
+    //mp height
+    pub fn height(&self) -> f64 {self.y1-self.y0}
+
+    //mp get_cwh
+    pub fn get_cwh(&self) -> (Point, f64, f64) {
+        (self.get_center(), self.width(), self.height())
+    }
+
+    //mp scale
+    /// Scale by a fixed value
+    pub fn scale(mut self, value:f64) -> Self {
+        self.x0 *= value;
+        self.y0 *= value;
+        self.x1 *= value;
+        self.y1 *= value;
+        self
+    }
+
+    //mp reduce
+    /// reduce by a fixed value
+    pub fn reduce(mut self, value:f64) -> Self {
+        self.x0 += value;
+        self.y0 += value;
+        self.x1 -= value;
+        self.y1 -= value;
+        self
+    }
+
     //mp expand
     /// exand in-place by expansion scaled by 'scale'
-    pub fn expand(mut self, expansion:&Self, scale:f64) -> Self {
-        self.x0 -= scale * self.x0;
-        self.y0 -= scale * self.y0;
-        self.x1 += scale * self.x1;
-        self.y1 += scale * self.y1;
+    pub fn expand(mut self, other:&Self, scale:f64) -> Self {
+        self.x0 -= scale * other.x0;
+        self.y0 -= scale * other.y0;
+        self.x1 += scale * other.x1;
+        self.y1 += scale * other.y1;
         self
     }
 
     //mp shrink
     /// shrink in-place by expansion scaled by 'scale'
-    pub fn shrink(mut self, expansion:&Self, scale:f64) -> Self {
-        self.expand(expansion, -scale)
+    pub fn shrink(mut self, other:&Self, scale:f64) -> Self {
+        self.expand(other, -scale)
     }
 
     //mp union
@@ -99,156 +180,128 @@ impl Rectangle {
         self.y1 += scale*pt.y;
         self
     }
+
+    //mp new_rotated_around
+    /// Rotate the rectangle around a point by an angle,
+    /// generating a new rectangle that is the bounding box of that rotated rectangle
+    pub fn new_rotated_around(&self, pt:&Point, degrees:f64) -> Self{
+        let p0 = Point::new(self.x0,self.y0).rotate_around(pt, degrees);
+        let p1 = Point::new(self.x0,self.y1).rotate_around(pt, degrees);
+        let p2 = Point::new(self.x1,self.y1).rotate_around(pt, degrees);
+        let p3 = Point::new(self.x1,self.y0).rotate_around(pt, degrees);
+        let x0 = if p0.x<p1.x {p0.x} else {p1.x};
+        let x0 = if x0<p2.x {x0} else {p2.x};
+        let x0 = if x0<p3.x {x0} else {p3.x};
+        let y0 = if p0.y<p1.y {p0.y} else {p1.y};
+        let y0 = if y0<p2.y {y0} else {p2.y};
+        let y0 = if y0<p3.y {y0} else {p3.y};
+        let x1 = if p0.x>p1.x {p0.x} else {p1.x};
+        let x1 = if x1>p2.x {x1} else {p2.x};
+        let x1 = if x1>p3.x {x1} else {p3.x};
+        let y1 = if p0.y>p1.y {p0.y} else {p1.y};
+        let y1 = if y1>p2.y {y1} else {p2.y};
+        let y1 = if y1>p3.y {y1} else {p3.y};
+        Self {x0, x1, y0, y1}
+    }
+
+    //mp fit_within_region
+    /// Using two anchor values (x and y) between -1 and 1, and expansion values (between 0 and 1),
+    /// fit this region within an outer region
+    ///
+    /// See Point::fit_within_region for more details on each dimension
+    pub fn fit_within_dimension(mut self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> Self {
+        let xs = Point::new(self.x0,self.x1).fit_within_dimension( &Point::new(outer.x0,outer.x1), anchor.x, expand.x);
+        let ys = Point::new(self.y0,self.y1).fit_within_dimension( &Point::new(outer.y0,outer.y1), anchor.y, expand.y);
+        self.x0 = xs.x;
+        self.x1 = xs.y;
+        self.y0 = ys.x;
+        self.y1 = ys.y;
+        self
+    }
+    
+    //zz All done
 }
-/*
-  (*f rotate_around *)
-  let rotate_around r v a =
-    let sinr = sin (deg_to_rad a) in
-    let cosr = cos (deg_to_rad a) in
-    let rotate x y =
-      ( ((x-.v.(0)) *. cosr -. (y-.v.(1)) *. sinr),
-        ((x-.v.(0)) *. sinr +. (y-.v.(1)) *. cosr) )
-    in      
-    let x0,y0 = rotate r.(0) r.(1) in
-    let x1,y1 = rotate r.(0) r.(3) in
-    let x2,y2 = rotate r.(2) r.(1) in
-    let x3,y3 = rotate r.(2) r.(3) in
-    let lx = v.(0) +. (min (min x0 x1) (min x2 x3)) in
-    let rx = v.(0) +. (max (max x0 x1) (max x2 x3)) in
-    let ly = v.(1) +. (min (min y0 y1) (min y2 y3)) in
-    let ry = v.(1) +. (max (max y0 y1) (max y2 y3)) in
-    make lx ly rx ry
 
-  (*f wh_of_largest_area_within w h a
-    Find the width and height of the largest rectangle
-    that fits within w h at angle a
-    If a<0 then we can mirror vertically and use -a, hence abs(a)
-    Then modulo 180
+//a Test
+#[cfg(test)]
+mod tests_polygon {
+    use super::*;
+    pub fn pt_eq(pt:&Point, x:f64, y:f64) {
+        assert!((pt.x-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
+        assert!((pt.y-y).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
+    }
+    #[test]
+    fn test_zero() {
+        let x = Rectangle::zeros();
+        assert!(x.is_zero());
+        pt_eq(&x.get_center(),0.,0.);
+        pt_eq(&x.get_wh(),0.,0.);
+        assert_eq!(x.width(),0.);
+        assert_eq!(x.height(),0.);
+        pt_eq(&x.xrange(),0.,0.);
+        pt_eq(&x.yrange(),0.,0.);
+    }
+    #[test]
+    fn test_0() {
+        let x = Rectangle::new(-3.,1., 5.,7.);
+        pt_eq(&x.get_center(),1.,4.);
+        assert_eq!(x.width(),8.);
+        assert_eq!(x.height(),6.);
+        pt_eq(&x.get_wh(),8.,6.);
+        pt_eq(&x.xrange(),-3.,5.);
+        pt_eq(&x.yrange(),1.,7.);
+        pt_eq(&x.get_cwh().0,1.,4.);
+        assert_eq!(x.get_cwh().1,8.);
+        assert_eq!(x.get_cwh().2,6.);
+    }
+    #[test]
+    fn test_ops_0() {
+        let x = Rectangle::new(2.,1., 5.,7.);
+        let y = Rectangle::new(4.,0., 6.,3.);
+        let z = Rectangle::new(5.,1., 7.,4.);
+        let x_and_y = x.clone().intersect(&y);
+        let x_or_y  = x.clone().union(&y);
+        let x_and_z = x.clone().intersect(&z);
+        let x_or_z  = x.clone().union(&z);
+        println!("x_and_y:{}",x_and_y);
+        println!("x_or_y:{}",x_or_y);
+        println!("x_and_z:{}",x_and_z);
+        println!("x_or_z:{}",x_or_z);
+        pt_eq(&x_and_y.xrange(),4.,5.);
+        pt_eq(&x_and_y.yrange(),1.,3.);
+        pt_eq(&x_or_y.xrange(),2.,6.);
+        pt_eq(&x_or_y.yrange(),0.,7.);
 
-    If a>=90 then we can consider a-90 and swap w and h.
-    Then, if w>h we can consider 90-a and swap w and h.
-
-    Hence only consider a<90 (hence tan(a)>=0) and w<=h
-
-    Note that the area of a RH triangle with angle a and
-    adjacent length l is 1/2.l.l.tan(a) = l^2.t/2
-    Assume the largest rectangle leaves rectangular spaces
-    above and below; with coordinates of (xw,0), (w,(y'-y)h),
-    (w-xw,y'h), (0,yh)
-    This assumes largest rectangle is limited by width w, and y'<1.
-    We know that tan(a) = xw/yh; i.e.
-     yh=xw/t.
-    And tan(a)=(y'-y)h/w(1-x); i.e.
-     wt(1-x) = y'h-yh
-     y'h     = wt(1-x) + xw/t = wt(1+x/(t^2)-x)
-
-    Then the 'wasted space' is then two triangles of size xw : yh and
-    two triangles of size w(1-x) : (y'-y)h, and the rectangle of size w : (1-y')h.
-
-    The total is the sum of:
-      xw.yh = x^2.w^2/t
-      w(1-x).(y'-y)h = w^2.(1-x)^2.t = w^2.t.(1+x^2-2x) = w^2.t + x^2.w^2.t -2x.w^2.t
-      wh-wy'h = wh - w^2.t(1+x/(t^2)-x) = wh -w^2.t -x.w^2/t + x.w^2.t
-
-    Sum = x^2.w^2/t + w^2.t + x^2.w^2.t -2x.w^2.t + wh -w^2.t -x.w^2/t + x.w^2.t
-        = x^2.w^2/t + x^2.w^2.t -x.w^2.t -x.w^2/t + wh
-
-    This has a minimum (wasted) area when its derivative is 0 (since it has +ve x^2)
-
-    dA/dx = 2x.w^2/t + 2x.w^2.t -w^2.t -w^2/t
-          = (2x-1).w^2.(1/t+t)
-
-    i.e. x=0.5; i.e. the correct x is independent of w, h, a.
-
-    But, y' must be <=1. So, we want an x closest to 0.5 where y'<=1
-    Now y' when x=0.5 is:
-     y' = wt(1+0.5/(t^2)-0.5)/h
-        = w/2h * (t + 1/t)
-        <=1 if
-    t+1/t <= 2h/w
-    (t^2+1)/t <= 2h/w
-    But (tan^1+1)/tan = sec^2/tan = 1/(sin.cos) = 2/(sin 2a), hence
-    2/sin(2a) <= 2h/w
-    sin(2a)   >= w/h
-    So we only have to worry if sin(2a) < w/h
-
-    Now y'=1 occurs when w/h.t(1+x/(t^2)-x) = 1
-    i.e. 1+x/(t^2)-x  = h/(wt)
-    i.e. x(1/(t^2)-1) = h/(wt) - 1
-    i.e. x(1-(t^2))/t^2 = h/(wt) - 1
-    i.e. x              = (h/(wt) - 1) * t^2 / (1-(t^2))
-    i.e. x              = (ht/w - t^2) / (1-(t^2))
-    Now when the a=45 we have t=1 hence 1-t^2 is 0;
-      if w==h then we have a diamond solution (i.e. x-0.5 works)
-      if w<=h then sin(2*a) = 1 >= w/h then x=0.5 works
-    If w>h then, as at the top, we should have used 90-a and swapped w/h
-    
-   *)
-  let wh_of_largest_area_within w h a =
-    let a = abs_float a in
-    let a = mod_float a 180. in
-    let (w,h,a,flip) = if a>=90. then (h,w,a-.90.,true) else (w,h,a,false) in
-    let (w,h,a,flip) = if w>h then (h,w,90.-.a,not flip) else (w,h,a,flip) in
-    let sin2a = sin (2. *. a) in
-    let t     = tan a in
-    let y  x   = x *. w /. h /. t in
-    let y' x y = w /. h *. t *. (1. -. x) +. y in
-    let x =
-      if (t > 1E10) then 0.5 (* cover a=45 *)
-      else if (sin2a < w /. h) then (
-        (h *. t /. w -. t *. t) /. (1. -. t *. t)
-      ) else (
-        0.5
-      )
-    in
-    let y  = y x in
-    let y' = y' x y in
-    let yh = h *. y in
-    let y'myh = h *. (y' -. y) in
-    let wx = w *. x in
-    let wmwx = w *. (1. -. x) in
-    let (width,height) =
-      if (t>1E-10) then
-        ( sqrt (wx*.wx +. yh*.yh) , sqrt (wmwx*.wmwx +. y'myh*.y'myh) )
-      else
-        (w,h)
-    in
-    if flip then (height,width) else (width,height)        
-    
-  (*f get_wh *)
-  let get_wh r = (r.(2)-.r.(0), r.(3)-.r.(1))
-
-  (*f get_c *)
-  let get_c r =
-    ( (r.(0)+.r.(2))/.2.,
-      (r.(1)+.r.(3))/.2. )
-
-  (*f get_dim *)
-  let get_dim r = function
-    | 0 -> [|r.(0); r.(2)|]
-    | _ -> [|r.(1); r.(3)|]
-
-  (*f get_width *)
-  let get_width r = r.(2) -. r.(0)
-
-  (*f get_height *)
-  let get_height r = r.(3) -. r.(1)
-
-  (*f get_cwh *)
-  let get_cwh r =
-    ( (r.(0)+.r.(2))/.2.,
-      (r.(1)+.r.(3))/.2.,
-      r.(2)-.r.(0),
-      r.(3)-.r.(1))
-
-  (*f of_cwh *)
-  let of_cwh (x,y,w,h) =
-    make  (x -. w/.2.) (y -. h/.2.) (x +. w/.2.) (y +. h/.2.)
-
-  (*f str *)
-  let str r = Printf.sprintf "(%g,%g,%g,%g)" r.(0) r.(1) r.(2) r.(3)
-
-  (*f All done *)
-end
-
- */
+        assert!(x_and_z.is_zero());
+        pt_eq(&x_and_z.xrange(),0.,0.);
+        pt_eq(&x_and_z.yrange(),0.,0.);
+        pt_eq(&x_or_z.xrange(),2.,7.);
+        pt_eq(&x_or_z.yrange(),1.,7.);
+    }
+    #[test]
+    fn test_ops_1() {
+        let x = Rectangle::new(2.,1., 5.,7.);
+        let y = Rectangle::new(0.1, 0.2, 0.3, 0.5);
+        let x_p_y  = x.clone().expand(&y,1.);
+        let x_p_2y = x.clone().expand(&y,2.);
+        println!("x_p_y:{}",x_p_y);
+        println!("x_p_2y:{}",x_p_2y);
+        pt_eq(&x_p_y.xrange(),1.9, 5.3);
+        pt_eq(&x_p_y.yrange(),0.8, 7.5);
+        pt_eq(&x_p_2y.xrange(),1.8, 5.6);
+        pt_eq(&x_p_2y.yrange(),0.6, 8.);
+    }
+    #[test]
+    fn test_ops_2() {
+        let x = Rectangle::new(2.,1., 5.,7.);
+        let y = Rectangle::new(0.1, 0.2, 0.3, 0.5);
+        let x_m_y  = x.clone().shrink(&y,1.);
+        let x_m_2y = x.clone().shrink(&y,2.);
+        println!("x_m_y:{}",x_m_y);
+        println!("x_m_2y:{}",x_m_2y);
+        pt_eq(&x_m_y.xrange(),2.1, 4.7);
+        pt_eq(&x_m_y.yrange(),1.2, 6.5);
+        pt_eq(&x_m_2y.xrange(),2.2, 4.4);
+        pt_eq(&x_m_2y.yrange(),1.4, 6.);
+    }
+}

@@ -2,11 +2,13 @@ mod point;
 mod bezier;
 mod rectangle;
 mod polygon;
+mod layout;
 
 pub use self::point::Point;
 pub use self::bezier::Bezier;
 pub use self::rectangle::Rectangle;
 pub use self::polygon::Polygon;
+pub use self::layout::LayoutBox;
 
 /*
 (** Copyright (C) 2018,  Gavin J Stark.  All rights reserved.

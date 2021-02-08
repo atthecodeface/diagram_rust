@@ -22,6 +22,13 @@ impl std::fmt::Display for Bezier {
     //zz All done
 }
 impl Bezier {
+    pub fn get_pt(&self, index:usize) -> &Point {
+        match self {
+            Self::Linear(p0,p1) => { if index==0 {p0} else {p1} },
+            Self::Quadratic(p0,_,p1) => { if index==0 {p0} else {p1} },
+            Self::Cubic(p0,_,_,p1) => { if index==0 {p0} else {p1} },
+        }
+    }
     pub fn line(p0:&Point, p1:&Point) -> Self {
         Self::Linear(p0.clone(), p1.clone())
     }
