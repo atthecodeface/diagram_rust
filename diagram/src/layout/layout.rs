@@ -1,7 +1,9 @@
 use super::Point;
 use super::Rectangle;
 use super::Polygon;
+use super::grid::{CellData, GridPlacement};
 
+#[derive(Debug, PartialEq)]
 pub struct LayoutBox {
     /// This indicates how much to expand the content within its laid-out space (0-1 each in x and y)
     expansion : Point,
@@ -179,3 +181,164 @@ impl LayoutBox {
     }
 }
 
+//tp Layout
+pub struct Layout {
+    cell_data  : (Vec<CellData>, Vec<CellData>),
+    placements : (GridPlacement, GridPlacement),
+}
+impl Layout {
+    pub fn new() -> Self {
+        let placements = ( GridPlacement::new(), GridPlacement::new() );
+        Self { cell_data:(Vec::new(), Vec::new()),
+               placements:placements,
+        }
+    }
+    pub fn add_element(&mut self, start:(isize,isize), span:(usize,usize), size:(f64,f64)) {
+        self.cell_data.0.push(CellData::new(start.0, span.0, size.0));
+        self.cell_data.1.push(CellData::new(start.1, span.1, size.1));
+    }
+    pub fn layout(&mut self) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
+        self.placements.0.set_cell_data( &self.cell_data.0 );
+        self.placements.1.set_cell_data( &self.cell_data.0 );
+        self.placements.0.set_expansion( 0., vec![] );
+        self.placements.1.set_expansion( 0., vec![] );
+    }
+}
+
+/*
+
+impl Layout {
+    pub fn get_bbox(&self, start:isize, number:usize) -> (f64,f64) {
+        let i0 = start - self.start_index;
+        let i1 = i0+number;
+        let i0 = { if i0 < 0) {0} else {i0} };
+    let i1 = min i1 (tl.last_index-tl.start_index) in (* i1 <= n *)
+    if (i1<=i0) then (0.,0.) else (tl.positions.(i0), tl.positions.(i1))
+
+    
+  (*f resize_and_place : t -> center float -> size float -> t_layout *)
+  let resize_and_place (t:t_placement) c (size:float) =
+    let n = t.last_index - t.start_index in
+    let positions = Array.init (n+1) (fun i-> Placement.get_position t (i+t.start_index)) in
+    let slack     = size -. positions.(n) in
+    let rec set_position extra i =
+      positions.(i) <- positions.(i)+.extra; (* do this for i==n *)
+      if (i<n) then (
+        let extra=extra +. slack *. t.expansion.(i) in
+        set_position extra (i+1)
+      )
+    in
+    set_position (c -. size /. 2.) 0;
+    {start_index=t.start_index; last_index=t.last_index; positions;}
+
+  (*f str *)
+  let str t =
+    if t.last_index<=t.start_index then
+      "Grid layout <none>"
+    else if t.last_index<=t.start_index+1 then
+      Printf.sprintf "Grid layout of 1 at %g" t.positions.(0)
+    else (
+      let str_positions = String.concat "," (Array.fold_left (fun acc p->acc@[Printf.sprintf "%g" p]) [] t.positions) in
+      Printf.sprintf "Grid layout %d..%d [%s]" t.start_index t.last_index str_positions
+    )
+
+  (*f All done *)
+end
+}
+
+(*a Functions for positions for a grid *)
+(*f sort_by_start_index - sort the data by starting index *)
+let sort_by_start_index cell_data =
+  List.sort (fun (s0,_,_) (s1,_,_) -> compare s0 s1) cell_data
+
+(*f find_min_size - find the shortest height in cell_data starting
+    at the specified row;
+    
+    If there are any cells that start at a row
+    after first_row but all cells starting at first_row span beyond
+    those, then first_row can be zero height.
+
+    If there are no such cells then find the cells that have the
+    minimum span; then of these we need the largest of their sizes, in
+    order to fit that cell in. This will be the min height for first_row
+    then.
+
+ *)
+let find_min_size cell_data first_row =
+  let acc_if_smaller acc (s0,h0,size) =
+    let (min_height, current_next) = acc in
+    (* Printf.printf "acc_if_smaller %d %f %d %d %d %f\n" first_row min_height current_next s0 h0 size; *)
+    if ((s0 > first_row) && (s0 < current_next)) then
+      (0., s0)
+    else if (s0==first_row) && (s0+h0<current_next) then
+      (size, s0+h0)
+    else if (s0==first_row) && (s0+h0==current_next) && (size>min_height) then
+      (size, current_next)
+    else
+      acc
+  in
+  List.fold_left acc_if_smaller (0.,max_int) cell_data
+
+(*f remove_rows - remove the span of rows 'first_row' through
+    'next_row' given that they have the specified size
+
+    Any cell that starts at first_row can have next_row-first_row rows
+    removed from its span: if a cell does not start at first_row then
+    it will not overlap with the range; if it does, then remove size
+    from its height and changes its start to begin at next_row (since
+    the span first_row to next_row had size height).
+
+ *)
+let remove_rows sd first_row next_row row_size =
+  let n = next_row - first_row in
+  let remove_row acc row =
+    let (s0,h0,size) = row in
+    if (s0>first_row) then (row::acc)
+    else if (h0<=n) then acc
+    else if (size<=row_size) then (next_row, h0-n, 0.)::acc
+    else (next_row, h0-n, size-.row_size)::acc
+  in
+  List.fold_left remove_row [] sd
+
+(*f find_next_row_position - find the minimum height and next given
+    the current row, then set the row positions and remove the span
+    height from the cell data, and move on 
+
+ *)
+let rec find_next_row_position acc sd first_row current_posn =
+  if (List.length sd)==0 then acc else (
+    let (size, next_row) = find_min_size sd first_row in
+    let posn = current_posn +. size in
+    let sd = remove_rows sd first_row next_row size in
+    let acc = (next_row, posn)::acc in
+    find_next_row_position acc sd next_row posn
+  )
+
+(*f find_row_positions cell_data - find the minimal starting positions for
+    each row
+ *)
+let find_row_positions cell_data =
+  match cell_data with
+  | [] -> []
+  | _ -> (
+    let sd = sort_by_start_index cell_data in
+    let (first_row,_,_) = List.hd sd in
+    find_next_row_position [(first_row, 0.)] sd first_row 0.
+  )
+
+(*f find_first_last_index *)
+let find_first_last_index (f,l) (s,n,_) =
+  let f = min s f in
+  let l = max l (s+n) in
+  (f,l)
+  
+
+(*a Top level *)
+let make_placement = Placement.make
+let get_placement_size = Placement.get_size
+
+let make_layout = Layout.resize_and_place
+let get_layout_bbox = Layout.get_bbox
+                        
+                  
+*/

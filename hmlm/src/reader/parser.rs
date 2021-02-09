@@ -9,7 +9,7 @@ use xml::namespace::{Namespace, NamespaceStack};
 use xml::reader::XmlEvent;
 use xml::common::XmlVersion;
 
-use super::char::FilePosition;
+use crate::FilePosition;
 use super::lexer::{Token, TokenWithPos, TokenError, NamespaceName};
 pub type XmlEventWithPos = (FilePosition, FilePosition, XmlEvent);
 

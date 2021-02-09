@@ -3,9 +3,10 @@ extern crate hmlm;
 extern crate stylesheet;
 
 mod layout;
-pub use layout::{Polygon};
-pub use layout::{GridLayout};
 mod diagram;
 mod diagram_ml;
+pub use layout::{Polygon, Rectangle};
+pub use layout::{Layout, LayoutBox};
+
 pub use diagram::{Diagram, DiagramContents, DiagramDescriptor};
 pub use diagram_ml::{DiagramML};

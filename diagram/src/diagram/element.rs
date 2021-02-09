@@ -17,9 +17,9 @@ limitations under the License.
  */
 
 //a Imports
-use crate::GridLayout;
 use crate::Diagram;
 use crate::DiagramDescriptor;
+use crate::{Layout, LayoutBox, Rectangle};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, RrcStylableNode};
 use super::types::*;
@@ -111,29 +111,11 @@ impl Use {
 }
 
 //a ElementHeader and Element
-//tp ElementStyle
-#[derive(Debug)]
-pub enum ElementStyle {
-    Grid(StyleValue), // 2 or 4 ints
-    Bbox(StyleValue), // 2 or 4 floats
-    Transform(StyleValue), // 9 floats
-    Fill(StyleValue),   // color
-    Stroke(StyleValue), // color
-    StrokeWidth(StyleValue), // float
-    Markers(StyleValue), // 1-3 strings
-    Font(StyleValue), // string
-    FontSize(StyleValue), // float
-    FontStyle(StyleValue), // string
-    FontWeight(StyleValue), // string
-}
-
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
-    pub id           : StyleValue,
-    pub classes      : StyleValue,
-    styles           : Vec<ElementStyle>,
     stylable         : RrcStylableNode<'a, StyleValue>,
+    layout_box       : LayoutBox,
 }
 
 //ti ElementHeader
@@ -141,30 +123,17 @@ impl <'a> ElementHeader <'a> {
     pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader<'b>, Vec<(String,String)>), ValueError> {
         // let mut unused_nv = Vec::new();
         let unused_nv = Vec::new();
-        let mut hdr = 
-            ElementHeader{ id      : StyleValue::string(None),
-                           classes : StyleValue::string_array(),
-                           styles  : Vec::new(),
-                           stylable: StylableNode::new(None, "node_type", styles, Vec::new()/*name_values*/),
-            };
-        for (n,v) in name_values {
-            if n=="id" {
-                hdr.id.from_string(&v)?;
-            } else if n=="class" {
-                for s in v.split_whitespace() {
-                    hdr.classes.add_string(s.to_string());
-                }
-            } else {
-                //match styles.find_style_index(n) {
-                //    None => unused_nv.push((n,v));
-                //}
-            }
+        let stylable = StylableNode::new(None, "node_type", styles, vec![]);
+        for (name,value) in &name_values {
+            stylable.borrow_mut().add_name_value(name, value);
         }
+        let layout_box = LayoutBox::new();
+        let hdr = ElementHeader{ stylable, layout_box };
         Ok((hdr, unused_nv))
     }
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = StyleDescriptor::new();
-        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "transform", "pad", "margin", "border"]);
+        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "transform", "pad", "margin", "border", "bg", "bordercolor"]);
         desc
     }
 }
@@ -189,7 +158,7 @@ pub struct Element<'a> {
 impl <'a> Element <'a> {
     //mp has_id
     pub fn has_id(&self, name:&str) -> bool {
-        self.header.id.eq_string(name)
+        self.header.stylable.borrow().has_id(name)
     }
 
     //fp new_shape
@@ -216,8 +185,34 @@ impl <'a> Element <'a> {
         Ok(value)
     }
 
-    //fp set_grid_layout
-    pub fn set_grid_layout(&self, grid:&mut GridLayout) {
+    //fp get_desired_geometry
+    pub fn get_desired_geometry(&mut self) -> Rectangle {
+        Rectangle::new(0.,0.,10.,10.)
+    }
+    
+    //fp set_layout
+    pub fn set_layout(&mut self, layout:&mut Layout) {
+        let bbox = self.get_desired_geometry();
+        let stylable = self.header.stylable.borrow();
+        match stylable.get_style_value_of_name("grid").unwrap().as_ints(None) {
+            None => {return;},
+            Some(g) => {
+                let (sx,sy,nx,ny):(isize,isize,isize,isize) = {
+                    match g.len() {
+                        0 => {return;},
+                        1 => (g[0],g[0],1,1),
+                        2 => (g[0],g[1],1,1),
+                        3 => (g[0],g[1],g[2],1),
+                        _ => (g[0],g[1],g[3],g[4]),
+                    }
+                };
+                layout.add_element( (sx,sy), (nx as usize,ny as usize), (bbox.width(), bbox.height()) );
+            },
+        }
+    }
+                           
+    //fp apply_placement
+    pub fn apply_placement(&mut self, layout:&Layout) {
     }
                            
 }

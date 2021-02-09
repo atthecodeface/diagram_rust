@@ -187,27 +187,6 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         let mut classes    = Vec::new();
         let mut values     = descriptor.borrow().build_style_array();
         let mut id_name    = None;
-        for (name, value) in name_values {
-            if name=="id" {
-                id_name = Some(value.to_string());
-            } else if name=="class" {
-                for s in value.split_whitespace() {
-                    classes.push(s.to_string());
-                }
-            } else {
-                match descriptor.borrow().find_style_index(name) {
-                    Some(n) => {
-                        values[n].from_string(value).unwrap();
-                    },
-                    None => {
-                        // let v = stylesheet.get_style_value(name);
-                        // let v = v.new_value().from_string(value).unwrap();
-                        // extra_sids.push(name);
-                        // values.push(v)
-                    }
-                }
-            }
-        }
         let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
         let node = Rc::new(RefCell::new(StylableNode {
             parent,
@@ -221,7 +200,44 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             classes,
         }));
         parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
+        for (n,v) in name_values {
+            node.borrow_mut().add_name_value(n,v);
+        }
         node
+    }
+
+    //mp add_name_value
+    pub fn add_name_value(&mut self, name:&str, value:&str) -> () {
+        if name=="id" {
+            self.id_name = Some(value.to_string());
+        } else if name=="class" {
+            for s in value.split_whitespace() {
+                self.classes.push(s.to_string());
+            }
+        } else {
+            match self.descriptor.borrow().find_style_index(name) {
+                Some(n) => {
+                    self.values[n].from_string(value).unwrap();
+                },
+                None => {
+                    // let v = stylesheet.get_style_value(name);
+                    // let v = v.new_value().from_string(value).unwrap();
+                    // extra_sids.push(name);
+                    // values.push(v)
+                }
+            }
+        }
+    }
+
+    //mp has_id
+    pub fn has_id(&self, s:&str) -> bool {
+        match &self.id_name { Some(id) => s == id, None => false }
+    }
+
+    //mp has_class
+    pub fn has_classs(&self, s:&str) -> bool {
+        for c in &self.classes { if c==s {return true;} }
+        false
     }
 
     //fp delete_children
@@ -264,6 +280,14 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                 }
                 None
             },
+        }
+    }
+
+    //mp get_style_value_of_name
+    pub fn get_style_value_of_name(&self, s:&str) -> Option<&V> {
+        match self.find_style_index(s) {
+            None => None,
+            Some(n) => Some(&self.values[n]),
         }
     }
 

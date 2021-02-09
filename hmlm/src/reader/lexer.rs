@@ -18,6 +18,7 @@
 //a Imports
 use std::fmt;
 use std::io::prelude::Read;
+use crate::FilePosition;
 use super::utils::*;
 use super::char::*;
 

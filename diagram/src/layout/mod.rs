@@ -9,8 +9,8 @@ pub use self::point::Point;
 pub use self::bezier::Bezier;
 pub use self::rectangle::Rectangle;
 pub use self::polygon::Polygon;
-pub use self::layout::LayoutBox;
-pub use self::grid::GridLayout;
+pub use self::layout::{LayoutBox, Layout};
+pub use self::grid::{GridPlacement};
 
 /*
 (** Copyright (C) 2018,  Gavin J Stark.  All rights reserved.

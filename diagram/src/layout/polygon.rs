@@ -8,6 +8,7 @@ use super::Bezier;
 ///
 /// Nominally it is a regular n-gon, but it may have an eccentricity
 ///
+#[derive(Debug, PartialEq)]
 pub struct Polygon {
     center   : Point,
     vertices : usize,

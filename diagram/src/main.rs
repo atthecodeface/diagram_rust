@@ -34,7 +34,14 @@ fn main() {
             let mut diagram_ml = DiagramML::new(&mut diagram);
             for filename in vf {
                 let file = File::open(filename).unwrap();
-                diagram_ml.read_file(file).unwrap();
+                match diagram_ml.read_file(file)
+                {
+                    Err(e) => {
+                        eprintln!("{}", e);
+                        std::process::exit(1);
+                    },
+                    _ => (),
+                }
             }
         },
     }

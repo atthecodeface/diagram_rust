@@ -1,11 +1,14 @@
 use std::io::Read;
 
+mod file_position;
 pub mod utils;
 pub mod char;
 pub mod lexer;
 pub mod parser;
 
 use xml::reader::XmlEvent;
+
+pub use self::file_position::FilePosition;
 pub use self::parser::ParseError;
 pub use self::parser::XmlEventWithPos;
 

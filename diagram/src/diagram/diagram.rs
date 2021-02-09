@@ -20,7 +20,7 @@ limitations under the License.
 use super::types::*;
 use super::DiagramDescriptor;
 use super::Element;
-use crate::GridLayout;
+use crate::Layout;
 
 //a Diagram Definition
 //tp Diagram
@@ -57,9 +57,15 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
     pub fn layout(&mut self) -> Result<(),()> {
-        let mut grid_layout = GridLayout::new();
-        for e in self.iter_elements() {
-            e.set_grid_layout(&mut grid_layout);
+        let mut layout = Layout::new();
+        for e in self.contents.elements.iter_mut() {
+            e.set_layout(&mut layout);
+        }
+        // specify expansions
+        layout.layout();
+        // apply expansions - lay it out in a rectangle, generate transform?
+        for e in self.contents.elements.iter_mut() {
+            e.apply_placement(&layout);
         }
         Ok(())
     }
