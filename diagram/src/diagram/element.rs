@@ -30,7 +30,7 @@ use super::types::*;
 #[derive(Debug)]
 pub struct Group<'a> {
     // requires no styles
-    content : Vec<Element<'a>>
+    pub content : Vec<Element<'a>>
 }
 
 //ti Group
@@ -50,6 +50,30 @@ impl <'a> Group<'a> {
     //mp add_element
     pub fn add_element(&mut self, element:Element<'a>) -> () {
         self.content.push(element);
+    }
+    
+    //mp style
+    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+        for e in self.content.iter_mut() {
+            e.style()?;
+        }
+        Ok(())
+    }
+
+    //mp get_desired_geometry
+    pub fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
+        let mut rect = Rectangle::none();
+        for e in self.content.iter_mut() {
+            rect = rect.union(&e.set_layout_properties(layout));
+        }
+        rect
+    }
+
+    //fp apply_placement
+    pub fn apply_placement(&mut self, layout:&Layout) {
+        for e in self.content.iter_mut() {
+            e.apply_placement(layout);
+        }
     }
     
     //zz All done
@@ -95,7 +119,7 @@ impl Shape {
     //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = ElementHeader::get_descriptor(nts);
-        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate"]);
+        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]);
         desc
     }
 
@@ -120,13 +144,12 @@ impl Shape {
         Ok(())
     }
 
-    // get_desired_geometry
+    //mp get_desired_geometry
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        self.polygon.set_size(20., 1.);
-        self.polygon.get_bbox()
-            // expand by stroke-width
+        let rect = self.polygon.get_bbox();
+        rect.enlarge(self.stroke_width)
     }
-    // generate output with specified transform
+
     //zz All done
 }
 
@@ -143,6 +166,61 @@ impl Use {
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
+}
+
+//a ElementContent - enumerated union of the above
+//tp ElementContent 
+#[derive(Debug)]
+pub enum ElementContent<'a> {
+    Group(Group<'a>),
+    Text(Text),
+    Shape(Shape),
+    Use(Use), // use of a definition
+}
+
+//ti ElementContent
+impl <'a> ElementContent<'a> {
+    //fp add_element
+    pub fn add_element(&mut self, element:Element<'a>) {
+        match self {
+            ElementContent::Group(ref mut g) => { g.add_element(element); },
+            _ => (),
+        }
+    }
+
+    //mp style
+    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+        match self {
+            ElementContent::Shape(ref mut s) => { s.style(header) },
+            ElementContent::Group(ref mut g) => { g.style(header) },
+            _ => Ok(())
+        }
+    }
+
+    //mp get_desired_geometry
+    pub fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
+        match self {
+            ElementContent::Shape(ref mut s) => { s.get_desired_geometry() },
+            ElementContent::Group(ref mut g) => { g.get_desired_geometry(layout) },
+            _ => Rectangle::new(0.,0.,10.,10.),
+        }
+    }
+
+    //fp apply_placement
+    /// The layout contains the data required to map a grid or placement layout of the element
+    ///
+    /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
+    ///
+    /// If the element requires any further layout, that should be performed; certainly its
+    /// transformation should be determined
+    pub fn apply_placement(&mut self, layout:&Layout) {
+        match self {
+            ElementContent::Group(ref mut g) => { g.apply_placement(layout) },
+            _ => (),
+        }
+    }
+    
+    //zz All done
 }
 
 //a ElementHeader and Element
@@ -170,6 +248,7 @@ pub struct ElementLayout {
     pub margin       : Option<(f64,f64,f64,f64)>,
 }
 impl ElementLayout {
+    //fp new
     pub fn new() -> Self {
         Self { placement:LayoutPlacement::None,
                ref_pt : None,
@@ -184,12 +263,15 @@ impl ElementLayout {
                margin : None,
         }
     }
+    //fp set_grid
     pub fn set_grid(&mut self, sx:isize, sy:isize, nx:usize, ny:usize) {
         self.placement = LayoutPlacement::Grid(sx,sy,nx,ny);
     }
+    //fp set_place
     pub fn set_place(&mut self, x:f64, y:f64) {
         self.placement = LayoutPlacement::Place(Point::new(x,y));
     }
+    //zz All done
 }
 
 //tp ElementHeader
@@ -285,11 +367,13 @@ impl <'a> ElementHeader <'a> {
         if let Some(v) = self.get_style_rgb_of_name("bg").as_floats(None) {
             self.layout.bg = Some((v[0],v[1],v[2]));
         }
+        if let Some(v) = self.get_style_floats_of_name("margin").as_floats(None) {
+            self.layout.margin = Some( (v[0], v[1], v[2], v[3]) );
+        }
+        if let Some(v) = self.get_style_floats_of_name("pad").as_floats(None) {
+            self.layout.pad = Some( (v[0], v[1], v[2], v[3]) );
+        }
         /*
-        if let Some(v) = stylable.get_style_value_of_name("margin").unwrap().as_floats(None) {
-        }
-        if let Some(v) = stylable.get_style_value_of_name("pad").unwrap().as_floats(None) {
-        }
         if let Some(v) = stylable.get_style_value_of_name("translate").unwrap().as_floats(None) {
         }
          */
@@ -328,15 +412,22 @@ impl <'a> ElementHeader <'a> {
     
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
-    pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) {
-        println!("Layout {:?}",self);
+    pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
         self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
         self.layout_box.set_border_width(self.layout.border_width);
+        self.layout_box.set_margin(&self.layout.margin);
+        self.layout_box.set_padding(&self.layout.pad);
         let bbox = self.layout_box.get_desired_bbox();
         match self.layout.placement {
-            LayoutPlacement::None => (),
-            LayoutPlacement::Grid(sx,sy,nx,ny) => layout.add_grid_element( (sx,sy), (nx,ny), (bbox.width(), bbox.height() )),
-            LayoutPlacement::Place(pt)         => layout.add_placed_element( &pt, &self.layout.ref_pt, &bbox ),
+            LayoutPlacement::None => bbox,
+            LayoutPlacement::Grid(sx,sy,nx,ny) => {
+                layout.add_grid_element( (sx,sy), (nx,ny), (bbox.width(), bbox.height() ));
+                Rectangle::none()
+            },
+            LayoutPlacement::Place(pt) => {
+                layout.add_placed_element( &pt, &self.layout.ref_pt, &bbox );
+                Rectangle::none()
+            },
         }
     }
                            
@@ -361,35 +452,6 @@ impl <'a> ElementHeader <'a> {
     //zz All done
 }
 
-
-//tp ElementContent - the enumeration of the above
-#[derive(Debug)]
-pub enum ElementContent<'a> {
-    Group(Group<'a>),
-    Text(Text),
-    Shape(Shape),
-    Use(Use), // use of a definition
-}
-
-//ti ElementContent
-impl <'a> ElementContent<'a> {
-    pub fn get_desired_geometry(&mut self) -> Rectangle {
-        match self {
-            ElementContent::Shape(ref mut s) => {
-                s.get_desired_geometry()
-            },
-            _ => Rectangle::new(0.,0.,10.,10.),
-        }
-    }
-    //mp style
-    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
-        match self {
-            ElementContent::Shape(ref mut s) => { s.style(header) },
-            _ => Ok(())
-        }
-    }
-
-}
 
 //tp Element
 #[derive(Debug)]
@@ -419,6 +481,11 @@ impl <'a> Element <'a> {
         Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
     }
 
+    //fp add_element
+    pub fn add_element(&mut self, element:Element<'a>) {
+        self.content.add_element(element);
+    }
+
     //fp value_of_name
     pub fn value_of_name(name_values:Vec<(String,String)>, name:&str, mut value:StyleValue) -> Result<StyleValue,ValueError> {
         for (n,v) in name_values {
@@ -441,13 +508,17 @@ impl <'a> Element <'a> {
     /// finding its desired geometry and any placement or grid
     /// constraints
     ///
+    /// If the element has a specified layout then it should have a 'none' desired geometry
+    /// if it is unplaced then its geometry should be its bounding box
+    ///
     /// For normal elements (such as a shape) this requires finding
     /// the desired geometry, reporting this to the `LayoutBox`, and
     /// using the `LayoutBox` data to generate the boxed desired
     /// geometry, which is then added to the `Layout` element as a
     /// place or grid desire.
-    pub fn set_layout_properties(&mut self, layout:&mut Layout) {
-        self.header.set_layout_properties(layout, self.content.get_desired_geometry())
+    pub fn set_layout_properties(&mut self, layout:&mut Layout) -> Rectangle {
+        let content_rect = self.content.get_desired_geometry(layout);
+        self.header.set_layout_properties(layout, content_rect)
     }
 
     //fp apply_placement
@@ -459,6 +530,7 @@ impl <'a> Element <'a> {
     /// transformation should be determined
     pub fn apply_placement(&mut self, layout:&Layout) {
         self.header.apply_placement(layout);
+        self.content.apply_placement(layout);
     }
 
     //zz All done

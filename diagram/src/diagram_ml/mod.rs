@@ -128,7 +128,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
             (fp,_,XmlEvent::StartElement{name, attributes, ..}) => { // content of group
                 match Element::ml_new(reader, &fp, &name.local_name, &attributes) {
                     Ok(element) => {
-                // self.add_element(element);
+                        s.add_element(element);
                     },
                     e => { reader.errors.update(e); },
                 }

@@ -139,6 +139,24 @@ impl LayoutBox {
         self.border_width = border_width;
     }
 
+    //fp set_margin
+    pub fn set_margin(&mut self, value:&Option<(f64,f64,f64,f64)>) {
+        if let Some((x0,y0,x1,y1)) = value.as_ref() {
+            self.margin = Some(Rectangle::new(*x0,*y0,*x1,*y1));
+        } else {
+            self.margin = None;
+        }
+    }
+
+    //fp set_padding
+    pub fn set_padding(&mut self, value:&Option<(f64,f64,f64,f64)>) {
+        if let Some((x0,y0,x1,y1)) = value.as_ref() {
+            self.padding = Some(Rectangle::new(*x0,*y0,*x1,*y1));
+        } else {
+            self.padding = None;
+        }
+    }
+
     //fp borrow_content_transform
     pub fn borrow_content_transform(&self) -> Option<&Transform> {
         self.content_to_layout.as_ref()
