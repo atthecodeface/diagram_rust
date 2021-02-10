@@ -73,34 +73,50 @@ impl Text {
 pub struct Shape {
     // Possibly polygon
     // has Fill, Stroke, StrokeWidth, Markers
-    vertices : usize, // 0 for circle?
     pub polygon : Polygon,
+    pub fill   : Option<(f64,f64,f64)>,
+    pub stroke : Option<(f64,f64,f64)>,
+    pub stroke_width : f64,
 }
 
 //ti Shape
 impl Shape {
     //fp new
     pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
-        // This always gives 4
-        let vertices = Element::value_of_name(name_values, "vertices", StyleValue::int(Some(4)))?.as_int(Some(4)).unwrap() as usize;
-        let polygon = Polygon::new(vertices, 0.);
+        let polygon = Polygon::new(0, 0.);
         Ok( Self {
-            vertices,
             polygon,
+            stroke_width:0.,
+            stroke : None,
+            fill : None,
         } )
     }
 
     //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = ElementHeader::get_descriptor(nts);
-        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices"]);
+        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate"]);
         desc
     }
 
     //mp style
     pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
-        let vertices = header.get_style_value_of_name("vertices").unwrap().as_int(Some(4)).unwrap() as usize;
+        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
+            self.fill = Some((v[0],v[1],v[2]));
+        }
+        if let Some(v) = header.get_style_rgb_of_name("stroke").as_floats(None) {
+            self.stroke = Some((v[0],v[1],v[2]));
+        }
+        self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
+        let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
+        let width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
+        let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
+        let stellate = header.get_style_of_name_float("stellate",Some(0.)).unwrap();
+        let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
         self.polygon.set_vertices(vertices);
+        self.polygon.set_size(height, width/height);
+        self.polygon.set_rounding(round);
+        if stellate != 0. { self.polygon.set_stellate_size(stellate); }
         Ok(())
     }
 
@@ -206,38 +222,79 @@ impl <'a> ElementHeader <'a> {
         desc
     }
 
-    //mp get_style_value_of_name
-    pub fn get_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
+    //mp get_opt_style_value_of_name
+    pub fn get_opt_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
         let stylable = self.stylable.borrow();
         stylable.get_style_value_of_name(name).map(|a| a.clone())
     }
 
+    //mp get_style_rgb_of_name
+    pub fn get_style_rgb_of_name(&self, name:&str) -> StyleValue {
+        match self.get_opt_style_value_of_name(name) {
+            None        => StyleValue::rgb(None),
+            Some(value) => value,
+        }
+    }
+
+    //mp get_style_ints_of_name
+    pub fn get_style_ints_of_name(&self, name:&str) -> StyleValue {
+        match self.get_opt_style_value_of_name(name) {
+            None        => StyleValue::int_array(),
+            Some(value) => value,
+        }
+    }
+
+    //mp get_style_floats_of_name
+    pub fn get_style_floats_of_name(&self, name:&str) -> StyleValue {
+        match self.get_opt_style_value_of_name(name) {
+            None        => StyleValue::float_array(),
+            Some(value) => value,
+        }
+    }
+
+    //mp get_style_of_name_float
+    pub fn get_style_of_name_float(&self, name:&str, default:Option<f64>) -> Option<f64> {
+        match self.get_opt_style_value_of_name(name) {
+            None => default,
+            Some(value) => value.as_float(default),
+        }
+    }
+
+    //mp get_style_of_name_int
+    pub fn get_style_of_name_int(&self, name:&str, default:Option<isize>) -> Option<isize> {
+        match self.get_opt_style_value_of_name(name) {
+            None => default,
+            Some(value) => value.as_int(default),
+        }
+    }
+
     //mp style
     pub fn style(&mut self) -> Result<(),()> {
-        let stylable = self.stylable.borrow();
-        if let Some(v) = stylable.get_style_value_of_name("border").unwrap().as_float(None) {
+        if let Some(v) = self.get_style_of_name_float("border",None) {
             self.layout.border_width = v;
         }
-        if let Some(v) = stylable.get_style_value_of_name("scale").unwrap().as_float(None) {
+        if let Some(v) = self.get_style_of_name_float("scale",None) {
             self.layout.scale = v;
         }
-        if let Some(v) = stylable.get_style_value_of_name("rotate").unwrap().as_float(None) {
+        if let Some(v) = self.get_style_of_name_float("rotate",None) {
             self.layout.rotation = v;
         }
-        if let Some(v) = stylable.get_style_value_of_name("bordercolor").unwrap().as_floats(None) {
+        if let Some(v) = self.get_style_rgb_of_name("bordercolor").as_floats(None) {
             self.layout.border_color = Some((v[0],v[1],v[2]));
         }
-        if let Some(v) = stylable.get_style_value_of_name("bg").unwrap().as_floats(None) {
+        if let Some(v) = self.get_style_rgb_of_name("bg").as_floats(None) {
             self.layout.bg = Some((v[0],v[1],v[2]));
         }
+        /*
         if let Some(v) = stylable.get_style_value_of_name("margin").unwrap().as_floats(None) {
         }
         if let Some(v) = stylable.get_style_value_of_name("pad").unwrap().as_floats(None) {
         }
         if let Some(v) = stylable.get_style_value_of_name("translate").unwrap().as_floats(None) {
         }
+         */
         if let Some( (sx,sy,nx,ny) ) = {
-            match stylable.get_style_value_of_name("grid").unwrap().as_ints(None) {
+            match self.get_style_ints_of_name("grid").as_ints(None) {
                 Some(g) => {
                     match g.len() {
                         0 => None,
@@ -253,7 +310,7 @@ impl <'a> ElementHeader <'a> {
             self.layout.set_grid(sx,sy,nx as usize, ny as usize);
         }
         if let Some( (x,y) ) = {
-            match stylable.get_style_value_of_name("place").unwrap().as_floats(None) {
+            match self.get_style_ints_of_name("place").as_floats(None) {
                 Some(g) => {
                     match g.len() {
                         0 => None,
@@ -271,9 +328,11 @@ impl <'a> ElementHeader <'a> {
     
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
-    pub fn set_layout_properties(&mut self, layout:&mut Layout) {
+    pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) {
+        println!("Layout {:?}",self);
+        self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
+        self.layout_box.set_border_width(self.layout.border_width);
         let bbox = self.layout_box.get_desired_bbox();
-        println!("Set layout properties bbox {}",bbox);
         match self.layout.placement {
             LayoutPlacement::None => (),
             LayoutPlacement::Grid(sx,sy,nx,ny) => layout.add_grid_element( (sx,sy), (nx,ny), (bbox.width(), bbox.height() )),
@@ -376,13 +435,7 @@ impl <'a> Element <'a> {
         self.content.style(&self.header)?;
         Ok(())
     }
-
-    //mp get_desired_geometry
-    pub fn get_desired_geometry(&mut self) -> () {
-        let rect = self.content.get_desired_geometry();
-        self.header.layout_box.set_content_geometry(rect, Point::origin(), self.header.layout.scale, self.header.layout.rotation);
-    }
-    
+        
     //mp set_layout_properties
     /// This method is invoked to set the `Layout` of this element, by
     /// finding its desired geometry and any placement or grid
@@ -394,8 +447,7 @@ impl <'a> Element <'a> {
     /// geometry, which is then added to the `Layout` element as a
     /// place or grid desire.
     pub fn set_layout_properties(&mut self, layout:&mut Layout) {
-        self.get_desired_geometry();
-        self.header.set_layout_properties(layout);
+        self.header.set_layout_properties(layout, self.content.get_desired_geometry())
     }
 
     //fp apply_placement

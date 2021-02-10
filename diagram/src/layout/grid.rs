@@ -74,12 +74,15 @@ impl CellData {
         let mut posn = 0.;
         result.push( (current_col, posn) );
         loop {
+            // (1,1,10.), (1,1,20.), (1,1,20.)
+            // println!("{} {} {}",current_col,posn,sd_index);
             while sd_index<n {
-                if sorted_cell_data[sd_index].size != 0. {break;}
+                if sorted_cell_data[sd_index].size > 0. {break;}
                 sd_index += 1;
             }
             if sd_index == n { break; }
 
+            // println!("{} {} {}",current_col,posn,sd_index);
             // The current space is being added
             // in (current_col,position)
             //
@@ -88,8 +91,9 @@ impl CellData {
             let mut next_col  = 99999999;
             let mut i = sd_index;
             while i<n {
+                // println!("loop {} {} {} {} {:?}", i, n, min_size, next_col, sorted_cell_data[i]);
                 if sorted_cell_data[i].start > next_col {break;}
-                if sorted_cell_data[i].size == 0.      {continue;}
+                if sorted_cell_data[i].size <= 0.      {i+=1; continue;}
                 let Self {start, end, size} = sorted_cell_data[i];
                 if (start > current_col) && (end < next_col) {
                     min_size = 0.;
@@ -104,14 +108,16 @@ impl CellData {
                 }
                 i += 1;
             }
-            println!("{}:{} {}",sd_index, next_col, min_size);
-            assert!(min_size>0.);
-            i = sd_index;
-            while i<n {
-                if sorted_cell_data[i].start >= next_col {break;}
-                println!("reduce {} by {}",sorted_cell_data[i], min_size);
-                sorted_cell_data[i].size -= min_size;
-                i += 1;
+            // println!("{}:{} {}",sd_index, next_col, min_size);
+            // min_size can be zero if we have no cell requirements between (e.g.) cells 1 and 2
+            if min_size > 0. {
+                i = sd_index;
+                while i<n {
+                    if sorted_cell_data[i].start >= next_col {break;}
+                    // println!("reduce {} by {}",sorted_cell_data[i], min_size);
+                    sorted_cell_data[i].size -= min_size; // This may reduce the size below zero
+                    i += 1;
+                }
             }
             current_col = next_col;
             posn       += min_size;
@@ -159,7 +165,30 @@ mod tests {
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
         assert_eq!((1,4.), CellData::find_position(&cp, 0, 4),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,6.), CellData::find_position(&cp, 0, 6),"Column 6 starts at 6., and is at index 2");
     }
+    #[test]
+    fn test_simple_gap() {
+        let mut cd = Vec::new();
+        cd.push( CellData::new(0,1,1.) );
+        cd.push( CellData::new(2,1,1.) );
+        assert_eq!((0,3),CellData::find_first_last_indices(&cd));
+        let cp = CellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,1.), CellData::find_position(&cp, 0, 1),"Column 1 starts at 1., and is at index 1");
+        assert_eq!((2,1.), CellData::find_position(&cp, 0, 2),"Column 2 starts at 1., and is at index 2");
+        assert_eq!((3,2.), CellData::find_position(&cp, 0, 3),"Column 3 starts at 2., and is at index 3");
+    }
+    #[test]
+    fn test_1() {
+        let mut cd = Vec::new();
+        cd.push( CellData::new(1,1,10.) );
+        cd.push( CellData::new(1,1,20.) );
+        cd.push( CellData::new(1,1,20.) );
+        assert_eq!((1,2),CellData::find_first_last_indices(&cd));
+        let cp = CellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+    }        
 }
 
 //a Public GridPlacement type
@@ -195,7 +224,7 @@ impl GridPlacement {
         let (start_index, last_index) = CellData::find_first_last_indices(cell_data);
         self.start_index = start_index;
         self.last_index = last_index;
-        println!("Given cell data {:?}", cell_data);
+        // println!("Given cell data {:?}", cell_data);
     }
 
     //mp set_expansion
@@ -214,13 +243,52 @@ impl GridPlacement {
         self.expansion = expansion;
     }
 
+    //mp expand_and_centre
+    /// Given an actual size, centered on a value, expand the grid as required, and translate so that it is centered on the value.
+    pub fn expand_and_centre(&mut self, size:f64, center:f64) {
+        let total_size = self.get_size();
+        if total_size <= 0. { return ; }
+        let mut sizes = self.generate_cell_sizes();
+        let extra_size = size - total_size; // share this according to expansion
+        for (n, mut s) in sizes.iter_mut().enumerate() {
+            *s = *s + extra_size * self.expansion[n];
+        }
+        let mut pos = center - size / 2.;
+        let mut index = self.start_index;
+        let mut i = 0;
+        for j in 0..self.cell_positions.len() {
+            let (cell_index, _) = self.cell_positions[j];
+            while index < cell_index {
+                pos += sizes[i];
+                index += 1;
+                i += 1;
+            }
+            self.cell_positions[j] = (cell_index, pos);
+        }
+    }
+
+    //mi generate_cell_sizes
+    fn generate_cell_sizes(&mut self) -> Vec<f64> {
+        let n = self.last_index - self.start_index;
+        let mut sizes = Vec::with_capacity(n as usize);
+        for i in 0..n {
+            sizes.push(0.);
+        }
+        for i in 0..(self.cell_positions.len()-1) {
+            let (cell_index, pos) = self.cell_positions[i];
+            let (_, next_pos) = self.cell_positions[i+1];
+            sizes[ (cell_index-self.start_index) as usize ] = next_pos - pos;
+        }
+        sizes
+    }
+    
     //mp get_span
     /// Find the span of a start/number of grid positions
     pub fn get_span(&self, start:isize, span:usize) -> (f64,f64) {
         let end = start + (span as isize);
         let (index, start_posn) = CellData::find_position(&self.cell_positions, 0,     start);
         let (_,     end_posn)   = CellData::find_position(&self.cell_positions, index, end);
-        println!("get spans {} {} {} {} {:?}", start, span, start_posn, end_posn, self);
+        // println!("get spans {} {} {} {} {:?}", start, span, start_posn, end_posn, self);
         (start_posn, end_posn)
     }
 
@@ -241,6 +309,11 @@ impl GridPlacement {
             if *i >= index { return *x; }
         }
         0.
+    }
+
+    //mp iter_positions
+    pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
+        self.cell_positions.iter().map(|(p,s)| (p,s))
     }
 
     /*f str *)

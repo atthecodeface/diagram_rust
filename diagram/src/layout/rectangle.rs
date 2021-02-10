@@ -125,6 +125,16 @@ impl Rectangle {
         self
     }
 
+    //mp enlarge
+    /// enlarge by a fixed value
+    pub fn enlarge(mut self, value:f64) -> Self {
+        self.x0 -= value;
+        self.y0 -= value;
+        self.x1 += value;
+        self.y1 += value;
+        self
+    }
+
     //mp reduce
     /// reduce by a fixed value
     pub fn reduce(mut self, value:f64) -> Self {

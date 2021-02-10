@@ -47,26 +47,28 @@ fn main() {
             }
         },
     }
+    diagram.record_layout();
     diagram.uniquify();
+    println!("Style");
     diagram.style();
+    println!("Lay out");
     diagram.layout(&Rectangle::new(0.,0.,210.,197.));
+    println!("Generate geometry");
     diagram.geometry();
-    for e in diagram.iter_elements() {
-        println!("{:?}", e);
-    }
-
-    let mut svg = Svg::new();
+    println!("Create SVG");
+    let mut svg = Svg::new().set_grid(false).set_layout(true);
     diagram.generate_svg(&mut svg);
+    println!("Write SVG");
     let file_out   = File::create("a.svg").unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
     let mut writer = xml::writer::EventWriter::new(file_out);
     for e in svg.iter_events() {
-        println!("{:?}",e);
         match e.as_writer_event() {
             None => (),
             Some(we) => writer.write(we).unwrap(),
         }
     }
+    println!("Complete");
     
 /*
     let input_file  = 

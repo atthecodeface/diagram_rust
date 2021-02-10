@@ -99,7 +99,7 @@ pub struct LayoutBox {
     /// The content rectangle is the content-coordinate space rectangle for the laid-out content
     content : Option<Rectangle>,
     /// The content transform maps from the content coordinate system to the layout coordinate system
-    pub content_to_layout : Option<Transform>,
+    content_to_layout : Option<Transform>,
 }
 
 //ti LayoutBox
@@ -134,14 +134,30 @@ impl LayoutBox {
         self.content_desired  = Some(rect);
     }
 
+    //fp set_border_width
+    pub fn set_border_width(&mut self, border_width:f64) {
+        self.border_width = border_width;
+    }
+
+    //fp borrow_content_transform
+    pub fn borrow_content_transform(&self) -> Option<&Transform> {
+        self.content_to_layout.as_ref()
+    }
+
     //fp get_desired_bbox
     pub fn get_desired_bbox(&self) -> Rectangle {
-        match &self.content_desired {
-            None => Rectangle::none(),
-            Some(r) => {
-                r.new_rotated_around(self.content_ref.as_ref().unwrap(), self.content_rotation).scale(self.content_scale)
+        let mut rect = {
+            match &self.content_desired {
+                None => Rectangle::none(),
+                Some(r) => {
+                    r.new_rotated_around(self.content_ref.as_ref().unwrap(), self.content_rotation).scale(self.content_scale)
+                }
             }
-        }
+        };
+        rect = self.padding.map_or(rect, |r| rect.expand(&r, 1.));
+        rect = rect.enlarge(self.border_width);
+        rect = self.margin.map_or(rect, |r| rect.expand(&r, 1.));
+        rect
     }
 
     //fp wh_of_largest_area_within
@@ -253,7 +269,6 @@ impl LayoutBox {
         inner = self.margin.map_or(inner, |r| inner.shrink(&r, 1.));
         let (c,w,h) = inner.clone().reduce(self.border_width*0.5).get_cwh();
         self.border_shape = Some(Polygon::new_rect(w,h).translate(&c));
-        println!("Inner {} within outer {} produces border shape {:?}", inner, self.outer.unwrap(), self.border_shape);
         inner = inner.reduce(self.border_width);
         inner = self.padding.map_or(inner, |r| inner.shrink(&r, 1.));
         self.inner = Some(inner);
@@ -272,7 +287,7 @@ impl LayoutBox {
         // so that is what we should get...
         let (aw, ah)      = Self::find_wh_of_largest_area_within(iw, ih, self.content_rotation);
         // self.content_desired can be 'fit_within_region' of the width/height
-        println!("{} {}",aw, ah);
+        // println!("{} {}",aw, ah);
         let cd = self.content_desired.unwrap();
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
@@ -284,7 +299,12 @@ impl LayoutBox {
         let a_y_range  = Point::new(-ah/2., ah/2.); // centred on zero
         let ci_y_range = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y); // 'centred' on zero
 
-        println!("{} {}",ci_x_range, ci_y_range);
+        // ci_*_range is in inner coordinates centred on 'zero => inner center'
+        // assuming content will be 'centred' on its desired centre (should perhaps use reference points?)
+        // then find the inner coordinates of this desired centre
+        // the transform maps this inner coordinates desired centre to the inner centre
+        // then when the content is drawn centred on this desired centre it will appear centres on inner centre
+        // println!("{} {}",ci_x_range, ci_y_range);
         let (cd_c,_,_) = cd.get_cwh();
         let ci_c = cd_c.scale_xy(self.content_scale,self.content_scale).rotate(self.content_rotation);
         self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
@@ -385,8 +405,11 @@ impl Layout {
     ///
     /// For any grid within the layout this requires a possibly expansion, plus a translation
     pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
+        println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within);
         let (ac,aw,ah) = within.get_cwh();
         let (dc,dw,dh) = self.desired_geometry.get_cwh();
+        self.grid_placements.0.expand_and_centre(aw, 0.);
+        self.grid_placements.1.expand_and_centre(ah, 0.);
         self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
     }
 
@@ -406,6 +429,20 @@ impl Layout {
     pub fn get_placed_rectangle(&self, pt:&Point, ref_pt:&Option<Point>) ->Rectangle {
         Rectangle::new(0.,0.,10.,10.)
     }
+
+    //mp get_grid_positions
+    pub fn get_grid_positions(&self) -> (Vec<(isize,f64)>,Vec<(isize,f64)>) {
+        let mut result = (Vec::new(), Vec::new());
+        for (p,s) in self.grid_placements.0.iter_positions() {
+            result.0.push( (*p,*s) );
+        }
+        for (p,s) in self.grid_placements.1.iter_positions() {
+            result.1.push( (*p,*s) );
+        }
+        result
+    }
+
+    //zz All done
 }
 
 /*

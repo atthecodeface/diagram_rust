@@ -64,6 +64,12 @@ impl Polygon {
         self.size = size;
         self.eccentricity = eccentricity;
     }
+    pub fn set_rounding(&mut self, rounding:f64) {
+        self.rounding = rounding;
+    }
+    pub fn set_stellate_size(&mut self, stellate_size:f64) {
+        self.stellate_size = stellate_size;
+    }
     pub fn translate(mut self, pt:&Point) -> Self {
         self.center = self.center.add(pt, 1.);
         self
@@ -96,48 +102,53 @@ impl Polygon {
         let delta_angle = 360./(self.vertices as f64);
         for i in 0..self.vertices {
             let p = Point::new(self.size,0.)
-                .rotate(delta_angle*(0.5+(i as f64)))
+                .rotate(delta_angle*(0.5-(i as f64)))
                 .scale_xy(self.eccentricity,1.)
                 .rotate(self.rotation)
                 .add(&self.center, 1.);
             corners.push(p);
-            if self.stellate_size!=0. {
+            if self.stellate_size != 0. {
                 let p = Point::new(self.stellate_size,0.)
-                    .rotate(delta_angle*(0.75+(i as f64)))
+                    .rotate(delta_angle*(0.0-(i as f64)))
                     .scale_xy(self.eccentricity,1.)
                     .rotate(self.rotation)
                     .add(&self.center, 1.);
                 corners.push(p);
             }
         }
+        // println!("{:?} {}",corners, self.stellate_size);
         corners
     }
     fn polygon_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
         let mut corners = self.get_points();
+        let n = corners.len();
         if self.rounding == 0. {
             corners.push(corners[0].clone());
-            for i in 0..self.vertices {
+            for i in 0..n {
                 v.push(Bezier::line(&corners[i], &corners[i+1]));
             }
         } else {
             corners.push(corners[0].clone());
             corners.push(corners[1].clone());
             let mut corner_beziers = Vec::new();
-            for i in 0..self.vertices {
+            for i in 0..n {
                 let v0     = corners[i+1].clone().add(&corners[i+0], -1.);
                 let v1     = corners[i+1].clone().add(&corners[i+2], -1.);
                 corner_beziers.push(Bezier::round(&corners[i+1], &v0, &v1, self.rounding));
             }
             let mut edge_beziers = Vec::new();
-            for i in 0..self.vertices {
+            for i in 0..n {
                 let p0 = corner_beziers[i].get_pt(1);
-                let p1 = corner_beziers[(i+1)%self.vertices].get_pt(0);
+                let p1 = corner_beziers[(i+1)%n].get_pt(0);
                 edge_beziers.push(Bezier::line(p0, p1));
             }
-            while edge_beziers.len()>0 {
-                v.push(edge_beziers.pop().unwrap());
-                v.push(corner_beziers.pop().unwrap());
+            for (e,c) in edge_beziers.iter().zip(corner_beziers.iter()) {
+                v.push(*c);
+                v.push(*e);
             }
+            // for b in &v {
+            //     println!("{}",b);
+            // }
         }
         v
     }

@@ -25,5 +25,5 @@ mod svg;
 pub use self::types::*;
 pub use self::descriptor::DiagramDescriptor;
 pub use self::element::{Element, ElementContent, ElementLayout, Shape, Group, Text, Use};
-pub use self::diagram::{Diagram, DiagramContents};
+pub use self::diagram::{LayoutRecord, Diagram, DiagramContents};
 pub use self::svg::{Svg, GenerateSvg};

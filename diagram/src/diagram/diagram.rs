@@ -23,6 +23,21 @@ use super::Element;
 use crate::Layout;
 use crate::{Rectangle, Polygon, Point, Transform};
 
+//a LayoutRecord
+pub struct LayoutRecord {
+    pub grid_positions : Option<(Vec<(isize,f64)>,Vec<(isize,f64)>)>
+}
+impl LayoutRecord {
+    pub fn new() -> Self {
+        Self {
+            grid_positions : None
+        }
+    }
+    pub fn capture_grid(&mut self, layout:&Layout) {
+        self.grid_positions = Some(layout.get_grid_positions());
+    }
+    
+}
 //a Diagram Definition
 //tp Diagram
 pub struct DiagramContents<'a> {
@@ -31,8 +46,9 @@ pub struct DiagramContents<'a> {
     pub content_transform : Transform,
 }
 pub struct Diagram<'a> {
-    pub descriptor  : DiagramDescriptor<'a>,
-    pub contents    : DiagramContents<'a>,
+    pub descriptor    : DiagramDescriptor<'a>,
+    pub contents      : DiagramContents<'a>,
+    pub layout_record : Option<LayoutRecord>, 
 }
 
 //ti Diagram
@@ -43,6 +59,13 @@ impl <'a> Diagram <'a> {
                                           elements:Vec::new(),
                                           content_transform:Transform::new(),
                },
+               layout_record : None,
+        }
+    }
+    pub fn record_layout(&mut self) {
+        match self.layout_record {
+            None => { self.layout_record = Some(LayoutRecord::new()); },
+            _ => (),
         }
     }
     pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
@@ -89,7 +112,9 @@ impl <'a> Diagram <'a> {
         for e in self.contents.elements.iter_mut() {
             e.apply_placement(&layout);
         }
-        println!("{:?}", layout);
+        if let Some(ref mut lr) = &mut self.layout_record {
+            lr.capture_grid(&layout);
+        }
         Ok(())
     }
     pub fn geometry(&mut self) -> Result<(),()> {

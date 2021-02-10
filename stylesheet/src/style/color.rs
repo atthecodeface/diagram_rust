@@ -203,7 +203,7 @@ pub fn as_floats(rgb:u32, v:&mut Vec<f64>) -> () {
                       ((rgb>>16) & 0xff) as f64,
     );
     while v.len()<3 { v.push(0.); }
-    v[0] = r; v[1] = g; v[2] = b;
+    v[0] = r/255.; v[1] = g/255.; v[2] = b/255.;
 }
 
 pub fn as_u32(rgb:&Vec<f64>) -> u32 {

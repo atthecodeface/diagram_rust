@@ -1,0 +1,24 @@
+#diagram
+##shape vertices="3" grid="1,1" bg="red" fill="blue" stroke="yellow" strokewidth="1"
+##shape vertices="4" grid="2,1" bordercolor="green" border="4" fill="pink" width="20"
+##shape vertices="5" grid="3,1" bordercolor="green" border="4" fill="pink" width="20"
+##shape vertices="6" grid="4,1" bordercolor="green" border="4" fill="pink" width="20"
+##shape vertices="7" grid="5,1" bordercolor="green" border="4" fill="pink" width="20"
+
+##shape vertices="3" grid="1,2" bg="red" fill="blue" stroke="yellow" strokewidth="1"  round="5"
+##shape vertices="4" grid="2,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
+##shape vertices="5" grid="3,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
+##shape vertices="6" grid="4,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
+##shape vertices="7" grid="5,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
+
+##shape vertices="3" grid="1,3" bg="red" fill="blue" stroke="yellow" strokewidth="1"  stellate="5"
+##shape vertices="4" grid="2,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
+##shape vertices="5" grid="3,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
+##shape vertices="6" grid="4,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
+##shape vertices="7" grid="5,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
+
+##shape vertices="3" grid="1,4" bg="red" fill="blue" stroke="yellow" strokewidth="1"  round="5" stellate="5"
+##shape vertices="4" grid="2,4" bordercolor="green" border="4" fill="pink" width="20" round="5" stellate="5"
+##shape vertices="5" grid="3,4" bordercolor="green" border="4" fill="pink" width="20" round="5" stellate="5"
+##shape vertices="6" grid="4,4" bordercolor="green" border="4" fill="pink" width="20" round="5" stellate="5"
+##shape vertices="7" grid="5,4" bordercolor="green" border="4" fill="pink" width="20" round="5" stellate="5"
