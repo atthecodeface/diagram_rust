@@ -34,12 +34,16 @@ impl <'a> DiagramDescriptor<'a> {
         let style_set = StyleSet::new()
             .add_type("bbox",        StyleValue::float_array(), false)            
             .add_type("grid",        StyleValue::int_array(),   false)
+            .add_type("place",       StyleValue::float_array(), false)
             .add_type("pad",         StyleValue::floats(4),     false)
             .add_type("margin",      StyleValue::floats(4),     false)
             .add_type("border",      StyleValue::float(None),   false)
+            .add_type("borderround", StyleValue::float(None),   false)
             .add_type("bordercolor", StyleValue::rgb(None),     false)
             .add_type("bg",          StyleValue::rgb(None),     false)
-            .add_type("transform",   StyleValue::floats(9),     false)
+            .add_type("scale",       StyleValue::float(None),   false)
+            .add_type("rotate",      StyleValue::float(None),   false)
+            .add_type("translate",   StyleValue::floats(2),     false)
             .add_type("fill",        StyleValue::rgb(None),     true)
             .add_type("stroke",      StyleValue::rgb(None),     true)
             .add_type("strokewidth", StyleValue::float(None),   true)
@@ -49,6 +53,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("fontsize",    StyleValue::float(None),   true)
             .add_type("fontweight",  StyleValue::string(None),  true)
             .add_type("fontstyle",   StyleValue::string(None),  true)
+            .add_type("vertices",    StyleValue::int(None),     false)
             ;
         let mut descriptors = HashMap::new();
         descriptors.insert("use",   element::Use::get_descriptor(&style_set));

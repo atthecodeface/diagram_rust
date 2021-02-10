@@ -7,6 +7,8 @@ extern crate diagram;
 use clap::{App, Arg};
 use diagram::Diagram;
 use diagram::DiagramML;
+use diagram::Rectangle;
+use diagram::{Svg, GenerateSvg};
 fn main() {
     let matches = App::new("diagram")
         .about("SVG creator from a diagram descriptor")
@@ -45,9 +47,27 @@ fn main() {
             }
         },
     }
+    diagram.uniquify();
+    diagram.style();
+    diagram.layout(&Rectangle::new(0.,0.,210.,197.));
+    diagram.geometry();
     for e in diagram.iter_elements() {
         println!("{:?}", e);
     }
+
+    let mut svg = Svg::new();
+    diagram.generate_svg(&mut svg);
+    let file_out   = File::create("a.svg").unwrap();
+    let file_out   = std::io::BufWriter::new(file_out);
+    let mut writer = xml::writer::EventWriter::new(file_out);
+    for e in svg.iter_events() {
+        println!("{:?}",e);
+        match e.as_writer_event() {
+            None => (),
+            Some(we) => writer.write(we).unwrap(),
+        }
+    }
+    
 /*
     let input_file  = 
     // let output_file = matches.value_of("output").unwrap();

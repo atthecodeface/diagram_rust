@@ -19,7 +19,9 @@ impl std::fmt::Display for Point {
 
 //ti Point
 impl Point {
-    pub fn new(x:f64, y:f64) -> Self { Self {x,y} }
+    pub const fn new(x:f64, y:f64) -> Self { Self {x,y} }
+    pub const fn origin() -> Self { Self {x:0.,y:0.} }
+    pub fn is_origin(&self) -> bool { self.x==0. && self.y==0. }
     pub fn rotate(mut self, degrees:f64) -> Self {
         let c = degrees.to_radians().cos();
         let s = degrees.to_radians().sin();

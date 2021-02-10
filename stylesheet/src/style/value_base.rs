@@ -323,6 +323,7 @@ impl BaseValue {
         match &self {
             Self::FloatArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
             Self::Floats(_, ref v)  => { if v.len()==0 {default} else {Some(v)} },
+            Self::Rgb(v)            => { if v.len()==0 {default} else {Some(v)} },
             _ => default,
         }
     }

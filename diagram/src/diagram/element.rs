@@ -19,11 +19,12 @@ limitations under the License.
 //a Imports
 use crate::Diagram;
 use crate::DiagramDescriptor;
-use crate::{Layout, LayoutBox, Rectangle};
+use crate::{Layout, LayoutBox};
+use crate::{Rectangle, Polygon, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, RrcStylableNode};
 use super::types::*;
-
+    
 //a Element types
 //tp Group - an Element that contains just other Elements
 #[derive(Debug)]
@@ -73,25 +74,43 @@ pub struct Shape {
     // Possibly polygon
     // has Fill, Stroke, StrokeWidth, Markers
     vertices : usize, // 0 for circle?
+    pub polygon : Polygon,
 }
 
 //ti Shape
 impl Shape {
     //fp new
     pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+        // This always gives 4
         let vertices = Element::value_of_name(name_values, "vertices", StyleValue::int(Some(4)))?.as_int(Some(4)).unwrap() as usize;
+        let polygon = Polygon::new(vertices, 0.);
         Ok( Self {
             vertices,
+            polygon,
         } )
     }
 
     //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = ElementHeader::get_descriptor(nts);
-        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers"]);
+        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices"]);
         desc
     }
 
+    //mp style
+    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+        let vertices = header.get_style_value_of_name("vertices").unwrap().as_int(Some(4)).unwrap() as usize;
+        self.polygon.set_vertices(vertices);
+        Ok(())
+    }
+
+    // get_desired_geometry
+    pub fn get_desired_geometry(&mut self) -> Rectangle {
+        self.polygon.set_size(20., 1.);
+        self.polygon.get_bbox()
+            // expand by stroke-width
+    }
+    // generate output with specified transform
     //zz All done
 }
 
@@ -111,15 +130,63 @@ impl Use {
 }
 
 //a ElementHeader and Element
+//tp LayoutPlacement
+#[derive(Debug)]
+enum LayoutPlacement {
+    None,
+    Place(Point),
+    Grid(isize,isize,usize,usize),
+}
+
+//tp ElementLayout
+#[derive(Debug)]
+pub struct ElementLayout {
+    placement : LayoutPlacement,
+    ref_pt    : Option<Point>,
+    pub scale     : f64,
+    pub rotation  : f64,
+    pub translate : Point,
+    pub border_width : f64,
+    pub border_round : f64,
+    pub border_color : Option<(f64,f64,f64)>,
+    pub bg           : Option<(f64,f64,f64)>,
+    pub pad          : Option<(f64,f64,f64,f64)>,
+    pub margin       : Option<(f64,f64,f64,f64)>,
+}
+impl ElementLayout {
+    pub fn new() -> Self {
+        Self { placement:LayoutPlacement::None,
+               ref_pt : None,
+               scale:1.,
+               rotation:0.,
+               translate : Point::origin(),
+               border_width : 0.,
+               border_round : 0.,
+               border_color : None,
+               bg : None,
+               pad : None,
+               margin : None,
+        }
+    }
+    pub fn set_grid(&mut self, sx:isize, sy:isize, nx:usize, ny:usize) {
+        self.placement = LayoutPlacement::Grid(sx,sy,nx,ny);
+    }
+    pub fn set_place(&mut self, x:f64, y:f64) {
+        self.placement = LayoutPlacement::Place(Point::new(x,y));
+    }
+}
+
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
     stylable         : RrcStylableNode<'a, StyleValue>,
-    layout_box       : LayoutBox,
+    pub layout_box   : LayoutBox,
+    pub layout       : ElementLayout,
 }
 
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
+    //fp new
     pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader<'b>, Vec<(String,String)>), ValueError> {
         // let mut unused_nv = Vec::new();
         let unused_nv = Vec::new();
@@ -128,18 +195,115 @@ impl <'a> ElementHeader <'a> {
             stylable.borrow_mut().add_name_value(name, value);
         }
         let layout_box = LayoutBox::new();
-        let hdr = ElementHeader{ stylable, layout_box };
+        let hdr = ElementHeader{ stylable, layout_box, layout:ElementLayout::new() };
         Ok((hdr, unused_nv))
     }
+
+    //mp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = StyleDescriptor::new();
-        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "transform", "pad", "margin", "border", "bg", "bordercolor"]);
+        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]);
         desc
     }
+
+    //mp get_style_value_of_name
+    pub fn get_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
+        let stylable = self.stylable.borrow();
+        stylable.get_style_value_of_name(name).map(|a| a.clone())
+    }
+
+    //mp style
+    pub fn style(&mut self) -> Result<(),()> {
+        let stylable = self.stylable.borrow();
+        if let Some(v) = stylable.get_style_value_of_name("border").unwrap().as_float(None) {
+            self.layout.border_width = v;
+        }
+        if let Some(v) = stylable.get_style_value_of_name("scale").unwrap().as_float(None) {
+            self.layout.scale = v;
+        }
+        if let Some(v) = stylable.get_style_value_of_name("rotate").unwrap().as_float(None) {
+            self.layout.rotation = v;
+        }
+        if let Some(v) = stylable.get_style_value_of_name("bordercolor").unwrap().as_floats(None) {
+            self.layout.border_color = Some((v[0],v[1],v[2]));
+        }
+        if let Some(v) = stylable.get_style_value_of_name("bg").unwrap().as_floats(None) {
+            self.layout.bg = Some((v[0],v[1],v[2]));
+        }
+        if let Some(v) = stylable.get_style_value_of_name("margin").unwrap().as_floats(None) {
+        }
+        if let Some(v) = stylable.get_style_value_of_name("pad").unwrap().as_floats(None) {
+        }
+        if let Some(v) = stylable.get_style_value_of_name("translate").unwrap().as_floats(None) {
+        }
+        if let Some( (sx,sy,nx,ny) ) = {
+            match stylable.get_style_value_of_name("grid").unwrap().as_ints(None) {
+                Some(g) => {
+                    match g.len() {
+                        0 => None,
+                        1 => Some( (g[0],g[0],1,1) ),
+                        2 => Some( (g[0],g[1],1,1) ),
+                        3 => Some( (g[0],g[1],g[2],1) ),
+                        _ => Some( (g[0],g[1],g[2],g[3]) ),
+                    }
+                },
+                _ => None,
+            }
+        } {
+            self.layout.set_grid(sx,sy,nx as usize, ny as usize);
+        }
+        if let Some( (x,y) ) = {
+            match stylable.get_style_value_of_name("place").unwrap().as_floats(None) {
+                Some(g) => {
+                    match g.len() {
+                        0 => None,
+                        1 => Some( (g[0],g[0]) ),
+                        _ => Some( (g[0], g[1]) ),
+                    }
+                },
+                _ => None,
+            }
+        } {
+            self.layout.set_place(x,y);
+        }
+        Ok(())
+    }
+    
+    //mp set_layout_properties
+    /// By this point layout_box has had its desired_geometry set
+    pub fn set_layout_properties(&mut self, layout:&mut Layout) {
+        let bbox = self.layout_box.get_desired_bbox();
+        println!("Set layout properties bbox {}",bbox);
+        match self.layout.placement {
+            LayoutPlacement::None => (),
+            LayoutPlacement::Grid(sx,sy,nx,ny) => layout.add_grid_element( (sx,sy), (nx,ny), (bbox.width(), bbox.height() )),
+            LayoutPlacement::Place(pt)         => layout.add_placed_element( &pt, &self.layout.ref_pt, &bbox ),
+        }
+    }
+                           
+    //fp apply_placement
+    /// The layout contains the data required to map a grid or placement layout of the element
+    ///
+    /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
+    ///
+    /// If the element requires any further layout, that should be performed; certainly its
+    /// transformation should be determined
+    pub fn apply_placement(&mut self, layout:&Layout) {
+        let rect = {
+            match self.layout.placement {
+                LayoutPlacement::None              => self.layout_box.get_desired_bbox(),
+                LayoutPlacement::Grid(sx,sy,nx,ny) => layout.get_grid_rectangle( (sx,sy), (nx,ny) ),
+                LayoutPlacement::Place(pt)         => layout.get_placed_rectangle( &pt, &self.layout.ref_pt ),
+            }
+        };
+        self.layout_box.layout_within_rectangle(rect);
+    }
+   
+    //zz All done
 }
 
 
-//tp Element - the enumeration of the above
+//tp ElementContent - the enumeration of the above
 #[derive(Debug)]
 pub enum ElementContent<'a> {
     Group(Group<'a>),
@@ -148,10 +312,31 @@ pub enum ElementContent<'a> {
     Use(Use), // use of a definition
 }
 
+//ti ElementContent
+impl <'a> ElementContent<'a> {
+    pub fn get_desired_geometry(&mut self) -> Rectangle {
+        match self {
+            ElementContent::Shape(ref mut s) => {
+                s.get_desired_geometry()
+            },
+            _ => Rectangle::new(0.,0.,10.,10.),
+        }
+    }
+    //mp style
+    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+        match self {
+            ElementContent::Shape(ref mut s) => { s.style(header) },
+            _ => Ok(())
+        }
+    }
+
+}
+
+//tp Element
 #[derive(Debug)]
 pub struct Element<'a> {
-    header  : ElementHeader<'a>,
-    content : ElementContent<'a>,
+    pub header  : ElementHeader<'a>,
+    pub content : ElementContent<'a>,
 }
 
 //ti Element
@@ -185,35 +370,45 @@ impl <'a> Element <'a> {
         Ok(value)
     }
 
-    //fp get_desired_geometry
-    pub fn get_desired_geometry(&mut self) -> Rectangle {
-        Rectangle::new(0.,0.,10.,10.)
+    //mp style
+    pub fn style(&mut self) -> Result<(),()> {
+        self.header.style()?;
+        self.content.style(&self.header)?;
+        Ok(())
+    }
+
+    //mp get_desired_geometry
+    pub fn get_desired_geometry(&mut self) -> () {
+        let rect = self.content.get_desired_geometry();
+        self.header.layout_box.set_content_geometry(rect, Point::origin(), self.header.layout.scale, self.header.layout.rotation);
     }
     
-    //fp set_layout
-    pub fn set_layout(&mut self, layout:&mut Layout) {
-        let bbox = self.get_desired_geometry();
-        let stylable = self.header.stylable.borrow();
-        match stylable.get_style_value_of_name("grid").unwrap().as_ints(None) {
-            None => {return;},
-            Some(g) => {
-                let (sx,sy,nx,ny):(isize,isize,isize,isize) = {
-                    match g.len() {
-                        0 => {return;},
-                        1 => (g[0],g[0],1,1),
-                        2 => (g[0],g[1],1,1),
-                        3 => (g[0],g[1],g[2],1),
-                        _ => (g[0],g[1],g[3],g[4]),
-                    }
-                };
-                layout.add_element( (sx,sy), (nx as usize,ny as usize), (bbox.width(), bbox.height()) );
-            },
-        }
+    //mp set_layout_properties
+    /// This method is invoked to set the `Layout` of this element, by
+    /// finding its desired geometry and any placement or grid
+    /// constraints
+    ///
+    /// For normal elements (such as a shape) this requires finding
+    /// the desired geometry, reporting this to the `LayoutBox`, and
+    /// using the `LayoutBox` data to generate the boxed desired
+    /// geometry, which is then added to the `Layout` element as a
+    /// place or grid desire.
+    pub fn set_layout_properties(&mut self, layout:&mut Layout) {
+        self.get_desired_geometry();
+        self.header.set_layout_properties(layout);
     }
-                           
+
     //fp apply_placement
+    /// The layout contains the data required to map a grid or placement layout of the element
+    ///
+    /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
+    ///
+    /// If the element requires any further layout, that should be performed; certainly its
+    /// transformation should be determined
     pub fn apply_placement(&mut self, layout:&Layout) {
+        self.header.apply_placement(layout);
     }
-                           
+
+    //zz All done
 }
 

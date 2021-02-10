@@ -25,9 +25,9 @@ impl std::fmt::Display for Rectangle {
 
 //ti Rectangle
 impl Rectangle {
-    //fp zeros
+    //fp none
     /// Create an empty rectangle at 0,0
-    pub fn zeros() -> Self {
+    pub const fn none() -> Self {
         Self { x0:0., x1:0., y0:0., y1:0.}
     }
 
@@ -37,6 +37,21 @@ impl Rectangle {
         let (x0,x1) = {if x0<x1 {(x0,x1)} else {(x1,x0)}};
         let (y0,y1) = {if y0<y1 {(y0,y1)} else {(y1,y0)}};
         Self {x0, x1, y0, y1}
+    }
+
+    //fp bbox_of_points
+    /// Make a new rectangle that is the bbox of a vec of points
+    pub fn bbox_of_points(pts:&Vec<Point>) -> Self {
+        match pts.len() {
+            0 => Self::none(),
+            _ => {
+                let mut r = Self::new(pts[0].x, pts[0].y, pts[0].x, pts[0].y);
+                for p in pts {
+                    r = r.union( &Self{x0:p.x, y0:p.y, x1:p.x, y1:p.y} );
+                }
+                r
+            },
+        }
     }
 
     //fp of_cwh
@@ -234,7 +249,7 @@ mod tests_polygon {
     }
     #[test]
     fn test_zero() {
-        let x = Rectangle::zeros();
+        let x = Rectangle::none();
         assert!(x.is_zero());
         pt_eq(&x.get_center(),0.,0.);
         pt_eq(&x.get_wh(),0.,0.);

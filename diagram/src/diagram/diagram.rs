@@ -21,12 +21,14 @@ use super::types::*;
 use super::DiagramDescriptor;
 use super::Element;
 use crate::Layout;
+use crate::{Rectangle, Polygon, Point, Transform};
 
 //a Diagram Definition
 //tp Diagram
 pub struct DiagramContents<'a> {
     pub definitions : Vec<Element<'a>>,
     pub elements    : Vec<Element<'a>>,
+    pub content_transform : Transform,
 }
 pub struct Diagram<'a> {
     pub descriptor  : DiagramDescriptor<'a>,
@@ -39,6 +41,7 @@ impl <'a> Diagram <'a> {
         Self { descriptor: DiagramDescriptor::new(),
                contents: DiagramContents{ definitions:Vec::new(),
                                           elements:Vec::new(),
+                                          content_transform:Transform::new(),
                },
         }
     }
@@ -54,19 +57,39 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
     pub fn style(&mut self) -> Result<(),()> {
+        for e in self.contents.elements.iter_mut() {
+            e.style();
+        }
         Ok(())
     }
-    pub fn layout(&mut self) -> Result<(),()> {
+
+    //mp layout
+    /// Lay out the diagram (within a bbox?)
+    ///
+    /// The diagram is a layout element by its nature,
+    /// and so the process is as for a layout element.
+    ///
+    /// This is to create a `Layout`, and find the desired geometry
+    /// and placement/layout properties of all of the contents.
+    ///
+    /// The `Layout` element can then be laid out within the required
+    /// bbox, which will generate the positions of the grid elements,
+    /// and so on
+    ///
+    pub fn layout(&mut self, within:&Rectangle) -> Result<(),()> {
         let mut layout = Layout::new();
         for e in self.contents.elements.iter_mut() {
-            e.set_layout(&mut layout);
+            e.set_layout_properties(&mut layout);
         }
         // specify expansions
-        layout.layout();
+        layout.get_desired_geometry();
+        layout.layout(within);
+        self.contents.content_transform = layout.get_layout_transform();
         // apply expansions - lay it out in a rectangle, generate transform?
         for e in self.contents.elements.iter_mut() {
             e.apply_placement(&layout);
         }
+        println!("{:?}", layout);
         Ok(())
     }
     pub fn geometry(&mut self) -> Result<(),()> {

@@ -1,9 +1,74 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    layout.rs
+@brief   Layout of placed items and grids
+ */
+
 use super::Point;
 use super::Rectangle;
 use super::Polygon;
 use super::grid::{CellData, GridPlacement};
+use super::placement::{Placements};
 
-#[derive(Debug, PartialEq)]
+//tp Transform
+/// A Transfom is a transformation applied to something - for example, applied to content to present it in its parent coordinates.
+///
+/// The transformation is translate(rotate(scale(pt)))
+///
+#[derive(Debug, Clone)]
+pub struct Transform {
+    pub translation : Point,
+    pub rotation : f64,
+    pub scale : f64,
+}
+//ti Transform
+impl Transform {
+    pub fn new() -> Self {
+        Self { translation : Point::origin(),
+               rotation    : 0.,
+               scale       : 1.,
+        }
+    }
+    pub fn of_trs(translation:Point, rotation:f64, scale:f64) -> Self {
+        Self { translation, rotation, scale }
+    }
+    pub fn translation(translation:Point) -> Self {
+        Self { translation, rotation:0., scale:1. }
+    }
+}
+
+//ip std::fmt::Display for Transform
+impl std::fmt::Display for Transform {
+    //mp fmt - format a `Transform` for display
+    /// Display the `TokenError` in a human-readable form
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if self.translation.is_origin() && self.rotation == 0. && self.scale == 1. {
+            write!(f, "<identity>")
+        } else if self.rotation == 0. && self.scale == 1. {
+            write!(f, "<+{}>", self.translation)
+        } else {
+            if !self.translation.is_origin() { write!(f, "<+{}>", self.translation)?};
+            if self.rotation != 0.         { write!(f, "<rot({})>", self.rotation)?};
+            if self.scale != 1.            { write!(f, "<*{}>", self.scale)?};
+            Ok(())
+        }
+    }
+}
+
+//tp LayoutBox
+#[derive(Debug)]
 pub struct LayoutBox {
     /// This indicates how much to expand the content within its laid-out space (0-1 each in x and y)
     expansion : Point,
@@ -19,7 +84,7 @@ pub struct LayoutBox {
     content_rotation : f64,
     /// The content may be scaled its space, by a uniform amount in X and Y
     content_scale    : f64,
-    /// The content reference is a fractional point within the content rectangle; this is probably not required
+    /// The content reference is a fractional point within the content rectangle; this is required for 'placement'
     content_ref      : Option<Point>,
     /// This rectangle specifies in content coordinates the desired rectangle for the content
     content_desired: Option<Rectangle>,
@@ -33,11 +98,16 @@ pub struct LayoutBox {
     inner : Option<Rectangle>,
     /// The content rectangle is the content-coordinate space rectangle for the laid-out content
     content : Option<Rectangle>,
+    /// The content transform maps from the content coordinate system to the layout coordinate system
+    pub content_to_layout : Option<Transform>,
 }
+
+//ti LayoutBox
 impl LayoutBox {
+    //fp new
     pub fn new() -> Self {
-        Self { expansion : Point::new(0.,0.),
-               anchor    : Point::new(0.,0.),
+        Self { expansion : Point::origin(),
+               anchor    : Point::origin(),
                margin    : None,
                border_width    : 0.,
                padding   : None,
@@ -50,13 +120,28 @@ impl LayoutBox {
                border_shape : None,
                inner   : None,
                content   : None,
+               content_to_layout : None,
         }
     }
-    pub fn desired_geometry(&mut self, rect:Rectangle, ref_pt:Point, scale:f64, rotation:f64) -> () {
-        self.content_ref      = Some(rect.pt_within(ref_pt));
+
+    //fp set_content_geometry
+    /// Sets the content's desired geometry
+    pub fn set_content_geometry(&mut self, rect:Rectangle, ref_pt:Point, scale:f64, rotation:f64) -> () {
+        // self.content_ref      = Some(rect.pt_within(ref_pt));
+        self.content_ref      = Some(ref_pt);
         self.content_scale    = scale;
         self.content_rotation = rotation;
         self.content_desired  = Some(rect);
+    }
+
+    //fp get_desired_bbox
+    pub fn get_desired_bbox(&self) -> Rectangle {
+        match &self.content_desired {
+            None => Rectangle::none(),
+            Some(r) => {
+                r.new_rotated_around(self.content_ref.as_ref().unwrap(), self.content_rotation).scale(self.content_scale)
+            }
+        }
     }
 
     //fp wh_of_largest_area_within
@@ -126,12 +211,15 @@ impl LayoutBox {
     fn find_wh_of_largest_area_within(width:f64, height:f64, angle:f64) ->(f64,f64) {
         let angle = {if angle>0.   {angle} else {-angle}};
         let angle = {if angle<180. {angle} else {angle-180.}};
-        let (width, height, angle, flip) = {if angle<90.    {(width, height, angle, false)} else {(height, width, angle-90., true)}};
+        let (width, height, angle, flip) = {if angle>=90.    {(width, height, angle, false)} else {(height, width, angle-90., true)}};
         let (width, height, angle, flip) = {if width<height {(width, height, angle,  flip)} else {(height, width, 90.-angle, !flip)}};
+
+        println!("{} {} {} {}",angle, width, height, flip);
+
         let sin2a = (2. * angle).to_radians().sin();
         let tana = angle.to_radians().tan();
         let x = {
-            if tana > 1E10 {
+            if angle>89.999 { // tana will be very large
                 0.5
             } else if sin2a<width/height {
                 (height * tana / width - tana * tana) / (1. - tana * tana)
@@ -155,53 +243,168 @@ impl LayoutBox {
         if flip {(height,width)} else {(width,height)}
     }
 
+    //mp inner_within_outer
+    /// Sets the inner rectangle based on an outer rectangle, allowing for border
+    ///
+    /// This also creates any border shape required later
     fn inner_within_outer(&mut self, rectangle:Rectangle) -> () {
         let mut inner = rectangle.clone();
         self.outer = Some(rectangle);
         inner = self.margin.map_or(inner, |r| inner.shrink(&r, 1.));
-        if self.border_width > 0. {
-            let (c,w,h) = inner.clone().reduce(self.border_width*0.5).get_cwh();
-            self.border_shape = Some(Polygon::new_rect(w,h).translate(&c));
-        }
+        let (c,w,h) = inner.clone().reduce(self.border_width*0.5).get_cwh();
+        self.border_shape = Some(Polygon::new_rect(w,h).translate(&c));
+        println!("Inner {} within outer {} produces border shape {:?}", inner, self.outer.unwrap(), self.border_shape);
         inner = inner.reduce(self.border_width);
         inner = self.padding.map_or(inner, |r| inner.shrink(&r, 1.));
         self.inner = Some(inner);
     }
-    
-    fn content_within_inner(&mut self) -> () {
-        let inner_cwh  = self.inner.unwrap().get_cwh();
-        let content_wh = Self::find_wh_of_largest_area_within(inner_cwh.1, inner_cwh.2, self.content_rotation);
-        self.content = Some(Rectangle::of_cwh(inner_cwh.0, content_wh.0, content_wh.1).scale(1.0/self.content_scale));
+
+    //mp get_border_shape
+    pub fn get_border_shape(&self) -> Option<&Polygon> {
+        self.border_shape.as_ref()
     }
 
-    pub fn layout_within_rectangle(mut self, rectangle:Rectangle) -> Self {
+    //mp content_within_inner
+    /// 
+    fn content_within_inner(&mut self) -> () {
+        let (ic, iw, ih)  = self.inner.unwrap().get_cwh();
+        // If scale is 1. and rotation is 0. then we should be able to use a translation of ic-dc
+        // so that is what we should get...
+        let (aw, ah)      = Self::find_wh_of_largest_area_within(iw, ih, self.content_rotation);
+        // self.content_desired can be 'fit_within_region' of the width/height
+        println!("{} {}",aw, ah);
+        let cd = self.content_desired.unwrap();
+
+        // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
+        let di_x_range = Point::new(cd.x0*self.content_scale, cd.x1*self.content_scale);
+        let a_x_range  = Point::new(-aw/2., aw/2.); // centred on zero
+        let ci_x_range = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor.x, self.expansion.x); // 'centred' on zero
+
+        let di_y_range = Point::new(cd.y0*self.content_scale, cd.y1*self.content_scale);
+        let a_y_range  = Point::new(-ah/2., ah/2.); // centred on zero
+        let ci_y_range = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y); // 'centred' on zero
+
+        println!("{} {}",ci_x_range, ci_y_range);
+        let (cd_c,_,_) = cd.get_cwh();
+        let ci_c = cd_c.scale_xy(self.content_scale,self.content_scale).rotate(self.content_rotation);
+        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
+        // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
+        let transform = Transform::of_trs(ic.add(&ci_c,-1.), self.content_rotation, self.content_scale );
+        self.content_to_layout = Some(transform)
+    }
+
+    //mp layout_within_rectangle
+    /// Layout the LayoutBox within a specified rectangle within layout coordinate space, generating any border required and the inner geometry,
+    /// and the content transformation
+    pub fn layout_within_rectangle(&mut self, rectangle:Rectangle)  {
         self.inner_within_outer(rectangle);
         self.content_within_inner();
-        self
     }
 }
 
 //tp Layout
+#[derive(Debug)]
 pub struct Layout {
     cell_data  : (Vec<CellData>, Vec<CellData>),
-    placements : (GridPlacement, GridPlacement),
+    grid_placements   : (GridPlacement, GridPlacement),
+    direct_placements : (Placements, Placements),
+    desired_grid      : Rectangle,
+    desired_placement : Rectangle,
+    desired_geometry  : Rectangle,
+    content_to_actual : Transform,
 }
 impl Layout {
     pub fn new() -> Self {
-        let placements = ( GridPlacement::new(), GridPlacement::new() );
+        let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
+        let direct_placements = ( Placements::new(), Placements::new() );
         Self { cell_data:(Vec::new(), Vec::new()),
-               placements:placements,
+               grid_placements,
+               direct_placements,
+               desired_placement : Rectangle::none(),
+               desired_grid      : Rectangle::none(),
+               desired_geometry  : Rectangle::none(),
+               content_to_actual : Transform::new(),
         }
     }
-    pub fn add_element(&mut self, start:(isize,isize), span:(usize,usize), size:(f64,f64)) {
+
+    //mp add_grid_element
+    pub fn add_grid_element(&mut self, start:(isize,isize), span:(usize,usize), size:(f64,f64)) {
         self.cell_data.0.push(CellData::new(start.0, span.0, size.0));
         self.cell_data.1.push(CellData::new(start.1, span.1, size.1));
     }
-    pub fn layout(&mut self) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
-        self.placements.0.set_cell_data( &self.cell_data.0 );
-        self.placements.1.set_cell_data( &self.cell_data.0 );
-        self.placements.0.set_expansion( 0., vec![] );
-        self.placements.1.set_expansion( 0., vec![] );
+
+    //mp add_placed_element
+    pub fn add_placed_element(&mut self, pt:&Point, ref_pt:&Option<Point>, bbox:&Rectangle) {
+        self.direct_placements.0.add_element(pt.x, ref_pt.map(|pt| pt.x), bbox.x0, bbox.x1);
+        self.direct_placements.1.add_element(pt.y, ref_pt.map(|pt| pt.y), bbox.y0, bbox.y1);
+    }
+
+    //mp get_desired_geometry
+    /// With all elements placed the layout will have a desired geometry
+    ///
+    /// Any placements provide a true bbox
+    /// A grid has a desired width and height, centred on 0,0
+    pub fn get_desired_geometry(&mut self) -> Rectangle {
+        self.grid_placements.0.set_cell_data( &self.cell_data.0 );
+        self.grid_placements.1.set_cell_data( &self.cell_data.1 );
+        self.grid_placements.0.set_expansion( 0., vec![] );
+        self.grid_placements.1.set_expansion( 0., vec![] );
+
+        let grid_width  = self.grid_placements.0.get_size();
+        let grid_height = self.grid_placements.1.get_size();
+
+        let place_x_pt = self.direct_placements.0.get_desired_geometry();
+        let place_y_pt = self.direct_placements.1.get_desired_geometry();
+
+        self.desired_grid = {
+            if grid_width == 0. || grid_height == 0. {
+                Rectangle::none()
+            } else {
+                Rectangle::new( grid_width * -0.5, grid_height * -0.5, grid_width * 0.5, grid_height * 0.5 )
+            }
+        };
+        self.desired_placement = {
+            if place_x_pt.x == place_x_pt.y || place_y_pt.x == place_y_pt.y {
+                Rectangle::none()
+            } else {
+                Rectangle::new( place_x_pt.x, place_y_pt.x, place_x_pt.y, place_y_pt.y )
+            }
+        };
+        self.desired_geometry = {
+            if self.desired_placement.is_zero() {
+                self.desired_grid.clone()
+            } else {
+                self.desired_placement.clone().union(&self.desired_grid)
+            }
+        };
+        self.desired_geometry.clone()
+    }
+
+    //mp layout
+    /// All the placement data must have been provided, and a layout of the box can be performed.
+    ///
+    /// For any grid within the layout this requires a possibly expansion, plus a translation
+    pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
+        let (ac,aw,ah) = within.get_cwh();
+        let (dc,dw,dh) = self.desired_geometry.get_cwh();
+        self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
+    }
+
+    //mp get_layout_transform
+    pub fn get_layout_transform(&self) -> Transform {
+        self.content_to_actual.clone()
+    }
+
+    //mp get_grid_rectangle
+    pub fn get_grid_rectangle(&self, start:(isize,isize), span:(usize,usize)) -> Rectangle {
+        let (x0, x1) = self.grid_placements.0.get_span(start.0, span.0);
+        let (y0, y1) = self.grid_placements.1.get_span(start.1, span.1);
+        Rectangle::new(x0,y0,x1,y1)
+    }
+
+    //mp get_place_rectangle
+    pub fn get_placed_rectangle(&self, pt:&Point, ref_pt:&Option<Point>) ->Rectangle {
+        Rectangle::new(0.,0.,10.,10.)
     }
 }
 
