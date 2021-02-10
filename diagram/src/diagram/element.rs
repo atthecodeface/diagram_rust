@@ -82,14 +82,60 @@ impl <'a> Group<'a> {
 //tp Text - an Element that contains text
 #[derive(Debug)]
 pub struct Text {
-    text    : Vec<String>,
+    pub fill        : Option<(f64,f64,f64)>,
+    pub font        : Option<String>,
+    pub font_style  : Option<String>,
+    pub font_weight : Option<String>,
+    pub font_size   : f64,
+    pub text         : Vec<String>,
 }
 impl Text {
+    //fp new
+    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+        Ok( Self {
+            fill : None,
+            text:Vec::new(),
+            font : None,
+            font_style : None,
+            font_weight : None,
+            font_size : 10.,
+        } )
+    }
+
+    //fp get_descriptor
     pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
         let desc = ElementHeader::get_descriptor(nts);
+        // tab stops, bullets, alignment
         desc.borrow_mut().add_styles(nts, vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]);
         desc
     }
+
+    //mp add_string
+    pub fn add_string(&mut self, s:&str) -> Result<(),()> {
+        self.text.push(s.to_string());
+        Ok(())
+    }
+
+    //mp style
+    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
+            self.fill = Some((v[0],v[1],v[2]));
+        }
+        self.font         = header.get_style_of_name_string("font");
+        self.font_weight  = header.get_style_of_name_string("fontweight");
+        self.font_style   = header.get_style_of_name_string("fontstyle");
+        self.font_size = header.get_style_of_name_float("fontsize",Some(10.)).unwrap();
+        // let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
+        Ok(())
+    }
+
+    //mp get_desired_geometry
+    pub fn get_desired_geometry(&mut self) -> Rectangle {
+        let mut rect = Rectangle::none();
+        rect
+    }
+
+    //zz All done
 }
 
 //tp Shape - an Element that contains a polygon (or path?)
@@ -180,10 +226,18 @@ pub enum ElementContent<'a> {
 
 //ti ElementContent
 impl <'a> ElementContent<'a> {
-    //fp add_element
+    //mp add_element
     pub fn add_element(&mut self, element:Element<'a>) {
         match self {
             ElementContent::Group(ref mut g) => { g.add_element(element); },
+            _ => (),
+        }
+    }
+
+    //mp add_string
+    pub fn add_string(&mut self, s:&str) {
+        match self {
+            ElementContent::Text(ref mut t) => { t.add_string(s); },
             _ => (),
         }
     }
@@ -193,6 +247,7 @@ impl <'a> ElementContent<'a> {
         match self {
             ElementContent::Shape(ref mut s) => { s.style(header) },
             ElementContent::Group(ref mut g) => { g.style(header) },
+            ElementContent::Text(ref mut t)  => { t.style(header) },
             _ => Ok(())
         }
     }
@@ -202,6 +257,7 @@ impl <'a> ElementContent<'a> {
         match self {
             ElementContent::Shape(ref mut s) => { s.get_desired_geometry() },
             ElementContent::Group(ref mut g) => { g.get_desired_geometry(layout) },
+            ElementContent::Text(ref mut t)  => { t.get_desired_geometry() },
             _ => Rectangle::new(0.,0.,10.,10.),
         }
     }
@@ -331,6 +387,14 @@ impl <'a> ElementHeader <'a> {
         match self.get_opt_style_value_of_name(name) {
             None        => StyleValue::float_array(),
             Some(value) => value,
+        }
+    }
+
+    //mp get_style_of_name_string
+    pub fn get_style_of_name_string(&self, name:&str) -> Option<String> {
+        match self.get_opt_style_value_of_name(name) {
+            None        => None,
+            Some(value) => value.as_string(),
         }
     }
 
@@ -474,11 +538,23 @@ impl <'a> Element <'a> {
         Ok(Self { header, content:ElementContent::Shape(Shape::new(name_values)?) })
     }
 
+    //fp new_text
+    pub fn new_text(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
+        let styles = descriptor.get("text").unwrap();
+        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
+        Ok(Self { header, content:ElementContent::Text(Text::new(name_values)?) })
+    }
+
     //fp new_group
     pub fn new_group(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let styles = descriptor.get("group").unwrap();
         let (header, name_values) = ElementHeader::new(&styles, name_values)?;
         Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
+    }
+
+    //fp add_string
+    pub fn add_string(&mut self, s:&str) {
+        self.content.add_string(s);
     }
 
     //fp add_element

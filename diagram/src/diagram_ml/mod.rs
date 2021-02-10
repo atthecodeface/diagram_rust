@@ -155,11 +155,29 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
     }
 }
 
+//ti MLEvent for Text
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
+    fn ml_new (reader:&mut MLReader<R>, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
+        let text = Element::new_text(reader.descriptor, name, to_nv(attributes))?;
+        Self::ml_event(text, reader)
+    }
+    fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
+        match reader.next_event()? {
+            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
+            (_,_,XmlEvent::Characters(c))  => { s.add_string(&c); },
+            (_,_,XmlEvent::Comment(_))     => (), // continue
+            ewp => { return Err(reader.bad_ml_event(ewp)); },
+        }
+        Self::ml_event(s, reader)
+    }
+}
+
 //ti MLEvent for Element
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
     fn ml_new (reader:&mut MLReader<R>, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
             "shape" => Ok(Shape::ml_new(reader, fp, name, attributes)?),
+            "text"  => Ok(Text::ml_new(reader, fp, name, attributes)?),
             "g"     => Ok(Group::ml_new(reader, fp, name, attributes)?),
             _ => {
                 let r = BadXMLElement::ml_new(reader, fp, name, attributes);
