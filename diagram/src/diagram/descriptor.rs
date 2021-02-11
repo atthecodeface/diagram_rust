@@ -22,6 +22,7 @@ use std::rc::Rc;
 use std::collections::HashMap;
 use super::types::*;
 use super::element;
+use super::element::DiagramElementContent;
 use super::font::*;
 
 //a Diagram Descriptor - covers
@@ -63,10 +64,10 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("vertices",    StyleValue::int(None),     false)
             ;
         let mut descriptors = HashMap::new();
-        descriptors.insert("use",   element::Use::get_descriptor(&style_set));
-        descriptors.insert("group", element::Group::get_descriptor(&style_set));
-        descriptors.insert("text",  element::Text::get_descriptor(&style_set));
-        descriptors.insert("shape", element::Shape::get_descriptor(&style_set));
+        descriptors.insert("use",   element::Use::get_descriptor(&style_set, "use"));
+        descriptors.insert("group", element::Group::get_descriptor(&style_set, "group"));
+        descriptors.insert("text",  element::Text::get_descriptor(&style_set, "text"));
+        descriptors.insert("shape", element::Shape::get_descriptor(&style_set, "shape"));
         let mut fonts = HashMap::new();
         fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         Self {
