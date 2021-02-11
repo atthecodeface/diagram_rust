@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    mod.rs
-@brief   Diagram module
+@file    element.rs
+@brief   Diagram elements
  */
 
 //a Imports
@@ -29,16 +29,24 @@ use super::text::*;
     
 //a Element types
 //tp Group - an Element that contains just other Elements
+/// The Group supplies simple grouping of elements
+///
+/// This element could have its own layout blob, if it is defined to be a layout entity
+///
+/// The elements that are part of this group must be created and moved
+/// in to this group; the lifetime of the elements is the same as that
+/// of the group.
 #[derive(Debug)]
 pub struct Group<'a> {
-    // requires no styles
+    /// The elements that are part of this group
     pub content : Vec<Element<'a>>
 }
 
 //ti Group
 impl <'a> Group<'a> {
     //fp new
-    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+    /// Create a new group
+    pub fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
         Ok( Self {
             content:Vec::new(),
         } )
@@ -94,7 +102,7 @@ pub struct Text {
 }
 impl Text {
     //fp new
-    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+    pub fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
         Ok( Self {
             fill : None,
             text:Vec::new(),
@@ -161,7 +169,7 @@ pub struct Shape {
 //ti Shape
 impl Shape {
     //fp new
-    pub fn new(name_values:Vec<(String,String)>) -> Result<Self,ValueError> {
+    pub fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
         let polygon = Polygon::new(0, 0.);
         Ok( Self {
             polygon,
@@ -350,16 +358,14 @@ pub struct ElementHeader<'a> {
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
     //fp new
-    pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<(ElementHeader<'b>, Vec<(String,String)>), ValueError> {
-        // let mut unused_nv = Vec::new();
-        let unused_nv = Vec::new();
+    pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<ElementHeader<'b>, ValueError> {
         let stylable = StylableNode::new(None, "node_type", styles, vec![]);
         for (name,value) in &name_values {
             stylable.borrow_mut().add_name_value(name, value);
         }
         let layout_box = LayoutBox::new();
         let hdr = ElementHeader{ stylable, layout_box, layout:ElementLayout::new() };
-        Ok((hdr, unused_nv))
+        Ok(hdr)
     }
 
     //mp get_descriptor
@@ -547,22 +553,25 @@ impl <'a> Element <'a> {
     //fp new_shape
     pub fn new_shape(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let styles = descriptor.get("shape").unwrap();
-        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
-        Ok(Self { header, content:ElementContent::Shape(Shape::new(name_values)?) })
+        let header = ElementHeader::new(&styles, name_values)?;
+        let shape  = Shape::new(&header)?;
+        Ok(Self { header, content:ElementContent::Shape(shape) })
     }
 
     //fp new_text
     pub fn new_text(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let styles = descriptor.get("text").unwrap();
-        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
-        Ok(Self { header, content:ElementContent::Text(Text::new(name_values)?) })
+        let header = ElementHeader::new(&styles, name_values)?;
+        let text = Text::new(&header)?;
+        Ok(Self { header, content:ElementContent::Text(text) })
     }
 
     //fp new_group
     pub fn new_group(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
         let styles = descriptor.get("group").unwrap();
-        let (header, name_values) = ElementHeader::new(&styles, name_values)?;
-        Ok(Self { header, content:ElementContent::Group(Group::new(name_values)?) })
+        let header = ElementHeader::new(&styles, name_values)?;
+        let group  = Group::new(&header)?;
+        Ok(Self { header, content:ElementContent::Group(group) })
     }
 
     //fp add_string
