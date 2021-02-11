@@ -32,6 +32,7 @@ pub struct CellData {
 }
 
 //ip CellData
+const DEBUG_CELL_DATA : bool = false;
 impl CellData {
 
     //fp new
@@ -57,6 +58,7 @@ impl CellData {
 
     //fp generate_cell_positions
     pub fn generate_cell_positions(cell_data:&Vec<CellData>) -> Vec<CellPosition> {
+        if DEBUG_CELL_DATA { println!("Generate cell positions of cell data {:?}", cell_data); }
         let n = cell_data.len();
         let mut result = Vec::with_capacity(n);
         if n==0 {return result;}
@@ -68,6 +70,8 @@ impl CellData {
         sorted_indices.sort_by(|a,b| cell_data[*a].start.partial_cmp(&cell_data[*b].start).unwrap());
         let mut sorted_cell_data : Vec<CellData> = sorted_indices.iter().map(|n| cell_data[*n]).collect();
 
+        if DEBUG_CELL_DATA { println!("Sorted cell data {:?}", sorted_cell_data); }
+
         let first_col = sorted_cell_data[0].start;
         let mut sd_index = 0;
         let mut current_col  = first_col;
@@ -75,14 +79,14 @@ impl CellData {
         result.push( (current_col, posn) );
         loop {
             // (1,1,10.), (1,1,20.), (1,1,20.)
-            // println!("{} {} {}",current_col,posn,sd_index);
+            if DEBUG_CELL_DATA { println!("start loop: column {} at posn {} sd index {}",current_col,posn,sd_index); }
             while sd_index<n {
                 if sorted_cell_data[sd_index].size > 0. {break;}
                 sd_index += 1;
             }
             if sd_index == n { break; }
 
-            // println!("{} {} {}",current_col,posn,sd_index);
+            if DEBUG_CELL_DATA { println!("moved past completed indices to sd index {}",sd_index); }
             // The current space is being added
             // in (current_col,position)
             //
@@ -91,30 +95,39 @@ impl CellData {
             let mut next_col  = 99999999;
             let mut i = sd_index;
             while i<n {
-                // println!("loop {} {} {} {} {:?}", i, n, min_size, next_col, sorted_cell_data[i]);
+
+                if DEBUG_CELL_DATA { println!("{}->{} min size {} : checking sd {} {:?}", current_col, next_col, min_size, i, sorted_cell_data[i]); }
                 if sorted_cell_data[i].start > next_col {break;}
                 if sorted_cell_data[i].size <= 0.      {i+=1; continue;}
                 let Self {start, end, size} = sorted_cell_data[i];
-                if (start > current_col) && (end < next_col) {
-                    min_size = 0.;
-                    next_col = start;
-                } else if (start <= current_col) && (end < next_col) {
-                    min_size = size;
-                    next_col = end;
-                } else if (start <= current_col) && (end == next_col) && (size>min_size){
-                    min_size = size;
-                } else if (start >= next_col) {
+                if start <= current_col { // MUST ovelap
+                    if (end < next_col) { // this is the shortest segment starting at current_col so far
+                        min_size = size;
+                        next_col = end;
+                    } else if (end == next_col) {
+                        if (size>min_size) { min_size = size; }
+                        // next_col already == end
+                    }
+                } else if end <= next_col { // may overlap
+                    if min_size > size {
+                        next_col = start;
+                        min_size = min_size - size;
+                    } else {
+                        next_col = start;
+                        min_size = 0.;
+                    }
+                } else {
                     break;
                 }
                 i += 1;
             }
-            // println!("{}:{} {}",sd_index, next_col, min_size);
+            if DEBUG_CELL_DATA { println!("{}->{} will have size {} [ {} ]",current_col, next_col, min_size, sd_index); }
             // min_size can be zero if we have no cell requirements between (e.g.) cells 1 and 2
             if min_size > 0. {
                 i = sd_index;
                 while i<n {
                     if sorted_cell_data[i].start >= next_col {break;}
-                    // println!("reduce {} by {}",sorted_cell_data[i], min_size);
+                    if DEBUG_CELL_DATA { println!("reduce {} by {}",sorted_cell_data[i], min_size); }
                     sorted_cell_data[i].size -= min_size; // This may reduce the size below zero
                     i += 1;
                 }
@@ -123,6 +136,14 @@ impl CellData {
             posn       += min_size;
             result.push( (current_col, posn) );
         }
+        let mut last_end = sorted_cell_data[0].end;
+        for Self{ end,  .. } in &sorted_cell_data {
+            if *end > last_end {last_end = *end; }
+        }
+        if last_end > current_col {
+            result.push( (last_end,posn) );
+        }
+        if DEBUG_CELL_DATA { println!("Generated cell positions {:?}\n for cell data {:?}", result, cell_data); }
         result
     }
 
@@ -188,6 +209,19 @@ mod tests {
         assert_eq!((1,2),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+    }        
+    #[test]
+    fn test_2() {
+        let mut cd = Vec::new();
+        cd.push( CellData::new(60,30,10.) );
+        cd.push( CellData::new(80,30,20.) );
+        cd.push( CellData::new(100,10,20.) );
+        assert_eq!((60,110),CellData::find_first_last_indices(&cd));
+        let cp = CellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), CellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((0,0.), CellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((2,10.), CellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((3,30.), CellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
     }        
 }
 
