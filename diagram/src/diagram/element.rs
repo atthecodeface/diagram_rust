@@ -24,6 +24,8 @@ use crate::{Rectangle, Polygon, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, RrcStylableNode};
 use super::types::*;
+use super::font::*;
+use super::text::*;
     
 //a Element types
 //tp Group - an Element that contains just other Elements
@@ -53,9 +55,9 @@ impl <'a> Group<'a> {
     }
     
     //mp style
-    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&'a DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
         for e in self.content.iter_mut() {
-            e.style()?;
+            e.style(descriptor)?;
         }
         Ok(())
     }
@@ -87,7 +89,8 @@ pub struct Text {
     pub font_style  : Option<String>,
     pub font_weight : Option<String>,
     pub font_size   : f64,
-    pub text         : Vec<String>,
+    pub text        : Vec<String>,
+    pub text_area   : TextArea<Font>,
 }
 impl Text {
     //fp new
@@ -99,6 +102,7 @@ impl Text {
             font_style : None,
             font_weight : None,
             font_size : 10.,
+            text_area : TextArea::new(),
         } )
     }
 
@@ -117,7 +121,7 @@ impl Text {
     }
 
     //mp style
-    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
         if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
@@ -126,13 +130,18 @@ impl Text {
         self.font_style   = header.get_style_of_name_string("fontstyle");
         self.font_size = header.get_style_of_name_float("fontsize",Some(10.)).unwrap();
         // let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
+        let style = FontStyle::new(self.font_size, self.font_weight.as_ref(), self.font_style.as_ref());
+        let font = descriptor.get_font();
+        for t in &self.text {
+            self.text_area.add_text(t, font.clone(), style);
+        }
         Ok(())
     }
 
     //mp get_desired_geometry
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        let mut rect = Rectangle::none();
-        rect
+        let (w,h) = self.text_area.get_bbox();
+        Rectangle::new(0.,0.,w,h,)
     }
 
     //zz All done
@@ -243,11 +252,11 @@ impl <'a> ElementContent<'a> {
     }
 
     //mp style
-    pub fn style(&mut self, header:&ElementHeader) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&'a DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
         match self {
             ElementContent::Shape(ref mut s) => { s.style(header) },
-            ElementContent::Group(ref mut g) => { g.style(header) },
-            ElementContent::Text(ref mut t)  => { t.style(header) },
+            ElementContent::Group(ref mut g) => { g.style(descriptor, header) },
+            ElementContent::Text(ref mut t)  => { t.style(descriptor, header) },
             _ => Ok(())
         }
     }
@@ -419,6 +428,9 @@ impl <'a> ElementHeader <'a> {
         if let Some(v) = self.get_style_of_name_float("border",None) {
             self.layout.border_width = v;
         }
+        if let Some(v) = self.get_style_of_name_float("borderround",None) {
+            self.layout.border_round = v;
+        }
         if let Some(v) = self.get_style_of_name_float("scale",None) {
             self.layout.scale = v;
         }
@@ -479,6 +491,7 @@ impl <'a> ElementHeader <'a> {
     pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
         self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
         self.layout_box.set_border_width(self.layout.border_width);
+        self.layout_box.set_border_round(self.layout.border_round);
         self.layout_box.set_margin(&self.layout.margin);
         self.layout_box.set_padding(&self.layout.pad);
         let bbox = self.layout_box.get_desired_bbox();
@@ -573,9 +586,9 @@ impl <'a> Element <'a> {
     }
 
     //mp style
-    pub fn style(&mut self) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),()> {
         self.header.style()?;
-        self.content.style(&self.header)?;
+        self.content.style(descriptor, &self.header)?;
         Ok(())
     }
         

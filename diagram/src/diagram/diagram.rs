@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use std::collections::HashMap;
 use super::types::*;
 use super::DiagramDescriptor;
 use super::Element;
@@ -46,15 +47,15 @@ pub struct DiagramContents<'a> {
     pub content_transform : Transform,
 }
 pub struct Diagram<'a> {
-    pub descriptor    : DiagramDescriptor<'a>,
+    pub descriptor    : &'a DiagramDescriptor<'a>,
     pub contents      : DiagramContents<'a>,
     pub layout_record : Option<LayoutRecord>, 
 }
 
 //ti Diagram
 impl <'a> Diagram <'a> {
-    pub fn new() -> Self {
-        Self { descriptor: DiagramDescriptor::new(),
+    pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
+        Self { descriptor,
                contents: DiagramContents{ definitions:Vec::new(),
                                           elements:Vec::new(),
                                           content_transform:Transform::new(),
@@ -81,7 +82,7 @@ impl <'a> Diagram <'a> {
     }
     pub fn style(&mut self) -> Result<(),()> {
         for e in self.contents.elements.iter_mut() {
-            e.style();
+            e.style(self.descriptor);
         }
         Ok(())
     }

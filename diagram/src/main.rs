@@ -5,6 +5,7 @@ extern crate clap;
 extern crate diagram;
 
 use clap::{App, Arg};
+use diagram::DiagramDescriptor;
 use diagram::Diagram;
 use diagram::DiagramML;
 use diagram::Rectangle;
@@ -27,7 +28,8 @@ fn main() {
              .multiple(true))
         .get_matches();
 
-    let mut diagram = Diagram::new();
+    let diagram_descriptor = DiagramDescriptor::new();
+    let mut diagram = Diagram::new(&diagram_descriptor);
     match matches.values_of("file") {
         None => {
             println!("Should read stdin");
@@ -132,28 +134,6 @@ pattern
 
  */
 /*
-
-#rect class="structure hardware"   grid="0,0,10,10"   "Cpu Core"
-#rect class="structure kernel"     grid="0,20,10,10"  "VFS"
-#rect class="structure kernel"     grid="0,40,10,10"  "Block\n(blk-mq)\n& NVME"
-#rect class="structure kernel i10" grid="0,60,10,10"  "i10"
-#rect class="structure kernel"     grid="0,80,10,10"  "TCP/IP\nStack"
-#rect class="structure kernel"     grid="0,100,10,10" "Device"
-
-#rect class="cpu core"             grid="20,0,30,10" "X"
-
-#rect class="app app1"             grid="60,-20,30,10" "X"
-#rect class="app app2"             grid="100,-20,10,10" "X"
-#rect class="cpu core"             grid="60,0,10,10" "X"
-#rect class="cpu core"             grid="80,0,30,10" "X"
-
-#rect class="cpu core"             grid="80,12,50,6" "I/O syscalls"
-
-#rect class="cpu core"             grid="80,0,30,10" ""
-
-
-#style rounded_rect rx=5
-#rule class=structure       style=
 
    
 */

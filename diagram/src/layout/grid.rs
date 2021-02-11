@@ -250,7 +250,7 @@ impl GridPlacement {
         if total_size <= 0. { return ; }
         let mut sizes = self.generate_cell_sizes();
         let extra_size = size - total_size; // share this according to expansion
-        for (n, mut s) in sizes.iter_mut().enumerate() {
+        for (n, s) in sizes.iter_mut().enumerate() {
             *s = *s + extra_size * self.expansion[n];
         }
         let mut pos = center - size / 2.;

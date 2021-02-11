@@ -78,6 +78,8 @@ pub struct LayoutBox {
     margin: Option<Rectangle>,
     /// The border is a fixed width all round, and may be 0. for no border; the border is within the laid-out margin, around the padding around the content
     border_width: f64,
+    /// The border may be rounded
+    border_round: f64,
     /// The padding may be specified for each of the four sides - it reduces the laid-out space for the content within the border
     padding: Option<Rectangle>,
     /// The content may be rotated within its laid-out (post-padding) space; it will still be rectangular, so it will be the largest rectangle permitted at the rotation provided by the laid-out rectangle
@@ -110,6 +112,7 @@ impl LayoutBox {
                anchor    : Point::origin(),
                margin    : None,
                border_width    : 0.,
+               border_round    : 0.,
                padding   : None,
                content_desired : None,
                content_scale    : 1.,
@@ -137,6 +140,11 @@ impl LayoutBox {
     //fp set_border_width
     pub fn set_border_width(&mut self, border_width:f64) {
         self.border_width = border_width;
+    }
+
+    //fp set_border_round
+    pub fn set_border_round(&mut self, border_round:f64) {
+        self.border_round = border_round;
     }
 
     //fp set_margin
@@ -286,7 +294,9 @@ impl LayoutBox {
         self.outer = Some(rectangle);
         inner = self.margin.map_or(inner, |r| inner.shrink(&r, 1.));
         let (c,w,h) = inner.clone().reduce(self.border_width*0.5).get_cwh();
-        self.border_shape = Some(Polygon::new_rect(w,h).translate(&c));
+        let mut polygon = Polygon::new_rect(w,h).translate(&c);
+        polygon.set_rounding(self.border_round);
+        self.border_shape = Some(polygon);
         inner = inner.reduce(self.border_width);
         inner = self.padding.map_or(inner, |r| inner.shrink(&r, 1.));
         self.inner = Some(inner);

@@ -17,15 +17,19 @@ limitations under the License.
  */
 
 //a Imports
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::collections::HashMap;
 use super::types::*;
 use super::element;
+use super::font::*;
 
 //a Diagram Descriptor - covers
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
 pub struct DiagramDescriptor<'a> {
     style_set   : StyleSet,
     descriptors : HashMap<&'a str, RrcStyleDescriptor>,
+    fonts       : HashMap<&'a str, RrcFont>,
 }
 
 //ti DiagramDescriptor
@@ -63,13 +67,19 @@ impl <'a> DiagramDescriptor<'a> {
         descriptors.insert("group", element::Group::get_descriptor(&style_set));
         descriptors.insert("text",  element::Text::get_descriptor(&style_set));
         descriptors.insert("shape", element::Shape::get_descriptor(&style_set));
+        let mut fonts = HashMap::new();
+        fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         Self {
             style_set,
-            descriptors
+            descriptors,
+            fonts,
         }
     }
     pub fn get(&self, tag:&str) -> Option<RrcStyleDescriptor> {
         match self.descriptors.get(tag)
         { Some(rrc) => Some(rrc.clone()), None => None}
+    }
+    pub fn get_font(&self) -> RrcFont {
+        self.fonts.get("default").unwrap().clone()
     }
 }

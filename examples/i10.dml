@@ -1,0 +1,25 @@
+#diagram{
+#text grid=0,0,140,100  bg=#f0e0e0 ""
+#text fill="black" class="structure hardware"   border=1 bordercolor="red" borderround=2 grid="0,0,10,10"   "Cpu Core"
+#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,20,10,10"  "VFS"
+#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,40,10,10"  "Block" "(blk-mq)" "& NVME"
+#text fill="black" class="structure kernel i10" border=1 bordercolor="red" borderround=2 grid="0,60,10,10"  "i10"
+#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,80,10,10"  "TCP/IP" "Stack"
+#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,100,10,10" "Device"
+
+#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="20,0,30,10" "X1"
+
+#text fill="black" class="app app1"             border=1 bordercolor="red" borderround=2 grid="60,0,30,10" "X2"
+#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="60,0,10,15" "App1"
+#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,0,30,15" "App2"
+#text fill="black" class="app app2"             border=1 bordercolor="red" borderround=2 grid="100,0,10,10" "X3"
+
+#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,12,50,6" "I/O syscalls"
+
+#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,0,30,10" ""
+
+
+; #style rounded_rect rx=5
+; #rule class=structure       style=
+
+#diagram}
