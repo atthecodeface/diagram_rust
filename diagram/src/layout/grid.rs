@@ -149,13 +149,20 @@ impl CellData {
 
     //fp find_position
     pub fn find_position(positions:&Vec<CellPosition>, index:usize, col:isize) -> (usize, f64) {
+        if positions.len() == 0 { return (0, 0.); } 
         let mut i = index;
+        if i >= positions.len() {
+            i = 0;
+        }
+        let mut posn = positions[i].1;
         loop {
             if i >= positions.len() { break; }
-            if positions[i].0 == col { return (i, positions[i].1); }
+            if positions[i].0 > col { return (i, posn); }
+            posn = positions[i].1;
+            if positions[i].0 == col { return (i, posn); }
             i += 1;
         }
-        (0, 0.)
+        (i, posn)
     }
 
     //zz All done
@@ -240,6 +247,7 @@ pub struct GridPlacement {
 }
 
 //ip GridPlacement
+const DEBUG_GRID_PLACEMENT : bool = false;
 impl GridPlacement {
     //fp new
     pub fn new() -> Self {
@@ -258,7 +266,7 @@ impl GridPlacement {
         let (start_index, last_index) = CellData::find_first_last_indices(cell_data);
         self.start_index = start_index;
         self.last_index = last_index;
-        // println!("Given cell data {:?}", cell_data);
+        if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
     }
 
     //mp set_expansion
@@ -322,7 +330,7 @@ impl GridPlacement {
         let end = start + (span as isize);
         let (index, start_posn) = CellData::find_position(&self.cell_positions, 0,     start);
         let (_,     end_posn)   = CellData::find_position(&self.cell_positions, index, end);
-        // println!("get spans {} {} {} {} {:?}", start, span, start_posn, end_posn, self);
+        if DEBUG_GRID_PLACEMENT { println!("Got span for {} {} to be {} {}", start, end, start_posn, end_posn); }
         (start_posn, end_posn)
     }
 
@@ -339,6 +347,7 @@ impl GridPlacement {
     //mp get_position
     /// Get the position for dimension index N
     pub fn get_position(&self, index:isize) -> f64 {
+        if DEBUG_GRID_PLACEMENT { println!("Get position {} of {:?}", index, self.cell_positions); }
         for (i,x) in &self.cell_positions {
             if *i >= index { return *x; }
         }
@@ -347,6 +356,7 @@ impl GridPlacement {
 
     //mp iter_positions
     pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
+        if DEBUG_GRID_PLACEMENT { println!("Iter positions {:?}", self.cell_positions); }
         self.cell_positions.iter().map(|(p,s)| (p,s))
     }
 
