@@ -98,6 +98,7 @@ impl <'a> Use<'a> {
         self.strings.push(s.to_string());
         Ok(())
     }
+
     //mp uniquify
     /// Sets internal self.content to a clone of a resolved definition
     ///
