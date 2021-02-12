@@ -29,7 +29,21 @@ use super::types::*;
 pub trait DiagramElementContent:Sized+std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
-    fn new(header:&ElementHeader, name:&str ) -> Result<Self,ValueError>;
+    fn new(header:&ElementHeader, name:&str ) -> Result<Self,ElementError>;
+
+    //fp clone
+    /// Clone element given clone of header within scope
+    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>;
+    
+    //mp uniquify
+    /// Sets internal self.content to a clone of a resolved definition
+    ///
+    /// The id_ref should identify an element in `scope`.
+    /// The header may have to be cloned - it has layout information etc, and indeed any of its
+    /// name/values override those of
+    //fn uniquify<'a, 'b>(&'b mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+    //    Ok(false)
+    //}
 
     //fp get_descriptor
     /// Get the style descriptor for this element when referenced by the name
@@ -66,13 +80,22 @@ pub trait DiagramElementContent:Sized+std::fmt::Debug {
 //a ElementError
 //tp ElementError
 pub enum ElementError {
-    Error(String,String)
+    UnknownId(String,String),
+    Error(String,String),
 }
 
 //ii ElementError
 impl ElementError {
+    //fp unknown_id
+    pub fn unknown_id(hdr:&ElementHeader, name:&str) -> Self {
+        Self::UnknownId(hdr.borrow_id().to_string(), name.to_string())
+    }
+    //fp of_string
+    pub fn of_string(hdr:&ElementHeader, s:&str) -> Self {
+        Self::Error(hdr.borrow_id().to_string(), s.to_string())
+    }
     //mi of_result
-    fn of_result<V,E:std::fmt::Display>(hdr:&ElementHeader, result:Result<V,E>) -> Result<V,ElementError> {
+    pub fn of_result<V,E:std::fmt::Display>(hdr:&ElementHeader, result:Result<V,E>) -> Result<V,ElementError> {
         match result {
             Ok(v) => Ok(v),
             Err(e) => Err(ElementError::Error(hdr.borrow_id().to_string(), e.to_string()))
@@ -88,6 +111,7 @@ impl std::fmt::Display for ElementError {
     /// Display the error
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
+            ElementError::UnknownId(id,s) => write!(f, "Element id '{}': Unknown id reference '{}'", id, s),
             ElementError::Error(id,s) => write!(f, "Element id '{}': {}", id, s),
         }
     }
@@ -95,7 +119,41 @@ impl std::fmt::Display for ElementError {
     //zz All done
 }
 
+//a ElementScope<'a> - 'a is the lifetime of the definition elements
+//tp ElementScope
+pub struct ElementScope<'a, 'b> {
+    id_prefix   : String,
+    definitions : &'b Vec<Element<'a>>,
+}
 
+//ip ElementScope
+impl <'a, 'b> ElementScope<'a, 'b> {
+    pub fn new(id_prefix:&str, definitions: &'b Vec<Element<'a>>) -> Self {
+        let id_prefix = id_prefix.to_string();
+        Self { id_prefix, definitions, }
+    }
+    pub fn new_subscope<'c>(&'c self, header:&ElementHeader<'a>, name:&str) -> Result<(ElementScope<'a, 'c>, &'c Element<'a>), ElementError> {
+        let n = self.definitions.len();
+        let mut index = None;
+        for i in 0..n {
+            if self.definitions[i].has_id(name) {
+                index = Some(i);
+            }
+        }
+        if let Some(index) = index {
+            let mut id_prefix = self.id_prefix.clone();
+            id_prefix.push_str(".");
+            id_prefix.push_str(header.borrow_id());
+            let definitions = self.definitions;
+            let element     = &self.definitions[index];
+            Ok((Self { id_prefix, definitions}, element))
+        } else {
+            Err(ElementError::unknown_id(header, name))
+        }
+            
+    }
+}
+    
 //a ElementContent - enumerated union of the above
 //tp ElementContent 
 #[derive(Debug)]
@@ -103,15 +161,55 @@ pub enum ElementContent<'a> {
     Group(Group<'a>),
     Text(Text),
     Shape(Shape),
-    Use(Use), // use of a definition
+    Use(Use<'a>), // use of a definition
 }
 
 //ti ElementContent
 impl <'a> ElementContent<'a> {
+    //fp new
+    pub fn new(header:&ElementHeader, name:&str) -> Result<Self, ElementError> {
+        match name {
+            "group" => Ok(Self::Group(Group::new(&header, name)?)),
+            "shape" => Ok(Self::Shape(Shape::new(&header, name)?)),
+            "text"  => Ok(Self::Text(Text::new(&header, name)?)),
+            "use"   => Ok(Self::Use(Use::new(&header, name)?)),
+            _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
+        }
+    }
+
+    //mp uniquify
+    /// Generates a *replacement* Content if required.
+    ///
+    /// This is for a 'use' content, which should have an id_ref that
+    /// identifies and element in `scope`.  This will return Ok(true),
+    /// if it uniquifies the use content reference; in doing so it
+    /// must clone the relevant element and push its header
+    /// name/values down in to the cloned content header.
+    ///
+    /// If the immediate element content, then recurse through any
+    /// subcontent, and return Ok(false)
+    pub fn uniquify<'b, 'c>(&'c mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a, 'b>) -> Result<bool, ElementError> {
+         match self {
+            Self::Use(ref mut c)   => c.uniquify(header, scope),
+            // Self::Group(ref c) => c.uniquify(header, scope),
+            _ => Ok(false),
+        }
+    }
+
+    //mp clone
+    pub fn clone(&self, header:&ElementHeader, scope:&ElementScope) -> Result<Self, ElementError> {
+        match self {
+            Self::Group(ref c) => Ok(Self::Group(ElementError::of_result(&header,c.clone(header, scope))?)),
+            Self::Shape(ref c) => Ok(Self::Shape(ElementError::of_result(&header,c.clone(header, scope))?)),
+            Self::Text(ref c)  => Ok(Self::Text(ElementError::of_result(&header,c.clone(header, scope))?)),
+            Self::Use(ref c)   => Ok(Self::Use(ElementError::of_result(&header,c.clone(header, scope))?)),
+        }
+    }
+
     //mp add_element
     pub fn add_element(&mut self, element:Element<'a>) {
         match self {
-            ElementContent::Group(ref mut g) => { g.add_element(element); },
+            Self::Group(ref mut c) => { c.add_element(element); },
             _ => (),
         }
     }
@@ -119,8 +217,8 @@ impl <'a> ElementContent<'a> {
     //mp add_string
     pub fn add_string(&mut self, header:&ElementHeader, s:&str) -> Result<(),ElementError> {
         match self {
-            ElementContent::Text(ref mut t) => ElementError::of_result( header, t.add_string(s) ),
-            ElementContent::Use(ref mut t)  => ElementError::of_result( header, t.add_string(s) ),
+            Self::Text(ref mut c) => ElementError::of_result( header, c.add_string(s) ),
+            Self::Use(ref mut c)  => ElementError::of_result( header, c.add_string(s) ),
             _ => Ok(()), // could error - bug in code
         }
     }
@@ -128,9 +226,9 @@ impl <'a> ElementContent<'a> {
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         match self {
-            ElementContent::Shape(ref mut s) => { s.style(descriptor, header) },
-            ElementContent::Group(ref mut g) => { g.style(descriptor, header) },
-            ElementContent::Text(ref mut t)  => { t.style(descriptor, header) },
+            Self::Shape(ref mut s) => { s.style(descriptor, header) },
+            Self::Group(ref mut g) => { g.style(descriptor, header) },
+            Self::Text(ref mut t)  => { t.style(descriptor, header) },
             _ => Ok(())
         }
     }
@@ -138,9 +236,9 @@ impl <'a> ElementContent<'a> {
     //mp get_desired_geometry
     pub fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
         match self {
-            ElementContent::Shape(ref mut s) => { s.get_desired_geometry(layout) },
-            ElementContent::Group(ref mut g) => { g.get_desired_geometry(layout) },
-            ElementContent::Text(ref mut t)  => { t.get_desired_geometry(layout) },
+            Self::Shape(ref mut s) => { s.get_desired_geometry(layout) },
+            Self::Group(ref mut g) => { g.get_desired_geometry(layout) },
+            Self::Text(ref mut t)  => { t.get_desired_geometry(layout) },
             _ => Rectangle::new(0.,0.,10.,10.),
         }
     }
@@ -154,7 +252,7 @@ impl <'a> ElementContent<'a> {
     /// transformation should be determined
     pub fn apply_placement(&mut self, layout:&Layout) {
         match self {
-            ElementContent::Group(ref mut g) => { g.apply_placement(layout) },
+            Self::Group(ref mut g) => { g.apply_placement(layout) },
             _ => (),
         }
     }
@@ -162,7 +260,7 @@ impl <'a> ElementContent<'a> {
     //zz All done
 }
 
-//a ElementHeader and Element
+//a ElementHeader and ElementLayout
 //tp LayoutPlacement
 #[derive(Debug)]
 enum LayoutPlacement {
@@ -186,6 +284,8 @@ pub struct ElementLayout {
     pub pad          : Option<(f64,f64,f64,f64)>,
     pub margin       : Option<(f64,f64,f64,f64)>,
 }
+
+//ip ElementLayout
 impl ElementLayout {
     //fp new
     pub fn new() -> Self {
@@ -202,14 +302,17 @@ impl ElementLayout {
                margin : None,
         }
     }
+    
     //fp set_grid
     pub fn set_grid(&mut self, sx:isize, sy:isize, nx:usize, ny:usize) {
         self.placement = LayoutPlacement::Grid(sx,sy,nx,ny);
     }
+    
     //fp set_place
     pub fn set_place(&mut self, x:f64, y:f64) {
         self.placement = LayoutPlacement::Place(Point::new(x,y));
     }
+    
     //zz All done
 }
 
@@ -231,13 +334,26 @@ impl <'a> ElementHeader <'a> {
             for (name,value) in &name_values {
                 stylable.borrow_mut().add_name_value(name, value);
             }
-            let layout_box = LayoutBox::new();
             let id_name = stylable.borrow().borrow_id().map(|s| s.to_string());
-            let hdr = ElementHeader{ stylable, id_name, layout_box, layout:ElementLayout::new() };
+            let layout_box = LayoutBox::new();
+            let layout = ElementLayout::new();
+            let hdr = ElementHeader{ stylable, id_name, layout_box, layout };
             Ok(hdr)
         } else {
             Err(ElementError::Error("".to_string(),format!("Bug - unknown element descriptor {}",name)))
         }
+    }
+
+    //fp clone
+    pub fn clone(&self, scope:&ElementScope) -> ElementHeader<'a> {
+        let mut id_name = scope.id_prefix.clone();
+        id_name.push_str(".");
+        id_name.push_str(self.borrow_id());
+        let id_name = Some(id_name);
+        let stylable = self.stylable.clone(); // WRONG!!
+        let layout_box = LayoutBox::new();
+        let layout = ElementLayout::new();
+        ElementHeader{ stylable, id_name, layout_box, layout }
     }
 
     //mp get_descriptor
@@ -446,16 +562,26 @@ impl <'a> Element <'a> {
 
     //fp new
     pub fn new(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
-        let header = ElementHeader::new(descriptor, name, name_values)?;
-        let content = {
-            match name {
-                "group" => Ok(ElementContent::Group(ElementError::of_result(&header,Group::new(&header, name))?)),
-                "shape" => Ok(ElementContent::Shape(ElementError::of_result(&header,Shape::new(&header, name))?)),
-                "text"  => Ok(ElementContent::Text(ElementError::of_result(&header,Text::new(&header, name))?)),
-                "use"   => Ok(ElementContent::Use(ElementError::of_result(&header,Use::new(&header, name))?)),
-                _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
-            }
-        }?;
+        let header  = ElementHeader::new(descriptor, name, name_values)?;
+        let content = ElementContent::new(&header,name)?;
+        Ok( Self { header, content })
+    }
+
+    //mp uniquify
+    /// Generates a *replacement* if the content requires it
+    pub fn uniquify<'b>(&mut self, scope:&ElementScope<'a, 'b>) -> Result<(), ElementError> {
+        if self.content.uniquify(&self.header, scope)? {
+            // Updated the content, so uniquify again
+            self.uniquify(scope)
+        } else {
+            Ok(())
+        }
+    }
+
+    //mp clone
+    pub fn clone<'b>(&self, scope:&ElementScope<'a, 'b>) -> Result<Element<'a>, ElementError> {
+        let header = self.header.clone(scope);
+        let content = self.content.clone(&header, scope)?;
         Ok( Self { header, content })
     }
 

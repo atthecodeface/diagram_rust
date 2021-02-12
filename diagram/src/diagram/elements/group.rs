@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::super::{GenerateSvg, Svg, SvgError};
-use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementHeader, ElementError};
+use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use super::super::types::*;
 use crate::{Layout};
 use crate::{Rectangle};
@@ -42,10 +42,16 @@ pub struct Group<'a> {
 impl <'a> DiagramElementContent for Group<'a> {
     //fp new
     /// Create a new group
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ValueError> {
+    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         Ok( Self {
             content:Vec::new(),
         } )
+    }
+
+    //fp clone
+    /// Clone element given clone of header within scope
+    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
+        ElementError::of_result(header, Err("nyi:group"))
     }
 
     //fp get_descriptor

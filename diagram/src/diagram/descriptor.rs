@@ -61,6 +61,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("fontweight",  StyleValue::string(None),  true)
             .add_type("fontstyle",   StyleValue::string(None),  true)
             .add_type("vertices",    StyleValue::int(None),     false)
+            .add_type("ref",         StyleValue::string(None),  false)
             ;
         let descriptors = HashMap::new();
         let fonts = HashMap::new();

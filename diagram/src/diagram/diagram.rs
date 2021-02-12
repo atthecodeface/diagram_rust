@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::DiagramDescriptor;
-use super::{Element, ElementError};
+use super::{Element, ElementScope, ElementError};
 use crate::Layout;
 use crate::{Rectangle, Transform};
 
@@ -33,7 +33,9 @@ impl std::fmt::Display for DiagramError {
     //mp fmt - format error for display
     /// Display the error
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "DiagramError")
+        match self {
+            Self::Error(s) => write!(f, "DiagramError {}", s),
+        }
     }
 
     //zz All done
@@ -113,8 +115,13 @@ impl <'a> Diagram <'a> {
     //mp uniquify
     /// Convert all 'use <id_ref>'s in to copies of the definition
     /// that has id==<id_ref>, uniquifying the contents within that
-    /// dfinition too along with the ids therein
+    /// definition too along with the ids therein
     pub fn uniquify(&mut self) -> Result<(),DiagramError> {
+        let scope = ElementScope::new("", &self.contents.definitions);
+        let n = self.contents.elements.len();
+        for i in 0..n {
+            self.contents.elements[i].uniquify(&scope)?
+        }
         Ok(())
     }
 

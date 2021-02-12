@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::super::{GenerateSvg, Svg, SvgElement, SvgError};
-use super::super::{DiagramDescriptor, DiagramElementContent, ElementHeader, ElementError};
+use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle, Polygon};
 use super::super::types::*;
@@ -38,7 +38,7 @@ pub struct Shape {
 //ip DiagramElementContent for Shape
 impl DiagramElementContent for Shape {
     //fp new
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ValueError> {
+    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         let polygon = Polygon::new(0, 0.);
         Ok( Self {
             polygon,
@@ -46,6 +46,12 @@ impl DiagramElementContent for Shape {
             stroke : None,
             fill : None,
         } )
+    }
+
+    //fp clone
+    /// Clone element given clone of header within scope
+    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
+        ElementError::of_result(header, Err("nyi:shape"))
     }
 
     //fp get_descriptor

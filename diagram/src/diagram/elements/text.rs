@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::super::{GenerateSvg, Svg, SvgElement, SvgError};
-use super::super::{DiagramDescriptor, DiagramElementContent, ElementHeader, ElementError};
+use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle};
 use super::super::types::*;
@@ -58,7 +58,7 @@ pub struct Text {
 //ip DiagramElementContent for Text
 impl DiagramElementContent for Text {
     //fp new
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ValueError> {
+    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         Ok( Self {
             fill : None,
             text:Vec::new(),
@@ -68,6 +68,12 @@ impl DiagramElementContent for Text {
             font_size : 10.,
             text_area : TextArea::new(),
         } )
+    }
+
+    //fp clone
+    /// Clone element given clone of header within scope
+    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
+        ElementError::of_result(header, Err("nyi:text"))
     }
 
     //fp get_descriptor

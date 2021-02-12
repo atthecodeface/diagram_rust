@@ -343,7 +343,7 @@ impl <'a> GenerateSvg for ElementContent<'a> {
             ElementContent::Shape(ref s) => { s.generate_svg(svg) },
             ElementContent::Text(ref t)  => { t.generate_svg(svg) },
             ElementContent::Group(ref g) => { g.generate_svg(svg) },
-            _ => Ok(())
+            ElementContent::Use(ref g)   => { g.generate_svg(svg) },
         }
     }
 }

@@ -149,7 +149,7 @@ trait MLEvent <'a, R:Read, S:Sized> {
 }
 
 //ti MLEvent for Use
-impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Use {
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Use<'a> {
     fn ml_new(reader:&mut MLReader<R>, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
         let use_ref = MLError::value_result(fp, Element::new(reader.descriptor, name, to_nv(attributes)))?;
         Self::ml_event(use_ref, reader)
@@ -230,6 +230,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
             "shape" => Ok(Shape::ml_new(reader, fp, name, attributes)?),
             "text"  => Ok(Text::ml_new(reader, fp, name, attributes)?),
             "group" => Ok(Group::ml_new(reader, fp, name, attributes)?),
+            "use"   => Ok(Use::ml_new(reader, fp, name, attributes)?),
             _ => {
                 let r = BadXMLElement::ml_new(reader, fp, name, attributes);
                 reader.errors.update(r);

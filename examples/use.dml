@@ -1,0 +1,6 @@
+#diagram
+##defs{
+#shape id="box" vertices=4 width=20 border="black" borderround=2
+##defs}
+##use id="a" ref=box grid=1,1
+##use id="b" ref=box grid=2,1
