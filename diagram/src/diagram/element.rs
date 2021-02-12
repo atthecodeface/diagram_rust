@@ -17,290 +17,84 @@ limitations under the License.
  */
 
 //a Imports
-use crate::Diagram;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
-use crate::{Rectangle, Polygon, Point};
+use crate::{Rectangle, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, RrcStylableNode};
+use super::elements::{Group, Shape, Text, Use};
 use super::types::*;
-use super::font::*;
-use super::text::*;
     
 //a DiagramElement trait
-pub trait DiagramElementContent:Sized {
+pub trait DiagramElementContent:Sized+std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
-    fn new(_header:&ElementHeader /*, _name:&str */) -> Result<Self,ValueError>;
+    fn new(header:&ElementHeader, name:&str ) -> Result<Self,ValueError>;
+
     //fp get_descriptor
     /// Get the style descriptor for this element when referenced by the name
     fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor;
+
     //mp style
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()>;
+    fn style(&mut self, _descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
+        Ok(())
+    }
+    
     //mp get_desired_geometry
     /// Get the desired bounding box for the element; the layout is
     /// required if it is to be passed in to the contents (element
     /// header + element content) -- by setting their layout
     /// properties -- but does not effect the *content* of a single
     /// element
-    fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle;
+    fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
+        Rectangle::none()
+    }
+
     //fp apply_placement
     /// Apply the layout to the element; this may cause contents to
     /// then get laid out, etc Nothing needs to be done - the layout
     /// is available when the element is visualized
-    fn apply_placement(&mut self, layout:&Layout) {
+    fn apply_placement(&mut self, _layout:&Layout) {
         // No need to do anything
     }
+
     //zz All done
 }
 
-//a Element types
-//tp Group - an Element that contains just other Elements
-/// The Group supplies simple grouping of elements
-///
-/// This element could have its own layout blob, if it is defined to be a layout entity
-///
-/// The elements that are part of this group must be created and moved
-/// in to this group; the lifetime of the elements is the same as that
-/// of the group.
-#[derive(Debug)]
-pub struct Group<'a> {
-    /// The elements that are part of this group
-    pub content : Vec<Element<'a>>
+//a ElementError
+//tp ElementError
+pub enum ElementError {
+    Error(String,String)
 }
 
-//ti DiagramElementContent for Group
-impl <'a> DiagramElementContent for Group<'a> {
-    //fp new
-    /// Create a new group
-    fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
-        Ok( Self {
-            content:Vec::new(),
-        } )
-    }
-
-    //fp get_descriptor
-    /// Get the style descriptor for this element when referenced by the name
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        ElementHeader::get_descriptor(nts)
-    }
-
-    //mp style
-    /// Style the element within the Diagram's descriptor, using the
-    /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),()> {
-        for e in self.content.iter_mut() {
-            e.style(descriptor)?;
+//ii ElementError
+impl ElementError {
+    //mi of_result
+    fn of_result<V,E:std::fmt::Display>(hdr:&ElementHeader, result:Result<V,E>) -> Result<V,ElementError> {
+        match result {
+            Ok(v) => Ok(v),
+            Err(e) => Err(ElementError::Error(hdr.borrow_id().to_string(), e.to_string()))
         }
-        Ok(())
-    }
-
-    //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
-        let mut rect = Rectangle::none();
-        for e in self.content.iter_mut() {
-            rect = rect.union(&e.set_layout_properties(layout));
-        }
-        rect
-    }
-
-    //fp apply_placement
-    fn apply_placement(&mut self, layout:&Layout) {
-        for e in self.content.iter_mut() {
-            e.apply_placement(layout);
-        }
-    }
-    
-    //zz All done
-}
-
-//ti Group
-impl <'a> Group<'a> {
-    //mp add_element
-    /// Add an element to the group; moves the element in to the content
-    pub fn add_element(&mut self, element:Element<'a>) -> () {
-        self.content.push(element);
-    }
-}
-
-//tp Text - an Element that contains text
-#[derive(Debug)]
-pub struct Text {
-    pub fill        : Option<(f64,f64,f64)>,
-    pub font        : Option<String>,
-    pub font_style  : Option<String>,
-    pub font_weight : Option<String>,
-    pub font_size   : f64,
-    pub text        : Vec<String>,
-    pub text_area   : TextArea<Font>,
-}
-
-//ti DiagramElementContent for Text
-impl DiagramElementContent for Text {
-    //fp new
-    fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
-        Ok( Self {
-            fill : None,
-            text:Vec::new(),
-            font : None,
-            font_style : None,
-            font_weight : None,
-            font_size : 10.,
-            text_area : TextArea::new(),
-        } )
-    }
-
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        let desc = ElementHeader::get_descriptor(nts);
-        // tab stops, bullets, alignment
-        desc.borrow_mut().add_styles(nts, vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]);
-        desc
-    }
-
-    //mp style
-    /// Style the element within the Diagram's descriptor, using the
-    /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
-        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
-            self.fill = Some((v[0],v[1],v[2]));
-        }
-        self.font         = header.get_style_of_name_string("font");
-        self.font_weight  = header.get_style_of_name_string("fontweight");
-        self.font_style   = header.get_style_of_name_string("fontstyle");
-        self.font_size = header.get_style_of_name_float("fontsize",Some(10.)).unwrap();
-        // let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
-        let style = FontStyle::new(self.font_size, self.font_weight.as_ref(), self.font_style.as_ref());
-        let font = descriptor.get_font();
-        for t in &self.text {
-            self.text_area.add_text(t, font.clone(), style);
-        }
-        Ok(())
-    }
-
-    //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
-        let (w,h) = self.text_area.get_bbox();
-        Rectangle::new(0.,0.,w,h,)
     }
 
     //zz All done
 }
 
-//ti Text
-impl Text {
-    //mp add_string
-    pub fn add_string(&mut self, s:&str) -> Result<(),()> {
-        self.text.push(s.to_string());
-        Ok(())
-    }
-}
-
-//tp Shape - an Element that contains a polygon (or path?)
-#[derive(Debug)]
-pub struct Shape {
-    // Possibly polygon
-    // has Fill, Stroke, StrokeWidth, Markers
-    pub polygon : Polygon,
-    pub fill   : Option<(f64,f64,f64)>,
-    pub stroke : Option<(f64,f64,f64)>,
-    pub stroke_width : f64,
-}
-
-//ti DiagramElementContent for Shape
-impl DiagramElementContent for Shape {
-    //fp new
-    fn new(_header:&ElementHeader) -> Result<Self,ValueError> {
-        let polygon = Polygon::new(0, 0.);
-        Ok( Self {
-            polygon,
-            stroke_width:0.,
-            stroke : None,
-            fill : None,
-        } )
-    }
-
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        let desc = ElementHeader::get_descriptor(nts);
-        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]);
-        desc
-    }
-
-    //mp style
-    fn style(&mut self, _descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
-        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
-            self.fill = Some((v[0],v[1],v[2]));
+//ip Display for ElementError
+impl std::fmt::Display for ElementError {
+    //mp fmt - format error for display
+    /// Display the error
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            ElementError::Error(id,s) => write!(f, "Element id '{}': {}", id, s),
         }
-        if let Some(v) = header.get_style_rgb_of_name("stroke").as_floats(None) {
-            self.stroke = Some((v[0],v[1],v[2]));
-        }
-        self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
-        let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
-        let width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
-        let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
-        let stellate = header.get_style_of_name_float("stellate",Some(0.)).unwrap();
-        let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
-        self.polygon.set_vertices(vertices);
-        self.polygon.set_size(height, width/height);
-        self.polygon.set_rounding(round);
-        if stellate != 0. { self.polygon.set_stellate_size(stellate); }
-        Ok(())
-    }
-
-    //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
-        let rect = self.polygon.get_bbox();
-        rect.enlarge(self.stroke_width)
     }
 
     //zz All done
 }
-//ti Shape
-impl Shape {
-}
 
-//tp Use - an Element that is a reference to a group or other element
-#[derive(Debug)]
-pub struct Use {
-    // has Transform - to put it somewhere!
-    id_ref  : String,
-}
-
-//ti DiagramElementContent for Use
-impl DiagramElementContent for Use {
-    //fp new
-    /// Create a new element of the given name
-    fn new(_header:&ElementHeader /*, _name:&str */) -> Result<Self,ValueError> {
-        Ok(Self { id_ref:"".to_string() })
-    }
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        ElementHeader::get_descriptor(nts)
-    }
-    //mp style
-    /// Style the element within the Diagram's descriptor, using the
-    /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
-        Ok(())
-    }
-    
-    //mp get_desired_geometry
-    /// Get the desired bounding box for the element; the layout is
-    /// required if it is to be passed in to the contents (element
-    /// header + element content) -- by setting their layout
-    /// properties -- but does not effect the *content* of a single
-    /// element
-    fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
-        Rectangle::none()
-    }
-}
-
-//ti Use
-impl Use {
-}
 
 //a ElementContent - enumerated union of the above
 //tp ElementContent 
@@ -323,15 +117,17 @@ impl <'a> ElementContent<'a> {
     }
 
     //mp add_string
-    pub fn add_string(&mut self, s:&str) {
+    pub fn add_string(&mut self, header:&ElementHeader, s:&str) -> Result<(),ElementError> {
         match self {
-            ElementContent::Text(ref mut t) => { t.add_string(s); },
-            _ => (),
+            ElementContent::Text(ref mut t) => {
+                ElementError::of_result( header, t.add_string(s) )
+            },
+            _ => Ok(()), // could error - bug in code
         }
     }
 
     //mp style
-    pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         match self {
             ElementContent::Shape(ref mut s) => { s.style(descriptor, header) },
             ElementContent::Group(ref mut g) => { g.style(descriptor, header) },
@@ -422,6 +218,7 @@ impl ElementLayout {
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
     stylable         : RrcStylableNode<'a, StyleValue>,
+    pub id_name      : Option<String>, // replicated from stylable
     pub layout_box   : LayoutBox,
     pub layout       : ElementLayout,
 }
@@ -429,14 +226,19 @@ pub struct ElementHeader<'a> {
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
     //fp new
-    pub fn new<'b> (styles:&RrcStyleDescriptor, name_values:Vec<(String,String)>) -> Result<ElementHeader<'b>, ValueError> {
-        let stylable = StylableNode::new(None, "node_type", styles, vec![]);
-        for (name,value) in &name_values {
-            stylable.borrow_mut().add_name_value(name, value);
+    pub fn new<'b> (descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<ElementHeader<'b>, ElementError> {
+        if let Some(styles) = descriptor.get(name) { // &RrcStyleDescriptor
+            let stylable = StylableNode::new(None, name, &styles, vec![]);
+            for (name,value) in &name_values {
+                stylable.borrow_mut().add_name_value(name, value);
+            }
+            let layout_box = LayoutBox::new();
+            let id_name = stylable.borrow().borrow_id().map(|s| s.to_string());
+            let hdr = ElementHeader{ stylable, id_name, layout_box, layout:ElementLayout::new() };
+            Ok(hdr)
+        } else {
+            Err(ElementError::Error("".to_string(),format!("Bug - unknown element descriptor {}",name)))
         }
-        let layout_box = LayoutBox::new();
-        let hdr = ElementHeader{ stylable, layout_box, layout:ElementLayout::new() };
-        Ok(hdr)
     }
 
     //mp get_descriptor
@@ -444,6 +246,14 @@ impl <'a> ElementHeader <'a> {
         let desc = StyleDescriptor::new();
         desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]);
         desc
+    }
+
+    //mp borrow_id
+    pub fn borrow_id(&self) -> &str {
+        match &self.id_name {
+            None => "",
+            Some(s) => s,
+        }
     }
 
     //mp get_opt_style_value_of_name
@@ -501,7 +311,7 @@ impl <'a> ElementHeader <'a> {
     }
 
     //mp style
-    pub fn style(&mut self) -> Result<(),()> {
+    pub fn style(&mut self) -> Result<(),ElementError> {
         if let Some(v) = self.get_style_of_name_float("border",None) {
             self.layout.border_width = v;
         }
@@ -607,6 +417,7 @@ impl <'a> ElementHeader <'a> {
 }
 
 
+//a Element
 //tp Element
 #[derive(Debug)]
 pub struct Element<'a> {
@@ -614,40 +425,44 @@ pub struct Element<'a> {
     pub content : ElementContent<'a>,
 }
 
-//ti Element
+//ip Element
 impl <'a> Element <'a> {
+    //mp borrow_id
+    pub fn borrow_id(&self) -> &str {
+        self.header.borrow_id()
+    }
+
     //mp has_id
     pub fn has_id(&self, name:&str) -> bool {
         self.header.stylable.borrow().has_id(name)
     }
 
-    //fp new_shape
-    pub fn new_shape(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
-        let styles = descriptor.get("shape").unwrap();
-        let header = ElementHeader::new(&styles, name_values)?;
-        let shape  = Shape::new(&header)?;
-        Ok(Self { header, content:ElementContent::Shape(shape) })
+    //mp add_content_descriptors {
+    pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
+        descriptor.add("use",   |s,n| Use::get_descriptor(s,n) );
+        descriptor.add("group", |s,n| Group::get_descriptor(s,n) );
+        descriptor.add("text",  |s,n| Text::get_descriptor(s,n) );
+        descriptor.add("shape", |s,n| Shape::get_descriptor(s,n) );
     }
 
-    //fp new_text
-    pub fn new_text(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
-        let styles = descriptor.get("text").unwrap();
-        let header = ElementHeader::new(&styles, name_values)?;
-        let text = Text::new(&header)?;
-        Ok(Self { header, content:ElementContent::Text(text) })
-    }
-
-    //fp new_group
-    pub fn new_group(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ValueError> {
-        let styles = descriptor.get("group").unwrap();
-        let header = ElementHeader::new(&styles, name_values)?;
-        let group  = Group::new(&header)?;
-        Ok(Self { header, content:ElementContent::Group(group) })
+    //fp new
+    pub fn new(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
+        let header = ElementHeader::new(descriptor, name, name_values)?;
+        let content = {
+            match name {
+                "group" => Ok(ElementContent::Group(ElementError::of_result(&header,Group::new(&header, name))?)),
+                "shape" => Ok(ElementContent::Shape(ElementError::of_result(&header,Shape::new(&header, name))?)),
+                "text"  => Ok(ElementContent::Text(ElementError::of_result(&header,Text::new(&header, name))?)),
+                "use"   => Ok(ElementContent::Use(ElementError::of_result(&header,Use::new(&header, name))?)),
+                _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
+            }
+        }?;
+        Ok( Self { header, content })
     }
 
     //fp add_string
-    pub fn add_string(&mut self, s:&str) {
-        self.content.add_string(s);
+    pub fn add_string(&mut self, s:&str) -> Result<(),ElementError> {
+        self.content.add_string(&self.header, s)
     }
 
     //fp add_element
@@ -666,7 +481,7 @@ impl <'a> Element <'a> {
     }
 
     //mp style
-    pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),()> {
+    pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),ElementError> {
         self.header.style()?;
         self.content.style(descriptor, &self.header)?;
         Ok(())

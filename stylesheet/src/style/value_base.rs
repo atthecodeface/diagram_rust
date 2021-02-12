@@ -42,12 +42,15 @@ lazy_static!{
 }
 
 //fi extract_first_and_rest
+// only used in test at present
+#[allow(dead_code)]
 fn extract_first_and_rest<'a> (rex:&Regex, s:&'a str) -> Option<(&'a str, &'a str)> {
     match rex.captures(s) {
         None => None,
         Some(caps) => Some( (caps.get(1).unwrap().as_str(), caps.get(2).unwrap().as_str()) )
     }
 }
+#[warn(dead_code)]
 
 //fi extract_vec_re_first_and_rest
 fn extract_vec_first_and_rest<'a, R:FromStr> (rex:&Regex, max_len:usize, v:&'a mut Vec<R>, s:&'a str) -> Result<(usize, &'a str), ValueError> {

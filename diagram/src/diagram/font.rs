@@ -17,7 +17,6 @@ limitations under the License.
  */
 
 //a Imports
-use super::types::*;
 
 //a FontMetrics trait
 #[derive(Debug)]
@@ -37,7 +36,7 @@ pub struct FontStyle {
     flags : usize, // italic, bold
 }
 impl FontStyle {
-    pub fn new(size:f64, weight:Option<&String>, style:Option<&String>) -> Self {
+    pub fn new(size:f64, _weight:Option<&String>, _style:Option<&String>) -> Self {
         let flags = 0;
         Self { size, flags }
     }

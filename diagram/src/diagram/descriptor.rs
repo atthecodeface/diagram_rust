@@ -21,8 +21,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::collections::HashMap;
 use super::types::*;
-use super::element;
-use super::element::DiagramElementContent;
+use super::element::Element;
 use super::font::*;
 
 //a Diagram Descriptor - covers
@@ -63,18 +62,19 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("fontstyle",   StyleValue::string(None),  true)
             .add_type("vertices",    StyleValue::int(None),     false)
             ;
-        let mut descriptors = HashMap::new();
-        descriptors.insert("use",   element::Use::get_descriptor(&style_set, "use"));
-        descriptors.insert("group", element::Group::get_descriptor(&style_set, "group"));
-        descriptors.insert("text",  element::Text::get_descriptor(&style_set, "text"));
-        descriptors.insert("shape", element::Shape::get_descriptor(&style_set, "shape"));
-        let mut fonts = HashMap::new();
-        fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
-        Self {
+        let descriptors = HashMap::new();
+        let fonts = HashMap::new();
+        let mut descriptor = Self {
             style_set,
             descriptors,
             fonts,
-        }
+        };
+        descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
+        Element::add_content_descriptors(&mut descriptor);
+        descriptor
+    }
+    pub fn add<F:FnOnce(&StyleSet, &str)->RrcStyleDescriptor> (&mut self, name:&'static str, get_descriptor:F) {
+        self.descriptors.insert(name, get_descriptor(&self.style_set, name));
     }
     pub fn get(&self, tag:&str) -> Option<RrcStyleDescriptor> {
         match self.descriptors.get(tag)

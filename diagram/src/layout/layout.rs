@@ -435,7 +435,7 @@ impl Layout {
     pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
         println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within);
         let (ac,aw,ah) = within.get_cwh();
-        let (dc,dw,dh) = self.desired_geometry.get_cwh();
+        let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
         self.grid_placements.0.expand_and_centre(aw, 0.);
         self.grid_placements.1.expand_and_centre(ah, 0.);
         self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
@@ -454,7 +454,7 @@ impl Layout {
     }
 
     //mp get_place_rectangle
-    pub fn get_placed_rectangle(&self, pt:&Point, ref_pt:&Option<Point>) ->Rectangle {
+    pub fn get_placed_rectangle(&self, _pt:&Point, _ref_pt:&Option<Point>) -> Rectangle {
         Rectangle::new(0.,0.,10.,10.)
     }
 

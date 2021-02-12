@@ -74,7 +74,7 @@ impl Polygon {
         self.center = self.center.add(pt, 1.);
         self
     }
-    pub fn as_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
+    pub fn as_paths(&self, v:Vec<Bezier>) -> Vec<Bezier> {
         match self.vertices {
             0 => self.elliptical_paths(v),
             1 => v,
@@ -176,8 +176,8 @@ mod tests_polygon {
     #[test]
     fn test_circle() {
         let x = Polygon::new_circle(1.0);
-        let mut v = Vec::new();
-        let mut v = x.as_paths(v);
+        let v = Vec::new();
+        let v = x.as_paths(v);
         bezier_eq(&v[0], vec![(1.,0.),  (1.,0.5522847498307935),   (0.5522847498307935,1.), (0.,1.)]);
         bezier_eq(&v[1], vec![(0., 1.), (-0.5522847498307935, 1.), (-1.,0.5522847498307935), (-1.,0.)]);
         bezier_eq(&v[2], vec![(-1.,0.), (-1.,-0.5522847498307935),   (-0.5522847498307935,-1.), (0.,-1.)]);

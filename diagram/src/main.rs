@@ -10,6 +10,16 @@ use diagram::Diagram;
 use diagram::DiagramML;
 use diagram::Rectangle;
 use diagram::{Svg, GenerateSvg};
+fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
+    match result {
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        },
+        Ok(v) => v
+    }
+}
+
 fn main() {
     let matches = App::new("diagram")
         .about("SVG creator from a diagram descriptor")
@@ -38,28 +48,21 @@ fn main() {
             let mut diagram_ml = DiagramML::new(&mut diagram);
             for filename in vf {
                 let file = File::open(filename).unwrap();
-                match diagram_ml.read_file(file)
-                {
-                    Err(e) => {
-                        eprintln!("{}", e);
-                        std::process::exit(1);
-                    },
-                    _ => (),
-                }
+                exit_on_err( diagram_ml.read_file(file) );
             }
         },
     }
     diagram.record_layout();
-    diagram.uniquify();
+    exit_on_err( diagram.uniquify() );
     println!("Style");
-    diagram.style();
+    exit_on_err( diagram.style() );
     println!("Lay out");
-    diagram.layout(&Rectangle::new(0.,0.,210.,197.));
+    exit_on_err( diagram.layout(&Rectangle::new(0.,0.,210.,197.)) );
     println!("Generate geometry");
-    diagram.geometry();
+    exit_on_err( diagram.geometry() );
     println!("Create SVG");
     let mut svg = Svg::new().set_grid(false).set_layout(true);
-    diagram.generate_svg(&mut svg);
+    exit_on_err( diagram.generate_svg(&mut svg) );
     println!("Write SVG");
     let file_out   = File::create("a.svg").unwrap();
     let file_out   = std::io::BufWriter::new(file_out);

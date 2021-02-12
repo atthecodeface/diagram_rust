@@ -184,9 +184,9 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&RrcDescriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
         let descriptor = descriptor.clone();
         let extra_sids = Vec::new();
-        let mut classes    = Vec::new();
-        let mut values     = descriptor.borrow().build_style_array();
-        let mut id_name    = None;
+        let classes    = Vec::new();
+        let values     = descriptor.borrow().build_style_array();
+        let id_name    = None;
         let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
         let node = Rc::new(RefCell::new(StylableNode {
             parent,
@@ -194,8 +194,8 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             descriptor,
             extra_sids,
             values,
+            id_name,
             state:       Vec::new(),
-            id_name:     id_name,
             node_type:   node_type.to_string(),
             classes,
         }));
@@ -206,6 +206,14 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         node
     }
 
+    //mp borrow_id
+    pub fn borrow_id(&self) -> Option<&str> {
+        match &self.id_name {
+            None => None,
+            Some(s) => Some(s)
+        }
+    }
+    
     //mp add_name_value
     pub fn add_name_value(&mut self, name:&str, value:&str) -> () {
         if name=="id" {

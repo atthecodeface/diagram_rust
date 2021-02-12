@@ -19,7 +19,6 @@ limitations under the License.
 //a Imports
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::types::*;
 use super::font::*;
 
 //a Text span
@@ -68,8 +67,7 @@ impl <F:FontMetrics> TextLine<F> {
     pub fn get_metrics(&self) -> TextMetrics {
         let mut max_asc = 0.;
         let mut max_desc = 0.;
-        let mut width = 0.;
-        width = self.line_metrics();
+        let mut width = self.line_metrics();
         if self.bullet.is_some() { width = width + 7.; }
         for s in &self.spans {
             let tm = s.get_metrics();
@@ -148,13 +146,6 @@ impl <F:FontMetrics> TextArea<F> {
 }
 
 //a TextSpan iterator
-//ti IterState
-#[derive(Debug)]
-enum IterState {
-    PreDocument,
-    Completed,
-}
-
 //tp TextSpanIter
 pub struct TextSpanIter<'a, F:FontMetrics> {
     area: &'a TextArea<F>,

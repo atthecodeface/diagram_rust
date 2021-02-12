@@ -12,6 +12,17 @@ use xml::attribute::{Attribute};
 use super::HmlmResult;
 // use super::HmlmError;
 
+//a Utilities
+//vi INDENT_STRING
+const INDENT_STRING : &str = "################################";
+
+//fi indent
+fn indent<'a> (n:usize) -> &'a str{
+    let l:usize = INDENT_STRING.len();
+    if n>=l {INDENT_STRING} else {&INDENT_STRING[l-n..l]}
+}
+
+//fi write_str
 pub fn write_str<W>(target: &mut W, s:&str) -> HmlmResult<()>
     where W:Write
     { 
@@ -39,6 +50,7 @@ pub fn write_str<W>(target: &mut W, s:&str) -> HmlmResult<()>
     Ok (())
 }
 
+//ti ElementStack
 struct ElementStack {
     name:  OwnedName,
     attrs: Vec<String>,
@@ -48,12 +60,7 @@ struct ElementStack {
     indent_level : usize, // if multiline then 0, else parent_indent_level+1
 }
 
-const INDENT_STRING : &str = "################################";
-fn indent<'a> (n:usize) -> &'a str{
-    let l:usize = INDENT_STRING.len();
-    if n>=l {INDENT_STRING} else {&INDENT_STRING[l-n..l]}
-}
-
+//ip ElementStack
 impl ElementStack {
     fn new(indent_level:usize,
            name:Name,
@@ -103,6 +110,8 @@ impl ElementStack {
         Ok(self.parent_indent_level)
     }
 }
+
+//tp Emitter
 pub struct Emitter {
     // config: EmitterConfig,
     // nst: NamespaceStack,
@@ -111,6 +120,7 @@ pub struct Emitter {
     element_pending : bool,
 }
 
+//ip Emitter
 impl Emitter {
     // pub fn new(config: EmitterConfig) -> Emitter {
     pub fn new() -> Emitter {
@@ -122,9 +132,13 @@ impl Emitter {
             element_pending : false,
         }
     }
+
+    //zz All done
 }
 
+//ip Emitter
 impl Emitter {
+    //mp emit_pending_element
     fn emit_pending_element<W>(&mut self, target: &mut W, has_content: bool)
                                         -> HmlmResult<()>
         where W: Write
@@ -138,6 +152,7 @@ impl Emitter {
         Ok(())
     }
 
+    //mp emit_start_element
     pub fn emit_start_element<W>(&mut self, target: &mut W,
                                  name: Name,
                                  attributes: &[Attribute]) -> HmlmResult<()>
@@ -155,16 +170,17 @@ impl Emitter {
         Ok(())
     }
 
+    //mp emit_current_namespace_attributes
+    /*
     pub fn emit_current_namespace_attributes<W>(&mut self, _target: &mut W) -> HmlmResult<()>
         where W: Write
     {
-        /*
         for (prefix, uri) in self.nst.peek() {
             match prefix {
                 // internal namespaces are not emitted
                 NS_XMLNS_PREFIX | NS_XML_PREFIX => Ok(()),
-                //// there is already a namespace binding with this prefix in scope
-                //prefix if self.nst.get(prefix) == Some(uri) => Ok(()),
+                // // there is already a namespace binding with this prefix in scope
+                // prefix if self.nst.get(prefix) == Some(uri) => Ok(()),
                 // emit xmlns only if it is overridden
                 NS_NO_PREFIX => if uri != NS_EMPTY_URI {
                     write!(target, " xmlns=\"{}\"", uri)
@@ -173,10 +189,11 @@ impl Emitter {
                 prefix => write!(target, " xmlns:{}=\"{}\"", prefix, uri)
             }?;
         }
-*/
         Ok(())
     }
+     */
 
+    //mp emit_end_element
     pub fn emit_end_element<W: Write>(&mut self, target: &mut W,
                                       _name: Option<Name>) -> HmlmResult<()> {
         self.emit_pending_element(target, false)?;
@@ -184,11 +201,13 @@ impl Emitter {
         Ok(())
     }
 
+    //mp emit_cdata
     pub fn emit_cdata<W: Write>(&mut self, target: &mut W, content: &str) -> HmlmResult<()> {
         self.emit_pending_element(target, true)?;
         write_str(target, content)
     }
 
+    //mp emit_characters
     pub fn emit_characters<W: Write>(&mut self, target: &mut W,
                                       content: &str) -> HmlmResult<()> {
         self.emit_pending_element(target, true)?;
@@ -199,6 +218,7 @@ impl Emitter {
         Ok(())
     }
 
+    //mp emit_comment
     pub fn emit_comment<W: Write>(&mut self, target: &mut W, content: &str) -> HmlmResult<()> {
         self.emit_pending_element(target, true)?;
         if content.contains("\n") {
@@ -214,4 +234,6 @@ impl Emitter {
         }
         Ok(())
     }
+
+    //zz All done
 }

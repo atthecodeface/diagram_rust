@@ -12,7 +12,6 @@
 //a Imports
 use std::io::prelude::Read;
 use std::fmt::Write;
-use super::utils;
 use crate::FilePosition;
 
 //a Constants

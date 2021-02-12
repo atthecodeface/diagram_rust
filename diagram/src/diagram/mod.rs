@@ -17,16 +17,18 @@ limitations under the License.
  */
 
 //a Imports
-mod types;
 mod font;
 mod text;
 mod descriptor;
 mod element;
 mod diagram;
 mod svg;
+mod elements;
 
-pub use self::types::*;
+pub mod types;
+pub use self::types::{ValueError};
 pub use self::descriptor::DiagramDescriptor;
-pub use self::element::{Element, ElementContent, ElementLayout, Shape, Group, Text, Use};
+pub use self::element::{Element, ElementError, ElementContent, ElementHeader, DiagramElementContent, ElementLayout};
+pub use self::elements::{Shape, Group, Text, Use};
 pub use self::diagram::{LayoutRecord, Diagram, DiagramContents};
-pub use self::svg::{Svg, GenerateSvg};
+pub use self::svg::{Svg, SvgElement, GenerateSvg, SvgError};

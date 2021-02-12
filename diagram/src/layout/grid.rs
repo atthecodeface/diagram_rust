@@ -101,11 +101,11 @@ impl CellData {
                 if sorted_cell_data[i].size <= 0.      {i+=1; continue;}
                 let Self {start, end, size} = sorted_cell_data[i];
                 if start <= current_col { // MUST ovelap
-                    if (end < next_col) { // this is the shortest segment starting at current_col so far
+                    if end < next_col { // this is the shortest segment starting at current_col so far
                         min_size = size;
                         next_col = end;
-                    } else if (end == next_col) {
-                        if (size>min_size) { min_size = size; }
+                    } else if end == next_col {
+                        if size > min_size { min_size = size; }
                         // next_col already == end
                     }
                 } else if end <= next_col { // may overlap
@@ -226,7 +226,7 @@ mod tests {
         assert_eq!((60,110),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,0.), CellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
         assert_eq!((2,10.), CellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
         assert_eq!((3,30.), CellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
     }        
@@ -313,7 +313,7 @@ impl GridPlacement {
     fn generate_cell_sizes(&mut self) -> Vec<f64> {
         let n = self.last_index - self.start_index;
         let mut sizes = Vec::with_capacity(n as usize);
-        for i in 0..n {
+        for _ in 0..n {
             sizes.push(0.);
         }
         for i in 0..(self.cell_positions.len()-1) {
@@ -342,16 +342,6 @@ impl GridPlacement {
             0 => 0.,
             n => self.cell_positions[n-1].1
         }
-    }
-
-    //mp get_position
-    /// Get the position for dimension index N
-    pub fn get_position(&self, index:isize) -> f64 {
-        if DEBUG_GRID_PLACEMENT { println!("Get position {} of {:?}", index, self.cell_positions); }
-        for (i,x) in &self.cell_positions {
-            if *i >= index { return *x; }
-        }
-        0.
     }
 
     //mp iter_positions

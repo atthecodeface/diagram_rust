@@ -17,14 +17,12 @@ limitations under the License.
  */
 
 //a Imports
-use super::{Shape, Group, Text, Element, ElementLayout, ElementContent, LayoutRecord, Diagram};
-use super::font::*;
-use super::text::*;
-use crate::{Layout, Transform};
-use crate::{Rectangle, Polygon, Bezier, Point};
-use xml::attribute::{Attribute, OwnedAttribute};
-use xml::name::{Name, OwnedName};
-use xml::namespace::{Namespace, NamespaceStack};
+use super::{Element, ElementContent, LayoutRecord, Diagram};
+use crate::{Transform};
+use crate::{Polygon, Bezier, Point};
+use xml::attribute::{Attribute};
+use xml::name::{Name};
+use xml::namespace::{Namespace};
 use xml::reader::XmlEvent;
 use xml::common::XmlVersion;
 
@@ -34,12 +32,24 @@ fn pt_as_str(pt:&Point) -> String {
 }
 const INDENT_STRING : &str="                                                            ";
 
-//a SvgElement
+//a SvgError
 //tp SvgError
 pub enum SvgError {
     None
 }
 
+//ip Display for SvgError
+impl std::fmt::Display for SvgError {
+    //mp fmt - format error for display
+    /// Display the error
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "SvgError")
+    }
+
+    //zz All done
+}
+
+//a SvgElement
 //tp SvgElement
 pub struct SvgElement {
     name : String,
@@ -98,7 +108,6 @@ impl SvgElement {
     pub fn add_polygon_path(&mut self, p:&Polygon) {
         let v = p.as_paths(Vec::new());
         let mut r = String::new();
-        let n = v.len();
         r.push_str(&format!("M {}",pt_as_str(v[0].get_pt(0))));
         for b in &v {
             match b {
@@ -247,8 +256,8 @@ impl <'a> Iterator for ElementIter<'a> {
 //a Svg
 //tp Svg
 pub struct Svg {
-    width  : f64, // in mm
-    height : f64, // in mm
+    pub width  : f64, // in mm
+    pub height : f64, // in mm
     stack : Vec<SvgElement>,
     pub show_grid : bool,
     pub show_layout : bool,
@@ -288,7 +297,7 @@ impl Svg {
         self.stack.pop().unwrap()
     }
     //mp add_subelement
-    fn add_subelement(&mut self, e:SvgElement) {
+    pub fn add_subelement(&mut self, e:SvgElement) {
         let n = self.stack.len();
         self.stack[n-1].contents.push(e);
     }
@@ -326,59 +335,6 @@ pub trait GenerateSvg {
     fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError>;
 }
 
-//ip GenerateSvg for Shape
-impl GenerateSvg for Shape {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
-        let mut ele = SvgElement::new("path");
-        match &self.stroke {
-            None      => {ele.add_attribute("stroke","None");},
-            Some(rgb) => {ele.add_color("stroke",rgb);},
-        }
-        match &self.fill {
-            None      => {ele.add_attribute("fill","None");},
-            Some(rgb) => {ele.add_color("fill",rgb);},
-        }
-        ele.add_size("strokewidth",self.stroke_width);
-        ele.add_polygon_path(&self.polygon);
-        svg.add_subelement(ele);
-        Ok(())
-    }
-}
-
-//ip GenerateSvg for Text
-impl GenerateSvg for Text {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
-        let font_size = self.font_size / 72.0 * 25.4;
-        for t in self.text_area.iter_spans() {
-            let mut ele = SvgElement::new("text");
-            match &self.fill {
-                None      => {ele.add_attribute("fill","None");},
-                Some(rgb) => {ele.add_color("fill",rgb);},
-            }
-            ele.add_size("x",t.x);
-            ele.add_size("y",t.y);
-            ele.add_size("font-size",font_size);
-            if let Some(f) = &self.font        { ele.add_attribute("font-family", f); }
-            if let Some(f) = &self.font_style  { ele.add_attribute("font-style", f); }
-            if let Some(f) = &self.font_weight { ele.add_attribute("font-weight", f); }
-            ele.add_string(t.text);
-            svg.add_subelement(ele);
-        }
-        Ok(())
-    }
-}
-
-//ip GenerateSvg for Group
-impl <'a> GenerateSvg for Group <'a> {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
-        for e in &self.content {
-            e.generate_svg( svg )?;
-        }
-
-        Ok(())
-    }
-}
-
 //ip GenerateSvg for ElementContent
 impl <'a> GenerateSvg for ElementContent<'a> {
     //mp generate_svg
@@ -408,7 +364,7 @@ impl <'a> GenerateSvg for Element<'a> {
             _ => (),
         }
         svg.push_element(ele);
-        self.content.generate_svg(svg);
+        self.content.generate_svg(svg)?;
         let ele = svg.pop_element();
         svg.add_subelement(ele);
         if self.header.layout.border_color.is_some() {
@@ -470,8 +426,8 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("xmlns:svg","http://www.w3.org/2000/svg");
         ele.add_attribute("xmlns","http://www.w3.org/2000/svg");
         ele.add_attribute("version","1.1");
-        ele.add_attribute("width","297mm");
-        ele.add_attribute("height","210mm");
+        ele.add_attribute("width" ,&format!("{}mm", svg.width));
+        ele.add_attribute("height",&format!("{}mm", svg.height));
         ele.add_attribute("viewBox","0 0 297 210");
         svg.push_element(ele);
         let mut ele = SvgElement::new("g");

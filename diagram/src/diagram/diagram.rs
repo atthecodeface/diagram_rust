@@ -17,12 +17,36 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::HashMap;
-use super::types::*;
 use super::DiagramDescriptor;
-use super::Element;
+use super::{Element, ElementError};
 use crate::Layout;
-use crate::{Rectangle, Polygon, Point, Transform};
+use crate::{Rectangle, Transform};
+
+//a DiagramError
+//tp DiagramError
+pub enum DiagramError {
+    Error(String),
+}
+
+//ip Display for DiagramError
+impl std::fmt::Display for DiagramError {
+    //mp fmt - format error for display
+    /// Display the error
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "DiagramError")
+    }
+
+    //zz All done
+}
+
+//ip From std::fmt::Display for DiagramError
+/// Provides an implicit conversion from 
+impl From<ElementError> for DiagramError {
+    fn from(e: ElementError) -> DiagramError {
+        DiagramError::Error(e.to_string())
+    }
+}
+
 
 //a LayoutRecord
 pub struct LayoutRecord {
@@ -54,6 +78,7 @@ pub struct Diagram<'a> {
 
 //ti Diagram
 impl <'a> Diagram <'a> {
+    //fp new
     pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
         Self { descriptor,
                contents: DiagramContents{ definitions:Vec::new(),
@@ -63,12 +88,19 @@ impl <'a> Diagram <'a> {
                layout_record : None,
         }
     }
+
+    //mp record_layout
+    /// If there is no layout set for the diagram, then create one
     pub fn record_layout(&mut self) {
         match self.layout_record {
             None => { self.layout_record = Some(LayoutRecord::new()); },
             _ => (),
         }
     }
+
+    //mp find_definition
+    /// Find the definition of an id, if it exists in the contents
+    /// 'definitions' section
     pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
         for i in &self.contents.definitions {
             if i.has_id(name) {
@@ -77,12 +109,20 @@ impl <'a> Diagram <'a> {
         }
         None
     }
-    pub fn uniquify(&mut self) -> Result<(),()> {
+
+    //mp uniquify
+    /// Convert all 'use <id_ref>'s in to copies of the definition
+    /// that has id==<id_ref>, uniquifying the contents within that
+    /// dfinition too along with the ids therein
+    pub fn uniquify(&mut self) -> Result<(),DiagramError> {
         Ok(())
     }
-    pub fn style(&mut self) -> Result<(),()> {
+
+    //mp style
+    /// Style the contents of the diagram, using the stylesheet
+    pub fn style(&mut self) -> Result<(),DiagramError> {
         for e in self.contents.elements.iter_mut() {
-            e.style(self.descriptor);
+            e.style(self.descriptor)?;
         }
         Ok(())
     }
@@ -100,7 +140,7 @@ impl <'a> Diagram <'a> {
     /// bbox, which will generate the positions of the grid elements,
     /// and so on
     ///
-    pub fn layout(&mut self, within:&Rectangle) -> Result<(),()> {
+    pub fn layout(&mut self, within:&Rectangle) -> Result<(),DiagramError> {
         let mut layout = Layout::new();
         for e in self.contents.elements.iter_mut() {
             e.set_layout_properties(&mut layout);
@@ -118,17 +158,30 @@ impl <'a> Diagram <'a> {
         }
         Ok(())
     }
-    pub fn geometry(&mut self) -> Result<(),()> {
+
+    //mp geometry
+    /// Resolve the geometry of the contents of the diagram based on
+    /// how it has been laid out
+    pub fn geometry(&mut self) -> Result<(),DiagramError> {
         Ok(())
     }
+
+    //mp iter_elements
+    /// Iterate over all the elements in the contents
     pub fn iter_elements<'b> (&'b self) -> DiagramElements<'a,'b> {
         DiagramElements { contents:&self.contents, n: 0 }
     }
+    
+    //zz All done
 }
+
+//tp DiagramElements
 pub struct DiagramElements<'a, 'b> {
     contents : &'b DiagramContents<'a>,
     n : usize,
 }
+
+//ip Iterator for DiagramElements
 impl <'a, 'b> Iterator for DiagramElements<'a, 'b> {
     type Item = &'b Element<'a>;
     fn next(&mut self) -> Option<Self::Item> {
