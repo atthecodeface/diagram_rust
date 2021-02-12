@@ -26,6 +26,7 @@ use super::super::types::*;
 pub struct Use {
     // has Transform - to put it somewhere!
     id_ref  : String,
+    strings : Vec<String>,
 }
 
 //ti DiagramElementContent for Use
@@ -33,7 +34,7 @@ impl DiagramElementContent for Use {
     //fp new
     /// Create a new element of the given name
     fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ValueError> {
-        Ok(Self { id_ref:"".to_string() })
+        Ok(Self { id_ref:"".to_string(), strings:Vec::new() })
     }
     //fp get_descriptor
     fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
@@ -44,5 +45,10 @@ impl DiagramElementContent for Use {
 
 //ti Use
 impl Use {
+    //mp add_string
+    pub fn add_string(&mut self, s:&str) -> Result<(),String> {
+        self.strings.push(s.to_string());
+        Ok(())
+    }
 }
 

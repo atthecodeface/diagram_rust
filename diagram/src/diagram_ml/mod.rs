@@ -35,6 +35,11 @@ impl MLError {
         Self::BadElementName(fp.clone(), name.to_string())
     }
 
+    //mp bad_ml_event
+    fn bad_ml_event(ewp:&XmlEventWithPos) -> Self {
+        Self::BadMLEvent(format!("{:?} at {}",ewp.2, ewp.0))
+    }
+
     //fi value_result
     fn value_result<V, E:std::fmt::Display>(fp:&FilePosition, result:Result<V,E>) -> Result<V,Self> {
         match result {
@@ -149,11 +154,12 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Use {
         let use_ref = MLError::value_result(fp, Element::new(reader.descriptor, name, to_nv(attributes)))?;
         Self::ml_event(use_ref, reader)
     }
-    fn ml_event (s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
+    fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the use
+            (fp,_,XmlEvent::Characters(c))  => { MLError::element_result(&fp, s.add_string(&c))?; },
             (_,_,XmlEvent::Comment(_))     => (), // continue
-            ewp => { return Err(reader.bad_ml_event(ewp)); },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader)
     }
@@ -178,7 +184,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
                     e => { reader.errors.update(e); },
                 }
             },
-            ewp => { return Err(reader.bad_ml_event(ewp)); },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader)
     }
@@ -194,7 +200,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
         match reader.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
             (_,_,XmlEvent::Comment(_))     => (), // continue
-            ewp => { return Err(reader.bad_ml_event(ewp)); },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader)
     }
@@ -211,7 +217,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
             (fp,_,XmlEvent::Characters(c))  => { MLError::element_result(&fp, s.add_string(&c))?; },
             (_,_,XmlEvent::Comment(_))     => (), // continue
-            ewp => { return Err(reader.bad_ml_event(ewp)); },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader)
     }
@@ -254,7 +260,7 @@ impl <'a, R:Read> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
             (_,_,XmlEvent::Whitespace(_))  => (), // continue
             (_,_,XmlEvent::Characters(_))  => (), // continue
             (_,_,XmlEvent::CData(_))       => (), // continue
-            ewp => { return Err(reader.bad_ml_event(ewp)); },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader)
     }
@@ -271,6 +277,7 @@ struct MLReader<'a, 'b, R:Read> {
 
 //ti MLReader
 impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
+    //fp new
     pub fn new<'c, 'd> ( descriptor: &'d DiagramDescriptor<'c>,
                          contents:   &'d mut DiagramContents<'c>,
                          reader:hmlm::reader::EventReader<R> ) -> MLReader<'c, 'd, R> {
@@ -281,41 +288,8 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
             errors :MLErrorList::new(),
         }
     }
-    fn bad_ml_event(&self, ewp:XmlEventWithPos) -> MLError {
-        MLError::BadMLEvent(format!("{:?} at {}",ewp.2, ewp.0).to_string())
-    }
-    fn read_diagram(&mut self) -> Result<(),MLError> {
-        match self.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                // if name.local_name=="defs"
-                match Element::ml_new(self, &fp, &name.local_name, &attributes) {
-                    Ok(element) => {
-                        self.contents.elements.push(element);
-                    },
-                    e => { self.errors.update(e); },
-                }
-            },
-            ewp => { return Err(self.bad_ml_event(ewp)); },
-        }
-        self.read_diagram()
-    }
-    fn read_document(&mut self) -> Result<(),MLError> {
-        match self.next_event()? {
-            (fp,_,XmlEvent::StartElement{name, ..}) => {
-                if name.local_name=="diagram" {
-                    self.read_diagram()?;
-                    match self.next_event()? {
-                        (_,_,XmlEvent::EndDocument) => { Ok (()) },
-                        ewp => Err(self.bad_ml_event(ewp)),
-                    }
-                } else {
-                    Err(MLError::bad_element_name(&fp, &name.local_name))
-                }
-            },
-            ewp => Err(self.bad_ml_event(ewp)),
-        }
-    }
+
+    //mp next_event
     fn next_event(&mut self) -> Result<XmlEventWithPos,MLError> {
         match self.reader.next() {
             None => Err(MLError::unexpected_end_of_stream()),
@@ -323,17 +297,78 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
             Some(Ok(x))  => Ok(x),
         }
     }
+
+    //mp read_definitions
+    fn read_definitions(&mut self) -> Result<(),MLError> {
+        match self.next_event()? {
+            (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
+                match Element::ml_new(self, &fp, &name.local_name, &attributes) {
+                    Ok(element) => {
+                        self.contents.definitions.push(element);
+                    },
+                    e => { self.errors.update(e); },
+                }
+            },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+        }
+        self.read_definitions()
+    }
+
+    //mp read_diagram
+    fn read_diagram(&mut self) -> Result<(),MLError> {
+        match self.next_event()? {
+            (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
+                if name.local_name=="defs" {
+                    let e = self.read_definitions();
+                    self.errors.update(e);
+                } else {
+                    match Element::ml_new(self, &fp, &name.local_name, &attributes) {
+                        Ok(element) => {
+                            self.contents.elements.push(element);
+                        },
+                        e => { self.errors.update(e); },
+                    }
+                }
+            },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+        }
+        self.read_diagram()
+    }
+
+    //mp read_document
+    fn read_document(&mut self) -> Result<(),MLError> {
+        match self.next_event()? {
+            (fp,_,XmlEvent::StartElement{name, ..}) => {
+                if name.local_name=="diagram" {
+                    self.read_diagram()?;
+                    match self.next_event()? {
+                        (_,_,XmlEvent::EndDocument) => { Ok (()) },
+                        ewp => Err(MLError::bad_ml_event(&ewp)),
+                    }
+                } else {
+                    Err(MLError::bad_element_name(&fp, &name.local_name))
+                }
+            },
+            ewp => Err(MLError::bad_ml_event(&ewp)),
+        }
+    }
+
+    //mp read_file
     fn read_file(&mut self) -> Result<(),MLErrorList> {
         match self.next_event() {
             Ok( (_,_,XmlEvent::StartDocument{..}) ) => {
                 let x = self.read_document();
                 self.errors.update(x);
             },
-            Ok(ewp) => { self.errors.add(self.bad_ml_event(ewp)); }
+            Ok(ewp) => { self.errors.add(MLError::bad_ml_event(&ewp)); }
             Err(e) =>  { self.errors.add(e); }
         }
         self.errors.as_err(Ok(()))
     }
+
+    //zz All done
 }
 
 //a DiagramML
@@ -348,8 +383,8 @@ pub struct DiagramML<'a, 'b> {
 /// let diagram_descriptor = DiagramDescriptor::new();
 /// let mut d   = Diagram::new(&diagram_descriptor);
 /// let mut dml = DiagramML::new(&mut d);
-/// dml.read_file("#diagram ##shape ##group ###shape ##shape".as_bytes()).unwrap();
-/// assert_eq!(0, d.contents.definitions.len(), "No definitions expected from this");
+/// dml.read_file("#diagram ##defs ###shape id=a ##shape ##group ###shape ##shape".as_bytes()).unwrap();
+/// assert_eq!(1, d.contents.definitions.len(), "One definition expected from this");
 /// assert_eq!(3, d.contents.elements.len(), "Three elements (shape, group, shape) expected from this");
 /// ```
 impl <'a, 'b> DiagramML<'a, 'b> {

@@ -119,9 +119,8 @@ impl <'a> ElementContent<'a> {
     //mp add_string
     pub fn add_string(&mut self, header:&ElementHeader, s:&str) -> Result<(),ElementError> {
         match self {
-            ElementContent::Text(ref mut t) => {
-                ElementError::of_result( header, t.add_string(s) )
-            },
+            ElementContent::Text(ref mut t) => ElementError::of_result( header, t.add_string(s) ),
+            ElementContent::Use(ref mut t)  => ElementError::of_result( header, t.add_string(s) ),
             _ => Ok(()), // could error - bug in code
         }
     }
