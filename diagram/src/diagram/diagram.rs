@@ -56,6 +56,7 @@ pub struct DiagramContents<'a> {
     pub definitions : Vec<Element<'a>>,
     pub elements    : Vec<Element<'a>>,
     pub content_transform : Transform,
+    pub content_bbox      : Rectangle,
 }
 pub struct Diagram<'a> {
     pub descriptor    : &'a DiagramDescriptor<'a>,
@@ -71,6 +72,7 @@ impl <'a> Diagram <'a> {
                contents: DiagramContents{ definitions:Vec::new(),
                                           elements:Vec::new(),
                                           content_transform:Transform::new(),
+                                          content_bbox : Rectangle::none(),
                },
                layout_record : None,
         }
@@ -138,9 +140,13 @@ impl <'a> Diagram <'a> {
             e.set_layout_properties(&mut layout);
         }
         // specify expansions
-        layout.get_desired_geometry();
-        layout.layout(within);
+        let mut rect = layout.get_desired_geometry();
+        if !within.is_none() {
+            rect = within.clone();
+        }
+        layout.layout(&rect);
         self.contents.content_transform = layout.get_layout_transform();
+        self.contents.content_bbox = rect;
         // apply expansions - lay it out in a rectangle, generate transform?
         for e in self.contents.elements.iter_mut() {
             e.apply_placement(&layout);

@@ -68,8 +68,8 @@ impl Rectangle {
         pt.scale_xy( 1./(self.x1-self.x0),  1./(self.y1-self.y0) )
     }
 
-    //mp is_zero
-    pub fn is_zero(&self) -> bool {
+    //mp is_none
+    pub fn is_none(&self) -> bool {
         self.x0==0. && self.x1==0. && self.y0==0. && self.y1==0.
     }
 
@@ -166,9 +166,9 @@ impl Rectangle {
     //mp union
     /// union this with another; if either is_zero then just the other
     pub fn union(mut self, other:&Self) -> Self {
-        if other.is_zero() {
+        if other.is_none() {
             ();
-        } else if self.is_zero() {
+        } else if self.is_none() {
             self.x0 = other.x0;
             self.y0 = other.y0;
             self.x1 = other.x1;

@@ -28,7 +28,7 @@ use xml::common::XmlVersion;
 
 //a Useful stuff
 fn pt_as_str(pt:&Point) -> String {
-    format!("{},{}", pt.x, pt.y)
+    format!("{:.4},{:.4}", pt.x, pt.y)
 }
 const INDENT_STRING : &str="                                                            ";
 
@@ -82,9 +82,9 @@ impl SvgElement {
     //fp add_transform
     pub fn add_transform(&mut self, transform:&Transform) {
         let mut r = String::new();
-        if transform.scale != 1.              { r.push_str(&format!("scale({}) ",transform.scale)); }
-        if transform.rotation != 0.           { r.push_str(&format!("rotate({}) ",transform.rotation)); }
-        if !transform.translation.is_origin() { r.push_str(&format!("translate({} {})",transform.translation.x, transform.translation.y)); }
+        if transform.scale != 1.              { r.push_str(&format!("scale({:.4}) ",transform.scale)); }
+        if transform.rotation != 0.           { r.push_str(&format!("rotate({:.4}) ",transform.rotation)); }
+        if !transform.translation.is_origin() { r.push_str(&format!("translate({:.4} {:.4})",transform.translation.x, transform.translation.y)); }
         if r.len() > 0 {
             self.add_attribute("transform", &r);
         }
@@ -92,7 +92,7 @@ impl SvgElement {
 
     //fp add_size
     pub fn add_size(&mut self, name:&str, value:f64) {
-        self.add_attribute(name, &format!("{}", value));
+        self.add_attribute(name, &format!("{:.4}", value));
     }
 
     //fp add_color
@@ -425,16 +425,16 @@ impl GenerateSvg for LayoutRecord {
                     let y0 = grid_y[0].1;
                     let y1 = grid_y[yn-1].1;
                     for (_,x) in grid_x {
-                        rx.push_str(&format!("M {},{} v {} ",x,y0,y1-y0));
+                        rx.push_str(&format!("M {:.4},{:.4} v {:.4} ",x,y0,y1-y0));
                     }
                     for (_,y) in grid_y {
-                        ry.push_str(&format!("M {},{} h {} ",x0,y,x1-x0));
+                        ry.push_str(&format!("M {:.4},{:.4} h {:.4} ",x0,y,x1-x0));
                     }
                     rx.push_str(&ry);
                     let mut grid = SvgElement::new("path");
                     grid.add_attribute("fill","None");
                     grid.add_attribute("stroke",color);
-                    grid.add_attribute("stroke-width",&format!("{}",line_width));
+                    grid.add_attribute("stroke-width",&format!("{:.4}",line_width));
                     grid.add_attribute("d",&rx);
                     svg.add_subelement(grid);
                     ()
@@ -455,7 +455,13 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("version","1.1");
         ele.add_attribute("width" ,&format!("{}mm", svg.width));
         ele.add_attribute("height",&format!("{}mm", svg.height));
-        ele.add_attribute("viewBox","0 0 297 210");
+        ele.add_attribute("viewBox",
+                          &format!("{} {} {} {}",
+                                   self.contents.content_bbox.x0,
+                                   self.contents.content_bbox.y0,
+                                   self.contents.content_bbox.x1-self.contents.content_bbox.x0,
+                                   self.contents.content_bbox.y1-self.contents.content_bbox.y0,
+                                   ) );
         svg.push_element(ele);
         let mut ele = SvgElement::new("g");
         ele.add_transform(&self.contents.content_transform);

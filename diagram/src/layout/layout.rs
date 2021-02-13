@@ -440,7 +440,7 @@ impl Layout {
             }
         };
         self.desired_geometry = {
-            if self.desired_placement.is_zero() {
+            if self.desired_placement.is_none() {
                 self.desired_grid.clone()
             } else {
                 self.desired_placement.clone().union(&self.desired_grid)

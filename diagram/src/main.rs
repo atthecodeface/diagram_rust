@@ -73,7 +73,8 @@ fn main() {
     println!("Style");
     exit_on_err( diagram.style() );
     println!("Lay out");
-    exit_on_err( diagram.layout(&Rectangle::new(0.,0.,297.,210.)) );
+    // exit_on_err( diagram.layout(&Rectangle::new(0.,0.,297.,210.)) );
+    exit_on_err( diagram.layout(&Rectangle::none()) );
     println!("Generate geometry");
     exit_on_err( diagram.geometry() );
     println!("Create SVG");
