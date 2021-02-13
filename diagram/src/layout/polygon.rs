@@ -39,41 +39,76 @@ impl std::fmt::Display for Polygon {
 
 //ti Polygon
 impl Polygon {
+    //fp new
     pub fn new(vertices:usize, stellate_size:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices:vertices, rotation:0., rounding:0., size:0., eccentricity:1., stellate_size }
     }
+
+    //fp new_rect
     pub fn new_rect(w:f64, h:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices:4, rotation:0., rounding:0., size:h/(2.0_f64.sqrt()), eccentricity:w/h, stellate_size:0. }
     }
+
+    //fp new_polygon
     pub fn new_polygon(vertices:usize, size:f64, rotation:f64, rounding:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices, rotation, rounding, size, eccentricity:1., stellate_size:0. }
     }
+
+    //fp new_star
     pub fn new_star(vertices:usize, size:f64, in_out:f64, rotation:f64, rounding:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices, rotation, rounding, size, eccentricity:1., stellate_size:size*in_out }
     }
+
+    //fp new_circle
     pub fn new_circle(r:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices:0, rotation:0., rounding:0., size:r, eccentricity:1., stellate_size:0. }
     }
+
+    //fp new_ellipse
     pub fn new_ellipse(rx:f64, ry:f64, rotation:f64) -> Self {
         Self{ center:Point::new(0.,0.), vertices:0, rotation, rounding:0., size:ry, eccentricity:rx/ry, stellate_size:0. }
     }
+
+    //cp set_vertices
     pub fn set_vertices(&mut self, vertices:usize) {
         self.vertices = vertices;
     }
+
+    //cp set_size
     pub fn set_size(&mut self, size:f64, eccentricity:f64) {
         self.size = size;
         self.eccentricity = eccentricity;
     }
+
+    //cp set_rounding
     pub fn set_rounding(&mut self, rounding:f64) {
         self.rounding = rounding;
     }
+
+    //cp set_stellate_size
     pub fn set_stellate_size(&mut self, stellate_size:f64) {
         self.stellate_size = stellate_size;
     }
+
+    //cp translate
     pub fn translate(mut self, pt:&Point) -> Self {
         self.center = self.center.add(pt, 1.);
         self
     }
+
+    //mp clone
+    pub fn clone(&self) -> Self {
+        Self { center:   self.center.clone(),
+               vertices: self.vertices,
+               size          : self.size,
+               stellate_size : self.stellate_size,
+               eccentricity: self.eccentricity,
+               rotation : self.rotation,
+               rounding : self.rounding,
+        }
+    }
+    
+    //mp as_paths
     pub fn as_paths(&self, v:Vec<Bezier>) -> Vec<Bezier> {
         match self.vertices {
             0 => self.elliptical_paths(v),
@@ -81,6 +116,8 @@ impl Polygon {
             _ => self.polygon_paths(v),
         }
     }
+
+    //mp get_bbox
     pub fn get_bbox(&self) -> Rectangle {
         match self.vertices {
             0 => Rectangle::new(-self.size*self.eccentricity, -self.size, self.size*self.eccentricity, self.size),
@@ -88,6 +125,8 @@ impl Polygon {
             _ => Rectangle::bbox_of_points(&self.get_points()),
         }
     }
+
+    //mp elliptical_paths
     fn elliptical_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
         let origin = Point::new(0.,0.);
         v.push( Bezier::arc(90.,self.size,&origin,  0.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
@@ -96,6 +135,8 @@ impl Polygon {
         v.push( Bezier::arc(90.,self.size,&origin,270.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
         v
     }
+
+    //mp get_points
     fn get_points(&self) -> Vec<Point> {
         assert!(self.vertices>1);
         let mut corners = Vec::new();
@@ -119,6 +160,8 @@ impl Polygon {
         // println!("{:?} {}",corners, self.stellate_size);
         corners
     }
+
+    //mp polygon_paths
     fn polygon_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
         let mut corners = self.get_points();
         let n = corners.len();
@@ -152,6 +195,8 @@ impl Polygon {
         }
         v
     }
+
+    //zz All done
 }
 
 //a Test

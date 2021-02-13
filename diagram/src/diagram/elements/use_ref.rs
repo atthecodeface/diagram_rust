@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::super::{GenerateSvg, Svg, SvgError};
+use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use super::super::types::*;
 use crate::{Layout};
@@ -37,7 +37,7 @@ pub struct Use<'a> {
 }
 
 //ti DiagramElementContent for Use<'a>
-impl <'a> DiagramElementContent for Use<'a> {
+impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     //fp new
     /// Create a new element of the given name
     fn new(header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
@@ -54,6 +54,26 @@ impl <'a> DiagramElementContent for Use<'a> {
         ElementError::of_result(header, Err("nyi:use_ref"))
     }
 
+    //mp uniquify
+    /// Sets internal self.content to a clone of a resolved definition
+    ///
+    /// The id_ref should identify an element in `scope`.
+    /// The header may have to be cloned - it has layout information etc, and indeed any of its
+    /// name/values override those of
+    fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+        match self.content.len() {
+            0 => {
+                let (scope, element) = scope.new_subscope(header, &self.id_ref)?;
+                self.content.push(element.clone(&scope)?);
+                Ok(true)
+            }
+            _ => {
+                self.content[0].uniquify(scope)?;
+                Ok(false)
+            }
+        }
+    }
+
     //fp get_descriptor
     fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
         let desc = ElementHeader::get_descriptor(nts);
@@ -65,7 +85,7 @@ impl <'a> DiagramElementContent for Use<'a> {
     //mp style
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
+    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
         }
@@ -82,7 +102,7 @@ impl <'a> DiagramElementContent for Use<'a> {
     }
 
     //fp apply_placement
-    fn apply_placement(&mut self, layout:&Layout) {
+    fn apply_placement(&mut self, layout:&Layout, _rect:&Rectangle) {
         for e in self.content.iter_mut() {
             e.apply_placement(layout);
         }
@@ -99,30 +119,11 @@ impl <'a> Use<'a> {
         Ok(())
     }
 
-    //mp uniquify
-    /// Sets internal self.content to a clone of a resolved definition
-    ///
-    /// The id_ref should identify an element in `scope`.
-    /// The header may have to be cloned - it has layout information etc, and indeed any of its
-    /// name/values override those of
-    pub fn uniquify<'b>(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
-        match self.content.len() {
-            0 => {
-                let (scope, element) = scope.new_subscope(header, &self.id_ref)?;
-                self.content.push(element.clone(&scope)?);
-                Ok(true)
-            }
-            _ => {
-                self.content[0].uniquify(scope)?;
-                Ok(false)
-            }
-        }
-    }
 }
 
-//ip GenerateSvg for Use
-impl <'a> GenerateSvg for Use <'a> {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
+//ip GenerateSvg format Use
+impl <'a> GenerateSvgElement for Use <'a> {
+    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         for e in &self.content {
             e.generate_svg( svg )?;
         }

@@ -315,7 +315,6 @@ impl LayoutBox {
         // so that is what we should get...
         let (aw, ah)      = Self::find_wh_of_largest_area_within(iw, ih, self.content_rotation);
         // self.content_desired can be 'fit_within_region' of the width/height
-        // println!("{} {}",aw, ah);
         let cd = self.content_desired.unwrap();
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
@@ -332,7 +331,7 @@ impl LayoutBox {
         // then find the inner coordinates of this desired centre
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
-        // println!("{} {}",ci_x_range, ci_y_range);
+        println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range);
         let (cd_c,_,_) = cd.get_cwh();
         let ci_c = cd_c.scale_xy(self.content_scale,self.content_scale).rotate(self.content_rotation);
         self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
@@ -348,6 +347,20 @@ impl LayoutBox {
         self.inner_within_outer(rectangle);
         self.content_within_inner();
     }
+
+    //mp get_content_rectangle
+    /// Get the content rectangle
+    ///
+    /// Must only be invoked after layout_within_rectangle has been called
+    pub fn get_content_rectangle(&mut self) -> Rectangle  {
+        self.content.unwrap()
+    }
+}
+
+//mt Test for LayoutBox
+#[cfg(test)]
+mod test_layoutbox {
+    use super::*;
 }
 
 //tp Layout
@@ -425,6 +438,7 @@ impl Layout {
                 self.desired_placement.clone().union(&self.desired_grid)
             }
         };
+        println!("Layout has desired geometries of grid:{}, place:{}, union {}", self.desired_grid, self.desired_placement, self.desired_geometry);
         self.desired_geometry.clone()
     }
 

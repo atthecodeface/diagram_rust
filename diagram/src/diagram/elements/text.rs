@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::super::{GenerateSvg, Svg, SvgElement, SvgError};
+use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle};
@@ -56,7 +56,7 @@ pub struct Text {
 }
 
 //ip DiagramElementContent for Text
-impl DiagramElementContent for Text {
+impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
     //fp new
     fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         Ok( Self {
@@ -73,7 +73,11 @@ impl DiagramElementContent for Text {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
-        ElementError::of_result(header, Err("nyi:text"))
+        let mut clone = Self::new(header, "")?;
+        for s in &self.text {
+            clone.text.push(s.clone());
+        }
+        Ok(clone)
     }
 
     //fp get_descriptor
@@ -123,12 +127,14 @@ impl Text {
 }
 
 
-//ip GenerateSvg for Text
-impl GenerateSvg for Text {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
+//ip GenerateSvgElement for Text
+impl GenerateSvgElement for Text {
+    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
+        let mut ele = SvgElement::new("path");
         let font_size = self.font_size / 72.0 * 25.4;
         for t in self.text_area.iter_spans() {
             let mut ele = SvgElement::new("text");
+            header.svg_add_transform(&mut ele);
             match &self.fill {
                 None      => {ele.add_attribute("fill","None");},
                 Some(rgb) => {ele.add_color("fill",rgb);},

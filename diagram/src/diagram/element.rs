@@ -26,14 +26,16 @@ use super::elements::{Group, Shape, Text, Use};
 use super::types::*;
     
 //a DiagramElement trait
-pub trait DiagramElementContent:Sized+std::fmt::Debug {
+pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
-    fn new(header:&ElementHeader, name:&str ) -> Result<Self,ElementError>;
+    fn new(header:&ElementHeader<'a>, name:&str ) -> Result<Self,ElementError>;
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>;
+    ///
+    /// This method is only invoke prior to styling, so often is the same as `new`
+    fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a, 'b> ) -> Result<Self,ElementError>;
     
     //mp uniquify
     /// Sets internal self.content to a clone of a resolved definition
@@ -41,9 +43,9 @@ pub trait DiagramElementContent:Sized+std::fmt::Debug {
     /// The id_ref should identify an element in `scope`.
     /// The header may have to be cloned - it has layout information etc, and indeed any of its
     /// name/values override those of
-    //fn uniquify<'a, 'b>(&'b mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
-    //    Ok(false)
-    //}
+    fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+        Ok(false)
+    }
 
     //fp get_descriptor
     /// Get the style descriptor for this element when referenced by the name
@@ -70,7 +72,10 @@ pub trait DiagramElementContent:Sized+std::fmt::Debug {
     /// Apply the layout to the element; this may cause contents to
     /// then get laid out, etc Nothing needs to be done - the layout
     /// is available when the element is visualized
-    fn apply_placement(&mut self, _layout:&Layout) {
+    ///
+    /// The rectangle supplied is the content-space rectangle derived
+    /// for the content
+    fn apply_placement(&mut self, _layout:&Layout, _rect:&Rectangle) {
         // No need to do anything
     }
 
@@ -167,7 +172,7 @@ pub enum ElementContent<'a> {
 //ti ElementContent
 impl <'a> ElementContent<'a> {
     //fp new
-    pub fn new(header:&ElementHeader, name:&str) -> Result<Self, ElementError> {
+    pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
         match name {
             "group" => Ok(Self::Group(Group::new(&header, name)?)),
             "shape" => Ok(Self::Shape(Shape::new(&header, name)?)),
@@ -191,13 +196,13 @@ impl <'a> ElementContent<'a> {
     pub fn uniquify<'b, 'c>(&'c mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a, 'b>) -> Result<bool, ElementError> {
          match self {
             Self::Use(ref mut c)   => c.uniquify(header, scope),
-            // Self::Group(ref c) => c.uniquify(header, scope),
+            Self::Group(ref mut c) => c.uniquify(header, scope),
             _ => Ok(false),
         }
     }
 
     //mp clone
-    pub fn clone(&self, header:&ElementHeader, scope:&ElementScope) -> Result<Self, ElementError> {
+    pub fn clone<'b>(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<Self, ElementError> {
         match self {
             Self::Group(ref c) => Ok(Self::Group(ElementError::of_result(&header,c.clone(header, scope))?)),
             Self::Shape(ref c) => Ok(Self::Shape(ElementError::of_result(&header,c.clone(header, scope))?)),
@@ -229,6 +234,7 @@ impl <'a> ElementContent<'a> {
             Self::Shape(ref mut s) => { s.style(descriptor, header) },
             Self::Group(ref mut g) => { g.style(descriptor, header) },
             Self::Text(ref mut t)  => { t.style(descriptor, header) },
+            Self::Use(ref mut t)   => { t.style(descriptor, header) },
             _ => Ok(())
         }
     }
@@ -239,6 +245,7 @@ impl <'a> ElementContent<'a> {
             Self::Shape(ref mut s) => { s.get_desired_geometry(layout) },
             Self::Group(ref mut g) => { g.get_desired_geometry(layout) },
             Self::Text(ref mut t)  => { t.get_desired_geometry(layout) },
+            Self::Use(ref mut t)   => { t.get_desired_geometry(layout) },
             _ => Rectangle::new(0.,0.,10.,10.),
         }
     }
@@ -250,9 +257,10 @@ impl <'a> ElementContent<'a> {
     ///
     /// If the element requires any further layout, that should be performed; certainly its
     /// transformation should be determined
-    pub fn apply_placement(&mut self, layout:&Layout) {
+    pub fn apply_placement(&mut self, layout:&Layout, rect:&Rectangle) {
         match self {
-            Self::Group(ref mut g) => { g.apply_placement(layout) },
+            Self::Group(ref mut g) => { g.apply_placement(layout, rect) },
+            Self::Use(ref mut g)   => { g.apply_placement(layout, rect) },
             _ => (),
         }
     }
@@ -510,14 +518,14 @@ impl <'a> ElementHeader <'a> {
         }
     }
                            
-    //fp apply_placement
+    //mp apply_placement
     /// The layout contains the data required to map a grid or placement layout of the element
     ///
     /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
     ///
     /// If the element requires any further layout, that should be performed; certainly its
     /// transformation should be determined
-    pub fn apply_placement(&mut self, layout:&Layout) {
+    pub fn apply_placement(&mut self, layout:&Layout) -> Rectangle {
         let rect = {
             match self.layout.placement {
                 LayoutPlacement::None              => self.layout_box.get_desired_bbox(),
@@ -525,7 +533,9 @@ impl <'a> ElementHeader <'a> {
                 LayoutPlacement::Place(pt)         => layout.get_placed_rectangle( &pt, &self.layout.ref_pt ),
             }
         };
+        println!("Laying out {:?} => {}",self.layout,rect);
         self.layout_box.layout_within_rectangle(rect);
+        self.layout_box.get_content_rectangle()
     }
    
     //zz All done
@@ -607,6 +617,7 @@ impl <'a> Element <'a> {
 
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),ElementError> {
+        println!("Style  {} ", self.header.borrow_id());
         self.header.style()?;
         self.content.style(descriptor, &self.header)?;
         Ok(())
@@ -638,8 +649,8 @@ impl <'a> Element <'a> {
     /// If the element requires any further layout, that should be performed; certainly its
     /// transformation should be determined
     pub fn apply_placement(&mut self, layout:&Layout) {
-        self.header.apply_placement(layout);
-        self.content.apply_placement(layout);
+        let content_rect = self.header.apply_placement(layout);
+        self.content.apply_placement(layout, &content_rect);
     }
 
     //zz All done

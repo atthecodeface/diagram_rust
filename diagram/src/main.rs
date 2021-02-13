@@ -53,6 +53,7 @@ fn main() {
         },
     }
     diagram.record_layout();
+    println!("Uniqify");
     exit_on_err( diagram.uniquify() );
     println!("Style");
     exit_on_err( diagram.style() );
@@ -75,32 +76,6 @@ fn main() {
     }
     println!("Complete");
     
-/*
-    let input_file  = 
-    // let output_file = matches.value_of("output").unwrap();
-    
-    
-    let event_reader = hmlm::reader::EventReader::new(file); // Can use an xml::reader
-
-    let file_out   = File::create(output_file).unwrap();
-    let file_out   = std::io::BufWriter::new(file_out);
-    // let mut writer = hmlm::writer::EventWriter::new(file_out);
-    let mut writer = xml::writer::EventWriter::new(file_out);
-    for e in event_reader {
-        match e {
-            Ok(e) => {
-                match e.as_writer_event() {
-                    None => (),
-                    Some(we) => writer.write(we).unwrap(),
-                }
-            },
-            Err(e) => {
-                println!("Error {:?}",e);
-                break;
-            },
-        }
-    }
-*/
 }
 
 /*

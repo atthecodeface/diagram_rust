@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::super::{GenerateSvg, Svg, SvgElement, SvgError};
+use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle, Polygon};
@@ -36,7 +36,7 @@ pub struct Shape {
 }
 
 //ip DiagramElementContent for Shape
-impl DiagramElementContent for Shape {
+impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp new
     fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         let polygon = Polygon::new(0, 0.);
@@ -51,7 +51,8 @@ impl DiagramElementContent for Shape {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
-        ElementError::of_result(header, Err("nyi:shape"))
+        let clone = Self::new(header, "")?;
+        Ok( clone )
     }
 
     //fp get_descriptor
@@ -94,10 +95,11 @@ impl DiagramElementContent for Shape {
 impl Shape {
 }
 
-//ip GenerateSvg for Shape
-impl GenerateSvg for Shape {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
+//ip GenerateSvgElement for Shape
+impl GenerateSvgElement for Shape {
+    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         let mut ele = SvgElement::new("path");
+        header.svg_add_transform(&mut ele);
         match &self.stroke {
             None      => {ele.add_attribute("stroke","None");},
             Some(rgb) => {ele.add_color("stroke",rgb);},

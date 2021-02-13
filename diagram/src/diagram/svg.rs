@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::{Element, ElementContent, LayoutRecord, Diagram};
+use super::{Element, ElementHeader, ElementContent, LayoutRecord, Diagram};
 use crate::{Transform};
 use crate::{Polygon, Bezier, Point};
 use xml::attribute::{Attribute};
@@ -289,11 +289,11 @@ impl Svg {
     }
     
     //mp push_element
-    fn push_element(&mut self, e:SvgElement) {
+    pub fn push_element(&mut self, e:SvgElement) {
         self.stack.push(e);
     }
     //mp pop_element
-    fn pop_element(&mut self) -> SvgElement {
+    pub fn pop_element(&mut self) -> SvgElement {
         self.stack.pop().unwrap()
     }
     //mp add_subelement
@@ -328,22 +328,37 @@ impl Svg {
     //zz All done
 }
 
-//a GenerateSvg
-//pt GenerateSvg
-pub trait GenerateSvg {
-    /// `transform` is that of the layout this is part of - this is probably not needed
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError>;
+//a GenerateSvg, GenerateSvgElement
+//pt GenerateSvgElement
+pub trait GenerateSvgElement {
+    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError>;
 }
 
-//ip GenerateSvg for ElementContent
-impl <'a> GenerateSvg for ElementContent<'a> {
+//ip GenerateSvgElement for ElementContent
+impl <'a> GenerateSvgElement for ElementContent<'a> {
     //mp generate_svg
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
+    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         match self {
-            ElementContent::Shape(ref s) => { s.generate_svg(svg) },
-            ElementContent::Text(ref t)  => { t.generate_svg(svg) },
-            ElementContent::Group(ref g) => { g.generate_svg(svg) },
-            ElementContent::Use(ref g)   => { g.generate_svg(svg) },
+            ElementContent::Shape(ref s) => { s.generate_svg(svg, header) },
+            ElementContent::Text(ref t)  => { t.generate_svg(svg, header) },
+            ElementContent::Group(ref g) => { g.generate_svg(svg, header) },
+            ElementContent::Use(ref g)   => { g.generate_svg(svg, header) },
+        }
+    }
+}
+
+//pt GenerateSvg
+pub trait GenerateSvg {
+    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> { Ok(()) }
+    fn svg_add_transform(&self, ele:&mut SvgElement) {}
+}
+
+//ip GenerateSvg for ElementHeader
+impl <'a> GenerateSvg for ElementHeader<'a> {
+    fn svg_add_transform(&self, ele:&mut SvgElement) {
+        match self.layout_box.borrow_content_transform() {
+            Some(transform) => { ele.add_transform(transform); },
+            _ => (),
         }
     }
 }
@@ -358,15 +373,7 @@ impl <'a> GenerateSvg for Element<'a> {
             ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap());
             svg.add_subelement(ele);
         }
-        let mut ele = SvgElement::new("g");
-        match self.header.layout_box.borrow_content_transform() {
-            Some(transform) => { ele.add_transform(transform); },
-            _ => (),
-        }
-        svg.push_element(ele);
-        self.content.generate_svg(svg)?;
-        let ele = svg.pop_element();
-        svg.add_subelement(ele);
+        self.content.generate_svg(svg, &self.header)?;
         if self.header.layout.border_color.is_some() {
             let mut ele = SvgElement::new("path");
             ele.add_color("stroke",&self.header.layout.border_color.unwrap());
@@ -450,6 +457,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         }
 
         let ele = svg.pop_element();
+        ele.display(0);
         svg.add_subelement(ele);
         Ok(())
     }
