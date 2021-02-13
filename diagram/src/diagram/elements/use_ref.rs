@@ -34,6 +34,8 @@ pub struct Use<'a> {
     strings : Vec<String>,
     /// The element that the use is bound to, once uniqified
     content : Vec<Element<'a>>,
+    /// Depth of recursion
+    depth : usize,
 }
 
 //ti DiagramElementContent for Use<'a>
@@ -42,7 +44,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     /// Create a new element of the given name
     fn new(header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         if let Some(id_ref) = header.get_style_of_name_string("ref") {
-            Ok(Self { id_ref, strings:Vec::new(), content:Vec::new() })
+            Ok(Self { id_ref, strings:Vec::new(), content:Vec::new(), depth:0 })
         } else {
             Err(ElementError::of_string(header, "No 'ref' attribute found in use element"))
         }
@@ -50,8 +52,12 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, _header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError> {
-        panic!("Not yet implemented clone of Use");
+    fn clone(&self, _header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError> {
+        let id_ref = self.id_ref.clone();
+        let strings = self.strings.iter().map(|s| s.clone()).collect();
+        let content = Vec::new();
+        let depth = scope.depth + 1;
+        Ok(Self { id_ref, strings, content, depth })
     }
 
     //mp uniquify
@@ -63,7 +69,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
         match self.content.len() {
             0 => {
-                let (scope, element) = scope.new_subscope(header, &self.id_ref)?;
+                let (scope, element) = scope.new_subscope(header, &self.id_ref, self.depth+1)?;
                 self.content.push(element.clone(&scope)?);
                 Ok(true)
             }

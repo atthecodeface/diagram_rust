@@ -260,7 +260,7 @@ mod tests_polygon {
     #[test]
     fn test_zero() {
         let x = Rectangle::none();
-        assert!(x.is_zero());
+        assert!(x.is_none());
         pt_eq(&x.get_center(),0.,0.);
         pt_eq(&x.get_wh(),0.,0.);
         assert_eq!(x.width(),0.);
@@ -299,7 +299,7 @@ mod tests_polygon {
         pt_eq(&x_or_y.xrange(),2.,6.);
         pt_eq(&x_or_y.yrange(),0.,7.);
 
-        assert!(x_and_z.is_zero());
+        assert!(x_and_z.is_none());
         pt_eq(&x_and_z.xrange(),0.,0.);
         pt_eq(&x_and_z.yrange(),0.,0.);
         pt_eq(&x_or_z.xrange(),2.,7.);

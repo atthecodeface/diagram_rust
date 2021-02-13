@@ -126,36 +126,45 @@ impl std::fmt::Display for ElementError {
 
 //a ElementScope<'a> - 'a is the lifetime of the definition elements
 //tp ElementScope
+#[derive(Debug)]
 pub struct ElementScope<'a, 'b> {
     id_prefix   : String,
     definitions : &'b Vec<Element<'a>>,
+    pub depth       : usize,
 }
 
 //ip ElementScope
 impl <'a, 'b> ElementScope<'a, 'b> {
+    //fp new
     pub fn new(id_prefix:&str, definitions: &'b Vec<Element<'a>>) -> Self {
         let id_prefix = id_prefix.to_string();
-        Self { id_prefix, definitions, }
+        Self { id_prefix, definitions, depth:0, }
     }
-    pub fn new_subscope<'c>(&'c self, header:&ElementHeader<'a>, name:&str) -> Result<(ElementScope<'a, 'c>, &'c Element<'a>), ElementError> {
-        let n = self.definitions.len();
-        let mut index = None;
-        for i in 0..n {
-            if self.definitions[i].has_id(name) {
-                index = Some(i);
+    //mp new_subscope
+    pub fn new_subscope<'c>(&'c self, header:&ElementHeader<'a>, name:&str, depth:usize) -> Result<(ElementScope<'a, 'c>, &'c Element<'a>), ElementError> {
+        if depth > 50 {
+            Err(ElementError::of_string(header, &format!("Maximum scope depth of {} reached - recursive Use?", depth)))
+        } else {
+            let n = self.definitions.len();
+            let mut index = None;
+            for i in 0..n {
+                if self.definitions[i].has_id(name) {
+                    index = Some(i);
+                }
+            }
+            if let Some(index) = index {
+                let mut id_prefix = self.id_prefix.clone();
+                id_prefix.push_str(header.borrow_id());
+                id_prefix.push_str(".");
+                id_prefix.push_str(name);
+                // println!("New scope with prefix {}", id_prefix);
+                let definitions = self.definitions;
+                let element     = &self.definitions[index];
+                Ok((Self { id_prefix, definitions, depth}, element))
+            } else {
+                Err(ElementError::unknown_id(header, name))
             }
         }
-        if let Some(index) = index {
-            let mut id_prefix = self.id_prefix.clone();
-            id_prefix.push_str(".");
-            id_prefix.push_str(header.borrow_id());
-            let definitions = self.definitions;
-            let element     = &self.definitions[index];
-            Ok((Self { id_prefix, definitions}, element))
-        } else {
-            Err(ElementError::unknown_id(header, name))
-        }
-            
     }
 }
     
@@ -356,6 +365,7 @@ impl <'a> ElementHeader <'a> {
         let mut id_name = scope.id_prefix.clone();
         id_name.push_str(".");
         id_name.push_str(self.borrow_id());
+        // println!("Clone header with new id {}", id_name);
         let id_name = Some(id_name);
         let stylable = self.stylable.clone(); // WRONG!!
         let layout_box = LayoutBox::new();
