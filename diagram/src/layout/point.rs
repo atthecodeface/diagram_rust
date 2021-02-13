@@ -31,26 +31,37 @@ impl Point {
         self.y = y1;
         self
     }
+
+    //cp scale_xy
     pub fn scale_xy(mut self, sx:f64, sy:f64) -> Self {
         self.x = self.x*sx;
         self.y = self.y*sy;
         self
     }
+
+    //cp add
     pub fn add(mut self, other:&Self, scale:f64) -> Self {
         self.x = self.x + other.x*scale;
         self.y = self.y + other.y*scale;
         self
     }
-    pub fn len2(self) -> f64 {
+
+    //mp len2
+    pub fn len2(&self) -> f64 {
         self.x*self.x + self.y*self.y
     }
-    pub fn len(self) -> f64 {
+    
+    //mp len
+    pub fn len(&self) -> f64 {
         (self.x*self.x + self.y*self.y).sqrt()
     }
-    pub fn dot(self, other:&Point) -> f64 {
+
+    //mp dot
+    pub fn dot(&self, other:&Point) -> f64 {
         self.x*other.x + self.y*other.y
     }
-    //mp rotate_around
+
+    //cp rotate_around
     pub fn rotate_around(mut self, pivot:&Point, degrees:f64) -> Self {
         let c = degrees.to_radians().cos();
         let s = degrees.to_radians().sin();
@@ -60,7 +71,8 @@ impl Point {
         self.y = y1 + pivot.y;
         self
     }
-    //mp union
+    
+    //cp union
     /// Treat this and other as a range, and find the min and max
     pub fn union(mut self, other:&Point) -> Self {
         if other.x<self.x {self.x=other.x;}
