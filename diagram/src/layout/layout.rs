@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::Point;
-use super::Rectangle;
+use super::{Rectangle, Float4};
 use super::Polygon;
 use super::grid::{CellData, GridPlacement};
 use super::placement::{Placements};
@@ -82,13 +82,13 @@ pub struct LayoutBox {
     /// This indicates how much where to anchor the content within its laid-out space; if the expansion is 1 then this is irrelevant. -1 indicates to the minimum X/Y, +1 indicates to the maximum X/Y
     anchor    : Point,
     /// The margin may be specified for each of the four sides - it reduces the laid-out space, with the border within the margin
-    margin: Option<Rectangle>,
+    margin: Option<Float4>,
     /// The border is a fixed width all round, and may be 0. for no border; the border is within the laid-out margin, around the padding around the content
     border_width: f64,
     /// The border may be rounded
     border_round: f64,
     /// The padding may be specified for each of the four sides - it reduces the laid-out space for the content within the border
-    padding: Option<Rectangle>,
+    padding: Option<Float4>,
     /// The content may be rotated within its laid-out (post-padding) space; it will still be rectangular, so it will be the largest rectangle permitted at the rotation provided by the laid-out rectangle
     content_rotation : f64,
     /// The content may be scaled its space, by a uniform amount in X and Y
@@ -141,6 +141,7 @@ impl LayoutBox {
         self.content_ref      = Some(ref_pt);
         self.content_scale    = scale;
         self.content_rotation = rotation;
+        // self.content_translation = ;
         self.content_desired  = Some(rect);
     }
 
@@ -157,7 +158,7 @@ impl LayoutBox {
     //fp set_margin
     pub fn set_margin(&mut self, value:&Option<(f64,f64,f64,f64)>) {
         if let Some((x0,y0,x1,y1)) = value.as_ref() {
-            self.margin = Some(Rectangle::new(*x0,*y0,*x1,*y1));
+            self.margin = Some(Float4::new(*x0,*y0,*x1,*y1));
         } else {
             self.margin = None;
         }
@@ -166,12 +167,18 @@ impl LayoutBox {
     //fp set_padding
     pub fn set_padding(&mut self, value:&Option<(f64,f64,f64,f64)>) {
         if let Some((x0,y0,x1,y1)) = value.as_ref() {
-            self.padding = Some(Rectangle::new(*x0,*y0,*x1,*y1));
+            self.padding = Some(Float4::new(*x0,*y0,*x1,*y1));
         } else {
             self.padding = None;
         }
     }
 
+    //fp set_anchor_expand
+    pub fn set_anchor_expand(&mut self, anchor:Point, expansion:Point) {
+        self.anchor = anchor;
+        self.expansion = expansion;
+    }
+    
     //fp borrow_content_transform
     pub fn borrow_content_transform(&self) -> Option<&Transform> {
         self.content_to_layout.as_ref()
@@ -317,6 +324,7 @@ impl LayoutBox {
     //mp content_within_inner
     /// 
     fn content_within_inner(&mut self) -> () {
+        if DEBUG_LAYOUT { println!("{:?} {:?}",self.inner, self.content_desired); }
         let (ic, iw, ih)  = self.inner.unwrap().get_cwh();
         // If scale is 1. and rotation is 0. then we should be able to use a translation of ic-dc
         // so that is what we should get...
@@ -326,12 +334,12 @@ impl LayoutBox {
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
         let di_x_range = Point::new(cd.x0*self.content_scale, cd.x1*self.content_scale);
-        let a_x_range  = Point::new(-aw/2., aw/2.); // centred on zero
-        let ci_x_range = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor.x, self.expansion.x); // 'centred' on zero
+        let a_x_range  = Point::new(ic.x-aw/2., ic.x+aw/2.);
+        let (x_translation,ci_x_range) = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor.x, self.expansion.x);
 
         let di_y_range = Point::new(cd.y0*self.content_scale, cd.y1*self.content_scale);
-        let a_y_range  = Point::new(-ah/2., ah/2.); // centred on zero
-        let ci_y_range = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y); // 'centred' on zero
+        let a_y_range  = Point::new(ic.y-ah/2., ic.y+ah/2.);
+        let (y_translation,ci_y_range) = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y);
 
         // ci_*_range is in inner coordinates centred on 'zero => inner center'
         // assuming content will be 'centred' on its desired centre (should perhaps use reference points?)
@@ -339,11 +347,9 @@ impl LayoutBox {
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
         if DEBUG_LAYOUT { println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
-        let (cd_c,_,_) = cd.get_cwh();
-        let ci_c = cd_c.scale_xy(self.content_scale,self.content_scale).rotate(self.content_rotation);
         self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
-        let transform = Transform::of_trs(ic.add(&ci_c,-1.), self.content_rotation, self.content_scale );
+        let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
         self.content_to_layout = Some(transform)
     }
 
@@ -375,8 +381,8 @@ mod test_layoutbox {
 #[derive(Debug)]
 pub struct Layout {
     cell_data  : (Vec<CellData>, Vec<CellData>),
-    grid_placements   : (GridPlacement, GridPlacement),
-    direct_placements : (Placements, Placements),
+    pub grid_placements   : (GridPlacement, GridPlacement),
+    pub direct_placements : (Placements, Placements),
     pub desired_grid      : Rectangle,
     pub desired_placement : Rectangle,
     pub desired_geometry  : Rectangle,
@@ -397,9 +403,9 @@ impl Layout {
     }
 
     //mp add_grid_element
-    pub fn add_grid_element(&mut self, start:(isize,isize), span:(usize,usize), size:(f64,f64)) {
-        self.cell_data.0.push(CellData::new(start.0, span.0, size.0));
-        self.cell_data.1.push(CellData::new(start.1, span.1, size.1));
+    pub fn add_grid_element(&mut self, start:(isize,isize), end:(isize,isize), size:(f64,f64)) {
+        self.cell_data.0.push(CellData::new(start.0, end.0, size.0));
+        self.cell_data.1.push(CellData::new(start.1, end.1, size.1));
     }
 
     //mp add_placed_element
@@ -469,9 +475,9 @@ impl Layout {
     }
 
     //mp get_grid_rectangle
-    pub fn get_grid_rectangle(&self, start:(isize,isize), span:(usize,usize)) -> Rectangle {
-        let (x0, x1) = self.grid_placements.0.get_span(start.0, span.0);
-        let (y0, y1) = self.grid_placements.1.get_span(start.1, span.1);
+    pub fn get_grid_rectangle(&self, start:(isize,isize), end:(isize,isize)) -> Rectangle {
+        let (x0, x1) = self.grid_placements.0.get_span(start.0, end.0);
+        let (y0, y1) = self.grid_placements.1.get_span(start.1, end.1);
         Rectangle::new(x0,y0,x1,y1)
     }
 

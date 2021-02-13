@@ -1,5 +1,5 @@
 #diagram
-##shape grid="1,1,5,4" margin="40" bg="yellow"
+##shape grid="1,1,6,5" margin="40" bg="yellow"
 
 ##shape vertices="3" grid="1,1" bg="red" fill="blue" stroke="yellow" strokewidth="1" width="10" height="20"
 ##shape vertices="4" grid="2,1" bordercolor="green" border="4" fill="pink" width="20"

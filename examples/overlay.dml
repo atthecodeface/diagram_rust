@@ -1,0 +1,27 @@
+#diagram
+##defs{
+#shape id="blob" vertices=7 grid=1,1 bordercolor=green border=4 stroke=purple fill=pink stellate=5
+#use id=big    ref=blob width=50 fill=red stellate=40
+#use id=medium ref=blob width=20 fill=yellow
+#use id=small  ref=blob width=10 fill=orange
+##defs}
+
+##use id=big     ref=big
+##use id=medium0 ref=medium anchor=-1
+##use id=medium1 ref=medium anchor=0,-1
+##use id=medium2 ref=medium anchor=1,-1
+##use id=medium3 ref=medium anchor=-1,0
+##use id=medium4 ref=medium
+##use id=medium5 ref=medium anchor=1,0
+##use id=medium6 ref=medium anchor=-1,1
+##use id=medium7 ref=medium anchor=0,1
+##use id=medium8 ref=medium anchor=1
+##use id=small0 ref=small anchor=-1
+##use id=small1 ref=small anchor=0,-1
+##use id=small2 ref=small anchor=1,-1
+##use id=small3 ref=small anchor=-1,0
+##use id=small4 ref=small
+##use id=small5 ref=small anchor=1,0
+##use id=small6 ref=small anchor=-1,1
+##use id=small7 ref=small anchor=0,1
+##use id=small8 ref=small anchor=1

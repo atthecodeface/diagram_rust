@@ -93,32 +93,55 @@ impl Point {
     /// using 'anchor' as a value from -1 to 1, where -1 is place this at the minimum
     /// of the outer range, 1 is place this at the maximum of the outer range
     ///
-    /// expand is 0 to not grow the size of the region, or 1 to make it expand to the whole of outer
+    /// First off, the 'anchor' point (for example at 0.5 in the range -1 to 1) indicates
+    /// that the point that is at 'anchor' relative to the 'self' remains at 'anchor' relative
+    /// to 'outer' (i.e. will be at 0.5 in the range -1 to 1 for the outer).
+    ///
+    /// This means that anchor of 0 means map center of self to center of outer
+    ///  anchor of 1 means map right hand of self to right hand of outer
+    ///  anchor of -1 means map left hand of self to left hand of outer
+    ///  anchor of 0.5 means map 3/4 of the way along self to 3/4 the way along outer
+    ///
+    /// Then the slack between the translated region can be expanded by 'expand'.
+    ///
+    /// The result is then a translation and a range.
     ///
     /// As an example, fitting (-4,4) to an outer of (4 25), (centers are 0 and 14.5)
     ///   self_size = 8; outer_size=21; slack=13
-    ///   with expand of 0 (new size 8, half unused slack=6.5) and anchor of 0, result of (10.5,18.5)
-    ///   with expand of 0 (new size 8, half unused slack=6.5) and anchor of -1, result of (4,12)
-    ///   with expand of 0 (new size 8, half unused slack=6.5) and anchor of 1, result of (17,25)
-    ///   with expand of 1 (new size 21, half unused slack=0) and anchor of _, result of (4,25)
-    ///   with expand of 0.5 (new size 14.5, half unused slack=3.25) and anchor of -1, result of (4,18.5)
-    ///   with expand of 0.5 (new size 14.5, half unused slack=3.25) and anchor of 0, result of (7.25,21.75)
+    /// anchor -1 means outer of (4,N): expand 0 means (4,12); expand 1 means (4,25)
+    /// anchor  1 means outer of (N,25): expand 0 means (17,25); expand 1 means (4,25)
+    /// anchor  0 means outer of (14.5-x,14.5-x): expand 0 means (10.5,18.5); expand 1 means (4,25)
     ///
-    /// used slack = expand*slack; unused slack=(1-expand)*slack
-    /// from this it is clear the new size = size+slack*expand, new center is 14.5+anchor*half_unused_slack
-    /// new center = outer_center + anchor*(1-expand)*slack/2
-    /// new left is new center - new_size/2
-    pub fn fit_within_dimension(mut self, outer:&Point, anchor:f64,  expand:f64) -> Self {
-        let self_size    = self.y-self.x;
+    /// current anchor = inner_center + anchor * inner_size
+    /// new anchor     = outer_center + anchor * outer_size
+    /// translation = new anchor - current anchor
+    ///
+    /// new left edge unexpanded = inner left + translation
+    /// new right edge unexpanded = inner right + translation
+    ///
+    /// new left slack  = (inner left + translation) - outer left
+    /// new right slack = outer right - (inner right + translation)
+    /// slack to use = expand * new slack
+    ///
+    /// new left edge = new left edge unexpanded - expand * new left slack
+    /// new right edge = new right edge unexpanded + expand * new right slack
+    ///
+    /// Or:
+    /// translation = outer_center - inner_center + anchor * (outer_size-inner_size)
+    /// new left edge = inner_left + translation + expand * (outer_left - inner left - translation)
+    /// new right edge = inner_right + translation + expand * (outer_right - inner_right - translation)
+    pub fn fit_within_dimension(mut self, outer:&Point, anchor:f64,  expand:f64) -> (f64,Self) {
+        let inner_center_2 = self.y  + self.x;
+        let outer_center_2 = outer.y + outer.x;
+        let inner_size   = self.y-self.x;
         let outer_size   = outer.y-outer.x;
-        let outer_center = (outer.y+outer.x)/2.;
-        let slack        = outer_size - self_size;
-        let new_size     = self_size + slack*expand;
-        let new_center   = outer_center + anchor*(1.-expand)*slack/2.;
-        // println!("{} {} {} {} {} {}", self_size, outer_size, outer_center, slack, new_size, new_center );
-        self.x = new_center - new_size/2.0;
-        self.y = new_center + new_size/2.0;
-        self
+        let translation = (outer_center_2 - inner_center_2)/2. + anchor * (outer_size-inner_size)/2.;
+        let new_left_edge  = self.x + translation + expand * (outer.x - self.x - translation);
+        let new_right_edge = self.y + translation + expand * (outer.y - self.y - translation);
+        // println!("{} {} {} {} {} {} {} {} {} {} {}", self, outer, anchor, expand, inner_center_2/2., outer_center_2/2., inner_size, outer_size, translation, new_left_edge, new_right_edge);
+        self.x = new_left_edge;
+        self.y = new_right_edge;
+        (translation,self)
     }
 
     //zz All done
@@ -180,10 +203,10 @@ mod test_point {
     }
     #[test]
     fn test_union() {
-        pt_eq( &Point::new(0.,4.).union(&Point::new(0.,4.)), 0., 4. );
-        pt_eq( &Point::new(0.,4.).union(&Point::new(0.,5.)), 0., 5. );
-        pt_eq( &Point::new(0.,4.).union(&Point::new(2.,5.)), 0., 5. );
-        pt_eq( &Point::new(0.,4.).union(&Point::new(2.,3.)), 0., 4. );
+        pt_eq( &Point::new(0.,4.).union(&Point::new(0.,4.)),  0., 4. );
+        pt_eq( &Point::new(0.,4.).union(&Point::new(0.,5.)),  0., 5. );
+        pt_eq( &Point::new(0.,4.).union(&Point::new(2.,5.)),  0., 5. );
+        pt_eq( &Point::new(0.,4.).union(&Point::new(2.,3.)),  0., 4. );
         pt_eq( &Point::new(0.,4.).union(&Point::new(-1.,3.)), -1., 4. );
         pt_eq( &Point::new(0.,4.).union(&Point::new(-1.,5.)), -1., 5. );
     }
@@ -198,19 +221,29 @@ mod test_point {
     }
     #[test]
     fn test_fit() {
+        // As an example, fitting (-4,4) to an outer of (4 25), (centers are 0 and 14.5)
+        //   self_size = 8; outer_size=21; slack=13
+        // anchor -1 means outer of (4,N): translate +8, expand 0 means (4,12); expand 1 means (4,25)
+        // anchor  1 means outer of (N,25): translate +21, expand 0 means (17,25); expand 1 means (4,25)
+        // anchor  0 means outer of (14.5-x,14.5-x): expand 0 means (10.5,18.5); expand 1 means (4,25)
         //   with expand of 0 (new size 8, half unused slack=6.5) and anchor of 0, result of (10.5,18.5)
         //   with expand of 0 (new size 8, half unused slack=6.5) and anchor of -1, result of (4,12)
         //   with expand of 0 (new size 8, half unused slack=6.5) and anchor of 1, result of (17,25)
         //   with expand of 1 (new size 21, half unused slack=0) and anchor of _, result of (4,25)
         //   with expand of 0.5 (new size 14.5, half unused slack=3.25) and anchor of -1, result of (4,18.5)
         //   with expand of 0.5 (new size 14.5, half unused slack=3.25) and anchor of 0, result of (7.25,21.75)
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 0.),  10.5, 18.5 );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 0.),    4., 12. );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 0.),   17., 25. );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 1.),    4., 25. );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 1.),    4., 25. );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 0.5), 7.25, 21.75 );
-        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 0.5),   4., 18.5  );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 0.).1,    4.,  12. );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 0.).1,   17.,  25. );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 0.).1,   10.5, 18.5 );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 1.).1,    4.,  25. );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 1.).1,    4.,  25. );
+        pt_eq( &Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 1.).1,    4.,  25. );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 0.).0,  8. );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 0.).0, 21. );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 0.).0, 14.5 );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.), -1., 1.).0,  8. );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  1., 1.).0, 21. );
+        assert_eq!( Point::new(-4.,4.).fit_within_dimension(&Point::new(4.,25.),  0., 1.).0, 14.5 );
     }
     /*
     pub fn add(mut self, other:&Self, scale:f64) -> Self {

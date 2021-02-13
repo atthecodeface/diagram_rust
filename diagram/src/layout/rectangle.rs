@@ -2,6 +2,43 @@
 use super::Point;
 
 //t Rectangle
+//tp Float4
+//tp Rectangle
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Float4 {
+    pub x0 : f64,
+    pub x1 : f64,
+    pub y0 : f64,
+    pub y1 : f64,
+}
+
+//ti Display for Float4
+impl std::fmt::Display for Float4 {
+
+    //mp fmt - format for a human
+    /// Display the Float4
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "[({},{}):({},{})]", self.x0, self.y0, self.x1, self.y1)
+    }
+
+    //zz All done
+}
+
+//ti Float4
+impl Float4 {
+    //fp none
+    /// Create an empty float4 at 0,0
+    pub const fn none() -> Self {
+        Self { x0:0., x1:0., y0:0., y1:0.}
+    }
+
+    //fp new
+    /// Make a float4
+    pub fn new(x0:f64, y0:f64, x1:f64, y1:f64) -> Self {
+        Self {x0, x1, y0, y1}
+    }
+}
+
 //tp Rectangle
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Rectangle {
@@ -14,8 +51,8 @@ pub struct Rectangle {
 //ti Display for Rectangle
 impl std::fmt::Display for Rectangle {
 
-    //mp fmt - format a `CharError` for display
-    /// Display the `Point' as (x,y)
+    //mp fmt - format for a human
+    /// Display the Rectangle
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "[({},{}):({},{})]", self.x0, self.y0, self.x1, self.y1)
     }
@@ -147,7 +184,7 @@ impl Rectangle {
 
     //mp expand
     /// exand in-place by expansion scaled by 'scale'
-    pub fn expand(mut self, other:&Self, scale:f64) -> Self {
+    pub fn expand(mut self, other:&Float4, scale:f64) -> Self {
         self.x0 -= scale * other.x0;
         self.y0 -= scale * other.y0;
         self.x1 += scale * other.x1;
@@ -159,7 +196,7 @@ impl Rectangle {
     /// shrink in-place by expansion scaled by 'scale'
     // note that self is not mut as this does not modify it - but it consumes it,
     // and returns that from expand
-    pub fn shrink(self, other:&Self, scale:f64) -> Self {
+    pub fn shrink(self, other:&Float4, scale:f64) -> Self {
         self.expand(other, -scale)
     }
 
@@ -236,14 +273,14 @@ impl Rectangle {
     /// fit this region within an outer region
     ///
     /// See Point::fit_within_region for more details on each dimension
-    pub fn fit_within_dimension(mut self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> Self {
-        let xs = Point::new(self.x0,self.x1).fit_within_dimension( &Point::new(outer.x0,outer.x1), anchor.x, expand.x);
-        let ys = Point::new(self.y0,self.y1).fit_within_dimension( &Point::new(outer.y0,outer.y1), anchor.y, expand.y);
+    pub fn fit_within_dimension(mut self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> (Point,Self) {
+        let (dx,xs) = Point::new(self.x0,self.x1).fit_within_dimension( &Point::new(outer.x0,outer.x1), anchor.x, expand.x);
+        let (dy,ys) = Point::new(self.y0,self.y1).fit_within_dimension( &Point::new(outer.y0,outer.y1), anchor.y, expand.y);
         self.x0 = xs.x;
         self.x1 = xs.y;
         self.y0 = ys.x;
         self.y1 = ys.y;
-        self
+        (Point::new(dx,dy), self)
     }
     
     //zz All done
@@ -308,7 +345,7 @@ mod tests_polygon {
     #[test]
     fn test_ops_1() {
         let x = Rectangle::new(2.,1., 5.,7.);
-        let y = Rectangle::new(0.1, 0.2, 0.3, 0.5);
+        let y = Float4::new(0.1, 0.2, 0.3, 0.5);
         let x_p_y  = x.clone().expand(&y,1.);
         let x_p_2y = x.clone().expand(&y,2.);
         println!("x_p_y:{}",x_p_y);
@@ -321,7 +358,7 @@ mod tests_polygon {
     #[test]
     fn test_ops_2() {
         let x = Rectangle::new(2.,1., 5.,7.);
-        let y = Rectangle::new(0.1, 0.2, 0.3, 0.5);
+        let y = Float4::new(0.1, 0.2, 0.3, 0.5);
         let x_m_y  = x.clone().shrink(&y,1.);
         let x_m_2y = x.clone().shrink(&y,2.);
         println!("x_m_y:{}",x_m_y);

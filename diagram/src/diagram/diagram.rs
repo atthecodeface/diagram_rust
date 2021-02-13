@@ -61,6 +61,7 @@ pub struct DiagramContents<'a> {
 pub struct Diagram<'a> {
     pub descriptor    : &'a DiagramDescriptor<'a>,
     pub contents      : DiagramContents<'a>,
+    pub layout : Layout,
     pub layout_record : Option<LayoutRecord>, 
 }
 
@@ -75,6 +76,7 @@ impl <'a> Diagram <'a> {
                                           content_bbox : Rectangle::none(),
                },
                layout_record : None,
+               layout : Layout::new(),
         }
     }
 
@@ -135,24 +137,23 @@ impl <'a> Diagram <'a> {
     /// and so on
     ///
     pub fn layout(&mut self, within:&Rectangle) -> Result<(),DiagramError> {
-        let mut layout = Layout::new();
         for e in self.contents.elements.iter_mut() {
-            e.set_layout_properties(&mut layout);
+            e.set_layout_properties(&mut self.layout);
         }
         // specify expansions
-        let mut rect = layout.get_desired_geometry();
+        let mut rect = self.layout.get_desired_geometry();
         if !within.is_none() {
             rect = within.clone();
         }
-        layout.layout(&rect);
-        self.contents.content_transform = layout.get_layout_transform();
+        self.layout.layout(&rect);
+        self.contents.content_transform = self.layout.get_layout_transform();
         self.contents.content_bbox = rect;
         // apply expansions - lay it out in a rectangle, generate transform?
         for e in self.contents.elements.iter_mut() {
-            e.apply_placement(&layout);
+            e.apply_placement(&self.layout);
         }
         if let Some(ref mut lr) = &mut self.layout_record {
-            lr.capture_grid(&layout);
+            lr.capture_grid(&self.layout);
         }
         Ok(())
     }
@@ -172,6 +173,9 @@ impl <'a> Diagram <'a> {
     
     //mp display
     pub fn display(&self) {
+        println!("Layout");
+        println!("    X grid {:?}", self.layout.grid_placements.0 );
+        println!("    Y grid {:?}", self.layout.grid_placements.1 );
         for e in self.iter_elements() {
             e.display(2);
         }

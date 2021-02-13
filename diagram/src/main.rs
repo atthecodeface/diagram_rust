@@ -45,6 +45,10 @@ fn main() {
              .long("svg_display")
              .help("Display SVG hierarchy")
              .multiple(false))
+        .arg(Arg::with_name("diag_display")
+             .long("diag_display")
+             .help("Display diagram hierarchy")
+             .multiple(false))
         .arg(Arg::with_name("file")
              .help("Input files to read")
              .multiple(true))
@@ -68,6 +72,7 @@ fn main() {
     let svg_show_grid   = matches.is_present("svg_grid");
     let svg_show_layout = matches.is_present("svg_layout");
     let svg_display     = matches.is_present("svg_display");
+    let diag_display    = matches.is_present("diag_display");
     diagram.record_layout();
     println!("Uniqify");
     exit_on_err( diagram.uniquify() );
@@ -78,7 +83,7 @@ fn main() {
     exit_on_err( diagram.layout(&Rectangle::none()) );
     println!("Generate geometry");
     exit_on_err( diagram.geometry() );
-    // diagram.display();
+    if diag_display { diagram.display(); }
     println!("Create SVG");
     let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display);
     exit_on_err( diagram.generate_svg(&mut svg) );

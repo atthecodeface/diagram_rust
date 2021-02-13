@@ -32,7 +32,7 @@ const STRING_IS_NONE : &str = r"^\s*$";
 const STRING_AS_FLOAT : &str = r"^\s*,?\s*(-?\d+\.?\d*)(.*)$";
 
 //vi STRING_AS_INT - decimal or hex with optional whitespace / comma in front of it and a 'rest' overflow
-const STRING_AS_INT : &str = r"^\s*,?\s*(0x[0-9a-fA-F]+|\d+)(.*)$";
+const STRING_AS_INT : &str = r"^\s*,?\s*(0x[0-9a-fA-F]+|-?\d+)(.*)$";
 
 //vi Static versions thereof
 lazy_static!{
@@ -118,6 +118,7 @@ mod test_res {
     }
     fn test_extract_vec<R:FromStr+Debug+PartialEq>(rex:&Regex, s:&str, max_len:usize, expected:Vec<R>, rest:&str) {
         let mut v = Vec::new();
+        println!("Test string {}",s);
         assert_eq!(extract_vec_first_and_rest::<R>(rex, max_len, &mut v, s).unwrap(),(expected.len(),rest));
         assert_eq!(v,expected);
     }
@@ -127,6 +128,10 @@ mod test_res {
         test_extract_vec::<isize>(&STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
         test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 2 3", 10, vec![1,2,3], "");
         test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 2 3", 1, vec![1], " 2 3");
+        test_extract_vec::<isize>(&STRING_AS_INT_REX, "1 -2 3", 10, vec![1,-2,3], "");
+        test_extract_vec::<isize>(&STRING_AS_INT_REX, "1 -2 3", 1, vec![1], " -2 3");
+        test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 -2 3", 10, vec![1], " -2 3");
+        test_extract_vec::<usize>(&STRING_AS_INT_REX, "1 -2 3", 1, vec![1], " -2 3");
     }
     #[test]
     fn test_extract_vec_float() {

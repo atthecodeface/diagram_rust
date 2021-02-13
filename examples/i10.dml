@@ -1,32 +1,103 @@
 #diagram{
 
 #defs
-##layout{ id="fifo4" grid=1,1 border=1 bordercolor="black" borderround=2
-#shape id="i0" grid=1,0 vertices=4 width=20 height=5 border=1 bordercolor="red" borderround=2 margin=1
-#shape id="i1" grid=1,1 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
-#shape id="i2" grid=1,2 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
-#shape id="i3" grid=1,3 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
+##layout{ id="fifo3p"
+#layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
+##shape id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
+##shape id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
+##shape id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
 ##layout}
 
-#text grid=0,0,140,100  bg=#f0e0e0 ""
-#text fill="black" class="structure hardware"   border=1 bordercolor="red" borderround=2 grid="0,0,10,10"   "Cpu Core"
-#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,20,10,10"  "VFS"
-#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,40,10,10"  "Block" "(blk-mq)" "& NVME"
-#text fill="black" class="structure kernel i10" border=1 bordercolor="red" borderround=2 grid="0,60,10,10"  "i10"
-#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,80,10,10"  "TCP/IP" "Stack"
-#text fill="black" class="structure kernel"     border=1 bordercolor="red" borderround=2 grid="0,100,10,10" "Device"
+##layout{ id="fifo3g"
+#layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
+##shape id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##shape id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##shape id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##layout}
 
-#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="20,0,30,10" "X1"
+##layout{ id="fifo3mixed"
+#layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
+##shape id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##shape id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
+##shape id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##layout}
 
-#text fill="black" class="app app1"             border=1 bordercolor="red" borderround=2 grid="60,0,30,10" "X2"
-#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="60,0,10,15" "App1"
-#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,0,30,15" "App2"
-#text fill="black" class="app app2"             border=1 bordercolor="red" borderround=2 grid="100,0,10,10" "X3"
+##layout id=bio_pink
+###layout grid=1,1
+####text border=0.3 bordercolor="grey" borderround=1 bg=pink  fill=black grid=1,1 pad=2,1 "bio"
+##layout id=bio_lightgreen
+###layout grid=1,1
+####text border=0.3 bordercolor="grey" borderround=1 bg=lightgreen  fill=black grid=1,1 pad=2,1 "bio"
+##layout id=req_pink
+###layout grid=1,1
+####text border=0.3 bordercolor="grey" borderround=1 bg=pink  fill=black grid=1,1 pad=2,1 "req"
+##layout id=req_lightgreen
+###layout grid=1,1
+####text border=0.3 bordercolor="grey" borderround=1 bg=lightgreen  fill=black grid=1,1 pad=2,1 "req"
 
-#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,12,50,6" "I/O syscalls"
 
-#text fill="black" class="cpu core"             border=1 bordercolor="red" borderround=2 grid="80,0,30,10" ""
+#text grid=0,60,140,70  bg=#ffece0 ""
+#text fill="black" class="structure hardware"   border=0.3 bordercolor="black" borderround=1 grid="0,0,10,10"   "CPU Core"
+#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,20,10,30"  "VFS"
+#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,30,10,60"  "Block" "(blk-mq)" "& NVME"
+#text fill="black" class="structure kernel i10" border=0.3 bordercolor="black" borderround=1 grid="0,60,10,70"  "i10"
+#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,80,10,90"  "TCP/IP" "Stack"
+#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,100,10,110" "Device"
 
+#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="20,0,50,10" "X1"
+
+#text fill="black" class="app app1"             border=0.3 bordercolor="black" borderround=1 bg=pink grid="60,-10,100,0" "App1"
+#text fill="black" class="app app2"             border=0.3 bordercolor="black" borderround=1 bg=lightgreen grid="100,-10,120,0" "App2"
+#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="60,0,80,10" "X2"
+#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="80,0,120,10" "X3"
+
+#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="60,12,120,18" "I/O syscalls"
+
+#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="130,0,170,10" "X4"
+
+#layout id="target1" grid=20,30,30,60
+##use id=x ref=bio_pink    grid=10,10,20,20
+##use id=y ref=req_pink    grid=10,20,20,30
+##use  id=pcbmq  ref=fifo3p grid=10,30,20,40
+##use  id=pcnvmq ref=fifo3p grid=10,40,20,50
+
+#use  id=pi10io_0  ref=fifo3p grid=30,60,40,70
+#use  id=pi10txp_0 ref=fifo3p grid=30,80,40,90
+#use  id=pi10io_1  ref=fifo3p grid=40,60,50,70
+#use  id=pi10txp_1 ref=fifo3p grid=40,80,50,90
+
+#text fill="black" class="structure kernel i10" grid="50,60,60,70"  "per-i10-lane" "I/O queue"
+#text fill="black" class="structure kernel i10" grid="50,80,60,90"  "per-i10-lane" "TCP Tx/Rx" "buffers"
+
+#text fill="black" class="structure kernel i10" grid="120,60,130,70"  "per-i10-lane" "I/O queue"
+#text fill="black" class="structure kernel i10" grid="120,80,130,90"  "per-i10-lane" "TCP Tx/Rx" "buffers"
+
+#layout id="host" grid=60,30,120,60 expand=1
+##use id=host_app1_bio1 ref=bio_pink  grid=10,10,20,20
+##use id=host_app1_bio2 ref=bio_pink  grid=20,10,30,20
+##use id=host_app2_bio ref=bio_lightgreen grid=30,10,40,20
+##use id=host_app1_req1 ref=req_pink  grid=10,20,20,30
+##use id=host_app1_req2 ref=req_pink  grid=20,20,30,30
+##use id=host_app2_req  ref=req_lightgreen grid=30,20,40,30
+##use id=host_pcbmq1  ref=fifo3p grid=10,30,20,40
+##use id=host_pcbmq2  ref=fifo3mixed grid=20,30,40,40
+
+#use  id=pi10io_0  ref=fifo3p grid=60,60,80,70
+#use  id=pi10txp_0 ref=fifo3p grid=60,80,80,90
+#use  id=pi10io_1  ref=fifo3p grid=80,60,100,70
+#use  id=pi10txp_1 ref=fifo3p grid=80,80,100,90
+#use  id=pi10io_2  ref=fifo3g grid=100,60,120,70
+#use  id=pi10txp_2 ref=fifo3g grid=100,80,120,90
+
+
+#layout id="target2"   grid=150,30,170,60
+##use id=x ref=bio_lightgreen    grid=10,10,20,20
+##use id=y ref=req_lightgreen    grid=10,20,20,30
+##use  id=pcbmq  ref=fifo3g grid=10,30,20,40
+##use  id=pcnvmq ref=fifo3g grid=10,40,20,50
+
+#use  id=pi10io_t2  ref=fifo3g grid=130,60,150,70
+#use  id=pi10txp_t2 ref=fifo3g grid=130,80,150,90
 
 ; #style rounded_rect rx=5
 ; #rule class=structure       style=

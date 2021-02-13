@@ -110,6 +110,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
         Rectangle::new(0.,0.,w,h,)
     }
 
+    //mp display
+    /// Display - using indent_str + 2 indent, or an indent of indent spaces
+    /// Content should be invoked with indent+4
+    fn display(&self, _indent:usize, indent_str:&str) {
+        println!("{}    font {}",indent_str, self.font.as_ref().unwrap_or(&"".to_string()));
+        for t in &self.text {
+            println!("{}     '{}'",indent_str, t);
+        }
+    }
+
     //zz All done
 }
 

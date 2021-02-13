@@ -300,7 +300,7 @@ impl <'a> ElementContent<'a> {
 enum LayoutPlacement {
     None,
     Place(Point),
-    Grid(isize,isize,usize,usize),
+    Grid(isize,isize,isize,isize),
 }
 
 //tp ElementLayout
@@ -308,6 +308,8 @@ enum LayoutPlacement {
 pub struct ElementLayout {
     placement : LayoutPlacement,
     ref_pt    : Option<Point>,
+    pub anchor    : Point,
+    pub expand    : Point,
     pub scale     : f64,
     pub rotation  : f64,
     pub translate : Point,
@@ -325,6 +327,8 @@ impl ElementLayout {
     pub fn new() -> Self {
         Self { placement:LayoutPlacement::None,
                ref_pt : None,
+               anchor : Point::origin(),
+               expand : Point::origin(),
                scale:1.,
                rotation:0.,
                translate : Point::origin(),
@@ -338,8 +342,8 @@ impl ElementLayout {
     }
     
     //fp set_grid
-    pub fn set_grid(&mut self, sx:isize, sy:isize, nx:usize, ny:usize) {
-        self.placement = LayoutPlacement::Grid(sx,sy,nx,ny);
+    pub fn set_grid(&mut self, sx:isize, sy:isize, ex:isize, ey:isize) {
+        self.placement = LayoutPlacement::Grid(sx,sy,ex,ey);
     }
     
     //fp set_place
@@ -397,7 +401,7 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_style_names
     pub fn get_style_names<'z> () -> Vec<&'z str> {
-        vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
+        vec!["bbox", "grid", "place", "anchor", "expand", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
     }
 
     //mp override_values
@@ -476,6 +480,12 @@ impl <'a> ElementHeader <'a> {
 
     //mp style
     pub fn style(&mut self) -> Result<(),ElementError> {
+        if let Some(v) = self.get_style_floats_of_name("anchor").as_floats(None) {
+            self.layout.anchor = Point::new(v[0],v[1]);
+        }
+        if let Some(v) = self.get_style_floats_of_name("expand").as_floats(None) {
+            self.layout.expand = Point::new(v[0],v[1]);
+        }
         if let Some(v) = self.get_style_of_name_float("border",None) {
             self.layout.border_width = v;
         }
@@ -500,25 +510,24 @@ impl <'a> ElementHeader <'a> {
         if let Some(v) = self.get_style_floats_of_name("pad").as_floats(None) {
             self.layout.pad = Some( (v[0], v[1], v[2], v[3]) );
         }
-        /*
-        if let Some(v) = stylable.get_style_value_of_name("translate").unwrap().as_floats(None) {
+        if let Some(v) = self.get_style_floats_of_name("translate").as_floats(None) {
+            self.layout.translate = Point::new(v[0],v[1]);
         }
-         */
-        if let Some( (sx,sy,nx,ny) ) = {
+        if let Some( (sx,sy,ex,ey) ) = {
             match self.get_style_ints_of_name("grid").as_ints(None) {
                 Some(g) => {
                     match g.len() {
                         0 => None,
-                        1 => Some( (g[0],g[0],1,1) ),
-                        2 => Some( (g[0],g[1],1,1) ),
-                        3 => Some( (g[0],g[1],g[2],1) ),
+                        1 => Some( (g[0],g[0],g[0]+1,g[0]+1) ),
+                        2 => Some( (g[0],g[1],g[0]+1,g[1]+1) ),
+                        3 => Some( (g[0],g[1],g[2],g[1]+1) ),
                         _ => Some( (g[0],g[1],g[2],g[3]) ),
                     }
                 },
                 _ => None,
             }
         } {
-            self.layout.set_grid(sx,sy,nx as usize, ny as usize);
+            self.layout.set_grid(sx,sy,ex,ey);
         }
         if let Some( (x,y) ) = {
             match self.get_style_ints_of_name("place").as_floats(None) {
@@ -545,11 +554,12 @@ impl <'a> ElementHeader <'a> {
         self.layout_box.set_border_round(self.layout.border_round);
         self.layout_box.set_margin(&self.layout.margin);
         self.layout_box.set_padding(&self.layout.pad);
+        self.layout_box.set_anchor_expand(self.layout.anchor.clone(), self.layout.expand.clone());
         let bbox = self.layout_box.get_desired_bbox();
         match self.layout.placement {
             LayoutPlacement::None => bbox,
-            LayoutPlacement::Grid(sx,sy,nx,ny) => {
-                layout.add_grid_element( (sx,sy), (nx,ny), (bbox.width(), bbox.height() ));
+            LayoutPlacement::Grid(sx,sy,ex,ey) => {
+                layout.add_grid_element( (sx,sy), (ex,ey), (bbox.width(), bbox.height() ));
                 Rectangle::none()
             },
             LayoutPlacement::Place(pt) => {
@@ -570,7 +580,7 @@ impl <'a> ElementHeader <'a> {
         let rect = {
             match self.layout.placement {
                 LayoutPlacement::None              => self.layout_box.get_desired_bbox(),
-                LayoutPlacement::Grid(sx,sy,nx,ny) => layout.get_grid_rectangle( (sx,sy), (nx,ny) ),
+                LayoutPlacement::Grid(sx,sy,ex,ey) => layout.get_grid_rectangle( (sx,sy), (ex,ey) ),
                 LayoutPlacement::Place(pt)         => layout.get_placed_rectangle( &pt, &self.layout.ref_pt ),
             }
         };
@@ -582,6 +592,7 @@ impl <'a> ElementHeader <'a> {
     //mp display
     pub fn display(&self, indent_str:&str) {
         println!("{}{:?} {:?}",indent_str, self.id_name, self.layout.placement);
+        // println!("{}  {:?}",indent_str, self.layout_box);
     }
     //zz All done
 }

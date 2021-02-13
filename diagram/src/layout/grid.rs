@@ -36,8 +36,9 @@ const DEBUG_CELL_DATA : bool = false;
 impl CellData {
 
     //fp new
-    pub fn new(start:isize, span:usize, size:f64) -> Self {
-        let end = start+(span as isize);
+    pub fn new(start:isize, end:isize, size:f64) -> Self {
+        let (start,end) = if start < end { (start,end) } else {(end,start)};
+        let (start,end) = if start != end { (start,end) } else {(start,end+1)};
         Self {start, end, size}
     }
 
@@ -188,7 +189,7 @@ mod tests {
     fn test_0() {
         let mut cd = Vec::new();
         cd.push( CellData::new(0,4,4.) );
-        cd.push( CellData::new(4,2,2.) );
+        cd.push( CellData::new(4,6,2.) );
         assert_eq!((0,6),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
@@ -199,7 +200,7 @@ mod tests {
     fn test_simple_gap() {
         let mut cd = Vec::new();
         cd.push( CellData::new(0,1,1.) );
-        cd.push( CellData::new(2,1,1.) );
+        cd.push( CellData::new(2,3,1.) );
         assert_eq!((0,3),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
@@ -210,9 +211,9 @@ mod tests {
     #[test]
     fn test_1() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(1,1,10.) );
-        cd.push( CellData::new(1,1,20.) );
-        cd.push( CellData::new(1,1,20.) );
+        cd.push( CellData::new(1,2,10.) );
+        cd.push( CellData::new(1,2,20.) );
+        cd.push( CellData::new(1,2,20.) );
         assert_eq!((1,2),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
@@ -220,15 +221,28 @@ mod tests {
     #[test]
     fn test_2() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(60,30,10.) );
-        cd.push( CellData::new(80,30,20.) );
-        cd.push( CellData::new(100,10,20.) );
+        cd.push( CellData::new(60,90,10.) );
+        cd.push( CellData::new(80,110,20.) );
+        cd.push( CellData::new(100,110,20.) );
         assert_eq!((60,110),CellData::find_first_last_indices(&cd));
         let cp = CellData::generate_cell_positions(&cd);
         assert_eq!((0,0.), CellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
         assert_eq!((1,0.), CellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
         assert_eq!((2,10.), CellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
         assert_eq!((3,30.), CellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
+    }        
+    #[test]
+    fn test_3() {
+        let mut cd = Vec::new();
+        cd.push( CellData::new( 10,20,20.) );
+        cd.push( CellData::new(-10,20,20.) );
+        cd.push( CellData::new(-30, 0,10.) );
+        assert_eq!((-30,20),CellData::find_first_last_indices(&cd));
+        let cp = CellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), CellData::find_position(&cp, 0, -30), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,0.), CellData::find_position(&cp, 0, -10), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((2,10.), CellData::find_position(&cp, 0, 10),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((3,30.), CellData::find_position(&cp, 0, 20),"Column 0 starts at 0., and is at index 0");
     }        
 }
 
@@ -326,8 +340,7 @@ impl GridPlacement {
     
     //mp get_span
     /// Find the span of a start/number of grid positions
-    pub fn get_span(&self, start:isize, span:usize) -> (f64,f64) {
-        let end = start + (span as isize);
+    pub fn get_span(&self, start:isize, end:isize) -> (f64,f64) {
         let (index, start_posn) = CellData::find_position(&self.cell_positions, 0,     start);
         let (_,     end_posn)   = CellData::find_position(&self.cell_positions, index, end);
         if DEBUG_GRID_PLACEMENT { println!("Got span for {} {} to be {} {}", start, end, start_posn, end_posn); }
