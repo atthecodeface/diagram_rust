@@ -56,9 +56,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     }
 
     //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        let desc = ElementHeader::get_descriptor(nts);
-        desc.borrow_mut().add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]);
+    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
+        let mut desc = ElementHeader::get_descriptor(nts);
+        desc.add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]);
         desc
     }
 

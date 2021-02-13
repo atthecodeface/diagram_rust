@@ -85,7 +85,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Get the style descriptor for this element when referenced by the name
     ///
     /// Same descriptor is returned for 'layout' or for 'group'
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
+    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
 

@@ -28,7 +28,7 @@ use super::font::*;
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
 pub struct DiagramDescriptor<'a> {
     style_set   : StyleSet,
-    descriptors : HashMap<&'a str, RrcStyleDescriptor>,
+    descriptors : HashMap<&'a str, StyleDescriptor>,
     fonts       : HashMap<&'a str, RrcFont>,
 }
 
@@ -64,7 +64,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("ref",         StyleValue::string(None),  false)
             ;
         let descriptors = HashMap::new();
-        let fonts = HashMap::new();
+        let fonts       = HashMap::new();
         let mut descriptor = Self {
             style_set,
             descriptors,
@@ -74,10 +74,10 @@ impl <'a> DiagramDescriptor<'a> {
         Element::add_content_descriptors(&mut descriptor);
         descriptor
     }
-    pub fn add<F:FnOnce(&StyleSet, &str)->RrcStyleDescriptor> (&mut self, name:&'static str, get_descriptor:F) {
+    pub fn add<F:FnOnce(&StyleSet, &str) -> StyleDescriptor> (&mut self, name:&'static str, get_descriptor:F) {
         self.descriptors.insert(name, get_descriptor(&self.style_set, name));
     }
-    pub fn get(&self, tag:&str) -> Option<RrcStyleDescriptor> {
+    pub fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
         match self.descriptors.get(tag)
         { Some(rrc) => Some(rrc.clone()), None => None}
     }

@@ -74,7 +74,12 @@ let build_desc desc t =
 pub type RrcDescriptor<V> = Rc<RefCell<Descriptor<V>>>;
 impl <V:TypeValue> Descriptor<V> {
     //fp new
-    pub fn new() -> RrcDescriptor<V> {
+    pub fn new() -> Descriptor<V> {
+        Self { state_classes:Vec::new(), styles:Vec::new() }
+    }
+
+    //fp new_rrc
+    pub fn new_rrc() -> RrcDescriptor<V> {
         Rc::new(RefCell::new(Self { state_classes:Vec::new(), styles:Vec::new() }))
     }
 
@@ -142,13 +147,14 @@ pub struct StylableNode<'a, V:TypeValue>{
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values
     /// from its parent
-    parent                : Option<RrcStylableNode<'a, V>>,
+    // parent                : Option<RrcStylableNode<'a, V>>,
     /// The `children` of a node are those which have the node as a
     /// parent; this is used to propagate the stylesheet through the
     /// hierarchy.
-    children              : Vec<RrcStylableNode<'a, V>>,
+    // children              : Vec<RrcStylableNode<'a, V>>,
     /// The descriptor provides the description of the styles required by the node
-    descriptor            : RrcDescriptor<V>,
+    // descriptor            : RrcDescriptor<V>,
+    descriptor            : &'a Descriptor<V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -181,16 +187,18 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new <'b>(parent:Option<RrcStylableNode<'b, V>>, node_type:&str, descriptor:&RrcDescriptor<V>, name_values:NameValues) -> RrcStylableNode<'b, V> {
-        let descriptor = descriptor.clone();
+    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>, name_values:NameValues) -> Self {
+        // parent:Option<RrcStylableNode<'b, V>>,
+        // let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
+        // parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
+        // parent,
+        // children : Vec::new(),
+        // let descriptor = descriptor.clone();
         let extra_sids = Vec::new();
         let classes    = Vec::new();
-        let values     = descriptor.borrow().build_style_array();
+        let values     = descriptor.build_style_array();
         let id_name    = None;
-        let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
-        let node = Rc::new(RefCell::new(StylableNode {
-            parent,
-            children : Vec::new(),
+        let mut node = Self {
             descriptor,
             extra_sids,
             values,
@@ -198,11 +206,28 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             state:       Vec::new(),
             node_type:   node_type.to_string(),
             classes,
-        }));
-        parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
+        };
         for (n,v) in name_values {
-            node.borrow_mut().add_name_value(n,v);
+            node.add_name_value(n,v);
         }
+        node
+    }
+
+    //fp clone
+    pub fn clone(&self) -> Self {
+        let extra_sids = Vec::new();
+        let classes    = Vec::new();
+        let values     = self.descriptor.build_style_array();
+        let id_name    = None;
+        let mut node = Self {
+            descriptor: self.descriptor,
+            extra_sids,
+            values,
+            id_name,
+            state:       Vec::new(),
+            node_type:   self.node_type.clone(),
+            classes,
+        };
         node
     }
 
@@ -223,7 +248,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                 self.classes.push(s.to_string());
             }
         } else {
-            match self.descriptor.borrow().find_style_index(name) {
+            match self.descriptor.find_style_index(name) {
                 Some(n) => {
                     self.values[n].from_string(value).unwrap();
                 },
@@ -267,6 +292,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///  assert_eq!(1, Rc::strong_count(&child_1)); // only child_1
     ///
     /// ```
+    /*
     pub fn delete_children(&mut self) -> () {
         while self.children.len()>0 {
             let c = self.children.pop().unwrap();
@@ -274,14 +300,14 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             c.borrow_mut().delete_children();
         }
     }
+     */
 
     //mp find_style_index -- was find_sid_index(_exn)
     pub fn find_style_index(&self, s:&str) -> Option<usize> {
-        let descriptor = self.descriptor.borrow();
-        match descriptor.find_style_index(s) {
+        match self.descriptor.find_style_index(s) {
             Some(n) => Some(n),
             None => {
-                let mut n=descriptor.styles.len();
+                let mut n = self.descriptor.styles.len();
                 for (sn, _) in &self.extra_sids {
                     if sn==s { return Some(n); }
                     n += 1

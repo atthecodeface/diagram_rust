@@ -49,7 +49,7 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
 
     //fp get_descriptor
     /// Get the style descriptor for this element when referenced by the name
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor;
+    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor;
 
     //mp style
     /// Style the element within the Diagram's descriptor, using the
@@ -276,7 +276,7 @@ impl <'a> ElementContent<'a> {
     //zz All done
 }
 
-//a ElementHeader and ElementLayout
+//a ElementLayout
 //tp LayoutPlacement
 #[derive(Debug)]
 enum LayoutPlacement {
@@ -332,10 +332,11 @@ impl ElementLayout {
     //zz All done
 }
 
+//a ElementHeader
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
-    stylable         : RrcStylableNode<'a, StyleValue>,
+    stylable         : StylableNode<'a, StyleValue>,
     pub id_name      : Option<String>, // replicated from stylable
     pub layout_box   : LayoutBox,
     pub layout       : ElementLayout,
@@ -344,13 +345,13 @@ pub struct ElementHeader<'a> {
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
     //fp new
-    pub fn new<'b> (descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<ElementHeader<'b>, ElementError> {
+    pub fn new(descriptor:&'a DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
         if let Some(styles) = descriptor.get(name) { // &RrcStyleDescriptor
-            let stylable = StylableNode::new(None, name, &styles, vec![]);
+            let mut stylable = StylableNode::new(name, styles, vec![]);
             for (name,value) in &name_values {
-                stylable.borrow_mut().add_name_value(name, value);
+                stylable.add_name_value(name, value);
             }
-            let id_name = stylable.borrow().borrow_id().map(|s| s.to_string());
+            let id_name = stylable.borrow_id().map(|s| s.to_string());
             let layout_box = LayoutBox::new();
             let layout = ElementLayout::new();
             let hdr = ElementHeader{ stylable, id_name, layout_box, layout };
@@ -374,12 +375,19 @@ impl <'a> ElementHeader <'a> {
     }
 
     //mp get_descriptor
-    pub fn get_descriptor(nts:&StyleSet) -> RrcStyleDescriptor {
-        let desc = StyleDescriptor::new();
-        desc.borrow_mut().add_styles(nts, vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]);
+    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
+        let mut desc = StyleDescriptor::new();
+        desc.add_styles(nts, vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]);
         desc
     }
 
+    //mp override_values
+    /// Override any values in the stylable that are set in 'other'
+    /// This will be called before any stylesheet is invoked, basically at construction time
+    pub fn override_values(&mut self, other:&ElementHeader) -> Result<(),ElementError> {
+        Ok(())
+    }
+    
     //mp borrow_id
     pub fn borrow_id(&self) -> &str {
         match &self.id_name {
@@ -390,8 +398,7 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_opt_style_value_of_name
     pub fn get_opt_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
-        let stylable = self.stylable.borrow();
-        stylable.get_style_value_of_name(name).map(|a| a.clone())
+        self.stylable.get_style_value_of_name(name).map(|a| a.clone())
     }
 
     //mp get_style_rgb_of_name
@@ -568,7 +575,7 @@ impl <'a> Element <'a> {
 
     //mp has_id
     pub fn has_id(&self, name:&str) -> bool {
-        self.header.stylable.borrow().has_id(name)
+        self.header.stylable.has_id(name)
     }
 
     //mp add_content_descriptors {
@@ -581,7 +588,7 @@ impl <'a> Element <'a> {
     }
 
     //fp new
-    pub fn new(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
+    pub fn new(descriptor:&'a DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
         // println!("New element name '{}'", name);
         let header  = ElementHeader::new(descriptor, name, name_values)?;
         let content = ElementContent::new(&header,name)?;

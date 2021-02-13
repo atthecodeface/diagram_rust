@@ -65,12 +65,14 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     ///
     /// The id_ref should identify an element in `scope`.
     /// The header may have to be cloned - it has layout information etc, and indeed any of its
-    /// name/values override those of
+    /// name/values override those of the cloned element
     fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
         match self.content.len() {
             0 => {
                 let (scope, element) = scope.new_subscope(header, &self.id_ref, self.depth+1)?;
-                self.content.push(element.clone(&scope)?);
+                let mut clone = element.clone(&scope)?;
+                clone.header.override_values(header)?;
+                self.content.push(clone);
                 Ok(true)
             }
             _ => {
@@ -81,10 +83,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     }
 
     //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
-        let desc = ElementHeader::get_descriptor(nts);
-        // tab stops, bullets, alignment
-        desc.borrow_mut().add_styles(nts, vec!["ref"]);
+    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
+        let mut desc = ElementHeader::get_descriptor(nts);
+        desc.add_styles(nts, vec!["ref"]);
         desc
     }
 
