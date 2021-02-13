@@ -21,7 +21,6 @@ use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle, Polygon};
-use super::super::types::*;
 
 //a Group element
 //tp Shape - an Element that contains a polygon (or path?)
@@ -55,11 +54,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
         Ok( clone )
     }
 
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
-        let mut desc = ElementHeader::get_descriptor(nts);
-        desc.add_styles(nts, vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]);
-        desc
+    //fp get_style_names
+    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
+        vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]
     }
 
     //mp style

@@ -21,6 +21,7 @@ use std::collections::HashMap;
 use crate::TypeValue;
 
 //tp NamedTypeSet
+#[derive(Debug)]
 pub struct NamedTypeSet<V:TypeValue> {
     set:HashMap<String,(V,bool)>
 }

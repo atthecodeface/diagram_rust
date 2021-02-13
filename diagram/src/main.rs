@@ -50,7 +50,8 @@ fn main() {
              .multiple(true))
         .get_matches();
 
-    let diagram_descriptor = DiagramDescriptor::new();
+    let style_set = DiagramDescriptor::create_style_set();
+    let diagram_descriptor = DiagramDescriptor::new(&style_set);
     let mut diagram = Diagram::new(&diagram_descriptor);
     match matches.values_of("file") {
         None => {

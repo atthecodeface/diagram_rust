@@ -21,11 +21,13 @@ use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use crate::{Rectangle, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, RrcStylableNode};
-use super::elements::{Group, Shape, Text, Use};
+use stylesheet::StylableNode;
+pub use super::elements::{Group, Shape, Text, Use};
 use super::types::*;
     
 //a DiagramElement trait
+/// 'a is the lifetime of the diagram
+/// 'b is the lifetime of a scope while uniqifying/cloning contents of the diagram
 pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
@@ -47,9 +49,9 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
         Ok(false)
     }
 
-    //fp get_descriptor
+    //fp get_style_names
     /// Get the style descriptor for this element when referenced by the name
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor;
+    fn get_style_names<'c>(_name:&str) -> Vec<&'c str>;
 
     //mp style
     /// Style the element within the Diagram's descriptor, using the
@@ -367,18 +369,16 @@ impl <'a> ElementHeader <'a> {
         id_name.push_str(".");
         id_name.push_str(self.borrow_id());
         // println!("Clone header with new id {}", id_name);
+        let stylable = self.stylable.clone(&id_name);
         let id_name = Some(id_name);
-        let stylable = self.stylable.clone(); // WRONG!!
         let layout_box = LayoutBox::new();
         let layout = ElementLayout::new();
         ElementHeader{ stylable, id_name, layout_box, layout }
     }
 
-    //mp get_descriptor
-    pub fn get_descriptor(nts:&StyleSet) -> StyleDescriptor {
-        let mut desc = StyleDescriptor::new();
-        desc.add_styles(nts, vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]);
-        desc
+    //mp get_style_names
+    pub fn get_style_names<'z> () -> Vec<&'z str> {
+        vec!["bbox", "grid", "place", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
     }
 
     //mp override_values
@@ -568,6 +568,15 @@ pub struct Element<'a> {
 
 //ip Element
 impl <'a> Element <'a> {
+    //fp add_content_descriptors {
+    pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
+        descriptor.add_content_descriptor("use",    Use::get_style_names("use"));
+        descriptor.add_content_descriptor("group",  Group::get_style_names("group"));
+        descriptor.add_content_descriptor("layout", Group::get_style_names("layout"));
+        descriptor.add_content_descriptor("text",   Text::get_style_names("text"));
+        descriptor.add_content_descriptor("shape",  Shape::get_style_names("shape"));
+    }
+
     //mp borrow_id
     pub fn borrow_id(&self) -> &str {
         self.header.borrow_id()
@@ -576,15 +585,6 @@ impl <'a> Element <'a> {
     //mp has_id
     pub fn has_id(&self, name:&str) -> bool {
         self.header.stylable.has_id(name)
-    }
-
-    //mp add_content_descriptors {
-    pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add("use",    |s,n| Use::get_descriptor(s,n) );
-        descriptor.add("group",  |s,n| Group::get_descriptor(s,n) );
-        descriptor.add("layout", |s,n| Group::get_descriptor(s,n) );
-        descriptor.add("text",   |s,n| Text::get_descriptor(s,n) );
-        descriptor.add("shape",  |s,n| Shape::get_descriptor(s,n) );
     }
 
     //fp new

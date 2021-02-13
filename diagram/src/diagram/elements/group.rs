@@ -19,7 +19,6 @@ limitations under the License.
 //a Imports
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
-use super::super::types::*;
 use crate::{Layout, LayoutRecord};
 use crate::{Rectangle};
 
@@ -81,12 +80,12 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
         Ok(false)
     }
 
-    //fp get_descriptor
+    //fp get_style_names
     /// Get the style descriptor for this element when referenced by the name
     ///
     /// Same descriptor is returned for 'layout' or for 'group'
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
-        ElementHeader::get_descriptor(nts)
+    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
+        vec![]
     }
 
     //mp style

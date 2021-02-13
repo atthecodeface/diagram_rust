@@ -21,7 +21,6 @@ use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle};
-use super::super::types::*;
 use super::super::font::*;
 use super::super::text::*;
 
@@ -80,12 +79,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
         Ok(clone)
     }
 
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
-        let mut desc = ElementHeader::get_descriptor(nts);
-        // tab stops, bullets, alignment
-        desc.add_styles(nts, vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]);
-        desc
+    //fp get_style_names
+    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
+        vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]
     }
 
     //mp style

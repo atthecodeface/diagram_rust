@@ -405,7 +405,8 @@ mod tests {
     use crate::{Diagram, DiagramDescriptor, DiagramML};
     #[test]
     fn test_why() {
-        let diagram_descriptor = DiagramDescriptor::new();
+        let style_set = DiagramDescriptor::create_style_set();
+        let diagram_descriptor = DiagramDescriptor::new(&style_set);
         let mut d   = Diagram::new(&diagram_descriptor);
         let mut dml = DiagramML::new(&mut d);
         dml.read_file("#diagram".as_bytes()).unwrap();

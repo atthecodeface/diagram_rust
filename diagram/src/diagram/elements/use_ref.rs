@@ -19,7 +19,6 @@ limitations under the License.
 //a Imports
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
-use super::super::types::*;
 use crate::{Layout};
 use crate::{Rectangle};
 
@@ -82,11 +81,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
         }
     }
 
-    //fp get_descriptor
-    fn get_descriptor(nts:&StyleSet, _name:&str) -> StyleDescriptor {
-        let mut desc = ElementHeader::get_descriptor(nts);
-        desc.add_styles(nts, vec!["ref"]);
-        desc
+    //fp get_style_names
+    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
+        vec!["ref"]
     }
 
     //mp style

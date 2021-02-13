@@ -21,20 +21,20 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::collections::HashMap;
 use super::types::*;
-use super::element::Element;
+use super::element::{Element, ElementHeader};
 use super::font::*;
 
 //a Diagram Descriptor - covers
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
 pub struct DiagramDescriptor<'a> {
-    style_set   : StyleSet,
-    descriptors : HashMap<&'a str, StyleDescriptor>,
+    style_set   : &'a StyleSet,
+    descriptors : HashMap<&'a str, StyleDescriptor<'a>>,
     fonts       : HashMap<&'a str, RrcFont>,
 }
 
 //ti DiagramDescriptor
 impl <'a> DiagramDescriptor<'a> {
-    pub fn new() -> Self {
+    pub fn create_style_set() -> StyleSet {
         let style_set = StyleSet::new()
             .add_type("bbox",        StyleValue::float_array(), false)            
             .add_type("grid",        StyleValue::int_array(),   false)
@@ -63,6 +63,9 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("vertices",    StyleValue::int(None),     false)
             .add_type("ref",         StyleValue::string(None),  false)
             ;
+        style_set
+    }
+    pub fn new(style_set:&'a StyleSet) -> Self {
         let descriptors = HashMap::new();
         let fonts       = HashMap::new();
         let mut descriptor = Self {
@@ -70,13 +73,17 @@ impl <'a> DiagramDescriptor<'a> {
             descriptors,
             fonts,
         };
-        descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         Element::add_content_descriptors(&mut descriptor);
+        descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         descriptor
     }
-    pub fn add<F:FnOnce(&StyleSet, &str) -> StyleDescriptor> (&mut self, name:&'static str, get_descriptor:F) {
-        self.descriptors.insert(name, get_descriptor(&self.style_set, name));
+    pub fn add_content_descriptor(&mut self, name:&'static str, styles:Vec<&str>) {
+        let mut descriptor = StyleDescriptor::new(&self.style_set);
+        descriptor.add_styles(ElementHeader::get_style_names());
+        descriptor.add_styles(styles);
+        self.descriptors.insert(name, descriptor);
     }
+
     pub fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
         match self.descriptors.get(tag)
         { Some(rrc) => Some(rrc.clone()), None => None}

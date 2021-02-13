@@ -25,7 +25,8 @@ use crate::NamedTypeSet;
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 #[derive(Debug)]
-pub struct Descriptor<V:TypeValue> {
+pub struct Descriptor<'a, V:TypeValue> {
+    pub style_set: &'a NamedTypeSet<V>,
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
@@ -71,24 +72,26 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-pub type RrcDescriptor<V> = Rc<RefCell<Descriptor<V>>>;
-impl <V:TypeValue> Descriptor<V> {
+pub type RrcDescriptor<'a, V> = Rc<RefCell<Descriptor<'a, V>>>;
+impl <'a, V:TypeValue> Descriptor<'a, V> {
     //fp new
-    pub fn new() -> Descriptor<V> {
-        Self { state_classes:Vec::new(), styles:Vec::new() }
+    pub fn new(style_set:&'a NamedTypeSet<V>) -> Self {
+        Self { style_set, state_classes:Vec::new(), styles:Vec::new() }
     }
 
     //fp new_rrc
-    pub fn new_rrc() -> RrcDescriptor<V> {
+    /*
+    pub fn new_rrc() -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(Self { state_classes:Vec::new(), styles:Vec::new() }))
     }
+     */
 
     //cp add_style
-    pub fn add_style(&mut self, nts:&NamedTypeSet<V>, name:&str ) -> () {
+    pub fn add_style(&mut self, name:&str ) -> () {
         let (value, inheritable) = {
-            match nts.get_type(name) {
+            match self.style_set.get_type(name) {
                 None     => {
-                    panic!("Failed to add style {} as it is not in NamedTypeSet  {}\n",name,nts);
+                    panic!("Failed to add style {} as it is not in NamedTypeSet  {}\n",name,self.style_set);
                 },
                 Some(vi) => vi,
             }
@@ -97,9 +100,9 @@ impl <V:TypeValue> Descriptor<V> {
     }
 
     //mp add_styles
-    pub fn add_styles(&mut self, nts:&NamedTypeSet<V>, names:Vec<&str> ) -> () {
+    pub fn add_styles(&mut self, names:Vec<&str> ) -> () {
         for name in names {
-            self.add_style(nts, name);
+            self.add_style(name);
         }
     }
 
@@ -154,7 +157,7 @@ pub struct StylableNode<'a, V:TypeValue>{
     // children              : Vec<RrcStylableNode<'a, V>>,
     /// The descriptor provides the description of the styles required by the node
     // descriptor            : RrcDescriptor<V>,
-    descriptor            : &'a Descriptor<V>,
+    descriptor            : &'a Descriptor<'a, V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
     id_name               : Option<String>,
@@ -214,12 +217,12 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     }
 
     //fp clone
-    pub fn clone(&self) -> Self {
+    pub fn clone(&self, id_name:&str) -> Self {
         let extra_sids = Vec::new();
-        let classes    = Vec::new();
+        let classes    = self.classes.iter().map(|s| s.clone()).collect();
         let values     = self.descriptor.build_style_array();
-        let id_name    = None;
-        let mut node = Self {
+        let id_name    = Some(id_name.to_string());
+        let node = Self {
             descriptor: self.descriptor,
             extra_sids,
             values,
