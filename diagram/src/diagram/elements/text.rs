@@ -72,7 +72,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
+    fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
         let mut clone = Self::new(header, "")?;
         for s in &self.text {
             clone.text.push(s.clone());
@@ -130,7 +130,6 @@ impl Text {
 //ip GenerateSvgElement for Text
 impl GenerateSvgElement for Text {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
-        let mut ele = SvgElement::new("path");
         let font_size = self.font_size / 72.0 * 25.4;
         for t in self.text_area.iter_spans() {
             let mut ele = SvgElement::new("text");

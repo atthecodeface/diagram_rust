@@ -16,12 +16,18 @@ limitations under the License.
 @brief   Layout of placed items and grids
  */
 
+//a Imports
 use super::Point;
 use super::Rectangle;
 use super::Polygon;
 use super::grid::{CellData, GridPlacement};
 use super::placement::{Placements};
 
+//a Constants
+const DEBUG_LAYOUT_BOX : bool = false;
+const DEBUG_LAYOUT     : bool = false;
+
+//a Transform type
 //tp Transform
 /// A Transfom is a transformation applied to something - for example, applied to content to present it in its parent coordinates.
 ///
@@ -67,6 +73,7 @@ impl std::fmt::Display for Transform {
     }
 }
 
+//a LayoutBox
 //tp LayoutBox
 #[derive(Debug)]
 pub struct LayoutBox {
@@ -256,7 +263,7 @@ impl LayoutBox {
         let (width, height, angle, flip) = {if angle>=90.    {(width, height, angle, false)} else {(height, width, angle-90., true)}};
         let (width, height, angle, flip) = {if width<height {(width, height, angle,  flip)} else {(height, width, 90.-angle, !flip)}};
 
-        println!("{} {} {} {}",angle, width, height, flip);
+        if DEBUG_LAYOUT_BOX { println!("{} {} {} {}",angle, width, height, flip); }
 
         let sin2a = (2. * angle).to_radians().sin();
         let tana = angle.to_radians().tan();
@@ -331,7 +338,7 @@ impl LayoutBox {
         // then find the inner coordinates of this desired centre
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
-        println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range);
+        if DEBUG_LAYOUT { println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
         let (cd_c,_,_) = cd.get_cwh();
         let ci_c = cd_c.scale_xy(self.content_scale,self.content_scale).rotate(self.content_rotation);
         self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
@@ -360,9 +367,10 @@ impl LayoutBox {
 //mt Test for LayoutBox
 #[cfg(test)]
 mod test_layoutbox {
-    use super::*;
+    // use super::*;
 }
 
+//a Layout
 //tp Layout
 #[derive(Debug)]
 pub struct Layout {
@@ -438,7 +446,7 @@ impl Layout {
                 self.desired_placement.clone().union(&self.desired_grid)
             }
         };
-        println!("Layout has desired geometries of grid:{}, place:{}, union {}", self.desired_grid, self.desired_placement, self.desired_geometry);
+        if DEBUG_LAYOUT { println!("Layout has desired geometries of grid:{}, place:{}, union {}", self.desired_grid, self.desired_placement, self.desired_geometry); }
         self.desired_geometry.clone()
     }
 
@@ -447,7 +455,7 @@ impl Layout {
     ///
     /// For any grid within the layout this requires a possibly expansion, plus a translation
     pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
-        println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within);
+        if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
         let (ac,aw,ah) = within.get_cwh();
         let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
         self.grid_placements.0.expand_and_centre(aw, 0.);
@@ -624,3 +632,29 @@ let get_layout_bbox = Layout.get_bbox
                         
                   
 */
+
+
+//a LayoutRecord
+//tp LayoutRecord
+/// A type used to preserve the layout for, e.g., display as a grid
+#[derive(Debug)]
+pub struct LayoutRecord {
+    pub grid_positions : Option<(Vec<(isize,f64)>,Vec<(isize,f64)>)>
+}
+
+//ip LayoutRecord
+impl LayoutRecord {
+    //fp new
+    /// Create a new layout record
+    pub fn new() -> Self {
+        Self {
+            grid_positions : None
+        }
+    }
+    //mp capture_grid
+    /// Capture the grid positions from a layout
+    pub fn capture_grid(&mut self, layout:&Layout) {
+        self.grid_positions = Some(layout.get_grid_positions());
+    }
+    //zz All done
+}

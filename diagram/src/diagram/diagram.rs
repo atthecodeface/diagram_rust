@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 use super::DiagramDescriptor;
 use super::{Element, ElementScope, ElementError};
-use crate::Layout;
+use crate::{Layout, LayoutRecord};
 use crate::{Rectangle, Transform};
 
 //a DiagramError
@@ -50,21 +50,6 @@ impl From<ElementError> for DiagramError {
 }
 
 
-//a LayoutRecord
-pub struct LayoutRecord {
-    pub grid_positions : Option<(Vec<(isize,f64)>,Vec<(isize,f64)>)>
-}
-impl LayoutRecord {
-    pub fn new() -> Self {
-        Self {
-            grid_positions : None
-        }
-    }
-    pub fn capture_grid(&mut self, layout:&Layout) {
-        self.grid_positions = Some(layout.get_grid_positions());
-    }
-    
-}
 //a Diagram Definition
 //tp Diagram
 pub struct DiagramContents<'a> {

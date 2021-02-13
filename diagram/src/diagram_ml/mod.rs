@@ -227,10 +227,11 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
     fn ml_new (reader:&mut MLReader<R>, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
-            "shape" => Ok(Shape::ml_new(reader, fp, name, attributes)?),
-            "text"  => Ok(Text::ml_new(reader, fp, name, attributes)?),
-            "group" => Ok(Group::ml_new(reader, fp, name, attributes)?),
-            "use"   => Ok(Use::ml_new(reader, fp, name, attributes)?),
+            "shape"  => Ok(Shape::ml_new(reader, fp, name, attributes)?),
+            "text"   => Ok(Text::ml_new(reader, fp, name, attributes)?),
+            "group"  => Ok(Group::ml_new(reader, fp, name, attributes)?),
+            "layout" => Ok(Group::ml_new(reader, fp, name, attributes)?),
+            "use"    => Ok(Use::ml_new(reader, fp, name, attributes)?),
             _ => {
                 let r = BadXMLElement::ml_new(reader, fp, name, attributes);
                 reader.errors.update(r);

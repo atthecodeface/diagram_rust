@@ -33,6 +33,18 @@ fn main() {
         .arg(Arg::with_name("debug")
              .short("d")
              .multiple(true))
+        .arg(Arg::with_name("svg_grid")
+             .long("svg_grid")
+             .help("If provided then a grid is added to the SVG file (blue in region -100 to 100, spacing of 10; grey outside)")
+             .multiple(false))
+        .arg(Arg::with_name("svg_layout")
+             .long("svg_layout")
+             .help("Enable debug grids in green for every layout element")
+             .multiple(false))
+        .arg(Arg::with_name("svg_display")
+             .long("svg_display")
+             .help("Display SVG hierarchy")
+             .multiple(false))
         .arg(Arg::with_name("file")
              .help("Input files to read")
              .multiple(true))
@@ -52,17 +64,20 @@ fn main() {
             }
         },
     }
+    let svg_show_grid   = matches.is_present("svg_grid");
+    let svg_show_layout = matches.is_present("svg_layout");
+    let svg_display     = matches.is_present("svg_display");
     diagram.record_layout();
     println!("Uniqify");
     exit_on_err( diagram.uniquify() );
     println!("Style");
     exit_on_err( diagram.style() );
     println!("Lay out");
-    exit_on_err( diagram.layout(&Rectangle::new(0.,0.,210.,197.)) );
+    exit_on_err( diagram.layout(&Rectangle::new(0.,0.,297.,210.)) );
     println!("Generate geometry");
     exit_on_err( diagram.geometry() );
     println!("Create SVG");
-    let mut svg = Svg::new().set_grid(false).set_layout(true);
+    let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display);
     exit_on_err( diagram.generate_svg(&mut svg) );
     println!("Write SVG");
     let file_out   = File::create("a.svg").unwrap();

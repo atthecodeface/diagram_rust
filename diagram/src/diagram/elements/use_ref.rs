@@ -50,8 +50,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
-        ElementError::of_result(header, Err("nyi:use_ref"))
+    fn clone(&self, _header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError> {
+        panic!("Not yet implemented clone of Use");
     }
 
     //mp uniquify
@@ -85,7 +85,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     //mp style
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
+    fn style(&mut self, descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
         }
@@ -123,7 +123,7 @@ impl <'a> Use<'a> {
 
 //ip GenerateSvg format Use
 impl <'a> GenerateSvgElement for Use <'a> {
-    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
+    fn generate_svg(&self, svg:&mut Svg, _header:&ElementHeader) -> Result<(), SvgError> {
         for e in &self.content {
             e.generate_svg( svg )?;
         }

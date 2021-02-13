@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use super::{Element, ElementHeader, ElementContent, LayoutRecord, Diagram};
-use crate::{Transform};
+use super::{Element, ElementHeader, ElementContent, Diagram};
+use crate::{LayoutRecord, Transform};
 use crate::{Polygon, Bezier, Point};
 use xml::attribute::{Attribute};
 use xml::name::{Name};
@@ -167,11 +167,12 @@ impl <'a> ElementIter<'a> {
 }
 
 //ip Iterator for ElementIter
+const DEBUG_SVG_ITERATOR : bool = false;
 impl <'a> Iterator for ElementIter<'a> {
     type Item = XmlEvent;
     fn next(&mut self) -> Option<Self::Item> {
         // Track the state for debugging
-        if false {
+        if DEBUG_SVG_ITERATOR {
             let (ele,n) = self.elements.pop().unwrap();
             println!("State {:?} {}:{} [{}]",self.state,ele.name,n,ele.contents.len());
             self.elements.push((ele,n));
@@ -261,6 +262,7 @@ pub struct Svg {
     stack : Vec<SvgElement>,
     pub show_grid : bool,
     pub show_layout : bool,
+    pub display : bool,
 }
 
 //ip Svg
@@ -273,6 +275,7 @@ impl Svg {
             stack : Vec::new(),
             show_grid : false,
             show_layout : false,
+            display : false,
         }
     }
 
@@ -285,6 +288,12 @@ impl Svg {
     //cp set_layout
     pub fn set_layout(mut self, layout:bool) -> Self {
         self.show_layout = layout;
+        self
+    }
+    
+    //cp set_display
+    pub fn set_display(mut self, display:bool) -> Self {
+        self.display = display;
         self
     }
     
@@ -301,6 +310,7 @@ impl Svg {
         let n = self.stack.len();
         self.stack[n-1].contents.push(e);
     }
+
     //mp add_grid
     fn add_grid(&mut self, min:f64, max:f64, spacing:f64, line_width:f64, color:&str) {
         let length = max-min;
@@ -319,6 +329,16 @@ impl Svg {
         grid.add_attribute("stroke-width",&format!("{}",line_width));
         grid.add_attribute("d",&rx);
         self.add_subelement(grid);
+    }
+    
+    //mp generate_layout_recoved_svg
+    pub fn generate_layout_recoved_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
+        if self.show_layout {
+            if let Some(lr) = layout_record.as_ref() {
+                lr.generate_svg( self )?;
+            }
+        }
+        Ok(())
     }
     
     //mp iter_events
@@ -349,8 +369,8 @@ impl <'a> GenerateSvgElement for ElementContent<'a> {
 
 //pt GenerateSvg
 pub trait GenerateSvg {
-    fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> { Ok(()) }
-    fn svg_add_transform(&self, ele:&mut SvgElement) {}
+    fn generate_svg(&self, _svg:&mut Svg) -> Result<(), SvgError> { Ok(()) }
+    fn svg_add_transform(&self, _ele:&mut SvgElement) {}
 }
 
 //ip GenerateSvg for ElementHeader
@@ -442,8 +462,8 @@ impl <'a> GenerateSvg for Diagram<'a> {
         svg.push_element(ele);
 
         if svg.show_grid {
-            svg.add_grid(-100.,200.,10.,0.5,"grey");
-            svg.add_grid(0.,100.,10.,1.0,"blue");
+            svg.add_grid(-200.,200.,10.,0.5,"grey");
+            svg.add_grid(-100.,100.,10.,1.0,"blue");
         }
 
         for e in self.iter_elements() {
@@ -457,7 +477,9 @@ impl <'a> GenerateSvg for Diagram<'a> {
         }
 
         let ele = svg.pop_element();
-        ele.display(0);
+        if svg.display {
+            ele.display(0);
+        }
         svg.add_subelement(ele);
         Ok(())
     }

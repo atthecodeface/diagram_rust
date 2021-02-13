@@ -50,7 +50,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader, scope:&ElementScope ) -> Result<Self,ElementError>{
+    fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
         let clone = Self::new(header, "")?;
         Ok( clone )
     }

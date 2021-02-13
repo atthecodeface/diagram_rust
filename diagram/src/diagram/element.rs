@@ -43,7 +43,7 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     /// The id_ref should identify an element in `scope`.
     /// The header may have to be cloned - it has layout information etc, and indeed any of its
     /// name/values override those of
-    fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+    fn uniquify(&mut self, _header:&ElementHeader<'a>, _scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
         Ok(false)
     }
 
@@ -174,10 +174,11 @@ impl <'a> ElementContent<'a> {
     //fp new
     pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
         match name {
-            "group" => Ok(Self::Group(Group::new(&header, name)?)),
-            "shape" => Ok(Self::Shape(Shape::new(&header, name)?)),
-            "text"  => Ok(Self::Text(Text::new(&header, name)?)),
-            "use"   => Ok(Self::Use(Use::new(&header, name)?)),
+            "group"  => Ok(Self::Group(Group::new(&header, name)?)),
+            "layout" => Ok(Self::Group(Group::new(&header, name)?)),
+            "shape"  => Ok(Self::Shape(Shape::new(&header, name)?)),
+            "text"   => Ok(Self::Text(Text::new(&header, name)?)),
+            "use"    => Ok(Self::Use(Use::new(&header, name)?)),
             _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
         }
     }
@@ -235,7 +236,6 @@ impl <'a> ElementContent<'a> {
             Self::Group(ref mut g) => { g.style(descriptor, header) },
             Self::Text(ref mut t)  => { t.style(descriptor, header) },
             Self::Use(ref mut t)   => { t.style(descriptor, header) },
-            _ => Ok(())
         }
     }
 
@@ -246,7 +246,6 @@ impl <'a> ElementContent<'a> {
             Self::Group(ref mut g) => { g.get_desired_geometry(layout) },
             Self::Text(ref mut t)  => { t.get_desired_geometry(layout) },
             Self::Use(ref mut t)   => { t.get_desired_geometry(layout) },
-            _ => Rectangle::new(0.,0.,10.,10.),
         }
     }
 
@@ -533,7 +532,7 @@ impl <'a> ElementHeader <'a> {
                 LayoutPlacement::Place(pt)         => layout.get_placed_rectangle( &pt, &self.layout.ref_pt ),
             }
         };
-        println!("Laying out {:?} => {}",self.layout,rect);
+        // println!("Laying out {:?} => {}",self.layout,rect);
         self.layout_box.layout_within_rectangle(rect);
         self.layout_box.get_content_rectangle()
     }
@@ -564,14 +563,16 @@ impl <'a> Element <'a> {
 
     //mp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add("use",   |s,n| Use::get_descriptor(s,n) );
-        descriptor.add("group", |s,n| Group::get_descriptor(s,n) );
-        descriptor.add("text",  |s,n| Text::get_descriptor(s,n) );
-        descriptor.add("shape", |s,n| Shape::get_descriptor(s,n) );
+        descriptor.add("use",    |s,n| Use::get_descriptor(s,n) );
+        descriptor.add("group",  |s,n| Group::get_descriptor(s,n) );
+        descriptor.add("layout", |s,n| Group::get_descriptor(s,n) );
+        descriptor.add("text",   |s,n| Text::get_descriptor(s,n) );
+        descriptor.add("shape",  |s,n| Shape::get_descriptor(s,n) );
     }
 
     //fp new
     pub fn new(descriptor:&DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
+        // println!("New element name '{}'", name);
         let header  = ElementHeader::new(descriptor, name, name_values)?;
         let content = ElementContent::new(&header,name)?;
         Ok( Self { header, content })
@@ -617,7 +618,7 @@ impl <'a> Element <'a> {
 
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),ElementError> {
-        println!("Style  {} ", self.header.borrow_id());
+        // println!("Style  {} ", self.header.borrow_id());
         self.header.style()?;
         self.content.style(descriptor, &self.header)?;
         Ok(())

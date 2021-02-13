@@ -20,7 +20,7 @@ limitations under the License.
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use super::super::types::*;
-use crate::{Layout};
+use crate::{Layout, LayoutRecord};
 use crate::{Rectangle};
 
 //a Group element
@@ -37,17 +37,25 @@ pub struct Group<'a> {
     /// The elements that are part of this group
     pub content : Vec<Element<'a>>,
     layout : Option<Layout>,
+    layout_record : Option<LayoutRecord>,
 }
 
 //ip DiagramElementContent for Group
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     //fp new
     /// Create a new group
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
-        let layout=Some(Layout::new());
+    fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
+        let layout = {
+            match name {
+                "layout" => Some(Layout::new()),
+                _ => None,
+            }
+        };
+        // println!("Group created using name '{}' layout {:?}",  name, layout);
         Ok( Self {
-            layout,
             content:Vec::new(),
+            layout,
+            layout_record : None,
         } )
     }
 
@@ -55,6 +63,9 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b> ) -> Result<Self,ElementError>{
         let mut clone = Self::new(header, "")?;
+        if self.layout.is_some() {
+            clone.layout = Some(Layout::new());
+        }
         for e in &self.content {
             clone.content.push(e.clone(scope)?);
         }
@@ -63,7 +74,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 
     //mp uniquify
     /// Uniquify any content - and since this itself is unmodifed, return false
-    fn uniquify(&mut self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+    fn uniquify(&mut self, _header:&ElementHeader<'a>, scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
         for e in self.content.iter_mut() {
             e.uniquify(scope)?;
         }
@@ -72,6 +83,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 
     //fp get_descriptor
     /// Get the style descriptor for this element when referenced by the name
+    ///
+    /// Same descriptor is returned for 'layout' or for 'group'
     fn get_descriptor(nts:&StyleSet, _name:&str) -> RrcStyleDescriptor {
         ElementHeader::get_descriptor(nts)
     }
@@ -93,7 +106,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
                 e.set_layout_properties(layout);
             }
             let rect = layout.get_desired_geometry();
-            println!("Group layout desires rectangle of {}", rect);
+            // println!("Group layout desires rectangle of {}", rect);
             rect
         } else {
             let mut rect = Rectangle::none();
@@ -107,10 +120,18 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     //fp apply_placement
     fn apply_placement(&mut self, layout:&Layout, rect:&Rectangle) {
         if let Some(layout) = &mut self.layout {
-            println!("Lay out group within {}", rect);
+            // println!("Lay out group within {}", rect);
             layout.layout(rect);
             for e in self.content.iter_mut() {
                 e.apply_placement(layout);
+            }
+            match self.layout_record {
+                None => {
+                    let mut layout_record = LayoutRecord::new();
+                    layout_record.capture_grid(&layout);
+                    self.layout_record = Some(layout_record);
+                },
+                _ => (),
             }
         } else {
             for e in self.content.iter_mut() {
@@ -134,13 +155,14 @@ impl <'a> Group<'a> {
 //ip GenerateSvgElement for Group
 impl <'a> GenerateSvgElement for Group <'a> {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
-        if let Some(layout) = &self.layout {
+        if let Some(_layout) = &self.layout {
             let mut ele = SvgElement::new("g");
             header.svg_add_transform(&mut ele);
             svg.push_element(ele);
             for e in &self.content {
                 e.generate_svg( svg )?;
             }
+            svg.generate_layout_recoved_svg( &self.layout_record )?;
             let ele = svg.pop_element();
             svg.add_subelement(ele);
         } else {
