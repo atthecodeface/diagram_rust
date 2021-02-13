@@ -77,9 +77,11 @@ impl <'a> DiagramDescriptor<'a> {
         descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         descriptor
     }
-    pub fn add_content_descriptor(&mut self, name:&'static str, styles:Vec<&str>) {
+    pub fn add_content_descriptor(&mut self, name:&'static str, include_hdr:bool, styles:Vec<&str>) {
         let mut descriptor = StyleDescriptor::new(&self.style_set);
-        descriptor.add_styles(ElementHeader::get_style_names());
+        if include_hdr {
+            descriptor.add_styles(ElementHeader::get_style_names());
+        }
         descriptor.add_styles(styles);
         self.descriptors.insert(name, descriptor);
     }

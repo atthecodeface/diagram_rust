@@ -382,7 +382,8 @@ pub struct DiagramML<'a, 'b> {
 /// ```
 /// extern crate diagram;
 /// use diagram::{Diagram, DiagramDescriptor, DiagramML};
-/// let diagram_descriptor = DiagramDescriptor::new();
+/// let style_set = DiagramDescriptor::create_style_set();
+/// let diagram_descriptor = DiagramDescriptor::new(&style_set);
 /// let mut d   = Diagram::new(&diagram_descriptor);
 /// let mut dml = DiagramML::new(&mut d);
 /// dml.read_file("#diagram ##defs ###shape id=a ##shape ##group ###shape ##shape".as_bytes()).unwrap();

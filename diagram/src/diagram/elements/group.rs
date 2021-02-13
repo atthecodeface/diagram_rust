@@ -139,6 +139,21 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
         }
     }
     
+    //mp display
+    /// Display - using indent_str + 2 indent, or an indent of indent spaces
+    /// Content should be invoked with indent+4
+    fn display(&self, indent:usize, indent_str:&str) {
+        if let Some(layout) = &self.layout {
+            println!("{}  layout",indent_str);
+            println!("{}    {} : {} : {}",indent_str, layout.desired_grid, layout.desired_placement, layout.desired_geometry);
+        } else {
+            println!("{}  group only",indent_str);
+        }
+        for e in self.content.iter() {
+            e.display(indent+4);
+        }
+    }
+
     //zz All done
 }
 

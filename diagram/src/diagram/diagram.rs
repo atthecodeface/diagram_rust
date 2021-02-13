@@ -170,6 +170,13 @@ impl <'a> Diagram <'a> {
         DiagramElements { contents:&self.contents, n: 0 }
     }
     
+    //mp display
+    pub fn display(&self) {
+        for e in self.iter_elements() {
+            e.display(2);
+        }
+    }
+
     //zz All done
 }
 

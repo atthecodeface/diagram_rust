@@ -112,6 +112,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
         }
     }
     
+    //mp display
+    /// Display - using indent_str + 2 indent, or an indent of indent spaces
+    /// Content should be invoked with indent+4
+    fn display(&self, indent:usize, indent_str:&str) {
+        println!("{}  id_ref {}",indent_str,self.id_ref);
+        for e in self.content.iter() {
+            e.display(indent+4);
+        }
+    }
+
     //zz All done
 }
 

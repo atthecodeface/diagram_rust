@@ -377,9 +377,9 @@ pub struct Layout {
     cell_data  : (Vec<CellData>, Vec<CellData>),
     grid_placements   : (GridPlacement, GridPlacement),
     direct_placements : (Placements, Placements),
-    desired_grid      : Rectangle,
-    desired_placement : Rectangle,
-    desired_geometry  : Rectangle,
+    pub desired_grid      : Rectangle,
+    pub desired_placement : Rectangle,
+    pub desired_geometry  : Rectangle,
     content_to_actual : Transform,
 }
 impl Layout {

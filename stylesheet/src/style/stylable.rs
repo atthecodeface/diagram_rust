@@ -19,8 +19,7 @@ limitations under the License.
 //a Imports
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::TypeValue;
-use crate::NamedTypeSet;
+use crate::{TypeValue, NamedTypeSet, ValueError};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
@@ -115,6 +114,15 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
         result
     }
 
+    //mp clone_style_array
+    pub fn clone_style_array(&self, values:&Vec<V>) -> Vec<V> {
+        let mut result = Vec::new();
+        for v in values.iter() {
+            result.push(v.clone());
+        }
+        result
+    }
+
     //mp find_style_index -- was find_sid_index(_exn)
     pub fn find_style_index(&self, s:&str) -> Option<usize> {
         let mut n=0;
@@ -137,12 +145,12 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
 ///  let nts = NamedTypeSet::<BaseValue>::new()
 ///       .add_type("width",  BaseValue::int(None), true)
 ///       .add_type("height", BaseValue::int(None), true);
-///  let d = Descriptor::<BaseValue>::new();
-///  d.borrow_mut().add_styles(&nts, vec!["width", "height"]);
-///  let root = StylableNode::new(None, "graph", &d, vec![("width","3"), ("height","1")]);
-///  let child_1 = StylableNode::new(Some(root.clone()),     "line", &d, vec![]);
-///  let child_2 = StylableNode::new(Some(root.clone()),     "text", &d, vec![]);
-///  let child_11 = StylableNode::new(Some(child_1.clone()), "line", &d, vec![]);
+///  let mut d = Descriptor::<BaseValue>::new(&nts);
+///  d.add_styles(vec!["width", "height"]);
+///  let root = StylableNode::new("graph", &d); //, vec![("width","3"), ("height","1")]);
+///  let child_1 = StylableNode::new("line", &d);// , vec![]);
+///  let child_2 = StylableNode::new("text", &d);// , vec![]);
+///  let child_11 = StylableNode::new("line", &d);// , vec![]);
 ///
 /// ```
 #[derive(Debug)]
@@ -180,7 +188,7 @@ pub struct StylableNode<'a, V:TypeValue>{
     // style_change_callback : t_style_change_callback,
 }
 
-pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
+// pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
 pub type RrcStylableNode<'a, V> = Rc<RefCell<StylableNode<'a, V>>>;
 impl <'a, V:TypeValue> StylableNode<'a, V> {
     //fp new
@@ -190,7 +198,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>, name_values:NameValues) -> Self {
+    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>) -> Self {
         // parent:Option<RrcStylableNode<'b, V>>,
         // let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
         // parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
@@ -201,7 +209,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         let classes    = Vec::new();
         let values     = descriptor.build_style_array();
         let id_name    = None;
-        let mut node = Self {
+        Self {
             descriptor,
             extra_sids,
             values,
@@ -209,18 +217,14 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             state:       Vec::new(),
             node_type:   node_type.to_string(),
             classes,
-        };
-        for (n,v) in name_values {
-            node.add_name_value(n,v);
         }
-        node
     }
 
     //fp clone
     pub fn clone(&self, id_name:&str) -> Self {
-        let extra_sids = Vec::new();
+        let extra_sids = self.extra_sids.iter().map(|(s,v)| (s.clone(),v.clone())).collect();
         let classes    = self.classes.iter().map(|s| s.clone()).collect();
-        let values     = self.descriptor.build_style_array();
+        let values     = self.descriptor.clone_style_array(&self.values);
         let id_name    = Some(id_name.to_string());
         let node = Self {
             descriptor: self.descriptor,
@@ -243,24 +247,60 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     }
     
     //mp add_name_value
-    pub fn add_name_value(&mut self, name:&str, value:&str) -> () {
+    pub fn add_name_value(&mut self, name:&str, value:&str) -> Result<(),ValueError> {
         if name=="id" {
             self.id_name = Some(value.to_string());
+            Ok(())
         } else if name=="class" {
             for s in value.split_whitespace() {
                 self.classes.push(s.to_string());
             }
+            Ok(())
+        } else if let Some(n) = self.descriptor.find_style_index(name) {
+            self.values[n].from_string(value)?;
+            Ok(())
+        } else if let Some((v, _inheritable)) = self.descriptor.style_set.get_type(name) {
+            let mut v = v.new_value();
+            v.from_string(value)?;
+            self.extra_sids.push((name.to_string(),v));
+            Ok(())
         } else {
-            match self.descriptor.find_style_index(name) {
-                Some(n) => {
-                    self.values[n].from_string(value).unwrap();
-                },
-                None => {
-                    // let v = stylesheet.get_style_value(name);
-                    // let v = v.new_value().from_string(value).unwrap();
-                    // extra_sids.push(name);
-                    // values.push(v)
+            Err(ValueError::bad_value(&format!("name '{}' has no known value type in style set",name)))
+        }
+    }
+
+    //mp find_style_index -- was find_sid_index(_exn)
+    pub fn find_style_index(&self, s:&str) -> Option<usize> {
+        // println!("Find style index {} {}",s,self.values.len());
+        match self.descriptor.find_style_index(s) {
+            Some(n) => Some(n),
+            None => {
+                let mut n = self.descriptor.styles.len();
+                for (sn, _) in &self.extra_sids {
+                    if sn==s { return Some(n); }
+                    n += 1
                 }
+                None
+            },
+        }
+    }
+
+    //mp override_values
+    pub fn override_values(&mut self, other:&Self) {
+        for c in &other.classes {
+            let mut found = false;
+            for s in &self.classes {
+                if s == c { found = true; }
+            }
+            if !found {
+                self.classes.push(c.clone());
+            }
+        }
+        for (name, value) in &other.extra_sids {
+            if let Some(n) = self.find_style_index(name) {
+                self.values[n] = value.clone();
+            } else {
+                self.extra_sids.push( (name.clone(), value.clone()) );
             }
         }
     }
@@ -276,6 +316,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         false
     }
 
+    /*
     //fp delete_children
     /// ```
     ///  extern crate stylesheet;
@@ -295,7 +336,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///  assert_eq!(1, Rc::strong_count(&child_1)); // only child_1
     ///
     /// ```
-    /*
+    
     pub fn delete_children(&mut self) -> () {
         while self.children.len()>0 {
             let c = self.children.pop().unwrap();
@@ -305,26 +346,18 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     }
      */
 
-    //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str) -> Option<usize> {
-        match self.descriptor.find_style_index(s) {
-            Some(n) => Some(n),
-            None => {
-                let mut n = self.descriptor.styles.len();
-                for (sn, _) in &self.extra_sids {
-                    if sn==s { return Some(n); }
-                    n += 1
-                }
-                None
-            },
-        }
-    }
-
     //mp get_style_value_of_name
     pub fn get_style_value_of_name(&self, s:&str) -> Option<&V> {
         match self.find_style_index(s) {
             None => None,
-            Some(n) => Some(&self.values[n]),
+            Some(n) => {
+                let nv = self.values.len();
+                if n < nv {
+                    Some(&self.values[n])
+                } else {
+                    Some(&self.extra_sids[n-nv].1)
+                }
+            },
         }
     }
 

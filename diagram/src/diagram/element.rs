@@ -81,6 +81,12 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
         // No need to do anything
     }
 
+    //mp display
+    /// Display - using indent_str + 2 indent, or an indent of indent spaces
+    /// Content should be invoked with indent+4
+    fn display(&self, _indent:usize, _indent_str:&str) {
+    }
+
     //zz All done
 }
 
@@ -275,6 +281,16 @@ impl <'a> ElementContent<'a> {
         }
     }
     
+    //mp display
+    pub fn display(&self, indent:usize, indent_str:&str) {
+        match self {
+            Self::Shape(ref s) => { println!("{}  Shape",indent_str); s.display(indent, indent_str);},
+            Self::Group(ref g) => { println!("{}  Group",indent_str); g.display(indent, indent_str);},
+            Self::Text(ref t)  => { println!("{}  Text",indent_str);  t.display(indent, indent_str);},
+            Self::Use(ref t)   => { println!("{}  Use",indent_str);   t.display(indent, indent_str);},
+        }
+    }
+    
     //zz All done
 }
 
@@ -338,7 +354,7 @@ impl ElementLayout {
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
-    stylable         : StylableNode<'a, StyleValue>,
+    pub stylable         : StylableNode<'a, StyleValue>,
     pub id_name      : Option<String>, // replicated from stylable
     pub layout_box   : LayoutBox,
     pub layout       : ElementLayout,
@@ -349,14 +365,17 @@ impl <'a> ElementHeader <'a> {
     //fp new
     pub fn new(descriptor:&'a DiagramDescriptor, name:&str, name_values:Vec<(String,String)>) -> Result<Self, ElementError> {
         if let Some(styles) = descriptor.get(name) { // &RrcStyleDescriptor
-            let mut stylable = StylableNode::new(name, styles, vec![]);
-            for (name,value) in &name_values {
-                stylable.add_name_value(name, value);
-            }
-            let id_name = stylable.borrow_id().map(|s| s.to_string());
+            let stylable = StylableNode::new(name, styles);
+            let id_name = None;
             let layout_box = LayoutBox::new();
             let layout = ElementLayout::new();
-            let hdr = ElementHeader{ stylable, id_name, layout_box, layout };
+            let mut hdr = ElementHeader{ stylable, id_name, layout_box, layout };
+            for (name,value) in &name_values {
+                let result = hdr.stylable.add_name_value(name, value);
+                ElementError::of_result(&hdr, result)?;
+            }
+            let id_name = hdr.stylable.borrow_id().map(|s| s.to_string());
+            hdr.id_name = id_name;
             Ok(hdr)
         } else {
             Err(ElementError::Error("".to_string(),format!("Bug - unknown element descriptor {}",name)))
@@ -383,15 +402,21 @@ impl <'a> ElementHeader <'a> {
 
     //mp override_values
     /// Override any values in the stylable that are set in 'other'
-    /// This will be called before any stylesheet is invoked, basically at construction time
-    pub fn override_values(&mut self, other:&ElementHeader) -> Result<(),ElementError> {
+    /// This will be called before any stylesheet is invoked,
+    /// basically at construction time
+    ///
+    /// This is invoked on the cloned element header, with 'other'
+    /// being the header that may have overriding values. This may be
+    /// the header for a 'use' element, for example.
+    pub fn override_values<'z>(&mut self, other:&'z ElementHeader<'a>) -> Result<(),ElementError> {
+        self.stylable.override_values( &other.stylable );
         Ok(())
     }
     
     //mp borrow_id
     pub fn borrow_id(&self) -> &str {
         match &self.id_name {
-            None => "",
+            None => self.stylable.borrow_id().unwrap_or(""),
             Some(s) => s,
         }
     }
@@ -554,6 +579,10 @@ impl <'a> ElementHeader <'a> {
         self.layout_box.get_content_rectangle()
     }
    
+    //mp display
+    pub fn display(&self, indent_str:&str) {
+        println!("{}{:?} {:?}",indent_str, self.id_name, self.layout.placement);
+    }
     //zz All done
 }
 
@@ -570,11 +599,11 @@ pub struct Element<'a> {
 impl <'a> Element <'a> {
     //fp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add_content_descriptor("use",    Use::get_style_names("use"));
-        descriptor.add_content_descriptor("group",  Group::get_style_names("group"));
-        descriptor.add_content_descriptor("layout", Group::get_style_names("layout"));
-        descriptor.add_content_descriptor("text",   Text::get_style_names("text"));
-        descriptor.add_content_descriptor("shape",  Shape::get_style_names("shape"));
+        descriptor.add_content_descriptor("use",    false, Use::get_style_names("use"));
+        descriptor.add_content_descriptor("group",  true,  Group::get_style_names("group"));
+        descriptor.add_content_descriptor("layout", true,  Group::get_style_names("layout"));
+        descriptor.add_content_descriptor("text",   true,  Text::get_style_names("text"));
+        descriptor.add_content_descriptor("shape",  true,  Shape::get_style_names("shape"));
     }
 
     //mp borrow_id
@@ -669,6 +698,14 @@ impl <'a> Element <'a> {
     pub fn apply_placement(&mut self, layout:&Layout) {
         let content_rect = self.header.apply_placement(layout);
         self.content.apply_placement(layout, &content_rect);
+    }
+
+    //fp display
+    pub fn display(&self, indent:usize) {
+        const INDENT_STRING : &str="                                                            ";
+        let indent_str = &INDENT_STRING[0..indent];
+        self.header.display(indent_str);
+        self.content.display(indent, indent_str);
     }
 
     //zz All done

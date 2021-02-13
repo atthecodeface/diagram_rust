@@ -78,6 +78,7 @@ fn main() {
     exit_on_err( diagram.layout(&Rectangle::none()) );
     println!("Generate geometry");
     exit_on_err( diagram.geometry() );
+    // diagram.display();
     println!("Create SVG");
     let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display);
     exit_on_err( diagram.generate_svg(&mut svg) );

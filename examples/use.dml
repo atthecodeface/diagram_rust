@@ -12,5 +12,8 @@
 ##shape id="box0" grid=0,1 vertices=4 width=20 border=2 bordercolor="black" borderround=2 fill=red
 ##use id="a" ref=fifo4 grid=1,1
 ##use id="b" ref=fifo4 grid=2,1
-##use id=c ref=2fifos grid=0,2,3,1
 ##shape id="box2" grid=3,1 vertices=4 width=20 border=2 bordercolor="black" borderround=2 fill=red
+##use id=c ref=2fifos grid=0,3,3,1
+##layout id="bonus" grid=0,2,3,1
+###use id="f0" ref=fifo4 grid=1,1
+###use id="f1" ref=fifo4 grid=2,1

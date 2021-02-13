@@ -376,6 +376,9 @@ pub trait GenerateSvg {
 //ip GenerateSvg for ElementHeader
 impl <'a> GenerateSvg for ElementHeader<'a> {
     fn svg_add_transform(&self, ele:&mut SvgElement) {
+        if let Some(id) = self.id_name.as_ref() {
+            ele.add_attribute("id", id);
+        }
         match self.layout_box.borrow_content_transform() {
             Some(transform) => { ele.add_transform(transform); },
             _ => (),
