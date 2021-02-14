@@ -188,8 +188,11 @@ extern crate stylesheet;
 mod layout;
 mod diagram;
 mod diagram_ml;
-pub use layout::{Polygon, Rectangle, Point, Bezier};
-pub use layout::{Transform, Layout, LayoutBox, LayoutRecord, GridCellData};
+pub (crate) use layout::{Polygon, Bezier};
+pub (crate) use layout::{Transform, Layout, LayoutBox, LayoutRecord};
 
-pub use diagram::{Diagram, DiagramContents, DiagramDescriptor, Element, ElementError, Svg, GenerateSvg};
-pub use diagram_ml::{DiagramML};
+pub (crate) use diagram::{DiagramContents}; // , Element, ElementError, };
+pub use layout::{Rectangle, Point};
+pub use diagram::{Diagram, DiagramDescriptor};
+pub use diagram::{Svg, GenerateSvg};
+pub use diagram_ml::{DiagramML, MLErrorList};

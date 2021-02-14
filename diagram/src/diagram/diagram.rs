@@ -51,35 +51,71 @@ impl From<ElementError> for DiagramError {
 
 
 //a Diagram Definition
-//tp Diagram
+//tp DiagramContents
+/// The contents of a diagram that are constructed; this is mutable
+/// during construction, whereas other parts of a diagram are
+/// immutable (such as its DiagramDescriptor).
 pub struct DiagramContents<'a> {
     pub definitions : Vec<Element<'a>>,
     pub elements    : Vec<Element<'a>>,
     pub content_transform : Transform,
     pub content_bbox      : Rectangle,
 }
+
+//ip DiagramContents
+impl <'a> DiagramContents<'a> {
+    //fp new
+    /// Create a new empty `DiagramContents`
+    pub(self) fn new() -> Self {
+        Self { definitions:Vec::new(),
+               elements:Vec::new(),
+               content_transform:Transform::new(),
+               content_bbox : Rectangle::none(),
+        }
+    }
+
+    //zz All done
+}
+
+//tp Diagram
+/// This structure is used to construct and render a diagram.
+///
+/// It must be constructed using a DiagramDescriptor, which is
+/// immutable once the Diagram is created.
+///
+/// Once constructed, contents are added to the diagram
 pub struct Diagram<'a> {
-    pub descriptor    : &'a DiagramDescriptor<'a>,
-    pub contents      : DiagramContents<'a>,
-    pub layout : Layout,
-    pub layout_record : Option<LayoutRecord>, 
+    descriptor    : &'a DiagramDescriptor<'a>,
+    pub(super) contents      : DiagramContents<'a>,
+    pub(super) layout : Layout,
+    pub(super) layout_record : Option<LayoutRecord>, 
 }
 
 //ti Diagram
 impl <'a> Diagram <'a> {
     //fp new
+    /// Create a new diagram using a `DiagramDescriptor` that has
+    /// already been created.
     pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
+        let contents = DiagramContents::new();
         Self { descriptor,
-               contents: DiagramContents{ definitions:Vec::new(),
-                                          elements:Vec::new(),
-                                          content_transform:Transform::new(),
-                                          content_bbox : Rectangle::none(),
-               },
+               contents,
                layout_record : None,
                layout : Layout::new(),
         }
     }
 
+    //fp borrow_contents_descriptor
+    /// Borrow the contents and descriptor to build the diagram contents
+    ///
+    /// The lifetime of the descriptor will be that of the diagram;
+    /// the mutable borrow of the contents, required for building,
+    /// will be for that of the caller, although the contents have a
+    /// lifetime of the diagram.
+    pub fn borrow_contents_descriptor<'z>(&'z mut self) -> (&'a DiagramDescriptor<'a>, &'z mut DiagramContents<'a>) {
+        (&self.descriptor, &mut self.contents)
+    }
+    
     //mp record_layout
     /// If there is no layout set for the diagram, then create one
     pub fn record_layout(&mut self) {
@@ -172,6 +208,7 @@ impl <'a> Diagram <'a> {
     }
     
     //mp display
+    /// Display the diagram in a human-parseable form, generally for debugging
     pub fn display(&self) {
         println!("Layout");
         println!("    X grid {:?}", self.layout.grid_placements.0 );

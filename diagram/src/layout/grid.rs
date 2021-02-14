@@ -18,162 +18,30 @@ limitations under the License.
 
 //a Imports
 
-//a Internal types
-//ti GridCellPosition
-type GridCellPosition = (isize,f64);
+//a Global constants for debug
+const DEBUG_CELL_DATA : bool = true;
+const DEBUG_GRID_PLACEMENT : bool = true;
 
-//tp GridCellData
-/// (start row * number of rows (>=1) * height in pixels) *)
-#[derive(Clone, Copy, Debug)]
-pub struct GridCellData {
-    start : isize,
-    end   : isize,
-    size  : f64,
+//a GridData
+//tp GridData
+/// Used in external interfaces
+#[derive(Debug)]
+pub struct GridData {
+    start:isize,
+    end:isize,
+    size:f64,
 }
-
-//ip GridCellData
-const DEBUG_CELL_DATA : bool = false;
-impl GridCellData {
-
-    //fp new
+impl GridData {
     pub fn new(start:isize, end:isize, size:f64) -> Self {
-        let (start,end) = if start < end { (start,end) } else {(end,start)};
-        let (start,end) = if start != end { (start,end) } else {(start,end+1)};
-        Self {start, end, size}
+        Self { start, end, size }
     }
-
-    //fp find_first_last_indices
-    pub fn find_first_last_indices(cell_data:&Vec<GridCellData>) -> (isize,isize) {
-        if cell_data.len() == 0 {
-            (0,0)
-        } else {
-            let mut first = cell_data[0].start;
-            let mut last  = cell_data[0].end;
-            for Self {start:s, end:e, ..} in cell_data {
-                if first > *s {first = *s;}
-                if last  < *e {last = *e; }
-            }
-            (first, last)
-        }
-    }
-
-    //fp generate_cell_positions
-    pub fn generate_cell_positions(cell_data:&Vec<GridCellData>) -> Vec<GridCellPosition> {
-        if DEBUG_CELL_DATA { println!("Generate cell positions of cell data {:?}", cell_data); }
-        let n = cell_data.len();
-        let mut result = Vec::with_capacity(n);
-        if n==0 {return result;}
-        
-        let mut sorted_indices = Vec::with_capacity(n);
-        for i in 0..n {
-            sorted_indices.push(i);
-        }
-        sorted_indices.sort_by(|a,b| cell_data[*a].start.partial_cmp(&cell_data[*b].start).unwrap());
-        let mut sorted_cell_data : Vec<GridCellData> = sorted_indices.iter().map(|n| cell_data[*n]).collect();
-
-        if DEBUG_CELL_DATA { println!("Sorted cell data {:?}", sorted_cell_data); }
-
-        let first_col = sorted_cell_data[0].start;
-        let mut sd_index = 0;
-        let mut current_col  = first_col;
-        let mut posn = 0.;
-        result.push( (current_col, posn) );
-        loop {
-            // (1,1,10.), (1,1,20.), (1,1,20.)
-            if DEBUG_CELL_DATA { println!("start loop: column {} at posn {} sd index {}",current_col,posn,sd_index); }
-            while sd_index<n {
-                if sorted_cell_data[sd_index].size > 0. {break;}
-                sd_index += 1;
-            }
-            if sd_index == n { break; }
-
-            if DEBUG_CELL_DATA { println!("moved past completed indices to sd index {}",sd_index); }
-            // The current space is being added
-            // in (current_col,position)
-            //
-            // Find the next column and the size up to that column required
-            let mut min_size = 0.;
-            let mut next_col  = 99999999;
-            let mut i = sd_index;
-            while i<n {
-
-                if DEBUG_CELL_DATA { println!("{}->{} min size {} : checking sd {} {:?}", current_col, next_col, min_size, i, sorted_cell_data[i]); }
-                if sorted_cell_data[i].start > next_col {break;}
-                if sorted_cell_data[i].size <= 0.      {i+=1; continue;}
-                let Self {start, end, size} = sorted_cell_data[i];
-                if start <= current_col { // MUST ovelap
-                    if end < next_col { // this is the shortest segment starting at current_col so far
-                        min_size = size;
-                        next_col = end;
-                    } else if end == next_col {
-                        if size > min_size { min_size = size; }
-                        // next_col already == end
-                    }
-                } else if end <= next_col { // may overlap
-                    if min_size > size {
-                        next_col = start;
-                        min_size = min_size - size;
-                    } else {
-                        next_col = start;
-                        min_size = 0.;
-                    }
-                } else {
-                    break;
-                }
-                i += 1;
-            }
-            if DEBUG_CELL_DATA { println!("{}->{} will have size {} [ {} ]",current_col, next_col, min_size, sd_index); }
-            // min_size can be zero if we have no cell requirements between (e.g.) cells 1 and 2
-            if min_size > 0. {
-                i = sd_index;
-                while i<n {
-                    if sorted_cell_data[i].start >= next_col {break;}
-                    if DEBUG_CELL_DATA { println!("reduce {} by {}",sorted_cell_data[i], min_size); }
-                    sorted_cell_data[i].size -= min_size; // This may reduce the size below zero
-                    i += 1;
-                }
-            }
-            current_col = next_col;
-            posn       += min_size;
-            result.push( (current_col, posn) );
-        }
-        let mut last_end = sorted_cell_data[0].end;
-        for Self{ end,  .. } in &sorted_cell_data {
-            if *end > last_end {last_end = *end; }
-        }
-        if last_end > current_col {
-            result.push( (last_end,posn) );
-        }
-        if DEBUG_CELL_DATA { println!("Generated cell positions {:?}\n for cell data {:?}", result, cell_data); }
-        result
-    }
-
-    //fp find_position
-    pub fn find_position(positions:&Vec<GridCellPosition>, index:usize, col:isize) -> (usize, f64) {
-        if positions.len() == 0 { return (0, 0.); } 
-        let mut i = index;
-        if i >= positions.len() {
-            i = 0;
-        }
-        let mut posn = positions[i].1;
-        loop {
-            if i >= positions.len() { break; }
-            if positions[i].0 > col { return (i, posn); }
-            posn = positions[i].1;
-            if positions[i].0 == col { return (i, posn); }
-            i += 1;
-        }
-        (i, posn)
-    }
-
-    //zz All done
 }
 
-//it Display for GridCellData
-impl std::fmt::Display for GridCellData {
+//ip Display for GridData
+impl std::fmt::Display for GridData {
 
-    //mp fmt - format a GridCellData
-    /// Display the `GridCellData' as (min->max:size)
+    //mp fmt - format a GridData
+    /// Display the `GridData' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({}->{}:{}]", self.start, self.end, self.size)
     }
@@ -181,69 +49,405 @@ impl std::fmt::Display for GridCellData {
     //zz All done
 }
 
-//mt Test for GridCellData
+//a Internal types
+//ti GridCellDataEntry
+/// This holds the desired placement of actual data with overlapping GridData in an array (the GridCellData
+/// structure)
+#[derive(Debug, Clone)]
+struct GridCellDataEntry {
+    /// start is the index of the left-hand edge of the cell in the
+    /// grid dimension
+    start : isize,
+    /// end is the index of the right-hand edge of the cell in the
+    /// grid dimension
+    end   : isize,
+    /// size is the desired size, or actual size post-expansion
+    size  : f64,
+}
+
+//ii GridCellDataEntry
+impl GridCellDataEntry {
+
+    //fp new
+    pub fn new(start:isize, end:isize, size:f64) -> Self {
+        Self {start, end, size}
+    }
+}
+
+//it Display for GridCellDataEntry
+impl std::fmt::Display for GridCellDataEntry {
+
+    //mp fmt - format a GridCellDataEntry
+    /// Display the `GridCellDataEntry' as (min->max:size)
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "({}->{}:{}]", self.start, self.end, self.size)
+    }
+
+    //zz All done
+}
+
+//tp GridCellData
+/// This structure holds the positions and sizes of one dimension of
+/// all the elements in a grid
+#[derive(Debug)]
+pub struct GridCellData {
+    data : Vec<GridCellDataEntry>,
+    start : isize,
+    end   : isize
+}
+
+//ip GridCellData
+impl GridCellData {
+
+    //fp new
+    pub fn new() -> Self {
+        Self { data:Vec::new(), start:0, end:0, }
+    }
+
+    //fi clone
+    /// Clone so that a sorted data version may be used non-destructively
+    fn clone(&self) -> Self {
+        let mut clone = Self { data:Vec::new(), start:self.start, end:self.end };
+        for cd in &self.data {
+            clone.data.push(cd.clone());
+        }
+        clone
+    }
+
+    //fp add
+    pub fn add(&mut self, start:isize, end:isize, size:f64) {
+        let (start,end) = { if start < end { (start,end) } else {(end,start)} };
+        let (start,end) = { if start != end { (start,end) } else {(start,end+1)} };
+        if start < self.start { self.start = start; }
+        if end   > self.end   { self.end   = end; }
+        let size = if size < 0. {0.} else {size};
+        if self.data.len()==0 { self.start = start; self.end = end; }
+        self.data.push(GridCellDataEntry::new(start, end, size));
+    }
+
+    //fp add_data
+    pub fn add_data(&mut self, grid_data:&GridData) {
+        self.add(grid_data.start, grid_data.end, grid_data.size);
+    }
+
+    //fi sort_cell_data
+    /// Sort the GridCellDataEntry so that they are in increasing order of
+    /// 'start'
+    fn sort_cell_data(&mut self) {
+        self.data.sort_by(|a,b| a.start.partial_cmp(&b.start).unwrap());
+    }
+
+    //fi find_next_column_and_size
+    /// Find the next column and the size given cell data
+    ///
+    fn find_next_column_and_size (&self, current_col:isize, mut index:usize) -> (isize, f64) {
+        let mut min_size = 0.;
+        let mut next_col = self.end+1;
+        while index < self.data.len() {
+            if DEBUG_CELL_DATA { println!("{}->{} min size {} : checking sd {} {:?}", current_col, next_col, min_size, index, self.data[index]); }
+            if self.data[index].start > next_col {break;}
+            if self.data[index].size <= 0. {index+=1; continue;}
+            let GridCellDataEntry {start, end, size, ..} = self.data[index];
+            if start <= current_col {
+                // If this grid cell MUST ovelap with the current
+                // concept...
+                if end < next_col {
+                    // and if this is the shortest segment including
+                    // current_col so far then it is a better
+                    // candidate. Split in to:
+                    // current,end,size; end,next_col,min_size-size
+                    min_size = size;
+                    next_col = end;
+                } else if end == next_col {
+                    // else if it matches the shortest segment
+                    // including current_col so far then it is a
+                    // better candidate if it has a larger size
+                    // current,(end==next_col),size
+                    if size > min_size { min_size = size; }
+                    // next_col already == end
+                }
+                // else this region extends beyond the current
+                // current,next_col,min_size; next_col,end,size-min_size
+            } else if end <= next_col {
+                // If this grid cell starts in the middle of the
+                // region but this ends before the region finishes
+                if min_size <= size {
+                    // if the region is smaller than what this requires
+                    // then we can split into:
+                    // current,start,0. ; start,end,size ; end,next_col,0.
+                    next_col = start;
+                    min_size = 0.;
+                } else {
+                    // if the region is larger than what this requires
+                    // then we can split into:
+                    // current,start,min_size-size ; start,end,size ; end,next_col,0.
+                    next_col = start;
+                    min_size = min_size - size;
+                }
+            } else {
+                // if this grid cell starts in the middle of the region
+                // but ends after the region then
+                // current,next_col,min_size ; next_col,end,size-min_size
+                // will satisfy this region
+                // since the data is sorted, no other grid cells will overlap
+                // with the region, so stop
+                break;
+            }
+            index += 1;
+        }
+        (next_col, min_size)
+    }
+
+    //mi remove_next_region
+    /// Find the next region starting at 'column' required by the cell data, knowing that
+    /// up to 'index' all the data has non-positive size
+    ///
+    /// Return a new index (skipping any more initial non-positive
+    /// size data) and a next_column and size for the next region,
+    /// having removed that size from all elements overlapping that
+    /// region
+    fn remove_next_region(&mut self, mut index:usize, column:isize) -> Option<(usize, isize, f64)> {
+        while index < self.data.len() {
+            if self.data[index].size > 0. {break;}
+            index += 1;
+        }
+        if index == self.data.len() {
+            None
+        } else {
+            if DEBUG_CELL_DATA { println!("moved past completed indices to sd index {}",index); }
+            let (next_col, min_size) = self.find_next_column_and_size(column, index);
+            if DEBUG_CELL_DATA { println!("{}->{} will have size {} [ {} ]",column, next_col, min_size, index); }
+        
+            // min_size can be zero if we have no cell requirements between (e.g.) cells 1 and 2
+            if min_size > 0. {
+                for i in index..self.data.len() {
+                    if self.data[i].start >= next_col {break;}
+                    if DEBUG_CELL_DATA { println!("reduce {} by {}",self.data[i], min_size); }
+                    self.data[i].size -= min_size; // This may reduce the size below zero
+                }
+            }
+            Some((index, next_col, min_size))
+        }
+    }
+
+    //fp create_grid_dimension
+    /// Destructively create a grid dimension
+    pub fn create_grid_dimension(&self) -> GridDimension {
+        let mut gd = GridDimension::new(self.start, self.end);
+        
+        if DEBUG_CELL_DATA { println!("Generate cell positions of cell data {:?}", self.data); }
+
+        if self.data.len() == 0 {return gd;}
+
+        let mut clone = self.clone();
+        clone.sort_cell_data();
+
+        if DEBUG_CELL_DATA { println!("Sorted cell data {:?}", self.data); }
+
+        let mut index = 0;
+        let mut column  = clone.start;
+        loop {
+            if DEBUG_CELL_DATA { println!("start loop: column {} at index {}",column,index); }
+            if let Some((next_index, next_col, size)) = clone.remove_next_region(index, column) {
+                gd.add(column,next_col,size);
+                index  = next_index;
+                column = next_col;
+            } else {
+                break;
+            }
+        }
+        if clone.end > column { gd.add(column, clone.end, 0.); }
+        gd.calculate_positions(0.,0.);
+        if DEBUG_CELL_DATA { println!("Generated cell positions {:?}\n for cell data {:?}", gd, self.data); }
+        gd
+    }
+
+    //zz All done
+}
+
+//tp GridDimensionEntry
+/// This holds the data for the actual
+/// dimension of the grid (in the GridDimension structure),
+/// with size, growth and position.
+/// When created only start, end and size are valid
+/// With grow provided and an amount for the dimension to expand by
+/// the expansion and position can be determined
+#[derive(Debug)]
+pub struct GridDimensionEntry {
+    /// start is the index of the left-hand edge of the cell in the
+    /// grid dimension
+    start : isize,
+    /// end is the index of the right-hand edge of the cell in the
+    /// grid dimension
+    end   : isize,
+    /// size is the desired size, or actual size post-expansion
+    size  : f64,
+    /// grow is a positive float growth factor
+    /// it describes how much this region would like to grow;
+    /// for a total growth of X across the whole dimension,
+    /// this has a desired growth of size/X*grow
+    grow : f64, // defaults to 0.
+    /// position - where the left-edge is finally placed
+    position : f64, // defaults to 0.
+}
+
+//ip GridDimensionEntry
+impl GridDimensionEntry {
+
+    //fp new
+    pub fn new(start:isize, end:isize, size:f64) -> Self {
+        Self {start, end, size, grow:0., position:0.}
+    }
+}
+
+//tp GridDimension
+/// This structure holds the non-overlapping positions and sizes of one dimension of
+/// a grid
+#[derive(Debug)]
+pub struct GridDimension {
+    data  : Vec<GridDimensionEntry>,
+    start : isize,
+    end   : isize,
+    min_pos : f64,
+    max_pos : f64,
+}
+
+//ii GridDimension
+impl GridDimension {
+    //fp new
+    pub fn new(start:isize, end:isize) -> Self {
+        Self { start, end, data:Vec::new(), min_pos:0., max_pos:0. }
+    }
+
+    //fp add
+    pub fn add(&mut self, start:isize, end:isize, size:f64) {
+        assert!((self.data.len() == 0) || (self.end == start), "GridDimension added with a gap between old and new!");
+        if start < self.start { self.start = start; }
+        if end > self.end { self.end = end; }
+        if self.data.len()==0 { self.start = start; self.end = end; }
+        self.data.push( GridDimensionEntry::new(start, end, size) );
+    }
+
+    //fp add_data
+    pub fn add_data(&mut self, grid_data:&GridData) {
+        self.add(grid_data.start, grid_data.end, grid_data.size);
+    }
+
+    //mp calculate_positions
+    pub fn calculate_positions(&mut self, base:f64, _expansion:f64) {
+        let mut pos = base;
+        self.min_pos = pos;
+        for gde in self.data.iter_mut() {
+            gde.position = pos;
+            pos += gde.size;
+        }
+        self.max_pos = pos;
+    }
+
+    //mp get_size
+    /// Get the size of the whole placement
+    pub fn get_size(&self) -> f64 {
+        self.max_pos - self.min_pos
+    }
+    
+    //fp find_position
+    /// Find the (precalculated) position of 'column' using the clue that it starts within or beyond 'index' data entry
+    pub fn find_position(&self, index:usize, column:isize) -> (usize, f64) {
+        if self.data.len() == 0 { return (0, 0.); } 
+        let mut i = index;
+        if i >= self.data.len() { i = 0; }
+        while i<self.data.len() {
+            if column < self.data[i].end { break; }
+            i += 1;
+        }
+        if i >= self.data.len() {
+            (i, self.data[i-1].position + self.data[i-1].size)
+        } else {
+            (i, self.data[i].position)
+        }
+    }
+
+    //mp iter_positions
+    //
+    pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
+        self.data.iter().map(|p| (&p.start,&p.position))
+    }
+
+    //zz All done
+}
+
+//mt Test for GridDimension
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn test_0() {
-        let mut cd = Vec::new();
-        cd.push( GridCellData::new(0,4,4.) );
-        cd.push( GridCellData::new(4,6,2.) );
-        assert_eq!((0,6),GridCellData::find_first_last_indices(&cd));
-        let cp = GridCellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,4.), GridCellData::find_position(&cp, 0, 4),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,6.), GridCellData::find_position(&cp, 0, 6),"Column 6 starts at 6., and is at index 2");
+        let mut cd = GridCellData::new();
+        cd.add( 0, 4, 4.);
+        cd.add( 4, 6, 2.);
+        assert_eq!(0, cd.start);
+        assert_eq!(6, cd.end);
+        let cp = cd.create_grid_dimension();
+        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,4.), cp.find_position(0, 4),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,6.), cp.find_position(0, 6),"Column 6 starts at 6., and is at index 2");
     }
     #[test]
     fn test_simple_gap() {
-        let mut cd = Vec::new();
-        cd.push( GridCellData::new(0,1,1.) );
-        cd.push( GridCellData::new(2,3,1.) );
-        assert_eq!((0,3),GridCellData::find_first_last_indices(&cd));
-        let cp = GridCellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,1.), GridCellData::find_position(&cp, 0, 1),"Column 1 starts at 1., and is at index 1");
-        assert_eq!((2,1.), GridCellData::find_position(&cp, 0, 2),"Column 2 starts at 1., and is at index 2");
-        assert_eq!((3,2.), GridCellData::find_position(&cp, 0, 3),"Column 3 starts at 2., and is at index 3");
+        let mut cd = GridCellData::new();
+        cd.add( 0, 1, 1.);
+        cd.add( 2, 3, 1.);
+        assert_eq!(0, cd.start);
+        assert_eq!(3, cd.end);
+        let cp = cd.create_grid_dimension();
+        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,1.), cp.find_position(0, 1),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,1.), cp.find_position(0, 2),"Column 6 starts at 6., and is at index 2");
+        assert_eq!((3,2.), cp.find_position(0, 3),"Column 6 starts at 6., and is at index 2");
     }
     #[test]
     fn test_1() {
-        let mut cd = Vec::new();
-        cd.push( GridCellData::new(1,2,10.) );
-        cd.push( GridCellData::new(1,2,20.) );
-        cd.push( GridCellData::new(1,2,20.) );
-        assert_eq!((1,2),GridCellData::find_first_last_indices(&cd));
-        let cp = GridCellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
-    }        
+        let mut cd = GridCellData::new();
+        cd.add( 1, 2, 10.);
+        cd.add( 1, 2, 10.);
+        cd.add( 1, 2, 20.);
+        assert_eq!(1, cd.start);
+        assert_eq!(2, cd.end);
+        let cp = cd.create_grid_dimension();
+        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((0,0.), cp.find_position(0, 1),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((1,20.), cp.find_position(0, 2),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,20.), cp.find_position(0, 3),"Column 4 starts at 4., and is at index 1");
+    }
     #[test]
     fn test_2() {
-        let mut cd = Vec::new();
-        cd.push( GridCellData::new(60,90,10.) );
-        cd.push( GridCellData::new(80,110,20.) );
-        cd.push( GridCellData::new(100,110,20.) );
-        assert_eq!((60,110),GridCellData::find_first_last_indices(&cd));
-        let cp = GridCellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,0.), GridCellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((2,10.), GridCellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((3,30.), GridCellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
-    }        
+        let mut cd = GridCellData::new();
+        cd.add( 60, 90, 10.);
+        cd.add( 80,110, 10.);
+        cd.add(100,110, 20.);
+        assert_eq!(60, cd.start);
+        assert_eq!(110, cd.end);
+        let cp = cd.create_grid_dimension();
+        assert_eq!((0,0.), cp.find_position(0, 60),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((0,0.), cp.find_position(0, 80),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((1,10.), cp.find_position(0, 90),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,10.), cp.find_position(0,100),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((3,30.), cp.find_position(0,110),"Column 4 starts at 4., and is at index 1");
+    }
     #[test]
     fn test_3() {
-        let mut cd = Vec::new();
-        cd.push( GridCellData::new( 10,20,20.) );
-        cd.push( GridCellData::new(-10,20,20.) );
-        cd.push( GridCellData::new(-30, 0,10.) );
-        assert_eq!((-30,20),GridCellData::find_first_last_indices(&cd));
-        let cp = GridCellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, -30), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,0.), GridCellData::find_position(&cp, 0, -10), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((2,10.), GridCellData::find_position(&cp, 0, 10),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((3,30.), GridCellData::find_position(&cp, 0, 20),"Column 0 starts at 0., and is at index 0");
-    }        
+        let mut cd = GridCellData::new();
+        cd.add( 10, 20, 20.);
+        cd.add(-10, 20, 20.);
+        cd.add(-30, 0,  10.);
+        assert_eq!(-30, cd.start);
+        assert_eq!( 20, cd.end);
+        let cp = cd.create_grid_dimension();
+        assert_eq!((0,0.), cp.find_position(0, -30),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((0,0.), cp.find_position(0, -10),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,10.), cp.find_position(0, 10),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((3,30.), cp.find_position(0, 20),"Column 0 starts at 0., and is at index 0");
+    } 
 }
 
 //a Public GridPlacement type
@@ -254,57 +458,54 @@ mod tests {
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug)]
 pub struct GridPlacement {
-    cell_data      : Vec<GridCellData>,
-    cell_positions : Vec<GridCellPosition>,
-    growth_data    : Vec<GridCellData>,
-    start_index    : isize,
-    last_index     : isize,
+    cell_data      : GridCellData,
+    grid_dimension : GridDimension,
+    growth_data    : GridDimension,
 }
 
 //ip GridPlacement
-const DEBUG_GRID_PLACEMENT : bool = false;
 impl GridPlacement {
     //fp new
     pub fn new() -> Self {
-        let cell_data      = Vec::new();
-        let cell_positions = Vec::new();
-        let growth_data    = Vec::new();
+        let cell_data      = GridCellData::new();
+        let grid_dimension = GridDimension::new(0,0);
+        let growth_data    = GridDimension::new(0,0);
         Self { cell_data,
-               cell_positions,
+               grid_dimension,
                growth_data,
-               start_index:0,
-               last_index:0,
         }
+    }
+
+    //mp add_cell
+    pub fn add_cell(&mut self, start:isize, end:isize, size:f64 ) {
+        self.cell_data.add( start, end, size );
     }
 
     //mp add_cell_data
-    pub fn add_cell_data(&mut self, cell_data:&Vec<GridCellData>) {
-        for cd in cell_data{
-            self.cell_data.push(cd.clone());
-        }
-        if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
+    pub fn add_cell_data(&mut self, cell_data:&GridData) {
+        self.cell_data.add_data( cell_data );
     }
 
     //mp add_growth_data
-    pub fn add_growth_data(&mut self, cell_data:&Vec<GridCellData>) {
-        for cd in cell_data{
-            self.growth_data.push(cd.clone());
+    pub fn add_growth_data(&mut self, growth_data:&Vec<GridData>) {
+        for gd in growth_data{
+            self.growth_data.add_data(gd);
         }
     }
 
     //mp recalculate
     pub fn recalculate(&mut self) {
-        self.cell_positions           = GridCellData::generate_cell_positions(&self.cell_data);
-        let (start_index, last_index) = GridCellData::find_first_last_indices(&self.cell_data);
-        self.start_index = start_index;
-        self.last_index = last_index;
+        self.grid_dimension = self.cell_data.create_grid_dimension();
+        self.grid_dimension.calculate_positions(0., 0.);
     }
 
     //mp expand_and_centre
+    /// 
     /// Given an actual size, centered on a value, expand the grid as required, and translate so that it is centered on the value.
-    pub fn expand_and_centre(&mut self, size:f64, center:f64) {
+    pub fn expand_and_centre(&mut self, _size:f64, _center:f64) {
         let total_size = self.get_size();
         if total_size <= 0. { return ; }
+        /*
         let mut sizes = self.generate_cell_sizes();
         let extra_size = size - total_size; // share this according to expansion
         for (n, s) in sizes.iter_mut().enumerate() {
@@ -322,54 +523,30 @@ impl GridPlacement {
             }
             self.cell_positions[j] = (cell_index, pos);
         }
+         */
     }
 
-    //mi generate_cell_sizes
-    fn generate_cell_sizes(&mut self) -> Vec<f64> {
-        let n = self.last_index - self.start_index;
-        let mut sizes = Vec::with_capacity(n as usize);
-        for _ in 0..n {
-            sizes.push(0.);
-        }
-        for i in 0..(self.cell_positions.len()-1) {
-            let (cell_index, pos) = self.cell_positions[i];
-            let (_, next_pos) = self.cell_positions[i+1];
-            sizes[ (cell_index-self.start_index) as usize ] = next_pos - pos;
-        }
-        sizes
-    }
-    
     //mp get_span
     /// Find the span of a start/number of grid positions
     pub fn get_span(&self, start:isize, end:isize) -> (f64,f64) {
-        let (index, start_posn) = GridCellData::find_position(&self.cell_positions, 0,     start);
-        let (_,     end_posn)   = GridCellData::find_position(&self.cell_positions, index, end);
+        let (index, start_posn) = self.grid_dimension.find_position(0,     start);
+        let (_,     end_posn)   = self.grid_dimension.find_position(index, end);
         if DEBUG_GRID_PLACEMENT { println!("Got span for {} {} to be {} {}", start, end, start_posn, end_posn); }
         (start_posn, end_posn)
     }
 
     //mp get_size
     /// Get the size of the whole placement
-    /// This is the position of the end grid element
     pub fn get_size(&self) -> f64 {
-        match self.cell_positions.len() {
-            0 => 0.,
-            n => self.cell_positions[n-1].1
-        }
+        self.grid_dimension.get_size()
     }
 
     //mp iter_positions
+    //
     pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
-        if DEBUG_GRID_PLACEMENT { println!("Iter positions {:?}", self.cell_positions); }
-        self.cell_positions.iter().map(|(p,s)| (p,s))
+        if DEBUG_GRID_PLACEMENT { println!("Iter positions {:?}", self.grid_dimension); }
+        self.grid_dimension.iter_positions()
     }
-
-    /*f str *)
-    let str t = 
-      let str_cell_data = String.concat "\n" (List.map (fun (s,n,sz) -> Printf.sprintf "start %d num %d size %f" s n sz) t.cell_data) in
-      let str_positions = String.concat "\n" (List.map (fun (s,p) -> Printf.sprintf "start %d position %f" s p) t.cell_positions) in
-      "Grid cell data:\n" ^ str_cell_data ^ "\nRev positions:\n" ^ str_positions
-     */
 
     //zz All done
 }

@@ -90,7 +90,11 @@ fn main() {
     exit_on_err( diagram.geometry() );
     if diag_display { diagram.display(); }
     println!("Create SVG");
-    let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display).set_content_rectangles(svg_show_content);
+    let mut svg = Svg::new()
+        .set_grid(svg_show_grid)
+        .set_layout(svg_show_layout)
+        .set_display(svg_display)
+        .set_content_rectangles(svg_show_content);
     exit_on_err( diagram.generate_svg(&mut svg) );
     println!("Write SVG");
     let file_out   = File::create("a.svg").unwrap();

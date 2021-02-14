@@ -20,7 +20,7 @@ limitations under the License.
 use super::Point;
 use super::{Rectangle, Float4};
 use super::Polygon;
-use super::grid::{GridCellData, GridPlacement};
+use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
 
 //a Constants
@@ -380,7 +380,6 @@ mod test_layoutbox {
 //tp Layout
 #[derive(Debug)]
 pub struct Layout {
-    cell_data     : (Vec<GridCellData>, Vec<GridCellData>),
     pub grid_placements   : (GridPlacement, GridPlacement),
     pub direct_placements : (Placements, Placements),
     pub desired_grid      : Rectangle,
@@ -394,9 +393,7 @@ impl Layout {
     pub fn new() -> Self {
         let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
         let direct_placements = ( Placements::new(), Placements::new() );
-        Self { cell_data:(Vec::new(), Vec::new()),
-               grid_placements,
-               direct_placements,
+        Self { grid_placements, direct_placements,
                desired_placement : Rectangle::none(),
                desired_grid      : Rectangle::none(),
                desired_geometry  : Rectangle::none(),
@@ -406,8 +403,8 @@ impl Layout {
 
     //mp add_grid_element
     pub fn add_grid_element(&mut self, start:(isize,isize), end:(isize,isize), size:(f64,f64)) {
-        self.cell_data.0.push(GridCellData::new(start.0, end.0, size.0));
-        self.cell_data.1.push(GridCellData::new(start.1, end.1, size.1));
+        self.grid_placements.0.add_cell(start.0, end.0, size.0);
+        self.grid_placements.1.add_cell(start.1, end.1, size.1);
     }
 
     //mp add_placed_element
@@ -417,13 +414,13 @@ impl Layout {
     }
 
     //mp add_min_cell_data
-    pub fn add_min_cell_data(&mut self, x:&Vec<GridCellData>, y:&Vec<GridCellData>) {
-        self.grid_placements.0.add_cell_data( x );
-        self.grid_placements.1.add_cell_data( y );
+    pub fn add_min_cell_data(&mut self, x:&Vec<GridData>, y:&Vec<GridData>) {
+        for cd in x { self.grid_placements.0.add_cell_data( cd ); }
+        for cd in y { self.grid_placements.1.add_cell_data( cd ); }
     }
 
     //mp add_grow_cell_data
-    pub fn add_grow_cell_data(&mut self, x:&Vec<GridCellData>, y:&Vec<GridCellData>) {
+    pub fn add_grow_cell_data(&mut self, x:&Vec<GridData>, y:&Vec<GridData>) {
         self.grid_placements.0.add_growth_data( x );
         self.grid_placements.1.add_growth_data( y );
     }
@@ -434,10 +431,7 @@ impl Layout {
     /// Any placements provide a true bbox
     /// A grid has a desired width and height, centred on 0,0
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        self.grid_placements.0.add_cell_data( &self.cell_data.0 );
         self.grid_placements.0.recalculate();
-
-        self.grid_placements.1.add_cell_data( &self.cell_data.1 );
         self.grid_placements.1.recalculate();
 
         let grid_width  = self.grid_placements.0.get_size();
@@ -479,8 +473,8 @@ impl Layout {
         if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
         let (ac,aw,ah) = within.get_cwh();
         let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
-        self.grid_placements.0.expand_and_centre(aw, 0.);
-        self.grid_placements.1.expand_and_centre(ah, 0.);
+        self.grid_placements.0.expand_and_centre(aw, ac.x);
+        self.grid_placements.1.expand_and_centre(ah, ac.y);
         self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
     }
 
@@ -502,6 +496,8 @@ impl Layout {
     }
 
     //mp get_grid_positions
+    /// Used to record the layout so it may, for example, be drawn
+    ///
     pub fn get_grid_positions(&self) -> (Vec<(isize,f64)>,Vec<(isize,f64)>) {
         let mut result = (Vec::new(), Vec::new());
         for (p,s) in self.grid_placements.0.iter_positions() {
@@ -672,10 +668,12 @@ impl LayoutRecord {
             grid_positions : None
         }
     }
+
     //mp capture_grid
     /// Capture the grid positions from a layout
     pub fn capture_grid(&mut self, layout:&Layout) {
         self.grid_positions = Some(layout.get_grid_positions());
     }
+    
     //zz All done
 }

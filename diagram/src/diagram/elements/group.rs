@@ -19,7 +19,8 @@ limitations under the License.
 //a Imports
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
-use crate::{Layout, LayoutRecord, GridCellData};
+use crate::{Layout, LayoutRecord};
+use super::super::super::layout::{GridData};
 use crate::{Rectangle};
 
 //a Group element
@@ -37,10 +38,10 @@ pub struct Group<'a> {
     pub content : Vec<Element<'a>>,
     layout : Option<Layout>,
     layout_record : Option<LayoutRecord>,
-    minx : Vec<GridCellData>,
-    miny : Vec<GridCellData>,
-    growx : Vec<GridCellData>,
-    growy : Vec<GridCellData>,
+    minx : Vec<GridData>,
+    miny : Vec<GridData>,
+    growx : Vec<GridData>,
+    growy : Vec<GridData>,
 }
 
 //ip DiagramElementContent for Group
@@ -59,8 +60,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             content:Vec::new(),
             layout,
             layout_record : None,
-            minx : Vec::new(),
-            miny : Vec::new(),
+            minx  : Vec::new(),
+            miny  : Vec::new(),
             growx : Vec::new(),
             growy : Vec::new(),
         } )
@@ -74,8 +75,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             content:Vec::new(),
             layout,
             layout_record : None,
-            minx : Vec::new(),
-            miny : Vec::new(),
+            minx  : Vec::new(),
+            miny  : Vec::new(),
             growx : Vec::new(),
             growy : Vec::new(),
         };
@@ -192,7 +193,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 //ip Group
 impl <'a> Group<'a> {
     //mp read_cell_data
-    /// For styling, this uses an array of floats and attempts to produce an array of GridCellData,
+    /// For styling, this uses an array of floats and attempts to produce an array of GridData,
     /// which provides the start/end/size for cells
     ///
     /// For the data to be valid it should be of the form
@@ -202,7 +203,7 @@ impl <'a> Group<'a> {
     /// Hence the data must be an odd number, of elements, with even
     /// indices being integers, and the indices monotically
     /// increasing, and the floats all positive or zero.
-    pub fn read_cell_data(&self, header:&ElementHeader, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
+    pub fn read_cell_data(&self, header:&ElementHeader, v:&Vec<f64>) -> Result<Vec<GridData>, ElementError> {
         if v.len() % 2 == 0 {
             Err(ElementError::of_string(header, &format!("grid minimums must be int,(float,int)* and hence and odd number of items, but got {} items", v.len())))
         } else {
@@ -220,7 +221,7 @@ impl <'a> Group<'a> {
             while n*2 <= v.len() {
                 let size = v[n*2-1];
                 let end = as_int(header, v[n*2], n+1)?;
-                result.push(GridCellData::new(start, end, size));
+                result.push(GridData::new(start, end, size));
                 if end <= start {
                     Err(ElementError::of_string(header, &format!("grid boundaries must increase left to right, but got {} followed by {}",start,end)))?;
                 }

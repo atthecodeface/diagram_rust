@@ -86,6 +86,14 @@ impl From<hmlm::reader::ParseError> for MLError {
 
 //a MLErrorList
 //tp MLErrorList
+/// An array of errors; if the array is zero-length after reading a
+/// file, then there is no error.
+///
+/// Otherwise it is an accumulation of errors from reading the
+/// file. Since some errors may indicate failure to correctly parse a
+/// file, only the first error is guaranteed to be valid, but it is
+/// useful to get a list of errors for when only minor attribute value
+/// errors are returned.
 #[derive(Debug)]
 pub struct MLErrorList {
     errors : Vec<MLError>,
@@ -94,16 +102,21 @@ pub struct MLErrorList {
 //ip MLErrorList
 impl MLErrorList {
     //fp new
-    pub fn new() -> Self {
+    /// Create a new MLErrorList
+    pub(self) fn new() -> Self {
         Self { errors : Vec::new() }
     }
 
     //mp add
-    pub fn add(&mut self, e:MLError) -> () {
+    /// Add an error to the list
+    pub(self) fn add(&mut self, e:MLError) -> () {
         self.errors.push(e);
     }
 
     //mp update
+    /// Update the MLErrorList from a result; this returns () so the
+    /// error is effectively caught and recorded. Subsequent errors
+    /// are therefore less reliable.
     pub fn update<T>(&mut self, e:Result<T,MLError>) {
         match e {
             Err(e) => { self.errors.push(e); }
@@ -112,6 +125,9 @@ impl MLErrorList {
     }
 
     //mp as_err
+    /// Return a result of 'Ok(x)' if this error list is empty, or
+    /// 'Err(MLErrorList)' if the error list has contents. It cleans
+    /// the current error list.
     pub fn as_err<T>(&mut self, v:Result<T,MLError>) -> Result<T, MLErrorList> {
         let x = std::mem::replace(&mut self.errors, Vec::new());
         match x.len() {
@@ -270,8 +286,8 @@ impl <'a, R:Read> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
 
 //a MLReader
 //tp MLReader
+/// A reader that creates diagram contents
 struct MLReader<'a, 'b, R:Read> {
-//     pub descriptor  : &'b DiagramDescriptor<'a>,
     pub contents    : &'b mut DiagramContents<'a>,
     pub reader      : hmlm::reader::EventReader<R>,
     errors          : MLErrorList,
@@ -377,30 +393,52 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
 
 //a DiagramML
 //tp DiagramML
-pub struct DiagramML<'a, 'b> {
-    diagram: &'a mut Diagram<'b>,
-}
-
-//ip DiagramML
+/// The `DiagramML` structure is used to construct a diagram from
+/// mark-up, be that XML or HML.
+///
+/// # Example
+///
 /// ```
 /// extern crate diagram;
 /// use diagram::{Diagram, DiagramDescriptor, DiagramML};
 /// let style_set = DiagramDescriptor::create_style_set();
 /// let diagram_descriptor = DiagramDescriptor::new(&style_set);
-/// let mut d   = Diagram::new(&diagram_descriptor);
-/// let mut dml = DiagramML::new(&mut d);
+/// let mut diagram  = Diagram::new(&diagram_descriptor);
+/// let mut dml      = DiagramML::new(&mut diagram);
 /// dml.read_file("#diagram ##defs ###shape id=a ##shape ##group ###shape ##shape".as_bytes()).unwrap();
-/// assert_eq!(1, d.contents.definitions.len(), "One definition expected from this");
-/// assert_eq!(3, d.contents.elements.len(), "Three elements (shape, group, shape) expected from this");
+/// let (_, contents) = diagram.borrow_contents_descriptor();
+/// assert_eq!(1, contents.definitions.len(), "One definition expected from this");
+/// assert_eq!(3, contents.elements.len(), "Three elements (shape, group, shape) expected from this");
 /// ```
+pub struct DiagramML<'a, 'b> {
+    diagram: &'a mut Diagram<'b>,
+}
+
+//ip DiagramML
 impl <'a, 'b> DiagramML<'a, 'b> {
+    //fp new
+    /// Create a new mark-up diagram reader `DiagramML`, for the provided diagram.
+    ///
+    /// The diagram is borrowed mutably, and is obviously then held
+    /// until the reader has completed reading the file.
+    ///
+    /// It is possible that the reader will support including other
+    /// files within a file being read; this will require the reader
+    /// to invoke a new reader with the new file.
     pub fn new(d:&'a mut Diagram<'b>) -> Self {
         Self { diagram:d }
     }
+
+    //mp read_file
+    /// Read a file as HML (currently), using its contents to build
+    /// the `Diagram` that this reader is constructing.
     pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLErrorList> {
         let event_reader = hmlm::reader::EventReader::new(f); // Can use an xml::reader
-        MLReader::new(&mut self.diagram.contents, event_reader).read_file(&self.diagram.descriptor)
+        let (descriptor, contents) = self.diagram.borrow_contents_descriptor();
+        MLReader::new(contents, event_reader).read_file(descriptor)
     }
+    
+    //zz All done
 }
 
 //a Test
@@ -411,10 +449,11 @@ mod tests {
     fn test_why() {
         let style_set = DiagramDescriptor::create_style_set();
         let diagram_descriptor = DiagramDescriptor::new(&style_set);
-        let mut d   = Diagram::new(&diagram_descriptor);
-        let mut dml = DiagramML::new(&mut d);
+        let mut diagram = Diagram::new(&diagram_descriptor);
+        let mut dml     = DiagramML::new(&mut diagram);
         dml.read_file("#diagram".as_bytes()).unwrap();
-        assert_eq!(0, d.contents.definitions.len());
-        assert_eq!(0, d.contents.elements.len());
+        let (_, contents) = diagram.borrow_contents_descriptor();
+        assert_eq!(0, contents.definitions.len());
+        assert_eq!(0, contents.elements.len());
     }
 }

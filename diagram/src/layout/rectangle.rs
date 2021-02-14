@@ -41,10 +41,17 @@ impl Float4 {
 
 //tp Rectangle
 #[derive(Clone, Copy, Debug, PartialEq)]
+/// `Rectangle` describes a region bounded by (x0,y0) and (x1,y1) It
+/// requires x0 <= x1 and y0 <= y1, and if either are equal then the
+/// region is deemed to be *none*
 pub struct Rectangle {
+    /// smaller x coordinate of region
     pub x0 : f64,
+    /// larger x coordinate of region
     pub x1 : f64,
+    /// smaller y coordinate of region
     pub y0 : f64,
+    /// larger y coordinate of region
     pub y1 : f64,
 }
 
@@ -68,8 +75,15 @@ impl Rectangle {
         Self { x0:0., x1:0., y0:0., y1:0.}
     }
 
+    //mp is_none
+    /// Return `true` if the rectangle describes a 'none' region
+    pub fn is_none(&self) -> bool {
+        self.x0 >= self.x1 || self.y0 >= self.y1
+    }
+
     //fp new
-    /// Make a rectangle
+    /// Make a rectangle using the coordinates supplied, ensuring that
+    /// the rectangle is correctly defined
     pub fn new(x0:f64, y0:f64, x1:f64, y1:f64) -> Self {
         let (x0,x1) = {if x0<x1 {(x0,x1)} else {(x1,x0)}};
         let (y0,y1) = {if y0<y1 {(y0,y1)} else {(y1,y0)}};
@@ -77,7 +91,7 @@ impl Rectangle {
     }
 
     //fp bbox_of_points
-    /// Make a new rectangle that is the bbox of a vec of points
+    /// Make a new rectangle that is the bounding box of a vec of points
     pub fn bbox_of_points(pts:&Vec<Point>) -> Self {
         match pts.len() {
             0 => Self::none(),
@@ -92,6 +106,7 @@ impl Rectangle {
     }
 
     //fp of_cwh
+    /// Generate a rectangle from a centre `Point` and a width/height.
     pub fn of_cwh(centre:Point, width:f64, height:f64) -> Self {
         Self::new( centre.x-width/2.,
                   centre.y-height/2.,
@@ -100,17 +115,37 @@ impl Rectangle {
     }
 
     //mp pt_within
+    /// Consume a point, and return a new point that whose X
+    /// coordinate indicate the fraction of this rectangles' width the
+    /// original point is along its width, and similarly for the Y
+    /// coordinate
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(0.,0., 10.,5.);
+    /// assert_eq!( r.pt_within(Point::origin()).x, 0. );
+    /// assert_eq!( r.pt_within(Point::origin()).y, 0. );
+    /// assert_eq!( r.pt_within(Point::new(10.,5.)).x, 1. );
+    /// assert_eq!( r.pt_within(Point::new(10.,5.)).y, 1. );
+    /// assert_eq!( r.pt_within(Point::new(5.,5.)).x, 0.5 );
+    /// assert_eq!( r.pt_within(Point::new(5.,5.)).y, 1. );
+    /// ```
     pub fn pt_within(&self, mut pt:Point) -> Point {
-        pt = pt.add( &Point::new(self.x0,self.y0), -1.);
-        pt.scale_xy( 1./(self.x1-self.x0),  1./(self.y1-self.y0) )
-    }
-
-    //mp is_none
-    pub fn is_none(&self) -> bool {
-        self.x0==0. && self.x1==0. && self.y0==0. && self.y1==0.
+        if self.is_none() {
+            pt
+        } else {
+            pt = pt.add( &Point::new(self.x0,self.y0), -1.);
+            pt.scale_xy( 1./(self.x1-self.x0),  1./(self.y1-self.y0) )
+        }
     }
 
     //mp as_points
+    /// Create a vector of four points that are the
+    /// anticlockwise-ordered corners of the rectangle starting at the
+    /// minumum (x,y)
     pub fn as_points(&self, close:bool, mut v:Vec<Point>) -> Vec<Point> {
         v.push(Point::new(self.x0,self.y0));
         v.push(Point::new(self.x1,self.y0));
@@ -122,38 +157,101 @@ impl Rectangle {
     }
 
     //mp get_wh
+    /// Return a point consisting of the width and height of the rectangle
     pub fn get_wh(&self) -> Point {
         Point::new(self.x1-self.x0, self.y1-self.y0)
     }
 
     //mp get_center
+    /// Return a point indicating the centre of the rectangle
     pub fn get_center(&self) -> Point {
         Point::new((self.x1+self.x0)/2., (self.y1+self.y0)/2.)
     }
 
     //mp xrange
+    /// Return a point to be used as the region that covers the X
+    /// dimension of the rectangle - that is `x0` to `x1`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(0.,0., 10.,5.);
+    /// assert_eq!( r.xrange().x, 0. );
+    /// assert_eq!( r.xrange().y, 10. );
+    /// ```
     pub fn xrange(&self) -> Point {
         Point::new(self.x0, self.x1)
     }
 
     //mp yrange
+    /// Return a point to be used as the region that covers the Y
+    /// dimension of the rectangle - that is `y0` to `y1`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(0.,0., 10.,5.);
+    /// assert_eq!( r.yrange().x, 0. );
+    /// assert_eq!( r.yrange().y, 5. );
+    /// ```
     pub fn yrange(&self) -> Point {
         Point::new(self.y0, self.y1)
     }
 
     //mp width
+    /// Return the width of the rectangle (`x1` - `x0`)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(15.,12., 29., 30.);
+    /// assert_eq!( r.width(), 14. );
+    /// # assert_eq!( r.height(), 18. );
+    /// ```
     pub fn width(&self) -> f64 {self.x1-self.x0}
 
     //mp height
+    /// Return the height of the rectangle (`y1` - `y0`)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(15.,12., 29., 30.);
+    /// # assert_eq!( r.width(), 14. );
+    /// assert_eq!( r.height(), 18. );
+    /// ```
     pub fn height(&self) -> f64 {self.y1-self.y0}
 
     //mp get_cwh
+    /// Get the centre, width and height of the rectangle 
     pub fn get_cwh(&self) -> (Point, f64, f64) {
         (self.get_center(), self.width(), self.height())
     }
 
-    //mp scale
-    /// Scale by a fixed value
+    //cp scale
+    /// Consume the rectangle and return a new rectangle whose
+    /// coordinates are scaled by a value
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(15.,12., 29., 30.)
+    ///         .scale(2.);
+    /// assert_eq!( r.x0, 30. );
+    /// assert_eq!( r.x1, 58. );
+    /// assert_eq!( r.y0, 24. );
+    /// assert_eq!( r.y1, 60. );
+    /// ```
     pub fn scale(mut self, value:f64) -> Self {
         self.x0 *= value;
         self.y0 *= value;
@@ -162,8 +260,22 @@ impl Rectangle {
         self
     }
 
-    //mp enlarge
-    /// enlarge by a fixed value
+    //cp enlarge
+    /// Consume the rectangle and return a new rectangle enlarge by a
+    /// fixed value
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(15.,12., 29., 30.)
+    ///         .enlarge(1.);
+    /// assert_eq!( r.x0, 14. );
+    /// assert_eq!( r.x1, 30. );
+    /// assert_eq!( r.y0, 11. );
+    /// assert_eq!( r.y1, 31. );
+    /// ```
     pub fn enlarge(mut self, value:f64) -> Self {
         self.x0 -= value;
         self.y0 -= value;
@@ -172,8 +284,21 @@ impl Rectangle {
         self
     }
 
-    //mp reduce
-    /// reduce by a fixed value
+    //cp reduce
+    /// Shrink the rectangle, keeping the same center, by a fixed value
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate diagram;
+    /// # use diagram::{Point, Rectangle};
+    /// let r = Rectangle::new(15.,12., 29., 30.)
+    ///         .reduce(1.);
+    /// assert_eq!( r.x0, 16. );
+    /// assert_eq!( r.x1, 28. );
+    /// assert_eq!( r.y0, 13. );
+    /// assert_eq!( r.y1, 29. );
+    /// ```
     pub fn reduce(mut self, value:f64) -> Self {
         self.x0 += value;
         self.y0 += value;
@@ -194,8 +319,6 @@ impl Rectangle {
 
     //mp shrink
     /// shrink in-place by expansion scaled by 'scale'
-    // note that self is not mut as this does not modify it - but it consumes it,
-    // and returns that from expand
     pub fn shrink(self, other:&Float4, scale:f64) -> Self {
         self.expand(other, -scale)
     }

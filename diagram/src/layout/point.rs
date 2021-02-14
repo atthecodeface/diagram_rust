@@ -1,7 +1,13 @@
 //tp Point
 #[derive(Clone, Copy, PartialEq, Debug)]
+/// This is a simple point class for two dimensions
+///
+/// Some methods treat the point as a range rather than a point,
+/// in which case x <= y
 pub struct Point {
+    /// X coordinate of the point
     pub x:f64,
+    /// Y coordinate of the point
     pub y:f64
 }
 
@@ -19,9 +25,21 @@ impl std::fmt::Display for Point {
 
 //ti Point
 impl Point {
+    //fp new
+    /// Create a new point from (x,y)
     pub const fn new(x:f64, y:f64) -> Self { Self {x,y} }
+
+    //fp origin
+    /// Create a new point from at (0,0)
     pub const fn origin() -> Self { Self {x:0.,y:0.} }
+
+    //fp is_origin
+    /// Return true if the point is the origin
     pub fn is_origin(&self) -> bool { self.x==0. && self.y==0. }
+
+    //cp rotate
+    /// Consume the point and return a new point that is the original
+    /// rotated around the origin
     pub fn rotate(mut self, degrees:f64) -> Self {
         let c = degrees.to_radians().cos();
         let s = degrees.to_radians().sin();
@@ -33,6 +51,8 @@ impl Point {
     }
 
     //cp scale_xy
+    /// Consume the point and return a new point that is the original
+    /// scaled in x and y by two different scaling factors
     pub fn scale_xy(mut self, sx:f64, sy:f64) -> Self {
         self.x = self.x*sx;
         self.y = self.y*sy;
@@ -40,6 +60,8 @@ impl Point {
     }
 
     //cp add
+    /// Consume the point, and return a new point that is the sum of
+    /// this point and a borrowed other point
     pub fn add(mut self, other:&Self, scale:f64) -> Self {
         self.x = self.x + other.x*scale;
         self.y = self.y + other.y*scale;
@@ -47,21 +69,26 @@ impl Point {
     }
 
     //mp len2
+    /// Return the distance^2 of the point from the origin
     pub fn len2(&self) -> f64 {
         self.x*self.x + self.y*self.y
     }
     
     //mp len
+    /// Return the distance of the point from the origin
     pub fn len(&self) -> f64 {
         (self.x*self.x + self.y*self.y).sqrt()
     }
 
     //mp dot
+    /// Return the dot product of this and another point
     pub fn dot(&self, other:&Point) -> f64 {
         self.x*other.x + self.y*other.y
     }
 
     //cp rotate_around
+    /// Consume the point and return a new point rotated around a
+    /// *pivot* point by the specified angle
     pub fn rotate_around(mut self, pivot:&Point, degrees:f64) -> Self {
         let c = degrees.to_radians().cos();
         let s = degrees.to_radians().sin();
@@ -73,19 +100,37 @@ impl Point {
     }
     
     //cp union
-    /// Treat this and other as a range, and find the min and max
+    /// Consume the point, and treat this and other as a range, and
+    /// find the min and max, returning the new region as a point
     pub fn union(mut self, other:&Point) -> Self {
-        if other.x<self.x {self.x=other.x;}
-        if other.y>self.y {self.y=other.y;}
-        self
+        if other.x > other.y {
+            self
+        } else if self.x > self.y {
+            self.x = other.x;
+            self.y = other.y;
+            self
+        } else {
+            if other.x < self.x {self.x=other.x;}
+            if other.y > self.y {self.y=other.y;}
+            self
+        }
     }
 
     //cp intersect
-    /// Treat this and other as a range, and find the intersection
+    /// Consume the point, and treat this and other as a range, and
+    /// find the overlap, returning the new region as a point
     pub fn intersect(mut self, other:&Point) -> Self {
-        if other.x>self.x {self.x=other.x;}
-        if other.y<self.y {self.y=other.y;}
-        self
+        if other.x > other.y {
+            self
+        } else if self.x > self.y {
+            self.x = other.x;
+            self.y = other.y;
+            self
+        } else {
+            if other.x > self.x {self.x=other.x;}
+            if other.y < self.y {self.y=other.y;}
+            self
+        }
     }
 
     //mp fit_within_region

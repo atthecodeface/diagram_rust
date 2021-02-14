@@ -150,6 +150,7 @@ enum IterState {
 }
 
 //tp ElementIter
+/// An iterator structure to permit iteration over an Svg object's elements
 pub struct ElementIter<'a> {
     state: IterState,
     elements: Vec<(&'a SvgElement, usize)>
@@ -157,6 +158,8 @@ pub struct ElementIter<'a> {
 
 //ip ElementIter
 impl <'a> ElementIter<'a> {
+    //fp new
+    /// Create a new Svg element iterator
     pub fn new(e:&'a SvgElement) -> Self {
         let mut elements = Vec::new();
         elements.push((e,0));
@@ -256,19 +259,25 @@ impl <'a> Iterator for ElementIter<'a> {
 
 //a Svg
 //tp Svg
+/// This structure is used to create SVG renderings of a `Diagram` It
+/// should be constructed, and mutably borrowed by a diagram when it's
+/// `generate_svg` method is invoked.
+///
+/// This method requires the `GenerateSvg` to be brought in to scope.
 pub struct Svg {
-    pub width  : f64, // in mm
-    pub height : f64, // in mm
+    pub(super) width  : f64, // in mm
+    pub(super) height : f64, // in mm
+    pub(super) show_grid : bool,
+    pub(super) show_layout : bool,
+    pub(super) show_content_rectangles : bool,
+    pub(super) display : bool,
     stack : Vec<SvgElement>,
-    pub show_grid : bool,
-    pub show_layout : bool,
-    pub show_content_rectangles : bool,
-    pub display : bool,
 }
 
 //ip Svg
 impl Svg {
     //fp new
+    /// Create a new `Svg` instance, to render a `Diagram` into
     pub fn new() -> Self  {
         Self {
             width  : 297.,
@@ -282,44 +291,56 @@ impl Svg {
     }
 
     //cp set_grid
+    /// Used in a construction, to update the `Svg` instance to enable
+    /// or disable the incorporation of a grid in to the SVG output
     pub fn set_grid(mut self, grid:bool) -> Self {
         self.show_grid = grid;
         self
     }
     
     //cp set_layout
+    /// Used in a construction, to update the `Svg` instance to enable
+    /// or disable the incorporation of lines indicating the `Layout`
+    /// grids.
     pub fn set_layout(mut self, layout:bool) -> Self {
         self.show_layout = layout;
         self
     }
     
     //cp set_display
+    /// Used in a construction, to update the `Svg` instance to enable
+    /// or disable the display to stdout of the Svg element hierarchy,
+    /// once created from the diagram.
     pub fn set_display(mut self, display:bool) -> Self {
         self.display = display;
         self
     }
     
     //cp set_content_rectangles
+    /// Used in a construction, to update the `Svg` instance to enable
+    /// or disable the incorporation of a grid in to the SVG output
     pub fn set_content_rectangles(mut self, show:bool) -> Self {
         self.show_content_rectangles = show;
         self
     }
     
     //mp push_element
-    pub fn push_element(&mut self, e:SvgElement) {
+    pub(super) fn push_element(&mut self, e:SvgElement) {
         self.stack.push(e);
     }
     //mp pop_element
-    pub fn pop_element(&mut self) -> SvgElement {
+    pub(super) fn pop_element(&mut self) -> SvgElement {
         self.stack.pop().unwrap()
     }
     //mp add_subelement
-    pub fn add_subelement(&mut self, e:SvgElement) {
+    pub(super) fn add_subelement(&mut self, e:SvgElement) {
         let n = self.stack.len();
         self.stack[n-1].contents.push(e);
     }
 
-    //mp add_grid
+    //mi add_grid
+    /// Add a grid to the SVG file with given region, spacing, line
+    /// width and color
     fn add_grid(&mut self, min:f64, max:f64, spacing:f64, line_width:f64, color:&str) {
         let length = max-min;
         let mut rx = String::new();
@@ -340,7 +361,7 @@ impl Svg {
     }
     
     //mp generate_layout_recoved_svg
-    pub fn generate_layout_recoved_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
+    pub(super) fn generate_layout_recoved_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
         if self.show_layout {
             if let Some(lr) = layout_record.as_ref() {
                 lr.generate_svg( self )?;
@@ -350,9 +371,15 @@ impl Svg {
     }
     
     //mp iter_events
+    /// Iterate over all the XML events the Svg would generate if it
+    /// were an SVG file being read in by xml-rs
+    ///
+    /// This permits the SVG to be read by an XML reader, or written
+    /// using xml-rs to convert reader XmlEvents to writer XmlEvents.
     pub fn iter_events<'a>(&'a self) -> ElementIter<'a> {
         ElementIter::new(&self.stack[0])
     }
+    
     //zz All done
 }
 
@@ -376,8 +403,15 @@ impl <'a> GenerateSvgElement for ElementContent<'a> {
 }
 
 //pt GenerateSvg
+/// This trait provdes a `Diagram` with the ability to render to an
+/// SVG object, which may then be written to a file.
 pub trait GenerateSvg {
+    //mp generate_svg
+    /// This method renders to the `Svg` instance any of the XML
+    /// elements required for the object
     fn generate_svg(&self, _svg:&mut Svg) -> Result<(), SvgError> { Ok(()) }
+    //mp svg_add_transform
+    /// This method is used internally
     fn svg_add_transform(&self, _ele:&mut SvgElement) {}
 }
 

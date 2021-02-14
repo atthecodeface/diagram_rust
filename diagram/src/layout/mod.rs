@@ -11,5 +11,5 @@ pub use self::bezier::Bezier;
 pub use self::rectangle::{Rectangle, Float4};
 pub use self::polygon::Polygon;
 pub use self::layout::{LayoutBox, Layout, LayoutRecord, Transform};
-pub use self::grid::{GridPlacement, GridCellData};
+pub use self::grid::{GridPlacement, GridData, GridCellData};
 

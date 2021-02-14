@@ -26,6 +26,14 @@ use super::font::*;
 
 //a Diagram Descriptor - covers
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
+/// A DiagramDescriptor contains the names and types of the styles
+/// that elements may have within a `Diagram`, and the fonts that the
+/// `Diagram` knows about.
+///
+/// A `DiagramDescriptor` must be created so that it can be used by a
+/// `Diagram`, and once constructed it should not be further mutated.
+/// The `Diagram` can borrow references to it, and hence it must
+/// outlive the Diagram.
 pub struct DiagramDescriptor<'a> {
     style_set   : &'a StyleSet,
     descriptors : HashMap<&'a str, StyleDescriptor<'a>>,
@@ -34,6 +42,10 @@ pub struct DiagramDescriptor<'a> {
 
 //ti DiagramDescriptor
 impl <'a> DiagramDescriptor<'a> {
+    //fp create_style_set
+    /// Create the `StyleSet` required by the `DiagramDescriptor`
+    /// The `StyleSet` must have a lifetime that exceeds the descriptor,
+    /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
         let style_set = StyleSet::new()
             .add_type("bbox",        StyleValue::float_array(), false)            
@@ -71,6 +83,26 @@ impl <'a> DiagramDescriptor<'a> {
             ;
         style_set
     }
+
+    //fp new
+    /// Create a new `DiagramDescriptor` using a StyleSet The
+    /// `DiagramDescriptor` can be used to create diagrams, and read
+    /// them from markup files.  It must have a lifetime that is at
+    /// least as long as any `Diagram`s it is used for.
+    ///
+    /// It is immutable after it has been created.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate diagram;
+    /// let style_set          = diagram::DiagramDescriptor::create_style_set();
+    /// let diagram_descriptor = diagram::DiagramDescriptor::new(&style_set);
+    /// let mut diagram        = diagram::Diagram::new(&diagram_descriptor);
+    /// let mut dml            = diagram::DiagramML::new(&mut diagram);
+    /// dml.read_file("#diagram ##shape id=circle vertices=0".as_bytes())?;
+    /// # Ok::<(), diagram::MLErrorList>(())
+    /// ```
     pub fn new(style_set:&'a StyleSet) -> Self {
         let descriptors = HashMap::new();
         let fonts       = HashMap::new();
@@ -83,7 +115,14 @@ impl <'a> DiagramDescriptor<'a> {
         descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
         descriptor
     }
-    pub fn add_content_descriptor(&mut self, name:&'static str, include_hdr:bool, styles:Vec<&str>) {
+
+    //fp add_content_descriptors
+    /// Invoked by element types to add descriptors to the set
+    /// dependent on those descriptor values.
+    ///
+    /// This is only invoked by the `Element` type to add the required
+    /// descriptors for the element types for styling.
+    pub(super) fn add_content_descriptor(&mut self, name:&'static str, include_hdr:bool, styles:Vec<&str>) {
         let mut descriptor = StyleDescriptor::new(&self.style_set);
         if include_hdr {
             descriptor.add_styles(ElementHeader::get_style_names());
@@ -92,11 +131,18 @@ impl <'a> DiagramDescriptor<'a> {
         self.descriptors.insert(name, descriptor);
     }
 
-    pub fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
+    //mp get
+    /// Get the descriptor belonging to a tag name
+    pub(crate) fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
         match self.descriptors.get(tag)
-        { Some(rrc) => Some(rrc.clone()), None => None}
+        { Some(rrc) => Some(rrc), None => None}
     }
-    pub fn get_font(&self) -> RrcFont {
+
+    //mp get_font
+    /// Get a font
+    pub(crate) fn get_font(&self) -> RrcFont {
         self.fonts.get("default").unwrap().clone()
     }
+
+    //zz All done
 }
