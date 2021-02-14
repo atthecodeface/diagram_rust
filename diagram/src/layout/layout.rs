@@ -346,8 +346,9 @@ impl LayoutBox {
         // then find the inner coordinates of this desired centre
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
-        if DEBUG_LAYOUT { println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
-        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).translate(&Point::new(x_translation,y_translation),-1.).scale(1.0/self.content_scale));
+        if DEBUG_LAYOUT { println!("Getting content within inner {} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
+        // GJS PUT BACK self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).translate(&Point::new(x_translation,y_translation),-1.).scale(1.0/self.content_scale));
+        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
         let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
         self.content_to_layout = Some(transform)
@@ -473,8 +474,10 @@ impl Layout {
         if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
         let (ac,aw,ah) = within.get_cwh();
         let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
-        self.grid_placements.0.expand_and_centre(aw, ac.x);
-        self.grid_placements.1.expand_and_centre(ah, ac.y);
+        // GJS PUT BACK self.grid_placements.0.expand_and_centre(aw, ac.x);
+        // GJS PUT BACK self.grid_placements.1.expand_and_centre(ah, ac.y);
+        self.grid_placements.0.expand_and_centre(aw, 0.);
+        self.grid_placements.1.expand_and_centre(ah, 0.);
         self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
     }
 

@@ -566,9 +566,12 @@ impl GridPlacement {
     //mp expand_and_centre
     /// 
     /// Given an actual size, centered on a value, expand the grid as required, and translate so that it is centered on the value.
-    pub fn expand_and_centre(&mut self, _size:f64, _center:f64) {
+    pub fn expand_and_centre(&mut self, _size:f64, center:f64) {
+        println!("********************************************************************************");
+        println!("recenter by {}",center);
         let total_size = self.get_size();
         if total_size <= 0. { return ; }
+        self.grid_dimension.calculate_positions(-total_size/2., 0.);
         /*
         let mut sizes = self.generate_cell_sizes();
         let extra_size = size - total_size; // share this according to expansion

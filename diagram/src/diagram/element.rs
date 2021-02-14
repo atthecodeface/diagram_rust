@@ -584,7 +584,7 @@ impl <'a> ElementHeader <'a> {
                 LayoutPlacement::Place(pt)         => layout.get_placed_rectangle( &pt, &self.layout.ref_pt ),
             }
         };
-        // println!("Laying out {:?} => {}",self.layout,rect);
+        //println!("Laying out {:?} => {}",self.layout,rect);
         self.layout_box.layout_within_rectangle(rect);
         self.layout_box.get_content_rectangle()
     }
