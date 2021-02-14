@@ -381,7 +381,6 @@ mod test_layoutbox {
 #[derive(Debug)]
 pub struct Layout {
     cell_data     : (Vec<GridCellData>, Vec<GridCellData>),
-    min_cell_data : (Vec<GridCellData>, Vec<GridCellData>),
     pub grid_placements   : (GridPlacement, GridPlacement),
     pub direct_placements : (Placements, Placements),
     pub desired_grid      : Rectangle,
@@ -396,7 +395,6 @@ impl Layout {
         let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
         let direct_placements = ( Placements::new(), Placements::new() );
         Self { cell_data:(Vec::new(), Vec::new()),
-               min_cell_data:(Vec::new(), Vec::new()),
                grid_placements,
                direct_placements,
                desired_placement : Rectangle::none(),
@@ -418,15 +416,24 @@ impl Layout {
         self.direct_placements.1.add_element(pt.y, ref_pt.map(|pt| pt.y), bbox.y0, bbox.y1);
     }
 
+    //mp add_min_cell_data
+    pub fn add_min_cell_data(&mut self, minx:&Vec<GridCellData>, miny:&Vec<GridCellData>) {
+        self.grid_placements.0.add_cell_data( minx );
+        self.grid_placements.1.add_cell_data( miny );
+    }
+
     //mp get_desired_geometry
     /// With all elements placed the layout will have a desired geometry
     ///
     /// Any placements provide a true bbox
     /// A grid has a desired width and height, centred on 0,0
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        self.grid_placements.0.set_cell_data( &self.cell_data.0 );
-        self.grid_placements.1.set_cell_data( &self.cell_data.1 );
+        self.grid_placements.0.add_cell_data( &self.cell_data.0 );
+        self.grid_placements.0.recalculate();
         self.grid_placements.0.set_expansion( 0., vec![] );
+
+        self.grid_placements.1.add_cell_data( &self.cell_data.1 );
+        self.grid_placements.1.recalculate();
         self.grid_placements.1.set_expansion( 0., vec![] );
 
         let grid_width  = self.grid_placements.0.get_size();

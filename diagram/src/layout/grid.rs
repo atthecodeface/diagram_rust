@@ -254,6 +254,7 @@ mod tests {
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug)]
 pub struct GridPlacement {
+    cell_data      : Vec<GridCellData>,
     cell_positions : Vec<GridCellPosition>,
     start_index    : isize,
     last_index     : isize,
@@ -265,22 +266,31 @@ const DEBUG_GRID_PLACEMENT : bool = false;
 impl GridPlacement {
     //fp new
     pub fn new() -> Self {
+        let cell_data      = Vec::new();
         let cell_positions = Vec::new();
         let expansion      = Vec::new();
-        Self { cell_positions,
+        Self { cell_data,
+               cell_positions,
                start_index:0,
                last_index:0,
                expansion,
         }
     }
 
-    //mp set_cell_data
-    pub fn set_cell_data(&mut self, cell_data:&Vec<GridCellData>) -> () {
-        self.cell_positions           = GridCellData::generate_cell_positions(cell_data);
-        let (start_index, last_index) = GridCellData::find_first_last_indices(cell_data);
+    //mp add_cell_data
+    pub fn add_cell_data(&mut self, cell_data:&Vec<GridCellData>) {
+        for cd in cell_data{
+            self.cell_data.push(cd.clone());
+        }
+        if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
+    }
+
+    //mp recalculate
+    pub fn recalculate(&mut self) {
+        self.cell_positions           = GridCellData::generate_cell_positions(&self.cell_data);
+        let (start_index, last_index) = GridCellData::find_first_last_indices(&self.cell_data);
         self.start_index = start_index;
         self.last_index = last_index;
-        if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
     }
 
     //mp set_expansion

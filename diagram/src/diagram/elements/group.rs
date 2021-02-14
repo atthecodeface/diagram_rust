@@ -64,7 +64,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b> ) -> Result<Self,ElementError>{
+    fn clone(&self, _header:&ElementHeader<'a>, scope:&ElementScope<'a,'b> ) -> Result<Self,ElementError>{
         let layout = {if self.layout.is_some() {Some(Layout::new())} else {None}};
         let mut clone = Self {
             content:Vec::new(),
@@ -104,10 +104,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// header if required to extract styles
     fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         if let Some(v) = header.get_style_floats_of_name("minx").as_floats(None) {
-            self.minx = self.read_minimums(v)?;
+            self.minx = self.read_minimums(header, v)?;
         }
         if let Some(v) = header.get_style_floats_of_name("miny").as_floats(None) {
-            self.miny = self.read_minimums(v)?;
+            self.miny = self.read_minimums(header, v)?;
         }
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
@@ -121,6 +121,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             for e in self.content.iter_mut() {
                 e.set_layout_properties(layout);
             }
+            layout.add_min_cell_data(&self.minx, &self.miny);
             let rect = layout.get_desired_geometry();
             // println!("Group layout desires rectangle of {}", rect);
             rect
@@ -188,8 +189,33 @@ impl <'a> Group<'a> {
     /// Hence the data must be an odd number, of elements, with even
     /// indices being integers, and the indices monotically
     /// increasing, and the floats all positive or zero.
-    pub fn read_minimums(&self, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
-        Ok(Vec::new())
+    pub fn read_minimums(&self, header:&ElementHeader, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
+        if v.len() % 2 == 0 {
+            Err(ElementError::of_string(header, &format!("grid minimums must be int,(float,int)* and hence and odd number of items, but got {} items", v.len())))
+        } else {
+            fn as_int(header:&ElementHeader, x:f64, n:usize) -> Result<isize, ElementError> {
+                let x_i = x as isize;
+                if x - (x_i as f64) == 0. {
+                    Ok(x_i)
+                } else {
+                    Err(ElementError::of_string(header, &format!("grid boundaries must be integers, but got {} for cell boundary {}", x, n)))
+                }
+            }
+            let mut n = 1;
+            let mut start = as_int(header, v[0], 1)?;
+            let mut result = Vec::new();
+            while n*2 <= v.len() {
+                let size = v[n*2-1];
+                let end = as_int(header, v[n*2], n+1)?;
+                result.push(GridCellData::new(start, end, size));
+                if end <= start {
+                    Err(ElementError::of_string(header, &format!("grid boundaries must increase left to right, but got {} followed by {}",start,end)))?;
+                }
+                start = end;
+                n += 1;
+            }
+            Ok(result)
+        }
     }
                                                                                  
     //mp add_element

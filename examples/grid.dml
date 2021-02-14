@@ -7,19 +7,56 @@
 ##defs}
 
 
+;;; Top row - anchor the internal content to top left
+##layout grid=1,1 anchor=-1,-1
+
 ;; First on the top row of an outer grid, place a grid layout with 4 cells
 ;; The four cells each have a medium shape.
-##layout{ id=1_1 grid=1,1
+###layout{ id=1_1 grid=1,1 anchor=-1,-1
 #use id=g1_1     ref=medium grid=1,1
 #use id=g2_1     ref=medium grid=2,1
 #use id=g1_2     ref=medium grid=1,2
 #use id=g2_2     ref=medium grid=2,2
-#layout}
+##layout}
 
 ;; Second on the top row of an outer grid, place a grid layout with 4 cells
 ;; The four cells each have a medium shape, but the whole grid has a big cell
 ;; The right-hand row and bottom column will be larger
-##layout{ id=1_2 grid=2,1
+###layout{ id=1_2 grid=2,1
+#use id=big     ref=big grid=1,1,3,3 border=4 bordercolor=blue
+
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+##layout}
+
+;; Third on the top row of an outer grid, place a grid layout with *9* cells
+;; The top-left four cells each have a medium shape, but the whole grid has a big cell
+;; The right-hand row and bottom column now provide slack so the medium shapes' cells are all
+;; the same size
+###layout{ id=1_3 grid=3,1
+#use id=big     ref=big grid=1,1,4,4 border=4 bordercolor=blue
+
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+##layout}
+
+;;; Second row - anchor the internal content to top left
+;; On the second row the effect of minx and miny can be seen
+##layout grid=1,2 anchor=-1,-1
+
+;; First on the second row we have four cells in a grid:
+;; The four cells each have a medium shape, but the whole grid has a big cell
+;; The columns are specified to be 60. units each, which together is wide enough for the
+;; big cell, so the medium shapes will have their cells equal in width and they will
+;; appear even
+;; The top row is specified to be 70. units but the bottom row a minimum of 0.;
+;; hence the top row will be 70., and the bottom row will be at least the medium shape.
+;; Since 70. + medium > big, it actually is the medium shape.
+###layout{ id=2_1 grid=1,2 minx=1,60.,2,60.,3 miny=0,70.,2,0.,10 anchor=-1,-1
 #use id=big     ref=big grid=1,1,3,3 border=4 bordercolor=blue
 
 #use id=g1_1     ref=medium grid=1,1
@@ -28,26 +65,16 @@
 #use id=g2_2     ref=medium grid=2,2
 #layout}
 
-;; Third on the top row of an outer grid, place a grid layout with *9* cells
-;; The top-left four cells each have a medium shape, but the whole grid has a big cell
-;; The right-hand row and bottom column now provide slack so the medium shapes' cells are all
-;; the same size
-##layout{ id=1_3 grid=3,1
-#use id=big     ref=big grid=1,1,4,4 border=4 bordercolor=blue
-
-#use id=g1_1     ref=medium grid=1,1
-#use id=g2_1     ref=medium grid=2,1
-#use id=g1_2     ref=medium grid=1,2
-#use id=g2_2     ref=medium grid=2,2
-#layout}
-
-;;; Second row
-
-;; On the second row the effect of minx and miny can be seen
-;; The top-left four cells each have a medium shape, but the whole grid has a big cell
-;; The right-hand row and bottom column now provide slack so the medium shapes' cells are all
-;; the same size
-##layout{ id=2_1 grid=1,2 minx=1,60.,2,60.,3
+;; Second on the second row we have:
+;; The four cells each have a medium shape, but the whole grid has a big cell
+;; The columns are specified to be 60. units each, which together is big enough for the
+;; big cell, so the medium shapes will have their cells equal in width and they will
+;; appear even
+;; The top row is specified to be 50. units but the bottom row a minimum of 40.;
+;; hence the top row will be 50. as this is larger than required by the medium, but
+;; the bottom row will be be the rest of the space required for the big shape:
+;; this is because 50. + medium < big
+###layout{ id=2_2 grid=2,2 minx=1,60.,2,60.,3 miny=0,50.,2,40.,10 anchor=-1,-1
 #use id=big     ref=big grid=1,1,3,3 border=4 bordercolor=blue
 
 #use id=g1_1     ref=medium grid=1,1
