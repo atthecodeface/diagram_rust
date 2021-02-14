@@ -17,64 +17,167 @@ limitations under the License.
  */
 
 //a Documentation
-//! The diagram library provides the support for creating styled
-//! diagrams, usually using a markup language to describe a diagram
-//! and its styling, and generating an SVG output.
-//!
-//! The diagrams use a boxed layout model, similar to web pages - and
-//! the styling is similar to cascading stylesheets.
-//!
-//! Layout types
-//!
-//! A grid layout uses a specification for each cell that participates
-//! in the layout, using a pair of cell start/end indications for the
-//! cell. The X and Y are laid out independently. All the cells within
-//! the grid are defined, and then styled (given style values from the
-//! stylesheet). Then the cells contents are interrogated to determine
-//! their *desired size*, to which scaling, rotation, padding, border
-//! and margin are added. The grid layout uses the cell start/end
-//! indications and the desired size to determine the demands of the
-//! cell on the X and Y dimensions of the grid layout. This produces a
-//! basic layout for each cell grid X and Y value mapping to a desired
-//! grid X and Y value; and the grid therefore has a desired size.
-//!
-//! The grid layout will eventually be asked to be laid out in a real
-//! geometry for the diagram.  At this point the real geometry may be
-//! larger than the desired, in which case the grid may be expanded if
-//! required by the styles.
-//!
-//! To permit the styling of the layout the grid may also be provided
-//! with minimum sizes for cell ranges, in the styling of the `layout`
-//! element. These are lists of <int> (<float> <int>)*; the ints
-//! should be in increasing order, and they specify the cell
-//! boundaries; the floats are the minimum size between its two
-//! neighboring float boundaries.
-//!
-//! An example layout could be just two elements:
-//!
-//! ```
-//!  #layout ##shape id=a grid=1,1 ##shape id=b grid=2,1
-//! ```
-//!
-//! This specifies two shapes, one at grid cell (1,1,2,2) (there is a
-//! default span of one row and one column), and the second at grid
-//! cell (2,1,3,2). The grid therefore has in the X dimension cell
-//! boundaries at 1, 2 and 3; in Y it just has 1 and 2 (i.e. a single row).
-//!
-//! These two shapes will be laid out, therefore, in a single row,
-//! using the sizes required by the shapes. The row will be tall
-//! enough for the taller of the two shapes.
-//!
-//! If the shapes are of different size, but the desire is to have the
-//! cells be the same width of 50 (provided the shapes are smaller
-//! than that) then one can provide the minimum sizes:
-//!
-//! ```
-//!  #layout minx=1,50.,2,50.,3 ##shape id=a grid=1,1 ##shape id=b grid=2,1
-//! ```
-//!
-//! Now the minimum width (X dimension) between cell 1 and cell 2 will
-//! be 50. units, and the same is required between cells 2 and 3.
+#![warn(missing_docs)]
+#![warn(missing_doc_code_examples)]
+/*!
+# Diagram library
+
+The diagram library provides the support for creating styled
+ diagrams, usually using a markup language to describe a diagram and
+ its styling, and generating an SVG output.
+
+The diagrams use a boxed layout model, similar to web pages - and the
+ styling is similar to cascading stylesheets.
+
+## Diagram elements
+
+The diagram is made up of elements, which are either leaf elements
+(shapes, text) or collections of elements (groups, layouts).
+
+Elements are fitted with rectangles, which may be rendered with
+padding, border and margin, with a background within the border
+possibly filled. The content of the element is rendered within this
+(filled) border, with an optional scaling and arbitrary rotation.
+
+Elements are rendered in the order in which they appear within the
+diagram specification; hence later elements in the diagram are drawn
+over earlier elements.
+
+### Leaf element types
+
+The rendered elements in a drawing are currently shapes and
+text.
+
+Shapes are regular polygons or regula stars, circles or
+ellipses; they may be filled with a solid color, and they may have
+their edges drawn; they may have rounded corners.
+
+Text elements are multiple lines of text
+
+### Group element
+
+The group element is purely a collection of elements; it will be laid
+out, but the contents themselves specify how they will be laid out in
+the parent of the group. The group element, though, will have an
+associated border which can be rendered if required; hence a group is
+used to group elements, and sometimes to provide an additional empty
+(optionally filled) border.
+
+### Layout element
+
+The layout element is another collection of elements, and it is
+fundamental to the operation of the diagram. It provides both a grid
+layout mechanism and a placement mechanism, for its contents. The
+contents of the layout element know nothing of the layout of the
+diagram outside of the layout element.
+
+Gridded layout uses row numbers and column numbers, and spans, and
+styling to specify how the rows and columns are laid out; each leaf
+element is laid out within a cell occupying a span of rows and a span
+of columns.
+
+## Definitions and Uses
+
+A diagram may contain definitions of collections of elements, such as
+(for example) a queue may be defined to be a layout of four rounded
+rectangles. This definition may be given, for example an 'id' of 'Queue'.
+
+The diagram contents may then *use* this definition, for example with:
+
+```text
+#use ref=Queue grid=1,1
+#use ref=Queue grid=2,1
+```
+
+This instances the four rounded rectangles twice, and so there will be
+two `Queue`s in the diagram.
+
+## Styling
+
+The structure of a diagram should be defined by the diagram
+elements. This implies that the layouts that form the diagram are
+defined, and the contents of each layout are defined.
+
+The diagram *may* be styled within its description too: styles (such as
+fill colors, line widths, and so on) may be defined using attributes
+in a markup diagram, for example.
+
+Diagram elements *should* be provided with 'id's and 'class'
+attributes; the 'class' is a list of tokens separated by whitespace -
+and hence an element may be considered to be in *many* classes.
+
+A set of stylings and style rules can then be applied to a diagram, to
+permit the diagram styling to be developed *independently of its
+structure*. This is the same operation as for web pages with CSS
+(cascading stylesheets). It is normal for 90% of the time spent on a
+diagram to be playing with the styling, compared with 10% developing
+its structure.
+
+## Layout types
+
+A grid layout uses a specification for each cell that participates
+ in the layout, using a pair of cell start/end indications for the
+ cell. The X and Y are laid out independently. All the cells within
+ the grid are defined, and then styled (given style values from the
+ stylesheet). Then the cells contents are interrogated to determine
+ their *desired size*, to which scaling, rotation, padding, border
+ and margin are added. The grid layout uses the cell start/end
+ indications and the desired size to determine the demands of the
+ cell on the X and Y dimensions of the grid layout. This produces a
+ basic layout for each cell grid X and Y value mapping to a desired
+ grid X and Y value; and the grid therefore has a desired size.
+
+The grid layout will eventually be asked to be laid out in a real
+ geometry for the diagram.  At this point the real geometry may be
+ larger than the desired, in which case the grid may be expanded if
+ required by the styles.
+
+To permit the styling of the layout the grid may also be provided
+ with minimum sizes for cell ranges, in the styling of the `layout`
+ element. These are lists of <int> (<float> <int>)*; the ints
+ should be in increasing order, and they specify the cell
+ boundaries; the floats are the minimum size between its two
+ neighboring float boundaries.
+
+An example layout could be just two elements:
+
+```text
+#layout ##shape id=a grid=1,1 ##shape id=b grid=2,1
+```
+
+This specifies two shapes, one at grid cell (1,1,2,2) (there is a
+ default span of one row and one column), and the second at grid
+ cell (2,1,3,2). The grid therefore has in the X dimension cell
+ boundaries at 1, 2 and 3; in Y it just has 1 and 2 (i.e. a single row).
+
+These two shapes will be laid out, therefore, in a single row,
+ using the sizes required by the shapes. The row will be tall
+ enough for the taller of the two shapes.
+
+If the shapes are of different size, but the desire is to have the
+ cells be the same width of 50 (provided the shapes are smaller
+ than that) then one can provide the minimum sizes:
+
+```text
+#layout minx=1,50.,2,50.,3 ##shape id=a grid=1,1 ##shape id=b grid=2,1
+```
+
+Now the minimum width (X dimension) between cell 1 and cell 2 will
+ be 50. units, and the same is required between cells 2 and 3.
+
+# Example diagrams
+
+A simple first example diagram consists of four shapes laid out in a 2-by-2 grid:
+
+```text
+#diagram
+##shape vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1 
+##shape vertices=4 grid=1,2 fill=pink width=10
+##shape vertices=3 grid=2,1 fill=blue width=10 stellate=8 stroke=yellow strokewidth=1 
+##shape vertices=4 grid=2,2 fill=pink width=10 stellate=8
+```
+
+!*/
 
 //a Crates
 extern crate xml;
