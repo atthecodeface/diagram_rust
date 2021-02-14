@@ -20,7 +20,7 @@ limitations under the License.
 use super::Point;
 use super::{Rectangle, Float4};
 use super::Polygon;
-use super::grid::{CellData, GridPlacement};
+use super::grid::{GridCellData, GridPlacement};
 use super::placement::{Placements};
 
 //a Constants
@@ -380,7 +380,8 @@ mod test_layoutbox {
 //tp Layout
 #[derive(Debug)]
 pub struct Layout {
-    cell_data  : (Vec<CellData>, Vec<CellData>),
+    cell_data     : (Vec<GridCellData>, Vec<GridCellData>),
+    min_cell_data : (Vec<GridCellData>, Vec<GridCellData>),
     pub grid_placements   : (GridPlacement, GridPlacement),
     pub direct_placements : (Placements, Placements),
     pub desired_grid      : Rectangle,
@@ -388,11 +389,14 @@ pub struct Layout {
     pub desired_geometry  : Rectangle,
     content_to_actual : Transform,
 }
+
+//ip Layout
 impl Layout {
     pub fn new() -> Self {
         let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
         let direct_placements = ( Placements::new(), Placements::new() );
         Self { cell_data:(Vec::new(), Vec::new()),
+               min_cell_data:(Vec::new(), Vec::new()),
                grid_placements,
                direct_placements,
                desired_placement : Rectangle::none(),
@@ -404,8 +408,8 @@ impl Layout {
 
     //mp add_grid_element
     pub fn add_grid_element(&mut self, start:(isize,isize), end:(isize,isize), size:(f64,f64)) {
-        self.cell_data.0.push(CellData::new(start.0, end.0, size.0));
-        self.cell_data.1.push(CellData::new(start.1, end.1, size.1));
+        self.cell_data.0.push(GridCellData::new(start.0, end.0, size.0));
+        self.cell_data.1.push(GridCellData::new(start.1, end.1, size.1));
     }
 
     //mp add_placed_element
@@ -460,7 +464,7 @@ impl Layout {
     /// All the placement data must have been provided, and a layout of the box can be performed.
     ///
     /// For any grid within the layout this requires a possibly expansion, plus a translation
-    pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<CellData>) -> Self {
+    pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<GridCellData>) -> Self {
         if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
         let (ac,aw,ah) = within.get_cwh();
         let (dc,_dw,_dh) = self.desired_geometry.get_cwh();

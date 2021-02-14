@@ -1,0 +1,58 @@
+#diagram
+##defs{
+#shape id="blob" vertices=7 grid=1,1 bordercolor=green border=1 stroke=purple fill=pink stellate=5
+#use id=big    ref=blob width=50 fill=red stellate=40
+#use id=medium ref=blob width=20 fill=yellow
+#use id=small  ref=blob width=10 fill=orange
+##defs}
+
+
+;; First on the top row of an outer grid, place a grid layout with 4 cells
+;; The four cells each have a medium shape.
+##layout{ id=1_1 grid=1,1
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+#layout}
+
+;; Second on the top row of an outer grid, place a grid layout with 4 cells
+;; The four cells each have a medium shape, but the whole grid has a big cell
+;; The right-hand row and bottom column will be larger
+##layout{ id=1_2 grid=2,1
+#use id=big     ref=big grid=1,1,3,3 border=4 bordercolor=blue
+
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+#layout}
+
+;; Third on the top row of an outer grid, place a grid layout with *9* cells
+;; The top-left four cells each have a medium shape, but the whole grid has a big cell
+;; The right-hand row and bottom column now provide slack so the medium shapes' cells are all
+;; the same size
+##layout{ id=1_3 grid=3,1
+#use id=big     ref=big grid=1,1,4,4 border=4 bordercolor=blue
+
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+#layout}
+
+;;; Second row
+
+;; On the second row the effect of minx and miny can be seen
+;; The top-left four cells each have a medium shape, but the whole grid has a big cell
+;; The right-hand row and bottom column now provide slack so the medium shapes' cells are all
+;; the same size
+##layout{ id=2_1 grid=1,2 minx=1,60.,2,60.,3
+#use id=big     ref=big grid=1,1,3,3 border=4 bordercolor=blue
+
+#use id=g1_1     ref=medium grid=1,1
+#use id=g2_1     ref=medium grid=2,1
+#use id=g1_2     ref=medium grid=1,2
+#use id=g2_2     ref=medium grid=2,2
+#layout}
+

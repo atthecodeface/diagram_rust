@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
-use crate::{Layout, LayoutRecord};
+use crate::{Layout, LayoutRecord, GridCellData};
 use crate::{Rectangle};
 
 //a Group element
@@ -37,6 +37,8 @@ pub struct Group<'a> {
     pub content : Vec<Element<'a>>,
     layout : Option<Layout>,
     layout_record : Option<LayoutRecord>,
+    minx : Vec<GridCellData>,
+    miny : Vec<GridCellData>,
 }
 
 //ip DiagramElementContent for Group
@@ -55,16 +57,22 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             content:Vec::new(),
             layout,
             layout_record : None,
+            minx : Vec::new(),
+            miny : Vec::new(),
         } )
     }
 
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a,'b> ) -> Result<Self,ElementError>{
-        let mut clone = Self::new(header, "")?;
-        if self.layout.is_some() {
-            clone.layout = Some(Layout::new());
-        }
+        let layout = {if self.layout.is_some() {Some(Layout::new())} else {None}};
+        let mut clone = Self {
+            content:Vec::new(),
+            layout,
+            layout_record : None,
+            minx : Vec::new(),
+            miny : Vec::new(),
+        };
         for e in &self.content {
             clone.content.push(e.clone(scope)?);
         }
@@ -83,15 +91,24 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     //fp get_style_names
     /// Get the style descriptor for this element when referenced by the name
     ///
-    /// Same descriptor is returned for 'layout' or for 'group'
-    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
-        vec![]
+    /// Layout supports minx/miny cell size descriptions
+    fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
+        match name {
+            "layout" => vec!["minx", "miny"],
+            _ => vec![],
+        }
     }
 
     //mp style
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
-    fn style(&mut self, descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
+    fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
+        if let Some(v) = header.get_style_floats_of_name("minx").as_floats(None) {
+            self.minx = self.read_minimums(v)?;
+        }
+        if let Some(v) = header.get_style_floats_of_name("miny").as_floats(None) {
+            self.miny = self.read_minimums(v)?;
+        }
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
         }
@@ -160,6 +177,21 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 
 //ip Group
 impl <'a> Group<'a> {
+    //mp read_minimums
+    /// For styling, this uses an array of floats and attempts to produce an array of GridCellData,
+    /// which provides the start/end/size for cells
+    ///
+    /// For the data to be valid it should be of the form
+    /// int,(float,int)*, describing spacing between cell boundaries
+    /// with increasing cell numbers.
+    ///
+    /// Hence the data must be an odd number, of elements, with even
+    /// indices being integers, and the indices monotically
+    /// increasing, and the floats all positive or zero.
+    pub fn read_minimums(&self, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
+        Ok(Vec::new())
+    }
+                                                                                 
     //mp add_element
     /// Add an element to the group; moves the element in to the content
     pub fn add_element(&mut self, element:Element<'a>) -> () {

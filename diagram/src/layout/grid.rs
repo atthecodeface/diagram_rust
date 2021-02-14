@@ -19,21 +19,21 @@ limitations under the License.
 //a Imports
 
 //a Internal types
-//ti CellPosition
-type CellPosition = (isize,f64);
+//ti GridCellPosition
+type GridCellPosition = (isize,f64);
 
-//tp CellData
+//tp GridCellData
 /// (start row * number of rows (>=1) * height in pixels) *)
 #[derive(Clone, Copy, Debug)]
-pub struct CellData {
+pub struct GridCellData {
     start : isize,
     end   : isize,
     size  : f64,
 }
 
-//ip CellData
+//ip GridCellData
 const DEBUG_CELL_DATA : bool = false;
-impl CellData {
+impl GridCellData {
 
     //fp new
     pub fn new(start:isize, end:isize, size:f64) -> Self {
@@ -43,7 +43,7 @@ impl CellData {
     }
 
     //fp find_first_last_indices
-    pub fn find_first_last_indices(cell_data:&Vec<CellData>) -> (isize,isize) {
+    pub fn find_first_last_indices(cell_data:&Vec<GridCellData>) -> (isize,isize) {
         if cell_data.len() == 0 {
             (0,0)
         } else {
@@ -58,7 +58,7 @@ impl CellData {
     }
 
     //fp generate_cell_positions
-    pub fn generate_cell_positions(cell_data:&Vec<CellData>) -> Vec<CellPosition> {
+    pub fn generate_cell_positions(cell_data:&Vec<GridCellData>) -> Vec<GridCellPosition> {
         if DEBUG_CELL_DATA { println!("Generate cell positions of cell data {:?}", cell_data); }
         let n = cell_data.len();
         let mut result = Vec::with_capacity(n);
@@ -69,7 +69,7 @@ impl CellData {
             sorted_indices.push(i);
         }
         sorted_indices.sort_by(|a,b| cell_data[*a].start.partial_cmp(&cell_data[*b].start).unwrap());
-        let mut sorted_cell_data : Vec<CellData> = sorted_indices.iter().map(|n| cell_data[*n]).collect();
+        let mut sorted_cell_data : Vec<GridCellData> = sorted_indices.iter().map(|n| cell_data[*n]).collect();
 
         if DEBUG_CELL_DATA { println!("Sorted cell data {:?}", sorted_cell_data); }
 
@@ -149,7 +149,7 @@ impl CellData {
     }
 
     //fp find_position
-    pub fn find_position(positions:&Vec<CellPosition>, index:usize, col:isize) -> (usize, f64) {
+    pub fn find_position(positions:&Vec<GridCellPosition>, index:usize, col:isize) -> (usize, f64) {
         if positions.len() == 0 { return (0, 0.); } 
         let mut i = index;
         if i >= positions.len() {
@@ -169,11 +169,11 @@ impl CellData {
     //zz All done
 }
 
-//it Display for CellData
-impl std::fmt::Display for CellData {
+//it Display for GridCellData
+impl std::fmt::Display for GridCellData {
 
-    //mp fmt - format a CellData
-    /// Display the `CellData' as (min->max:size)
+    //mp fmt - format a GridCellData
+    /// Display the `GridCellData' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({}->{}:{}]", self.start, self.end, self.size)
     }
@@ -181,68 +181,68 @@ impl std::fmt::Display for CellData {
     //zz All done
 }
 
-//mt Test for CellData
+//mt Test for GridCellData
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn test_0() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(0,4,4.) );
-        cd.push( CellData::new(4,6,2.) );
-        assert_eq!((0,6),CellData::find_first_last_indices(&cd));
-        let cp = CellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,4.), CellData::find_position(&cp, 0, 4),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,6.), CellData::find_position(&cp, 0, 6),"Column 6 starts at 6., and is at index 2");
+        cd.push( GridCellData::new(0,4,4.) );
+        cd.push( GridCellData::new(4,6,2.) );
+        assert_eq!((0,6),GridCellData::find_first_last_indices(&cd));
+        let cp = GridCellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,4.), GridCellData::find_position(&cp, 0, 4),"Column 4 starts at 4., and is at index 1");
+        assert_eq!((2,6.), GridCellData::find_position(&cp, 0, 6),"Column 6 starts at 6., and is at index 2");
     }
     #[test]
     fn test_simple_gap() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(0,1,1.) );
-        cd.push( CellData::new(2,3,1.) );
-        assert_eq!((0,3),CellData::find_first_last_indices(&cd));
-        let cp = CellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,1.), CellData::find_position(&cp, 0, 1),"Column 1 starts at 1., and is at index 1");
-        assert_eq!((2,1.), CellData::find_position(&cp, 0, 2),"Column 2 starts at 1., and is at index 2");
-        assert_eq!((3,2.), CellData::find_position(&cp, 0, 3),"Column 3 starts at 2., and is at index 3");
+        cd.push( GridCellData::new(0,1,1.) );
+        cd.push( GridCellData::new(2,3,1.) );
+        assert_eq!((0,3),GridCellData::find_first_last_indices(&cd));
+        let cp = GridCellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,1.), GridCellData::find_position(&cp, 0, 1),"Column 1 starts at 1., and is at index 1");
+        assert_eq!((2,1.), GridCellData::find_position(&cp, 0, 2),"Column 2 starts at 1., and is at index 2");
+        assert_eq!((3,2.), GridCellData::find_position(&cp, 0, 3),"Column 3 starts at 2., and is at index 3");
     }
     #[test]
     fn test_1() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(1,2,10.) );
-        cd.push( CellData::new(1,2,20.) );
-        cd.push( CellData::new(1,2,20.) );
-        assert_eq!((1,2),CellData::find_first_last_indices(&cd));
-        let cp = CellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
+        cd.push( GridCellData::new(1,2,10.) );
+        cd.push( GridCellData::new(1,2,20.) );
+        cd.push( GridCellData::new(1,2,20.) );
+        assert_eq!((1,2),GridCellData::find_first_last_indices(&cd));
+        let cp = GridCellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 0),"Column 0 starts at 0., and is at index 0");
     }        
     #[test]
     fn test_2() {
         let mut cd = Vec::new();
-        cd.push( CellData::new(60,90,10.) );
-        cd.push( CellData::new(80,110,20.) );
-        cd.push( CellData::new(100,110,20.) );
-        assert_eq!((60,110),CellData::find_first_last_indices(&cd));
-        let cp = CellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,0.), CellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((2,10.), CellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((3,30.), CellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
+        cd.push( GridCellData::new(60,90,10.) );
+        cd.push( GridCellData::new(80,110,20.) );
+        cd.push( GridCellData::new(100,110,20.) );
+        assert_eq!((60,110),GridCellData::find_first_last_indices(&cd));
+        let cp = GridCellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, 60), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,0.), GridCellData::find_position(&cp, 0, 80), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((2,10.), GridCellData::find_position(&cp, 0,100),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((3,30.), GridCellData::find_position(&cp, 0,110),"Column 0 starts at 0., and is at index 0");
     }        
     #[test]
     fn test_3() {
         let mut cd = Vec::new();
-        cd.push( CellData::new( 10,20,20.) );
-        cd.push( CellData::new(-10,20,20.) );
-        cd.push( CellData::new(-30, 0,10.) );
-        assert_eq!((-30,20),CellData::find_first_last_indices(&cd));
-        let cp = CellData::generate_cell_positions(&cd);
-        assert_eq!((0,0.), CellData::find_position(&cp, 0, -30), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,0.), CellData::find_position(&cp, 0, -10), "Column 0 starts at 0., and is at index 0");
-        assert_eq!((2,10.), CellData::find_position(&cp, 0, 10),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((3,30.), CellData::find_position(&cp, 0, 20),"Column 0 starts at 0., and is at index 0");
+        cd.push( GridCellData::new( 10,20,20.) );
+        cd.push( GridCellData::new(-10,20,20.) );
+        cd.push( GridCellData::new(-30, 0,10.) );
+        assert_eq!((-30,20),GridCellData::find_first_last_indices(&cd));
+        let cp = GridCellData::generate_cell_positions(&cd);
+        assert_eq!((0,0.), GridCellData::find_position(&cp, 0, -30), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((1,0.), GridCellData::find_position(&cp, 0, -10), "Column 0 starts at 0., and is at index 0");
+        assert_eq!((2,10.), GridCellData::find_position(&cp, 0, 10),"Column 0 starts at 0., and is at index 0");
+        assert_eq!((3,30.), GridCellData::find_position(&cp, 0, 20),"Column 0 starts at 0., and is at index 0");
     }        
 }
 
@@ -254,7 +254,7 @@ mod tests {
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug)]
 pub struct GridPlacement {
-    cell_positions : Vec<CellPosition>,
+    cell_positions : Vec<GridCellPosition>,
     start_index    : isize,
     last_index     : isize,
     expansion      : Vec<f64>,
@@ -275,9 +275,9 @@ impl GridPlacement {
     }
 
     //mp set_cell_data
-    pub fn set_cell_data(&mut self, cell_data:&Vec<CellData>) -> () {
-        self.cell_positions           = CellData::generate_cell_positions(cell_data);
-        let (start_index, last_index) = CellData::find_first_last_indices(cell_data);
+    pub fn set_cell_data(&mut self, cell_data:&Vec<GridCellData>) -> () {
+        self.cell_positions           = GridCellData::generate_cell_positions(cell_data);
+        let (start_index, last_index) = GridCellData::find_first_last_indices(cell_data);
         self.start_index = start_index;
         self.last_index = last_index;
         if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
@@ -341,8 +341,8 @@ impl GridPlacement {
     //mp get_span
     /// Find the span of a start/number of grid positions
     pub fn get_span(&self, start:isize, end:isize) -> (f64,f64) {
-        let (index, start_posn) = CellData::find_position(&self.cell_positions, 0,     start);
-        let (_,     end_posn)   = CellData::find_position(&self.cell_positions, index, end);
+        let (index, start_posn) = GridCellData::find_position(&self.cell_positions, 0,     start);
+        let (_,     end_posn)   = GridCellData::find_position(&self.cell_positions, index, end);
         if DEBUG_GRID_PLACEMENT { println!("Got span for {} {} to be {} {}", start, end, start_posn, end_posn); }
         (start_posn, end_posn)
     }

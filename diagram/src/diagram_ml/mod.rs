@@ -304,6 +304,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     fn read_definitions (&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+            (_,_,XmlEvent::Comment(_))     => (), // continue
             (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
                 match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
                     Ok(element) => {
@@ -321,6 +322,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+            (_,_,XmlEvent::Comment(_))     => (), // continue
             (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
                 if name.local_name=="defs" {
                     let e = self.read_definitions(descriptor);
@@ -379,6 +381,7 @@ pub struct DiagramML<'a, 'b> {
     diagram: &'a mut Diagram<'b>,
 }
 
+//ip DiagramML
 /// ```
 /// extern crate diagram;
 /// use diagram::{Diagram, DiagramDescriptor, DiagramML};

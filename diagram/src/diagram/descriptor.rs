@@ -38,6 +38,8 @@ impl <'a> DiagramDescriptor<'a> {
         let style_set = StyleSet::new()
             .add_type("bbox",        StyleValue::float_array(), false)            
             .add_type("grid",        StyleValue::int_array(),   false)
+            .add_type("minx",        StyleValue::float_array(), false)
+            .add_type("miny",        StyleValue::float_array(), false)
             .add_type("place",       StyleValue::float_array(), false)
             .add_type("anchor",      StyleValue::floats(2),     true)
             .add_type("expand",      StyleValue::floats(2),     true)
