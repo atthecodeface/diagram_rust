@@ -39,6 +39,8 @@ pub struct Group<'a> {
     layout_record : Option<LayoutRecord>,
     minx : Vec<GridCellData>,
     miny : Vec<GridCellData>,
+    growx : Vec<GridCellData>,
+    growy : Vec<GridCellData>,
 }
 
 //ip DiagramElementContent for Group
@@ -59,6 +61,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             layout_record : None,
             minx : Vec::new(),
             miny : Vec::new(),
+            growx : Vec::new(),
+            growy : Vec::new(),
         } )
     }
 
@@ -72,6 +76,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             layout_record : None,
             minx : Vec::new(),
             miny : Vec::new(),
+            growx : Vec::new(),
+            growy : Vec::new(),
         };
         for e in &self.content {
             clone.content.push(e.clone(scope)?);
@@ -94,7 +100,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Layout supports minx/miny cell size descriptions
     fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
         match name {
-            "layout" => vec!["minx", "miny"],
+            "layout" => vec!["minx", "miny", "growx", "growy"],
             _ => vec![],
         }
     }
@@ -104,10 +110,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// header if required to extract styles
     fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         if let Some(v) = header.get_style_floats_of_name("minx").as_floats(None) {
-            self.minx = self.read_minimums(header, v)?;
+            self.minx = self.read_cell_data(header, v)?;
         }
         if let Some(v) = header.get_style_floats_of_name("miny").as_floats(None) {
-            self.miny = self.read_minimums(header, v)?;
+            self.miny = self.read_cell_data(header, v)?;
+        }
+        if let Some(v) = header.get_style_floats_of_name("growx").as_floats(None) {
+            self.growx = self.read_cell_data(header, v)?;
+        }
+        if let Some(v) = header.get_style_floats_of_name("growy").as_floats(None) {
+            self.growy = self.read_cell_data(header, v)?;
         }
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
@@ -122,6 +134,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
                 e.set_layout_properties(layout);
             }
             layout.add_min_cell_data(&self.minx, &self.miny);
+            layout.add_grow_cell_data(&self.growx, &self.growy);
             let rect = layout.get_desired_geometry();
             // println!("Group layout desires rectangle of {}", rect);
             rect
@@ -178,7 +191,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
 
 //ip Group
 impl <'a> Group<'a> {
-    //mp read_minimums
+    //mp read_cell_data
     /// For styling, this uses an array of floats and attempts to produce an array of GridCellData,
     /// which provides the start/end/size for cells
     ///
@@ -189,7 +202,7 @@ impl <'a> Group<'a> {
     /// Hence the data must be an odd number, of elements, with even
     /// indices being integers, and the indices monotically
     /// increasing, and the floats all positive or zero.
-    pub fn read_minimums(&self, header:&ElementHeader, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
+    pub fn read_cell_data(&self, header:&ElementHeader, v:&Vec<f64>) -> Result<Vec<GridCellData>, ElementError> {
         if v.len() % 2 == 0 {
             Err(ElementError::of_string(header, &format!("grid minimums must be int,(float,int)* and hence and odd number of items, but got {} items", v.len())))
         } else {

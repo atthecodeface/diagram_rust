@@ -256,9 +256,9 @@ mod tests {
 pub struct GridPlacement {
     cell_data      : Vec<GridCellData>,
     cell_positions : Vec<GridCellPosition>,
+    growth_data    : Vec<GridCellData>,
     start_index    : isize,
     last_index     : isize,
-    expansion      : Vec<f64>,
 }
 
 //ip GridPlacement
@@ -268,12 +268,12 @@ impl GridPlacement {
     pub fn new() -> Self {
         let cell_data      = Vec::new();
         let cell_positions = Vec::new();
-        let expansion      = Vec::new();
+        let growth_data    = Vec::new();
         Self { cell_data,
                cell_positions,
+               growth_data,
                start_index:0,
                last_index:0,
-               expansion,
         }
     }
 
@@ -285,28 +285,19 @@ impl GridPlacement {
         if DEBUG_GRID_PLACEMENT { println!("Given cell data {:?}", cell_data); }
     }
 
+    //mp add_growth_data
+    pub fn add_growth_data(&mut self, cell_data:&Vec<GridCellData>) {
+        for cd in cell_data{
+            self.growth_data.push(cd.clone());
+        }
+    }
+
     //mp recalculate
     pub fn recalculate(&mut self) {
         self.cell_positions           = GridCellData::generate_cell_positions(&self.cell_data);
         let (start_index, last_index) = GridCellData::find_first_last_indices(&self.cell_data);
         self.start_index = start_index;
         self.last_index = last_index;
-    }
-
-    //mp set_expansion
-    pub fn set_expansion(&mut self, expand_default:f64, expand:Vec<(isize,f64)>) -> () {
-        let n = self.last_index - self.start_index;
-        let mut expansion = Vec::with_capacity(n as usize);
-        expansion.extend((0..n).map(|_| expand_default));
-        for (index, amount) in expand {
-            let i = index - self.start_index;
-            if i >= 0 && i < n { expansion[i as usize] = amount; }
-        }
-        let expand_total = expansion.iter().fold(0., |sum,x| sum+x);
-        if expand_total > 0. {
-            for e in &mut expansion { *e = *e / expand_total; }
-        }
-        self.expansion = expansion;
     }
 
     //mp expand_and_centre
@@ -317,7 +308,7 @@ impl GridPlacement {
         let mut sizes = self.generate_cell_sizes();
         let extra_size = size - total_size; // share this according to expansion
         for (n, s) in sizes.iter_mut().enumerate() {
-            *s = *s + extra_size * self.expansion[n];
+            *s = *s + extra_size * 1.; // self.expansion[n];
         }
         let mut pos = center - size / 2.;
         let mut index = self.start_index;

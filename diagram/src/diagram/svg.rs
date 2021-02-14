@@ -82,9 +82,9 @@ impl SvgElement {
     //fp add_transform
     pub fn add_transform(&mut self, transform:&Transform) {
         let mut r = String::new();
-        if transform.scale != 1.              { r.push_str(&format!("scale({:.4}) ",transform.scale)); }
+        if !transform.translation.is_origin() { r.push_str(&format!("translate({:.4} {:.4}) ",transform.translation.x, transform.translation.y)); }
         if transform.rotation != 0.           { r.push_str(&format!("rotate({:.4}) ",transform.rotation)); }
-        if !transform.translation.is_origin() { r.push_str(&format!("translate({:.4} {:.4})",transform.translation.x, transform.translation.y)); }
+        if transform.scale != 1.              { r.push_str(&format!("scale({:.4}) ",transform.scale)); }
         if r.len() > 0 {
             self.add_attribute("transform", &r);
         }
@@ -262,6 +262,7 @@ pub struct Svg {
     stack : Vec<SvgElement>,
     pub show_grid : bool,
     pub show_layout : bool,
+    pub show_content_rectangles : bool,
     pub display : bool,
 }
 
@@ -275,6 +276,7 @@ impl Svg {
             stack : Vec::new(),
             show_grid : false,
             show_layout : false,
+            show_content_rectangles : false,
             display : false,
         }
     }
@@ -294,6 +296,12 @@ impl Svg {
     //cp set_display
     pub fn set_display(mut self, display:bool) -> Self {
         self.display = display;
+        self
+    }
+    
+    //cp set_content_rectangles
+    pub fn set_content_rectangles(mut self, show:bool) -> Self {
+        self.show_content_rectangles = show;
         self
     }
     
@@ -394,6 +402,19 @@ impl <'a> GenerateSvg for Element<'a> {
             ele.add_attribute("stroke","None");
             ele.add_color("fill",&self.header.layout.bg.unwrap());
             ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap());
+            svg.add_subelement(ele);
+        }
+        if svg.show_content_rectangles {
+            let rect = self.header.layout_box.get_content_rectangle();
+            let (c,w,h) = rect.get_cwh();
+            let mut ele = SvgElement::new("rect");
+            // ele.add_attribute("id", &format!("{}.content_rect",self.header.borrow_id()));
+            ele.add_attribute("fill", "#40ff8080");
+            ele.add_size("x", c.x-w/2.);
+            ele.add_size("y", c.y-h/2.);
+            ele.add_size("width", w);
+            ele.add_size("height", h);
+            self.header.svg_add_transform(&mut ele);
             svg.add_subelement(ele);
         }
         self.content.generate_svg(svg, &self.header)?;

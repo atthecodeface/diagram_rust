@@ -347,7 +347,7 @@ impl LayoutBox {
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
         if DEBUG_LAYOUT { println!("{} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
-        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
+        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).translate(&Point::new(x_translation,y_translation),-1.).scale(1.0/self.content_scale));
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
         let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
         self.content_to_layout = Some(transform)
@@ -365,7 +365,7 @@ impl LayoutBox {
     /// Get the content rectangle
     ///
     /// Must only be invoked after layout_within_rectangle has been called
-    pub fn get_content_rectangle(&mut self) -> Rectangle  {
+    pub fn get_content_rectangle(&self) -> Rectangle  {
         self.content.unwrap()
     }
 }
@@ -417,9 +417,15 @@ impl Layout {
     }
 
     //mp add_min_cell_data
-    pub fn add_min_cell_data(&mut self, minx:&Vec<GridCellData>, miny:&Vec<GridCellData>) {
-        self.grid_placements.0.add_cell_data( minx );
-        self.grid_placements.1.add_cell_data( miny );
+    pub fn add_min_cell_data(&mut self, x:&Vec<GridCellData>, y:&Vec<GridCellData>) {
+        self.grid_placements.0.add_cell_data( x );
+        self.grid_placements.1.add_cell_data( y );
+    }
+
+    //mp add_grow_cell_data
+    pub fn add_grow_cell_data(&mut self, x:&Vec<GridCellData>, y:&Vec<GridCellData>) {
+        self.grid_placements.0.add_growth_data( x );
+        self.grid_placements.1.add_growth_data( y );
     }
 
     //mp get_desired_geometry
@@ -430,11 +436,9 @@ impl Layout {
     pub fn get_desired_geometry(&mut self) -> Rectangle {
         self.grid_placements.0.add_cell_data( &self.cell_data.0 );
         self.grid_placements.0.recalculate();
-        self.grid_placements.0.set_expansion( 0., vec![] );
 
         self.grid_placements.1.add_cell_data( &self.cell_data.1 );
         self.grid_placements.1.recalculate();
-        self.grid_placements.1.set_expansion( 0., vec![] );
 
         let grid_width  = self.grid_placements.0.get_size();
         let grid_height = self.grid_placements.1.get_size();

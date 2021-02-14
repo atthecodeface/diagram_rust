@@ -41,6 +41,10 @@ fn main() {
              .long("svg_layout")
              .help("Enable debug grids in green for every layout element")
              .multiple(false))
+        .arg(Arg::with_name("svg_content")
+             .long("svg_content")
+             .help("Enable debug showing of content rectangles for elements")
+             .multiple(false))
         .arg(Arg::with_name("svg_display")
              .long("svg_display")
              .help("Display SVG hierarchy")
@@ -69,10 +73,11 @@ fn main() {
             }
         },
     }
-    let svg_show_grid   = matches.is_present("svg_grid");
-    let svg_show_layout = matches.is_present("svg_layout");
-    let svg_display     = matches.is_present("svg_display");
-    let diag_display    = matches.is_present("diag_display");
+    let svg_show_grid    = matches.is_present("svg_grid");
+    let svg_show_layout  = matches.is_present("svg_layout");
+    let svg_show_content = matches.is_present("svg_content");
+    let svg_display      = matches.is_present("svg_display");
+    let diag_display     = matches.is_present("diag_display");
     diagram.record_layout();
     println!("Uniqify");
     exit_on_err( diagram.uniquify() );
@@ -85,7 +90,7 @@ fn main() {
     exit_on_err( diagram.geometry() );
     if diag_display { diagram.display(); }
     println!("Create SVG");
-    let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display);
+    let mut svg = Svg::new().set_grid(svg_show_grid).set_layout(svg_show_layout).set_display(svg_display).set_content_rectangles(svg_show_content);
     exit_on_err( diagram.generate_svg(&mut svg) );
     println!("Write SVG");
     let file_out   = File::create("a.svg").unwrap();
