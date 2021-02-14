@@ -95,12 +95,19 @@ impl Rectangle {
     pub fn bbox_of_points(pts:&Vec<Point>) -> Self {
         match pts.len() {
             0 => Self::none(),
+            1 => Self::none(),
             _ => {
-                let mut r = Self::new(pts[0].x, pts[0].y, pts[0].x, pts[0].y);
+                let mut min_x = pts[0].x;
+                let mut min_y = pts[0].y;
+                let mut max_x = min_x;
+                let mut max_y = min_y;
                 for p in pts {
-                    r = r.union( &Self{x0:p.x, y0:p.y, x1:p.x, y1:p.y} );
+                    if p.x < min_x { min_x = p.x; }
+                    if p.y < min_y { min_y = p.y; }
+                    if p.x > max_x { max_x = p.x; }
+                    if p.y > max_y { max_y = p.y; }
                 }
-                r
+                Self::new(min_x, min_y, max_x, max_y)
             },
         }
     }

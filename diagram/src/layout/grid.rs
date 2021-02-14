@@ -300,6 +300,44 @@ impl GridDimensionEntry {
     }
 }
 
+//tp GridDimensionIter
+/// An iterator structure to permit iteration over an Svg object's elements
+pub struct GridDimensionIter<'a> {
+    gd : &'a GridDimension,
+    index: usize,
+    n : usize,
+}
+
+//ip GridDimensionIter
+impl <'a> GridDimensionIter<'a> {
+    //fp new
+    /// Create a new iterator
+    pub fn new(e:&'a GridDimension) -> Self {
+        Self { gd : e,
+               index : 0,
+               n : e.data.len(),
+        }
+    }
+}
+
+//ip Iterator for GridDimensionIter
+impl <'a> Iterator for GridDimensionIter<'a> {
+    type Item = (isize, f64);
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index > self.n {
+            None
+        } else if self.index == self.n {
+            let i = self.index - 1;
+            self.index += 1;
+            Some((self.gd.data[i].end, self.gd.data[i].position+self.gd.data[i].size))
+        } else {
+            let i = self.index;
+            self.index += 1;
+            Some((self.gd.data[i].start, self.gd.data[i].position))
+        }
+    }
+}
+
 //tp GridDimension
 /// This structure holds the non-overlapping positions and sizes of one dimension of
 /// a grid
@@ -369,8 +407,8 @@ impl GridDimension {
 
     //mp iter_positions
     //
-    pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
-        self.data.iter().map(|p| (&p.start,&p.position))
+    pub fn iter_positions<'z>(&'z self) -> GridDimensionIter<'z> {
+        GridDimensionIter::new(self)
     }
 
     //zz All done
@@ -380,6 +418,9 @@ impl GridDimension {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn check_position(cp:&GridDimension, index:usize, column:isize, posn:f64) {
+        assert_eq!(posn, cp.find_position(index, column).1, "Column {} with index {} should be at {}", column, index, posn );
+    }
     #[test]
     fn test_0() {
         let mut cd = GridCellData::new();
@@ -388,9 +429,16 @@ mod tests {
         assert_eq!(0, cd.start);
         assert_eq!(6, cd.end);
         let cp = cd.create_grid_dimension();
-        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,4.), cp.find_position(0, 4),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,6.), cp.find_position(0, 6),"Column 6 starts at 6., and is at index 2");
+        check_position(&cp, 0, -1, 0.);
+        check_position(&cp, 0, 0, 0.);
+        check_position(&cp, 0, 1, 0.);
+        check_position(&cp, 0, 2, 0.);
+        check_position(&cp, 0, 3, 0.);
+        check_position(&cp, 0, 4, 4.);
+        check_position(&cp, 0, 5, 4.);
+        check_position(&cp, 0, 6, 6.);
+        check_position(&cp, 0, 7, 6.);
+        assert_eq!(6., cp.get_size());
     }
     #[test]
     fn test_simple_gap() {
@@ -400,10 +448,13 @@ mod tests {
         assert_eq!(0, cd.start);
         assert_eq!(3, cd.end);
         let cp = cd.create_grid_dimension();
-        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,1.), cp.find_position(0, 1),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,1.), cp.find_position(0, 2),"Column 6 starts at 6., and is at index 2");
-        assert_eq!((3,2.), cp.find_position(0, 3),"Column 6 starts at 6., and is at index 2");
+        check_position(&cp, 0, -1, 0.);
+        check_position(&cp, 0, 0, 0.);
+        check_position(&cp, 0, 1, 1.);
+        check_position(&cp, 0, 2, 1.);
+        check_position(&cp, 0, 3, 2.);
+        check_position(&cp, 0, 4, 2.);
+        assert_eq!(2., cp.get_size());
     }
     #[test]
     fn test_1() {
@@ -414,10 +465,12 @@ mod tests {
         assert_eq!(1, cd.start);
         assert_eq!(2, cd.end);
         let cp = cd.create_grid_dimension();
-        assert_eq!((0,0.), cp.find_position(0, 0),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((0,0.), cp.find_position(0, 1),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((1,20.), cp.find_position(0, 2),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((1,20.), cp.find_position(0, 3),"Column 4 starts at 4., and is at index 1");
+        check_position(&cp, 0, -1, 0.);
+        check_position(&cp, 0, 0, 0.);
+        check_position(&cp, 0, 1, 0.);
+        check_position(&cp, 0, 2, 20.);
+        check_position(&cp, 0, 3, 20.);
+        assert_eq!(20., cp.get_size());
     }
     #[test]
     fn test_2() {
@@ -428,11 +481,16 @@ mod tests {
         assert_eq!(60, cd.start);
         assert_eq!(110, cd.end);
         let cp = cd.create_grid_dimension();
-        assert_eq!((0,0.), cp.find_position(0, 60),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((0,0.), cp.find_position(0, 80),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((1,10.), cp.find_position(0, 90),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,10.), cp.find_position(0,100),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((3,30.), cp.find_position(0,110),"Column 4 starts at 4., and is at index 1");
+        check_position(&cp, 0, 50, 0.);
+        check_position(&cp, 0, 60, 0.);
+        check_position(&cp, 0, 70, 0.);
+        check_position(&cp, 0, 80, 0.);
+        check_position(&cp, 0, 90, 10.);
+        check_position(&cp, 0,100, 10.);
+        check_position(&cp, 0,110, 30.);
+        check_position(&cp, 0,120, 30.);
+        check_position(&cp, 0,130, 30.);
+        assert_eq!(30., cp.get_size());
     }
     #[test]
     fn test_3() {
@@ -443,10 +501,16 @@ mod tests {
         assert_eq!(-30, cd.start);
         assert_eq!( 20, cd.end);
         let cp = cd.create_grid_dimension();
-        assert_eq!((0,0.), cp.find_position(0, -30),"Column 0 starts at 0., and is at index 0");
-        assert_eq!((0,0.), cp.find_position(0, -10),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((2,10.), cp.find_position(0, 10),"Column 4 starts at 4., and is at index 1");
-        assert_eq!((3,30.), cp.find_position(0, 20),"Column 0 starts at 0., and is at index 0");
+        check_position(&cp, 0,-40, 0.);
+        check_position(&cp, 0,-30, 0.);
+        check_position(&cp, 0,-20, 00.);
+        check_position(&cp, 0,-10, 00.);
+        check_position(&cp, 0,  0, 10.);
+        check_position(&cp, 0, 10, 10.);
+        check_position(&cp, 0, 20, 30.);
+        check_position(&cp, 0, 30, 30.);
+        check_position(&cp, 0, 40, 30.);
+        assert_eq!(30., cp.get_size());
     } 
 }
 
@@ -543,7 +607,7 @@ impl GridPlacement {
 
     //mp iter_positions
     //
-    pub fn iter_positions(&self) -> impl Iterator<Item = (&isize,&f64)> {
+    pub fn iter_positions<'z>(&'z self) -> GridDimensionIter<'z> {
         if DEBUG_GRID_PLACEMENT { println!("Iter positions {:?}", self.grid_dimension); }
         self.grid_dimension.iter_positions()
     }

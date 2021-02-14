@@ -24,8 +24,8 @@ use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
 
 //a Constants
-const DEBUG_LAYOUT_BOX : bool = false;
-const DEBUG_LAYOUT     : bool = false;
+const DEBUG_LAYOUT_BOX : bool = true;
+const DEBUG_LAYOUT     : bool = true;
 
 //a Transform type
 //tp Transform
@@ -501,10 +501,10 @@ impl Layout {
     pub fn get_grid_positions(&self) -> (Vec<(isize,f64)>,Vec<(isize,f64)>) {
         let mut result = (Vec::new(), Vec::new());
         for (p,s) in self.grid_placements.0.iter_positions() {
-            result.0.push( (*p,*s) );
+            result.0.push( (p,s) );
         }
         for (p,s) in self.grid_placements.1.iter_positions() {
-            result.1.push( (*p,*s) );
+            result.1.push( (p,s) );
         }
         result
     }
