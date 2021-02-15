@@ -53,23 +53,24 @@ pub struct StylableNode<'a, V:TypeValue>{
     descriptor            : &'a Descriptor<'a, V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
-    id_name               : Option<String>,
+    pub(crate) id_name               : Option<String>,
     /// node_type is the type of the element, such as 'line' or 'circle'; it may be used in rules.
-    node_type             : String,
+    pub(crate) node_type             : String,
     /// classes is an array of class names that the element belongs to, the styles of all 
     /// of which may be used to specify style values; it may be used in rules.
-    classes               : Vec<String>,
+    pub(crate) classes               : Vec<String>,
     /// `extra_sids` provides values for a stylesheet that do *not*
     /// belong to the node, but may be inherited by children of the
     /// node
-    extra_sids            : Vec<(String, V)>,
-    /// `values` contains the nodes values for each of the styles in the descriptor; it is in 1-to-1 correspondence with descriptor.styles + extra_sids
-    /// `values` is supposed to be a set of ValueRefs
-    values                : Vec<V>,
+    pub(crate) extra_sids            : Vec<(String, V)>,
+    /// `values` contains the nodes values for each of the styles in
+    /// the descriptor; it contains bool and value, the bool
+    /// indicating whether it is set by the node or not
+    pub(crate) values                : Vec<(bool, V)>,
     /// state is a vector the same length as the descriptor.state_classes
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
     /// this has a 1-to-1 correspondence with descriptor.state_classes
-    state                 : Vec<isize>,
+    pub(crate) state                 : Vec<isize>,
     // style_change_callback : t_style_change_callback,
 }
 
@@ -92,7 +93,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         // let descriptor = descriptor.clone();
         let extra_sids = Vec::new();
         let classes    = Vec::new();
-        let values     = descriptor.build_style_array();
+        let values     = descriptor.build_style_value_array();
         let id_name    = None;
         Self {
             descriptor,
@@ -109,7 +110,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     pub fn clone(&self, id_name:&str) -> Self {
         let extra_sids = self.extra_sids.iter().map(|(s,v)| (s.clone(),v.clone())).collect();
         let classes    = self.classes.iter().map(|s| s.clone()).collect();
-        let values     = self.descriptor.clone_style_array(&self.values);
+        let values     = self.descriptor.clone_style_value_array(&self.values);
         let id_name    = Some(id_name.to_string());
         let node = Self {
             descriptor: self.descriptor,
@@ -142,7 +143,8 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             }
             Ok(())
         } else if let Some(n) = self.descriptor.find_style_index(name) {
-            self.values[n].from_string(value)?;
+            self.values[n].1.from_string(value)?;
+            self.values[n].0 = true;
             Ok(())
         } else if let Some((v, _inheritable)) = self.descriptor.style_set.borrow_type(name) {
             let mut v = v.new_value();
@@ -183,7 +185,8 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         }
         for (name, value) in &other.extra_sids {
             if let Some(n) = self.find_style_index(name) {
-                self.values[n] = value.clone();
+                self.values[n].1 = value.clone();
+                self.values[n].0 = true;
             } else {
                 self.extra_sids.push( (name.clone(), value.clone()) );
             }
@@ -238,7 +241,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
             Some(n) => {
                 let nv = self.values.len();
                 if n < nv {
-                    Some(&self.values[n])
+                    Some(&self.values[n].1)
                 } else {
                     Some(&self.extra_sids[n-nv].1)
                 }

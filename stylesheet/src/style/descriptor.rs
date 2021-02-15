@@ -105,17 +105,17 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
         }
     }
 
-    //mp build_style_array
-    pub fn build_style_array(&self) -> Vec<V> {
+    //mp build_style_value_array
+    pub fn build_style_value_array(&self) -> Vec<(bool, V)> {
         let mut result = Vec::new();
         for (_, v, _) in &self.styles {
-            result.push(v.new_value());
+            result.push((false, v.new_value()));
         }
         result
     }
 
-    //mp clone_style_array
-    pub fn clone_style_array(&self, values:&Vec<V>) -> Vec<V> {
+    //mp clone_style_value_array
+    pub fn clone_style_value_array(&self, values:&Vec<(bool, V)>) -> Vec<(bool, V)> {
         let mut result = Vec::new();
         for v in values.iter() {
             result.push(v.clone());
