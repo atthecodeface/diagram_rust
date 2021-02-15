@@ -42,17 +42,25 @@ impl <V:TypeValue> std::fmt::Display for NamedTypeSet< V> {
 
 //ti NamedTypeSet
 impl < V:TypeValue> NamedTypeSet< V> {
+    //fp new
+    /// Create a new set
     pub fn new() -> Self {
         Self {
             set : HashMap::new(),
         }
     }
+
+    //cp add_type
+    /// Constructor to add a new named type to the set, and indicated
+    /// whether it is inherited from a parent
     pub fn add_type(mut self, s:&str, value:V, inheritable:bool) -> Self {
         self.set.insert(s.to_string(), (value, inheritable));
         self
     }
     
-    pub fn get_type(&self, s:&str) -> Option<(&V, bool)> {
+    //cp borrow_type
+    /// Borrow a type from the set, if it is there, and whether it is inheritable
+    pub fn borrow_type(&self, s:&str) -> Option<(&V, bool)> {
         match self.set.get(s) {
             Some((value, inheritable)) => Some((value, *inheritable)),
             _ => None,
