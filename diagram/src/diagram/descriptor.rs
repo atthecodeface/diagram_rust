@@ -50,6 +50,8 @@ impl <'a> DiagramDescriptor<'a> {
         let style_set = StyleSet::new()
             .add_type("bbox",        StyleValue::float_array(), false)            
             .add_type("grid",        StyleValue::int_array(),   false)
+            .add_type("gridx",       StyleValue::int_array(),   false)
+            .add_type("gridy",       StyleValue::int_array(),   false)
             .add_type("minx",        StyleValue::float_array(), false)
             .add_type("miny",        StyleValue::float_array(), false)
             .add_type("growx",       StyleValue::float_array(), false)

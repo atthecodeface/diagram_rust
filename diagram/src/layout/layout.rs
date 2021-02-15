@@ -22,8 +22,8 @@ use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
 
 //a Constants
-const DEBUG_LAYOUT_BOX : bool = false;
-const DEBUG_LAYOUT     : bool = false;
+const DEBUG_LAYOUT_BOX : bool = 1 == 0;
+const DEBUG_LAYOUT     : bool = 1 == 0;
 
 //a LayoutBox
 //tp LayoutBox
@@ -299,8 +299,9 @@ impl LayoutBox {
         // the transform maps this inner coordinates desired centre to the inner centre
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
         if DEBUG_LAYOUT { println!("Getting content within inner {} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
-        // GJS PUT BACK self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).translate(&Point::new(x_translation,y_translation),-1.).scale(1.0/self.content_scale));
-        self.content = Some(Rectangle::none().to_ranges(ci_x_range, ci_y_range).scale(1.0/self.content_scale));
+        self.content = Some(Rectangle::none().to_ranges(ci_x_range, ci_y_range)
+                            .translate(&Point::new(x_translation,y_translation),-1.)
+                            .scale(1.0/self.content_scale));
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
         let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
         self.content_to_layout = Some(transform)
@@ -334,6 +335,8 @@ mod test_layoutbox {
 #[derive(Debug)]
 pub struct Layout {
     pub grid_placements   : (GridPlacement, GridPlacement),
+    /// 0. to 1. for each dimension to expand layout to fill its parent
+    pub grid_expand       : (f64, f64),
     pub direct_placements : (Placements, Placements),
     pub desired_grid      : Rectangle,
     pub desired_placement : Rectangle,
@@ -347,6 +350,7 @@ impl Layout {
         let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
         let direct_placements = ( Placements::new(), Placements::new() );
         Self { grid_placements, direct_placements,
+               grid_expand : (0., 0.), 
                desired_placement : Rectangle::none(),
                desired_grid      : Rectangle::none(),
                desired_geometry  : Rectangle::none(),
@@ -384,8 +388,8 @@ impl Layout {
     /// Any placements provide a true bbox
     /// A grid has a desired width and height, centred on 0,0
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        self.grid_placements.0.recalculate();
-        self.grid_placements.1.recalculate();
+        self.grid_placements.0.calculate_positions(0., 0., 0.);
+        self.grid_placements.1.calculate_positions(0., 0., 0.);
 
         let grid_width  = self.grid_placements.0.get_size();
         let grid_height = self.grid_placements.1.get_size();
@@ -426,10 +430,9 @@ impl Layout {
         if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
         let (ac,aw,ah) = within.get_cwh();
         let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
-        // GJS PUT BACK self.grid_placements.0.expand_and_centre(aw, ac.x);
-        // GJS PUT BACK self.grid_placements.1.expand_and_centre(ah, ac.y);
-        self.grid_placements.0.expand_and_centre(aw, 0.);
-        self.grid_placements.1.expand_and_centre(ah, 0.);
+        if DEBUG_LAYOUT { println!("Why not centre on ac {}?",ac); }
+        self.grid_placements.0.calculate_positions(aw, 0., self.grid_expand.0);
+        self.grid_placements.1.calculate_positions(ah, 0., self.grid_expand.1);
         self.content_to_actual = Transform::of_translation(ac.add(&dc,-1.));
     }
 

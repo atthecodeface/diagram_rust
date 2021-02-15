@@ -401,7 +401,7 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_style_names
     pub fn get_style_names<'z> () -> Vec<&'z str> {
-        vec!["bbox", "grid", "place", "anchor", "expand", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
+        vec!["bbox", "grid", "gridx", "gridy", "place", "anchor", "expand", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
     }
 
     //mp override_values
@@ -514,17 +514,60 @@ impl <'a> ElementHeader <'a> {
             self.layout.translate = Point::new(v[0],v[1]);
         }
         if let Some( (sx,sy,ex,ey) ) = {
-            match self.get_style_ints_of_name("grid").as_ints(None) {
-                Some(g) => {
-                    match g.len() {
-                        0 => None,
-                        1 => Some( (g[0],g[0],g[0]+1,g[0]+1) ),
-                        2 => Some( (g[0],g[1],g[0]+1,g[1]+1) ),
-                        3 => Some( (g[0],g[1],g[2],g[1]+1) ),
-                        _ => Some( (g[0],g[1],g[2],g[3]) ),
-                    }
-                },
-                _ => None,
+            let opt_gx = {
+                match self.get_style_ints_of_name("gridx").as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0], g[0]+1) ),
+                            _ => Some( (g[0], g[1]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            let opt_gy = {
+                match self.get_style_ints_of_name("gridy").as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0], g[0]+1) ),
+                            _ => Some( (g[0], g[1]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            let opt_grid = {
+                match self.get_style_ints_of_name("grid").as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0],g[0],g[0]+1,g[0]+1) ),
+                            2 => Some( (g[0],g[1],g[0]+1,g[1]+1) ),
+                            3 => Some( (g[0],g[1],g[2],g[1]+1) ),
+                            _ => Some( (g[0],g[1],g[2],g[3]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            if let Some( (gx0, gx1) ) = opt_gx {
+                if let Some( (gy0, gy1) ) = opt_gy {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else if let Some( (_,gy0,_,gy1) ) = opt_grid {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else  {
+                    Some( (gx0, 1, gx1, 2) )
+                }
+            } else if let Some( (gy0, gy1) ) = opt_gy {
+                if let Some( (gx0,_,gx1,_) ) = opt_grid {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else  {
+                    Some( (1,gy0,2,gy1) )
+                }
+            } else {
+                opt_grid
             }
         } {
             self.layout.set_grid(sx,sy,ex,ey);

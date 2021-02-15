@@ -42,7 +42,12 @@
 ;;  .RowLabels.    .Target1.     ...Host.........    .Target2.
 ;;                               ..App1....  .App2.                              
 ;;                               .C1.  .C2.  ..C3.
-#layout{ grid=1,1 minx=0,12.,10,3.,20,40.,50,0.,60,12.,80,12.,100,12.,120,0.,130,30.,170
+;; the rows are:
+;; -10     0      10  12       18    20   30       60   70  80     90  100    110
+;;  .Apps .  Cores .   .syscall.      .vfs. .block. .i1o.    .tcp/ip.    .device.
+#layout{ grid=1,1
+         minx=0,12.,10,3.,20,40.,50,0.,60,12.,80,12.,100,12.,120,0.,130,30.,170
+         miny=-10,5.,0,5.,10,5.,12,5.,18,5.,20,5.,30,5.,60,5.,70,5.,80,5.,90,5.,100,5.,110
 
 #text grid=0,60,140,70  bg=#ffece0 ""
 #text fill="black" class="structure hardware"   border=0.3 bordercolor="black" borderround=1 grid="0,0,10,10"   "CPU Core"
@@ -74,21 +79,21 @@
 #use  id=pi10io_1  ref=fifo3p grid=40,60,50,70
 #use  id=pi10txp_1 ref=fifo3p grid=40,80,50,90
 
-#text fill="black" class="structure kernel i10" grid="50,60,60,70"  "per-i10-lane" "I/O queue"
-#text fill="black" class="structure kernel i10" grid="50,80,60,90"  "per-i10-lane" "TCP Tx/Rx" "buffers"
+#text fill="black" class="structure kernel i10" gridx=50,60   gridy=60,70  "per-i10-lane" "I/O queue"
+#text fill="black" class="structure kernel i10" gridx=50,60   gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
 
-#text fill="black" class="structure kernel i10" grid="120,60,130,70"  "per-i10-lane" "I/O queue"
-#text fill="black" class="structure kernel i10" grid="120,80,130,90"  "per-i10-lane" "TCP Tx/Rx" "buffers"
+#text fill="black" class="structure kernel i10" gridx=120,130 gridy=60,70  "per-i10-lane" "I/O queue"
+#text fill="black" class="structure kernel i10" gridx=120,130 gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
 
-#layout id="host" grid=60,30,120,60 expand=1
-##use id=host_app1_bio1 ref=bio_pink  grid=10,10,20,20
-##use id=host_app1_bio2 ref=bio_pink  grid=20,10,30,20
-##use id=host_app2_bio ref=bio_lightgreen grid=30,10,40,20
-##use id=host_app1_req1 ref=req_pink  grid=10,20,20,30
-##use id=host_app1_req2 ref=req_pink  grid=20,20,30,30
-##use id=host_app2_req  ref=req_lightgreen grid=30,20,40,30
-##use id=host_pcbmq1  ref=fifo3p grid=10,30,20,40
-##use id=host_pcbmq2  ref=fifo3mixed grid=20,30,40,40
+#layout id="host" grid=60,30,120,60 expand=1 growx=0,1.,100 growy=0,1.,100
+##use id=host_app1_bio1 ref=bio_pink        gridx=10,20 gridy=10,20
+##use id=host_app1_bio2 ref=bio_pink        gridx=20,30 gridy=10,20
+##use id=host_app2_bio ref=bio_lightgreen   gridx=30,40 gridy=10,20
+##use id=host_app1_req1 ref=req_pink        gridx=10,20 gridy=20,30
+##use id=host_app1_req2 ref=req_pink        gridx=20,30 gridy=20,30
+##use id=host_app2_req  ref=req_lightgreen  gridx=30,40 gridy=20,30
+##use id=host_pcbmq1  ref=fifo3p            gridx=10,20 gridy=30,40
+##use id=host_pcbmq2  ref=fifo3mixed        gridx=20,40 gridy=30,40
 
 #use  id=pi10io_0  ref=fifo3p grid=60,60,80,70
 #use  id=pi10txp_0 ref=fifo3p grid=60,80,80,90

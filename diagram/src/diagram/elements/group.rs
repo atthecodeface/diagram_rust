@@ -38,8 +38,8 @@ pub struct Group<'a> {
     pub content : Vec<Element<'a>>,
     layout : Option<Layout>,
     layout_record : Option<LayoutRecord>,
-    minx : Vec<GridData>,
-    miny : Vec<GridData>,
+    minx  : Vec<GridData>,
+    miny  : Vec<GridData>,
     growx : Vec<GridData>,
     growy : Vec<GridData>,
 }
@@ -121,6 +121,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
         }
         if let Some(v) = header.get_style_floats_of_name("growy").as_floats(None) {
             self.growy = self.read_cell_data(header, v)?;
+        }
+        if let Some(layout) = &mut self.layout {
+            layout.grid_expand.0 = header.layout.expand.x;
+            layout.grid_expand.1 = header.layout.expand.y;
         }
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
