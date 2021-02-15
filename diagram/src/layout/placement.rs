@@ -17,12 +17,12 @@ limitations under the License.
  */
 
 //a Imports
-use super::Point;
+use crate::{Range};
 
 //a Types
 #[derive(Debug)]
 pub struct Placements {
-    elements : Vec<Point>
+    elements : Vec<Range>
 }
 
 impl Placements {
@@ -35,11 +35,11 @@ impl Placements {
         // actual bounds are such that 'ref_value' is at 'placement'
         let min = min + placement - ref_value;
         let max = max + placement - ref_value;
-        self.elements.push(Point::new(min,max));
+        self.elements.push(Range::new(min,max));
     }
-    pub fn get_desired_geometry(&self) -> Point {
+    pub fn get_desired_geometry(&self) -> Range {
         match self.elements.len() {
-            0 => Point::origin(),
+            0 => Range::none(),
             _ => {
                 let mut range = self.elements[0].clone();
                 for e in &self.elements {

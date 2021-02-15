@@ -17,61 +17,13 @@ limitations under the License.
  */
 
 //a Imports
-use super::Point;
-use super::{Rectangle, Float4};
-use super::Polygon;
+use crate::{Transform, Point, Range, Rectangle, Float4, Polygon};
 use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
 
 //a Constants
-const DEBUG_LAYOUT_BOX : bool = true;
-const DEBUG_LAYOUT     : bool = true;
-
-//a Transform type
-//tp Transform
-/// A Transfom is a transformation applied to something - for example, applied to content to present it in its parent coordinates.
-///
-/// The transformation is translate(rotate(scale(pt)))
-///
-#[derive(Debug, Clone)]
-pub struct Transform {
-    pub translation : Point,
-    pub rotation : f64,
-    pub scale : f64,
-}
-//ti Transform
-impl Transform {
-    pub fn new() -> Self {
-        Self { translation : Point::origin(),
-               rotation    : 0.,
-               scale       : 1.,
-        }
-    }
-    pub fn of_trs(translation:Point, rotation:f64, scale:f64) -> Self {
-        Self { translation, rotation, scale }
-    }
-    pub fn translation(translation:Point) -> Self {
-        Self { translation, rotation:0., scale:1. }
-    }
-}
-
-//ip std::fmt::Display for Transform
-impl std::fmt::Display for Transform {
-    //mp fmt - format a `Transform` for display
-    /// Display the `TokenError` in a human-readable form
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.translation.is_origin() && self.rotation == 0. && self.scale == 1. {
-            write!(f, "<identity>")
-        } else if self.rotation == 0. && self.scale == 1. {
-            write!(f, "<+{}>", self.translation)
-        } else {
-            if !self.translation.is_origin() { write!(f, "<+{}>", self.translation)?};
-            if self.rotation != 0.         { write!(f, "<rot({})>", self.rotation)?};
-            if self.scale != 1.            { write!(f, "<*{}>", self.scale)?};
-            Ok(())
-        }
-    }
-}
+const DEBUG_LAYOUT_BOX : bool = false;
+const DEBUG_LAYOUT     : bool = false;
 
 //a LayoutBox
 //tp LayoutBox
@@ -333,12 +285,12 @@ impl LayoutBox {
         let cd = self.content_desired.unwrap();
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
-        let di_x_range = Point::new(cd.x0*self.content_scale, cd.x1*self.content_scale);
-        let a_x_range  = Point::new(ic.x-aw/2., ic.x+aw/2.);
+        let di_x_range = Range::new(cd.x0*self.content_scale, cd.x1*self.content_scale);
+        let a_x_range  = Range::new(ic.x-aw/2., ic.x+aw/2.);
         let (x_translation,ci_x_range) = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor.x, self.expansion.x);
 
-        let di_y_range = Point::new(cd.y0*self.content_scale, cd.y1*self.content_scale);
-        let a_y_range  = Point::new(ic.y-ah/2., ic.y+ah/2.);
+        let di_y_range = Range::new(cd.y0*self.content_scale, cd.y1*self.content_scale);
+        let a_y_range  = Range::new(ic.y-ah/2., ic.y+ah/2.);
         let (y_translation,ci_y_range) = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y);
 
         // ci_*_range is in inner coordinates centred on 'zero => inner center'
@@ -348,7 +300,7 @@ impl LayoutBox {
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
         if DEBUG_LAYOUT { println!("Getting content within inner {} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
         // GJS PUT BACK self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).translate(&Point::new(x_translation,y_translation),-1.).scale(1.0/self.content_scale));
-        self.content = Some(Rectangle::new(ci_x_range.x, ci_y_range.x, ci_x_range.y, ci_y_range.y).scale(1.0/self.content_scale));
+        self.content = Some(Rectangle::none().to_ranges(ci_x_range, ci_y_range).scale(1.0/self.content_scale));
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
         let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
         self.content_to_layout = Some(transform)
@@ -449,10 +401,10 @@ impl Layout {
             }
         };
         self.desired_placement = {
-            if place_x_pt.x == place_x_pt.y || place_y_pt.x == place_y_pt.y {
+            if place_x_pt.is_none() || place_y_pt.is_none() {
                 Rectangle::none()
             } else {
-                Rectangle::new( place_x_pt.x, place_y_pt.x, place_x_pt.y, place_y_pt.y )
+                Rectangle::none().to_ranges(place_x_pt, place_y_pt)
             }
         };
         self.desired_geometry = {
@@ -478,7 +430,7 @@ impl Layout {
         // GJS PUT BACK self.grid_placements.1.expand_and_centre(ah, ac.y);
         self.grid_placements.0.expand_and_centre(aw, 0.);
         self.grid_placements.1.expand_and_centre(ah, 0.);
-        self.content_to_actual = Transform::translation(ac.add(&dc,-1.));
+        self.content_to_actual = Transform::of_translation(ac.add(&dc,-1.));
     }
 
     //mp get_layout_transform

@@ -19,8 +19,8 @@ limitations under the License.
 //a Imports
 
 //a Global constants for debug
-const DEBUG_CELL_DATA : bool = true;
-const DEBUG_GRID_PLACEMENT : bool = true;
+const DEBUG_CELL_DATA      : bool = false;
+const DEBUG_GRID_PLACEMENT : bool = false;
 
 //a GridData
 //tp GridData

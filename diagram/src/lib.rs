@@ -185,14 +185,17 @@ extern crate hmlm;
 extern crate stylesheet;
 
 //a Imports and exports
+mod geometry;
 mod layout;
 mod diagram;
 mod diagram_ml;
-pub (crate) use layout::{Polygon, Bezier};
-pub (crate) use layout::{Transform, Layout, LayoutBox, LayoutRecord};
 
+pub (crate) use geometry::{Transform, Range, Float4, Polygon, Bezier};
+pub         use geometry::{Rectangle, Point};
+
+pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
 pub (crate) use diagram::{DiagramContents}; // , Element, ElementError, };
-pub use layout::{Rectangle, Point};
+
 pub use diagram::{Diagram, DiagramDescriptor};
 pub use diagram::{Svg, GenerateSvg};
 pub use diagram_ml::{DiagramML, MLErrorList};

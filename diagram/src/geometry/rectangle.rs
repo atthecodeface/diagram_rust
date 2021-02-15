@@ -1,5 +1,5 @@
 //a Imports
-use super::Point;
+use super::{Point, Range};
 
 //t Rectangle
 //tp Float4
@@ -88,6 +88,16 @@ impl Rectangle {
         let (x0,x1) = {if x0<x1 {(x0,x1)} else {(x1,x0)}};
         let (y0,y1) = {if y0<y1 {(y0,y1)} else {(y1,y0)}};
         Self {x0, x1, y0, y1}
+    }
+
+    //cp to_ranges
+    /// Set the rectangle to be the ranges supplied
+    pub fn to_ranges(mut self, x:Range, y:Range) -> Self {
+        self.x0 = x.min;
+        self.x1 = x.max;
+        self.y0 = y.min;
+        self.y1 = y.max;
+        self
     }
 
     //fp bbox_of_points
@@ -402,15 +412,11 @@ impl Rectangle {
     /// Using two anchor values (x and y) between -1 and 1, and expansion values (between 0 and 1),
     /// fit this region within an outer region
     ///
-    /// See Point::fit_within_region for more details on each dimension
-    pub fn fit_within_dimension(mut self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> (Point,Self) {
-        let (dx,xs) = Point::new(self.x0,self.x1).fit_within_dimension( &Point::new(outer.x0,outer.x1), anchor.x, expand.x);
-        let (dy,ys) = Point::new(self.y0,self.y1).fit_within_dimension( &Point::new(outer.y0,outer.y1), anchor.y, expand.y);
-        self.x0 = xs.x;
-        self.x1 = xs.y;
-        self.y0 = ys.x;
-        self.y1 = ys.y;
-        (Point::new(dx,dy), self)
+    /// See Range::fit_within_region for more details on each dimension
+    pub fn fit_within_dimension(self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> (Point,Self) {
+        let (dx,xs) = Range::new(self.x0,self.x1).fit_within_dimension( &Range::new(outer.x0,outer.x1), anchor.x, expand.x);
+        let (dy,ys) = Range::new(self.y0,self.y1).fit_within_dimension( &Range::new(outer.y0,outer.y1), anchor.y, expand.y);
+        (Point::new(dx,dy), self.to_ranges(xs, ys))
     }
     
     //zz All done
