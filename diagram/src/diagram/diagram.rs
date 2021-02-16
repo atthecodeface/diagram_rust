@@ -86,6 +86,7 @@ impl <'a> DiagramContents<'a> {
 /// Once constructed, contents are added to the diagram
 pub struct Diagram<'a> {
     descriptor    : &'a DiagramDescriptor<'a>,
+    pub(super) stylesheet    : StyleSheet,
     pub(super) contents      : DiagramContents<'a>,
     pub(super) layout : Layout,
     pub(super) layout_record : Option<LayoutRecord>, 
@@ -98,7 +99,9 @@ impl <'a> Diagram <'a> {
     /// already been created.
     pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
         let contents = DiagramContents::new();
+        let stylesheet = Stylesheet::new(&descriptor.style_set);
         Self { descriptor,
+               stylesheet,
                contents,
                layout_record : None,
                layout : Layout::new(),
