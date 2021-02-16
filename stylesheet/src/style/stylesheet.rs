@@ -19,11 +19,12 @@ limitations under the License.
 //a Imports
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::{TypeValue, BaseValue, ValueError, Descriptor, NamedTypeSet, StylableNode};
-use super::bitmask::{BitMask, BitMaskU32};
-use super::rules::{RuleResult, RuleFn, Action, RuleSet};
-use super::tree::{Tree, TreeIterOp, TreeNode};
-use super::tree_rules::{TreeApplicator32};
+use crate::{TypeValue, BaseValue, ValueError, Descriptor, NamedTypeSet};
+use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
+use crate::{BitMask, BitMaskU32};
+use crate::{RuleResult, RuleFn, Action, RuleSet};
+use crate::{Tree, TreeIterOp};
+use crate::{TreeApplicator32};
 
 //a Constants for debug
 const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
@@ -77,48 +78,6 @@ mod test_stylesheet {
             }
             tree.close_container();
             tree
-        }
-    }
-    struct StylableNodeAction <'a> {
-        values : &'a Vec<(&'a str, BaseValue)>,
-    }
-    impl <'a> StylableNodeAction<'a> {
-        pub fn new(values:&'a Vec<(&'a str, BaseValue)>) -> Self {
-            Self { values }
-        }
-    }
-    impl <'a> Action<StylableNode<'a, BaseValue>> for StylableNodeAction<'a> {
-        fn apply(&self, rule:usize, depth:usize, value:&mut StylableNode<'a, BaseValue>)  {
-            for (n,v) in self.values {
-                if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
-                    *x = v.clone();
-                }
-            }
-        }
-    }
-    pub struct StylableNodeRule {
-        id_matches : Option<String>,
-    }
-    impl StylableNodeRule {
-        pub fn new() -> Self {
-            Self { id_matches:None }
-        }
-        pub fn has_id(mut self, id:&str) -> Self {
-            self.id_matches = Some(id.to_string());
-            self
-        }
-    }
-    impl <'a> RuleFn<StylableNode<'a, BaseValue>> for StylableNodeRule {
-        fn apply(&self, _depth:usize, value:&StylableNode<'a, BaseValue>) -> RuleResult {
-            if let Some(id) = self.id_matches.as_ref() {
-                if value.has_id(id) {
-                    RuleResult::MatchPropagateChildren
-                } else {
-                    RuleResult::MismatchPropagate
-                }
-            } else {
-                RuleResult::MismatchPropagate
-            }
         }
     }
     #[test]

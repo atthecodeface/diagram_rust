@@ -56,7 +56,7 @@ impl std::fmt::Display for ValueError {
 /// the other direction, creating a new value from an actual (possibly
 /// unset, or 'no value') value.
 ///
-pub trait TypeValue : std::fmt::Display+std::fmt::Debug+Clone+PartialEq {
+pub trait TypeValue : std::fmt::Display + std::fmt::Debug + Clone + PartialEq + Sized {
     fn new_value(&self) -> Self;
     fn as_type(&self) -> Self;
     //mp from_string

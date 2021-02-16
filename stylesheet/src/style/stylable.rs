@@ -20,6 +20,7 @@ limitations under the License.
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::{TypeValue, ValueError, Descriptor};
+use crate::{RuleResult, RuleFn, Action, RuleSet};
 
 //tp StylableNode
 /// A `StylableNode` is an element that is part of a hierarchy of elements, which
@@ -74,8 +75,6 @@ pub struct StylableNode<'a, V:TypeValue>{
     // style_change_callback : t_style_change_callback,
 }
 
-// pub type NameValues<'a> = Vec<(&'a str, &'a str)>;
-pub type RrcStylableNode<'a, V> = Rc<RefCell<StylableNode<'a, V>>>;
 impl <'a, V:TypeValue> StylableNode<'a, V> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
@@ -84,13 +83,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>) -> Self {
-        // parent:Option<RrcStylableNode<'b, V>>,
-        // let parent_clone = match parent { None => None, Some(ref p)=> Some(p.clone()) };
-        // parent_clone.map(|p| p.borrow_mut().children.push(node.clone()));
-        // parent,
-        // children : Vec::new(),
-        // let descriptor = descriptor.clone();
+    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>) -> Self { 
         let extra_sids = Vec::new();
         let classes    = Vec::new();
         let values     = descriptor.build_style_value_array();
@@ -249,6 +242,66 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
 
     //zz All done
 }
+
+//a Action
+pub struct StylableNodeAction <'a, V:TypeValue> {
+    values : &'a Vec<(&'a str, V)>,
+}
+impl <'a, V:TypeValue> StylableNodeAction<'a, V> {
+    pub fn new(values:&'a Vec<(&'a str, V)>) -> Self {
+        Self { values }
+    }
+}
+impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<'a, V> {
+    fn apply(&self, rule:usize, depth:usize, value:&mut StylableNode<'a, V>)  {
+        for (n,v) in self.values {
+            if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
+                *x = v.clone();
+            }
+        }
+    }
+}
+
+//a StylableNodeRule
+pub struct StylableNodeRule {
+    id_matches : Option<String>,
+    has_class  : Option<String>,
+    sideways   : bool,
+    propagate_depth : usize,
+}
+impl StylableNodeRule {
+    pub fn new() -> Self {
+        Self { id_matches:None, has_class:None, sideways:false, propagate_depth:0 }
+    }
+    pub fn sideways(mut self, sideways:bool) -> Self {
+        self.sideways = sideways;
+        self
+    }
+    pub fn max_depth(mut self, depth:usize) -> Self {
+        self.propagate_depth = depth;
+        self
+    }
+    pub fn has_id(mut self, s:&str) -> Self {
+        self.id_matches = Some(s.to_string());
+        self
+    }
+    pub fn has_class(mut self, s:&str) -> Self {
+        self.has_class = Some(s.to_string());
+        self
+    }
+}
+impl <'a, V:TypeValue> RuleFn<StylableNode<'a, V>> for StylableNodeRule {
+    fn apply(&self, depth:usize, value:&StylableNode<'a, V>) -> RuleResult {
+        let matched = {
+            if let Some(s) = self.id_matches.as_ref() { true } else { false }
+        };
+        let matched = matched || {
+            if let Some(sd) = self.has_class.as_ref() { true } else { false }
+        };
+        RuleResult::new(depth, matched, self.sideways, self.propagate_depth)
+    }
+}
+
 /*
   in
   add_styleable t sheet;

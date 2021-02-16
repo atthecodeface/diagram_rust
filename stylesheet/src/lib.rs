@@ -30,8 +30,15 @@ extern crate num;
 extern crate lazy_static;
 
 mod style;
+mod tree_rules;
+
 pub use style::{TypeValue, ValueError, BaseValue};
 pub use style::{NamedTypeSet};
-pub use style::{StylableNode, RrcStylableNode};
-pub use style::{Descriptor, RrcDescriptor};
+pub use style::{StylableNode};
+pub use style::{Descriptor};
+
+pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};
+pub use tree_rules::{RuleResult, RuleFn, Action, RuleSet};
+pub use tree_rules::{Tree, TreeIterOp};
+pub use tree_rules::{TreeApplicator32, TreeApplicator64};
 
