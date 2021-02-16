@@ -73,6 +73,20 @@ pub trait RuleFn<T> {
     fn apply(&self, depth:usize, value:&T) -> RuleResult;
 }
 
+//tp trait Action<T>
+/// This trait must be satisfied by a struct that a RuleSet can use as
+/// an action
+///
+/// It requires a single function that applies the rule to a tree
+/// depth and struct value, and it returns the result of applying the
+/// rule to that value
+pub trait Action<T> {
+    /// Apply the action to the value, at a given depth in the tree
+    fn apply(&self, rule:usize, depth:usize, _value:&T) {
+        println!("Application of action not defined {}", depth);
+    }
+}
+
 //tp Rule
 /// A rule is RuleFn and an optional action indicator; it is part of a
 /// RuleSet, which is a Vec of Rule's; it has children, indicated by
@@ -120,18 +134,22 @@ impl <T, F:RuleFn<T>> Rule<T, F> {
 ///
 /// T is the type of the value which rules are tested against
 ///
+/// A is a type that has the Action trait, which actions must be
+/// instances of. The Action trait methods will be invoked when the
+/// actions need to be taken due to the rules.
+///
 /// F is a type that has the RuleFn trait to allow it to be applied to
 /// a value of type T and get a rule match result.
 ///
 /// Note that the rule's children will all have a greater rule index
 /// than the parent rule. This invariant is required
-pub struct RuleSet<T, F:RuleFn<T>> {
+pub struct RuleSet<T, A:Action<T>, F:RuleFn<T>> {
     rules :   Vec<Rule<T,F>>,
-    actions : Vec<Rule<T,F>>,
+    actions : Vec<A>,
 }
 
 //ip RuleSet
-impl <T,F:RuleFn<T>> RuleSet <T,F> {
+impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
     //fp new
     /// Create an empty rule set
     #[inline]
@@ -150,8 +168,9 @@ impl <T,F:RuleFn<T>> RuleSet <T,F> {
     
     //mp add_action
     /// Add an action to the set
-    pub fn add_action(&mut self) -> usize {
+    pub fn add_action(&mut self, action:A) -> usize {
         let action_num = self.actions.len();
+        self.actions.push(action);
         action_num
     }
     
@@ -185,6 +204,14 @@ impl <T,F:RuleFn<T>> RuleSet <T,F> {
         self.rules[rule].match_fn.apply(depth, node)
     }
     
+    //mp fire
+    #[inline]
+    pub fn fire(&self, rule:usize, depth:usize, node:&T) {
+        if let Some(action) = self.rules[rule].action {
+            self.actions[action].apply(rule, depth, node);
+        }
+    }
+    
     //mp iter_children
     #[inline]
     pub fn iter_children(&self, rule:usize) -> std::slice::Iter<usize> {
@@ -194,161 +221,7 @@ impl <T,F:RuleFn<T>> RuleSet <T,F> {
     //zz All done
 }
 
-//a TreeApplicator
-//tp TreeApplicator
-/// This provides an applicator that applies a RuleSet to a tree
-///
-/// The Tree must have node element type V, and its lifetime is 'a
-///
-/// The RuleSet must use the type F, which has the trait RuleFn<V>,
-/// which means it has methods that apply itself to a value V and
-/// return a RuleResult
-///
-/// The TreeApplicator maintains a set of 'active rules' as it
-/// traverses the tree; there are many mechanisms that could be used
-/// to manage such a set, and the mechanism is abstracted out through
-/// 'M'. M must therefore be an BitMask that can cope with the
-/// number of rules in the RuleSet. Some implementations of BitMask
-/// are limited in the number of rules they support (for example a u32
-/// bitmask has support for 32 rules), trading off speed versus
-/// capability Another implementation could use an BitMask that
-/// supports an arbitrary number of rules using, for example, an array
-/// of bitmasks.
-pub struct TreeApplicator<'a, V, F, M>
-where V:std::fmt::Debug, F: RuleFn<V>, M:BitMask {
-    /// The rules that this tree can handle
-    rules        : &'a RuleSet<V, F>,
-    num_rules    : usize,
-    active_stack : Vec<M>,
-}
-
-//tp TreeApplicator32
-/// A instance of the TreeApplicator that works for up to 32 rules
-pub type TreeApplicator32<'a, T,F> = TreeApplicator<'a, T,F,BitMaskU32>;
-
-//ip TreeApplicator
-impl <'a, V, F, M> TreeApplicator<'a, V, F, M>
-where V:std::fmt::Debug, F: RuleFn<V>, M:BitMask {
-    //fp new
-    /// Create a new TreeApplicator consuming a given RuleSet
-    pub fn new(rules:&'a RuleSet<V, F>) -> Self {
-        let num_rules = rules.num_rules();
-        let mut active_stack = Vec::new();
-        let mut active_mask = M::new(num_rules);
-        for i in 0..num_rules {
-            if rules.is_toplevel(i) { active_mask.set(i); }
-        }
-        active_stack.push(active_mask);
-        Self { rules, num_rules, active_stack }
-    }
-
-    //mi try_rules
-    /// Try applying the active rules in the set to a node
-    ///
-    /// 
-    fn try_rules(&mut self, mut active_mask:M, node:&TreeNode<V>) {
-        println!("Try mask {:?} to node content {:?}", active_mask, node.borrow_node());
-        let depth = self.active_stack.len();
-        let mut result_mask = active_mask.clone(self.num_rules);
-        for i in 0..self.num_rules {
-            if active_mask.is_set(i) {
-                let action = {
-                    let result = self.rules.apply(i, depth, node.borrow_node());
-                    println!("Apply rule {} yields result {}", i, result);
-                    match result {
-                        // No match, and dont propagate so clear mask bit
-                        RuleResult::MismatchEnd => {
-                            result_mask.clear(i);
-                            false
-                        },
-                        // No match, but propagate so leave mask bit
-                        RuleResult::MismatchPropagate => {
-                            // no action
-                            false
-                        },
-                        // Match, and propagate just child rules to child nodes
-                        RuleResult::MatchEndChildren => {
-                            for j in self.rules.iter_children(i) {
-                                result_mask.set(*j);
-                            }
-                            result_mask.clear(i);
-                            true
-                        },
-                        // Match, and dont propagate this and child rules to child nodes
-                        RuleResult::MatchPropagateChildren => {
-                            for j in self.rules.iter_children(i) {
-                                result_mask.set(*j);
-                            }
-                            true
-                        },
-                        // Match, and propagate just child rules to this and child nodes
-                        RuleResult::MatchEndAgain => {
-                            for j in self.rules.iter_children(i) {
-                                active_mask.set(*j); // so that it child rules will apply to this node
-                            }
-                            result_mask.clear(i);
-                            true
-                        },
-                        // Match, and propagate this and child rules to this and child nodes
-                        RuleResult::MatchPropagateAgain => {
-                            for j in self.rules.iter_children(i) {
-                                active_mask.set(*j); // so that it child rules will apply to this node
-                            }
-                            true
-                        },
-                    }
-                };
-                if action { println!("Should do action"); }
-            }
-        }
-        self.active_stack.push(result_mask);
-    }
-
-    // mp handle_tree_op
-    /// This handles a tree operation returned by a Tree::iter_tree()
-    ///
-    /// The stack is maintained as:
-    /// 
-    ///   .. gp parent last_node
-    ///
-    /// A Push operation leads to:
-    ///
-    ///   .. ggp gp parent <this node>
-    ///
-    /// A sibling operation leads to
-    ///
-    ///   .. gp parent <this node>
-    ///
-    /// A  pop operation leads to
-    ///
-    ///   .. parent last_node
-    ///
-    /// And no children is a nop (in a sense it is push and pop)
-    /// 
-    ///   .. gp parent last_node
-    ///
-    pub fn handle_tree_op(&mut self, top:TreeIterOp<&TreeNode<V>>) {
-        match top {
-            TreeIterOp::Push(node)    => {
-                let n = self.active_stack.len();
-                let am = self.active_stack[n-1].clone(self.num_rules);
-                self.try_rules(am, node) // will push updated am
-            }
-            TreeIterOp::Sibling(node) => {
-                let am = self.active_stack.pop().unwrap();
-                self.try_rules(am, node) // will push updated am
-            },
-            TreeIterOp::Pop        => {
-                self.active_stack.pop();
-            }
-            TreeIterOp::NoChildren => {
-            }
-        };
-        
-    }
-}
-
-
+//a Test
 //tm Test code
 #[cfg(test)]
 mod test_types {
@@ -359,6 +232,11 @@ mod test_types {
     }
     impl UsizeRule {
         pub fn new(min_value:usize, max_value:usize) -> Self { Self { min_value, max_value } }
+    }
+    impl Action<usize> for usize {
+        fn apply(&self, rule:usize, depth:usize, value:&usize)  {
+            println!("Apply to {} because of rule {} at depth {}", value, rule, depth);
+        }
     }
     impl RuleFn<usize> for UsizeRule {
         fn apply(&self, _depth:usize, value:&usize) -> RuleResult {
@@ -377,28 +255,8 @@ mod test_ruleset {
     #[test]
     fn test_simple() {
         let mut rules = RuleSet::new();
+        rules.add_action(0);
         rules.add_rule(None, UsizeRule::new(0,10), None);
-    }
-    #[test]
-    fn test_apply() {
-        let mut rules = RuleSet::new();
-        rules.add_rule(None, UsizeRule::new(0,10), None);
-        {
-            let mut tree = Tree::new();
-            let mut group0 = 0;
-            let mut node0_0 = 1;
-            let mut node0_1 = 2;
-            tree.open_container(&mut group0);
-            tree.add_node(&mut node0_0);
-            tree.add_node(&mut node0_1);
-            tree.close_container();
-
-            let mut applicator = TreeApplicator32::new(&rules);
-            for n in tree.iter_tree() {
-                applicator.handle_tree_op(n);
-            }
-        }
-        assert!(false);
     }
 }
 
