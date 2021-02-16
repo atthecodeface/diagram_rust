@@ -26,7 +26,7 @@ mod svg;
 mod elements;
 
 pub mod types;
-pub use self::types::{ValueError};
+pub use self::types::{ValueError, StyleSheet};
 pub use self::descriptor::DiagramDescriptor;
 pub use self::element::{Element, ElementScope, ElementError, ElementContent, ElementHeader, DiagramElementContent, ElementLayout};
 pub use self::elements::{Shape, Group, Text, Use};

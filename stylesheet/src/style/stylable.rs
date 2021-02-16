@@ -242,17 +242,17 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
 }
 
 //a Action
-pub struct StylableNodeAction <'a, V:TypeValue> {
-    values : &'a Vec<(&'a str, V)>,
+pub struct StylableNodeAction <V:TypeValue> {
+    values : Vec<(String, V)>,
 }
-impl <'a, V:TypeValue> StylableNodeAction<'a, V> {
-    pub fn new(values:&'a Vec<(&'a str, V)>) -> Self {
+impl <V:TypeValue> StylableNodeAction<V> {
+    pub fn new(values:Vec<(String, V)>) -> Self {
         Self { values }
     }
 }
-impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<'a, V> {
+impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<V> {
     fn apply(&self, _rule:usize, _depth:usize, value:&mut StylableNode<'a, V>)  {
-        for (n,v) in self.values {
+        for (n,v) in &self.values {
             if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
                 *x = v.clone();
             }

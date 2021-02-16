@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::DiagramDescriptor;
+use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementScope, ElementError};
 use crate::{Layout, LayoutRecord};
 use crate::{Rectangle, Transform};
@@ -86,7 +86,7 @@ impl <'a> DiagramContents<'a> {
 /// Once constructed, contents are added to the diagram
 pub struct Diagram<'a> {
     descriptor    : &'a DiagramDescriptor<'a>,
-    pub(super) stylesheet    : StyleSheet,
+    pub(super) stylesheet    : StyleSheet<'a>,
     pub(super) contents      : DiagramContents<'a>,
     pub(super) layout : Layout,
     pub(super) layout_record : Option<LayoutRecord>, 
@@ -99,7 +99,7 @@ impl <'a> Diagram <'a> {
     /// already been created.
     pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
         let contents = DiagramContents::new();
-        let stylesheet = Stylesheet::new(&descriptor.style_set);
+        let stylesheet = StyleSheet::new(&descriptor.style_set);
         Self { descriptor,
                stylesheet,
                contents,
@@ -115,8 +115,8 @@ impl <'a> Diagram <'a> {
     /// the mutable borrow of the contents, required for building,
     /// will be for that of the caller, although the contents have a
     /// lifetime of the diagram.
-    pub fn borrow_contents_descriptor<'z>(&'z mut self) -> (&'a DiagramDescriptor<'a>, &'z mut DiagramContents<'a>) {
-        (&self.descriptor, &mut self.contents)
+    pub fn borrow_contents_descriptor<'z>(&'z mut self) -> (&'a DiagramDescriptor<'a>, &'z mut DiagramContents<'a>, &'z mut StyleSheet<'a>) {
+        (&self.descriptor, &mut self.contents, &mut self.stylesheet)
     }
     
     //mp record_layout

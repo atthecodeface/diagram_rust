@@ -1,6 +1,25 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    mod.rs
+@brief   Diagram Markup Reader module
+ */
+
+//a Imports
 use hmlm;
 use std::io::prelude::{Read};
-use crate::{Diagram, DiagramContents, DiagramDescriptor};
+use crate::{StyleSheet, Diagram, DiagramContents, DiagramDescriptor};
 use xml;
 use xml::reader::XmlEvent;
 use hmlm::{XmlEventWithPos, FilePosition};
@@ -289,6 +308,7 @@ impl <'a, R:Read> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
 /// A reader that creates diagram contents
 struct MLReader<'a, 'b, R:Read> {
     pub contents    : &'b mut DiagramContents<'a>,
+    pub stylesheet  : &'b mut StyleSheet<'a>,
     pub reader      : hmlm::reader::EventReader<R>,
     errors          : MLErrorList,
 }
@@ -297,12 +317,14 @@ struct MLReader<'a, 'b, R:Read> {
 impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     //fp new
     pub fn new<'c, 'd> ( // descriptor: &'d DiagramDescriptor<'c>,
-                         contents:   &'d mut DiagramContents<'c>,
+                         contents:    &'d mut DiagramContents<'c>,
+                         stylesheet:  &'d mut StyleSheet<'c>,
                          reader:hmlm::reader::EventReader<R> ) -> MLReader<'c, 'd, R> {
         MLReader {
             // descriptor,
             contents,
             reader,
+            stylesheet,
             errors :MLErrorList::new(),
         }
     }
@@ -334,21 +356,40 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
         self.read_definitions(descriptor)
     }
 
+    //mp read_style
+    fn read_style (&mut self, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<(), MLError> {
+        MLError::value_result(fp, self.stylesheet.add_action_from_name_values(&to_nv(attributes)))?;
+        loop {
+            match self.next_event()? {
+                (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+                (_,_,XmlEvent::Comment(_))     => (), // continue
+                ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+            }
+        }
+    }
+
     //mp read_diagram
     fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
             (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
             (_,_,XmlEvent::Comment(_))     => (), // continue
             (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                if name.local_name=="defs" {
-                    let e = self.read_definitions(descriptor);
-                    self.errors.update(e);
-                } else {
-                    match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
-                        Ok(element) => {
-                            self.contents.elements.push(element);
-                        },
-                        e => { self.errors.update(e); },
+                match name.local_name.as_str() {
+                    "style"  => {
+                        let e = self.read_style(descriptor, &fp, &name.local_name, &attributes);
+                        self.errors.update(e);
+                    }
+                    "defs" => {
+                        let e = self.read_definitions(descriptor);
+                        self.errors.update(e);
+                    }
+                    _ => {
+                        match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
+                            Ok(element) => {
+                                self.contents.elements.push(element);
+                            },
+                            e => { self.errors.update(e); },
+                        }
                     }
                 }
             },
@@ -434,8 +475,8 @@ impl <'a, 'b> DiagramML<'a, 'b> {
     /// the `Diagram` that this reader is constructing.
     pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLErrorList> {
         let event_reader = hmlm::reader::EventReader::new(f); // Can use an xml::reader
-        let (descriptor, contents) = self.diagram.borrow_contents_descriptor();
-        MLReader::new(contents, event_reader).read_file(descriptor)
+        let (descriptor, contents, stylesheet) = self.diagram.borrow_contents_descriptor();
+        MLReader::new(contents, stylesheet, event_reader).read_file(descriptor)
     }
     
     //zz All done
@@ -452,7 +493,7 @@ mod tests {
         let mut diagram = Diagram::new(&diagram_descriptor);
         let mut dml     = DiagramML::new(&mut diagram);
         dml.read_file("#diagram".as_bytes()).unwrap();
-        let (_, contents) = diagram.borrow_contents_descriptor();
+        let (_, contents, _) = diagram.borrow_contents_descriptor();
         assert_eq!(0, contents.definitions.len());
         assert_eq!(0, contents.elements.len());
     }

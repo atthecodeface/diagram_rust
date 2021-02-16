@@ -35,7 +35,7 @@ use super::font::*;
 /// The `Diagram` can borrow references to it, and hence it must
 /// outlive the Diagram.
 pub struct DiagramDescriptor<'a> {
-    style_set   : &'a StyleSet,
+    pub(super) style_set   : &'a StyleSet,
     descriptors : HashMap<&'a str, StyleDescriptor<'a>>,
     fonts       : HashMap<&'a str, RrcFont>,
 }
