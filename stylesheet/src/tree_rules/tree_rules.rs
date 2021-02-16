@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::bitmask::{BitMask, BitMaskU32, BitMaskU64};
+use super::bitmask::{BitMask, BitMaskU32, BitMaskU64, BitMaskX};
 use super::rules::{RuleResult, RuleFn, Action, RuleSet};
 use super::tree::{Tree, TreeIterOp, TreeNode};
 
@@ -182,11 +182,14 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
 
 
 //tp TreeApplicator32, TreeApplicator64
-/// A instance of the TreeApplicator that works for up to 32 rules
+/// An instance of the TreeApplicator that works for up to 32 rules
 pub type TreeApplicator32<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskU32>;
 
-/// A instance of the TreeApplicator that works for up to 64 rules
+/// An instance of the TreeApplicator that works for up to 64 rules
 pub type TreeApplicator64<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskU64>;
+
+/// An instance of the TreeApplicator that works for up to 64 rules
+pub type TreeApplicatorX<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskX>;
 
 //tm Test code
 #[cfg(test)]

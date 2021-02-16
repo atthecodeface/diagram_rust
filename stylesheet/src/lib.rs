@@ -40,5 +40,5 @@ pub use style::{Descriptor};
 pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};
 pub use tree_rules::{RuleResult, RuleFn, Action, RuleSet};
 pub use tree_rules::{Tree, TreeIterOp};
-pub use tree_rules::{TreeApplicator32, TreeApplicator64};
+pub use tree_rules::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
 

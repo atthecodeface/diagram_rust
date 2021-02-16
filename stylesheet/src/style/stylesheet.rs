@@ -24,7 +24,7 @@ use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
 use crate::{BitMask, BitMaskU32};
 use crate::{RuleResult, RuleFn, Action, RuleSet};
 use crate::{Tree, TreeIterOp};
-use crate::{TreeApplicator32};
+use crate::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
 
 //a Constants for debug
 const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
@@ -34,12 +34,54 @@ const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
 /// The Stylesheet
 pub struct Stylesheet <'a, V:TypeValue> {
     descriptor : &'a NamedTypeSet<V>,
-//    rules : 
+    rules      : RuleSet<StylableNode<'a, V>, StylableNodeAction<'a, V>, StylableNodeRule>,
 }
 
 impl <'a, V:TypeValue> Stylesheet<'a, V> {
     pub fn new(descriptor:&'a NamedTypeSet<V>) -> Self {
-        Self { descriptor
+        Self { descriptor,
+               rules : RuleSet::new(),
+        }
+    }
+    //mp add_action
+    /// Add an action to the set
+    pub fn add_action(&mut self, action:StylableNodeAction<'a, V>) -> usize {
+        self.rules.add_action(action)
+    }
+    
+    //mp add_rule
+    /// Add a rule to the set, and return its handle; it may be a
+    /// child of a parent rule given by a handle, or a toplevel rule.
+    ///
+    /// Note that the rule's children will all have a greater index
+    /// than the rule. This invariant is required
+    pub fn add_rule(&mut self, parent:Option<usize>, rule:StylableNodeRule, action:Option<usize>) -> usize {
+        self.rules.add_rule(parent, rule, action)
+    }
+
+    //mp apply_rule
+    pub fn apply_rules_to_tree(&self, tree:&mut Tree<StylableNode<'a,V>> ) {
+        let num_rules = self.rules.num_rules();
+        let mut iter = tree.it_create();
+
+        if num_rules <= 32 {
+            let mut applicator = TreeApplicator32::new(&self.rules);
+            loop { match tree.it_next(&mut iter) {
+                Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
+                None => {break;},
+            }}
+        } else if num_rules <= 64 {
+            let mut applicator = TreeApplicator64::new(&self.rules);
+            loop { match tree.it_next(&mut iter) {
+                Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
+                None => {break;},
+            }}
+        } else {
+            let mut applicator = TreeApplicatorX::new(&self.rules);
+            loop { match tree.it_next(&mut iter) {
+                Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
+                None => {break;},
+            }}
         }
     }
 }
@@ -90,7 +132,12 @@ mod test_stylesheet {
         d_pt.add_style("x");
         d_pt.add_style("y");
         let d_g  = Descriptor::new(&style_set);
-        let stylesheet = Stylesheet::new(&style_set);
+        
+        let mut stylesheet = Stylesheet::new(&style_set);
+        let act0_nv = vec![("x",BaseValue::int(Some(7))),];
+        let act_0  = stylesheet.add_action(StylableNodeAction::new(&act0_nv));
+        let rule_0 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
+        
         let mut node0_0 = StylableNode::new("pt", &d_pt);
         node0_0.add_name_value("id", "pt0");
         node0_0.add_name_value("x", "1");
@@ -105,21 +152,9 @@ mod test_stylesheet {
         group0.add_child(Element::new(node0_0));
         group0.add_child(Element::new(node0_1));
 
-        let mut rules = RuleSet::new();
-        let act0_nv = vec![("x",BaseValue::int(Some(7))),];
-        let act_0 = rules.add_action(StylableNodeAction::new(&act0_nv));
-        let rule_0 = rules.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
-
         {
             let mut tree = group0.create_tree();
-            let mut applicator = TreeApplicator32::new(&rules);
-            let mut iter = tree.it_create();
-            loop {
-                match tree.it_next(&mut iter) {
-                    Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
-                    None => {break;},
-                }
-            }
+            stylesheet.apply_rules_to_tree(&mut tree);
             for top in tree.iter_tree() {
                 top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
             }
