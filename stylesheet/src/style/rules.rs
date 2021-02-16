@@ -82,7 +82,7 @@ pub trait RuleFn<T> {
 /// rule to that value
 pub trait Action<T> {
     /// Apply the action to the value, at a given depth in the tree
-    fn apply(&self, rule:usize, depth:usize, _value:&T) {
+    fn apply(&self, rule:usize, depth:usize, _value:&mut T) {
         println!("Application of action not defined {}", depth);
     }
 }
@@ -206,7 +206,7 @@ impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
     
     //mp fire
     #[inline]
-    pub fn fire(&self, rule:usize, depth:usize, node:&T) {
+    pub fn fire(&self, rule:usize, depth:usize, node:&mut T) {
         if let Some(action) = self.rules[rule].action {
             self.actions[action].apply(rule, depth, node);
         }
@@ -234,7 +234,7 @@ mod test_types {
         pub fn new(min_value:usize, max_value:usize) -> Self { Self { min_value, max_value } }
     }
     impl Action<usize> for usize {
-        fn apply(&self, rule:usize, depth:usize, value:&usize)  {
+        fn apply(&self, rule:usize, depth:usize, value:&mut usize)  {
             println!("Apply to {} because of rule {} at depth {}", value, rule, depth);
         }
     }

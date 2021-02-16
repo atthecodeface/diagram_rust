@@ -21,7 +21,7 @@ limitations under the License.
 //a Constants for debug
 const DEBUG_TREE_ITERATOR : bool = 1 == 0;
 
-//a TreeIter iterator
+//a TreeIterOp
 //tp TreeIterOp
 /// This operation is used to iterate over a tree
 ///
@@ -62,12 +62,86 @@ pub enum TreeIterOp<V> {
     NoChildren,
     Pop
 }
+
+impl <V> TreeIterOp<V> {
+    pub fn map<U, F: FnOnce(V) -> U>(self, f: F) -> TreeIterOp<U> {
+        match self {
+            TreeIterOp::Push(x)    => TreeIterOp::Push(f(x)),
+            TreeIterOp::Sibling(x) => TreeIterOp::Sibling(f(x)),
+            TreeIterOp::NoChildren => TreeIterOp::NoChildren,
+            TreeIterOp::Pop => TreeIterOp::Pop,
+        }
+    }
+    pub fn as_option(self) -> Option<V> {
+        match self {
+            TreeIterOp::Push(x)    => Some(x),
+            TreeIterOp::Sibling(x) => Some(x),
+            TreeIterOp::NoChildren => None,
+            TreeIterOp::Pop        => None,
+        }
+    }
+}
+//a TreeIndexIter non-iterator
+//tp TreeIndexIter
+/// An iterator structure to permit iteration over a tree
+pub struct TreeIndexIter {
+    start : bool,
+    stack : Vec<(usize, usize)>,
+}
+
+//ip TreeIndexIter
+impl TreeIndexIter {
+    //fp new
+    /// Create a new iterator
+    pub fn new() -> Self {
+        Self { start:true,
+               stack:Vec::new(),
+        }
+    }
+
+    //mp next
+    fn next<V>(&mut self, tree:&Tree<V>) -> Option<TreeIterOp<(usize, usize)>> {
+        match self.stack.pop() {
+            None => {
+                if self.start {
+                    self.stack.push((0, 0));
+                    self.start = false;
+                    Some(TreeIterOp::Push((0, 0)))
+                } else {
+                    None
+                }
+            },
+            Some((node_index, child_index)) => {
+                if child_index >= tree.nodes[node_index].children.len() {
+                    if child_index == 0 {
+                        Some(TreeIterOp::NoChildren)
+                    } else {
+                        Some(TreeIterOp::Pop)
+                    }
+                } else {
+                    let child_node_index = tree.nodes[node_index].children[child_index];
+                    self.stack.push((node_index, child_index+1));
+                    let depth = self.stack.len();
+                    self.stack.push((child_node_index, 0));
+                    if child_index == 0 {
+                        Some(TreeIterOp::Push((depth, child_node_index)))
+                    } else {
+                        Some(TreeIterOp::Sibling((depth, child_node_index)))
+                    }
+                }
+            }
+        }
+    }
+
+    //zz All done
+}
+
+//a TreeIter iterator
 //tp TreeIter
 /// An iterator structure to permit iteration over an Svg object's elements
 pub struct TreeIter<'a, 'b, V> {
     tree  : &'a Tree<'b, V>,
-    start : bool,
-    stack : Vec<(usize, usize)>,
+    iter  : TreeIndexIter,
 }
 
 //ip TreeIter
@@ -76,46 +150,26 @@ impl <'a, 'b, V> TreeIter<'a, 'b, V> {
     /// Create a new iterator
     pub fn new(tree:&'a Tree<'b, V>) -> Self {
         Self { tree,
-               start:true,
-               stack:Vec::new(),
+               iter : TreeIndexIter::new(),
         }
     }
 }
 
 //ip Iterator for TreeIter
 impl <'a, 'b, V> Iterator for TreeIter<'a, 'b, V> {
-    type Item = TreeIterOp<&'a TreeNode<'b, V>>;
+    //tp Item
+    type Item = TreeIterOp<(usize, &'a TreeNode<'b, V>)>;
+
+    //mp next
     fn next(&mut self) -> Option<Self::Item> {
-        match self.stack.pop() {
-            None => {
-                if self.start {
-                    self.stack.push((0, 0));
-                    self.start = false;
-                    Some(TreeIterOp::Push(&self.tree.nodes[0]))
-                } else {
-                    None
-                }
-            },
-            Some((node_index, child_index)) => {
-                if child_index >= self.tree.nodes[node_index].children.len() {
-                    if child_index == 0 {
-                        Some(TreeIterOp::NoChildren)
-                    } else {
-                        Some(TreeIterOp::Pop)
-                    }
-                } else {
-                    let child_node_index = self.tree.nodes[node_index].children[child_index];
-                    self.stack.push((node_index, child_index+1));
-                    self.stack.push((child_node_index, 0));
-                    if child_index == 0 {
-                        Some(TreeIterOp::Push(&self.tree.nodes[child_node_index]))
-                    } else {
-                        Some(TreeIterOp::Sibling(&self.tree.nodes[child_node_index]))
-                    }
-                }
-            }
+        if let Some(top) = self.iter.next(self.tree) {
+            Some(top.map( |(d,i)| (d, &self.tree.nodes[i])))
+        } else {
+            None
         }
     }
+
+    //zz All done
 }
 
 //a TreeNode and Tree
@@ -199,33 +253,65 @@ impl <'a, V> Tree<'a, V> {
         self.stack.pop();
     }
 
-    //fi open_container
+    //mp open_container
     pub fn open_container(&mut self, node:&'a mut V) {
         self.push_node(node);
     }
 
-    //fi add_node
+    //mp add_node
     /// Add a leaf node that will not have children
     /// This means the stack depth will not change
     pub fn add_node(&mut self, node:&'a mut V) {
         self.int_add_node(node);
     }
 
-    //fi close_container
+    //mp close_container
     pub fn close_container(&mut self) {
         self.pop_node();
     }
 
-    //fi iter_tree
-    pub fn iter_tree(&self) -> TreeIter<V> {
+    //mp iter_tree
+    pub fn iter_tree(&self) -> TreeIter<(V)> {
         TreeIter::new(self)
     }
-    //fi borrow
+
+    //mp it_create
+    /// Create an iterator over the tree
+    ///
+    /// It is a logic error to mutate the tree after this is called,
+    /// before the iterator is finished
+    pub fn it_create(&self) -> TreeIndexIter {
+        TreeIndexIter::new()
+    }
+
+    //mp it_next
+    /// Return None if iterator complete, or
+    /// Some(TreeOp<(depth,node_index)>) if returning a node or tree
+    /// operation
+    pub fn it_next(&self, iter:&mut TreeIndexIter) -> Option<TreeIterOp<(usize, usize)>> {
+        iter.next(self)
+    }
+        
+    //mp it_next_borrow_mut
+    /// Return None if iterator complete, or Some(&mut V) 
+    pub fn it_next_borrow_mut(&mut self, iter:&mut TreeIndexIter) -> Option<(usize, &mut V)> {
+        if let Some(r) = iter.next(self) {
+            if let Some((depth,index)) = r.as_option() {
+                Some((depth, self.borrow_mut(index)))
+            } else {
+                self.it_next_borrow_mut(iter)
+            }
+        } else {
+            None
+        }
+    }
+        
+    //mp borrow
     pub fn borrow(&self, node_index:usize) -> &V {
         self.nodes[node_index].borrow()
     }
     
-    //fi borrow_mut
+    //mp borrow_mut
     pub fn borrow_mut(&mut self, node_index:usize) -> &mut V {
         self.nodes[node_index].borrow_mut()
     }
@@ -263,11 +349,9 @@ mod test_tree {
             tree.add_node(&mut node0_1);
             tree.close_container();
             
-            for n in tree.iter_tree() {
-                // println!("{:?} {:?} {:?}",n.node.id_name, n.node.node_type, n.node.values );
-                // n.node.id_name = Some("banana".to_string());
+            for top in tree.iter_tree() {
+                top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
             }
         }
-        assert!(false);
     }
 }

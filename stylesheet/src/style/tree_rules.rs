@@ -72,14 +72,14 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
     /// Try applying the active rules in the set to a node
     ///
     /// 
-    fn try_rules(&mut self, mut active_mask:M, node:&TreeNode<V>) {
-        if DEBUG_RULE_TREE {println!("Try mask {:?} to node content {:?}", active_mask, node.borrow());}
+    fn try_rules(&mut self, mut active_mask:M, node:&mut V) {
+        if DEBUG_RULE_TREE {println!("Try mask {:?} to node content {:?}", active_mask, node);}
         let depth = self.active_stack.len();
         let mut result_mask = active_mask.clone(self.num_rules);
         for i in 0..self.num_rules {
             if active_mask.is_set(i) {
                 let action = {
-                    let result = self.rules.apply(i, depth, node.borrow());
+                    let result = self.rules.apply(i, depth, node);
                     if DEBUG_RULE_TREE {println!("Apply rule {} yields result {}", i, result);}
                     match result {
                         // No match, and dont propagate so clear mask bit
@@ -125,7 +125,7 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
                     }
                 };
                 if action {
-                    self.rules.fire(i, depth, node.borrow());
+                    self.rules.fire(i, depth, node);
                 }
             }
         }
@@ -133,7 +133,7 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
         self.active_stack.push(result_mask);
     }
 
-    // mp handle_tree_op
+    //mp handle_tree_op
     /// This handles a tree operation returned by a Tree::iter_tree()
     ///
     /// The stack is maintained as:
@@ -156,7 +156,7 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
     /// 
     ///   .. gp parent last_node
     ///
-    pub fn handle_tree_op(&mut self, top:TreeIterOp<&TreeNode<V>>) {
+    pub fn handle_tree_op(&mut self, top:TreeIterOp<&mut V>) {
         match top {
             TreeIterOp::Push(node)    => {
                 let n = self.active_stack.len();
@@ -200,16 +200,18 @@ mod test_ruleset {
         }
     }
     struct ActionUsize <'a> {
-        callback : Box<dyn Fn(&UsizeNode)->() + 'a>,
+        callback : Box<dyn Fn(&UsizeNode)->bool + 'a>,
     }
     impl <'a> ActionUsize<'a> {
-        pub fn new(callback: impl Fn(&UsizeNode)->() + 'a) -> Self {
+        pub fn new(callback: impl Fn(&UsizeNode)->bool + 'a) -> Self {
             Self { callback:Box::new(callback) }
         }
     }
     impl Action<UsizeNode> for ActionUsize<'_> {
-        fn apply(&self, rule:usize, depth:usize, value:&UsizeNode)  {
-            (self.callback)(value);
+        fn apply(&self, rule:usize, depth:usize, value:&mut UsizeNode)  {
+            if (self.callback)(value) {
+                value.liked = true;
+            }
         }
     }
     #[derive(Default)]
@@ -272,8 +274,8 @@ mod test_ruleset {
     #[test]
     fn test_apply() {
         let mut rules = RuleSet::new();
-        let act_0 = rules.add_action(ActionUsize::new(|s| {println!("like this {} {}",s.value, s.liked);}));
-        let act_1 = rules.add_action(ActionUsize::new(|s| {println!("Really like this - odd inside ancestor with range 0 to 3 - {} {}",s.value, s.liked);}));
+        let act_0 = rules.add_action(ActionUsize::new(|s| {println!("like this {} {}",s.value, s.liked);false}));
+        let act_1 = rules.add_action(ActionUsize::new(|s| {println!("Really like this - odd inside ancestor with range 0 to 3 - {} {}",s.value, s.liked);true}));
         let rule_0 = rules.add_rule(None, UsizeRule::new().range(0,4),      Some(act_0));
         rules.add_rule(Some(rule_0), UsizeRule::new().mask_value(1,1), Some(act_1));
         {
@@ -304,8 +306,15 @@ mod test_ruleset {
             tree.close_container(); // closes root
 
             let mut applicator = TreeApplicator32::new(&rules);
-            for n in tree.iter_tree() {
-                applicator.handle_tree_op(n);
+            let mut iter = tree.it_create();
+            loop {
+                match tree.it_next(&mut iter) {
+                    Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
+                    None => {break;},
+                }
+            }
+            for top in tree.iter_tree() {
+                top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
             }
         }
         assert!(false);
