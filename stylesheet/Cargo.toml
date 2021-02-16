@@ -3,6 +3,7 @@ name = "stylesheet"
 version = "0.1.0"
 
 [dependencies]
+num = "0.3"
 regex = "1"
 lazy_static = "1.2.0"
 hmlm  = { path="../hmlm", version="0.1.0" }

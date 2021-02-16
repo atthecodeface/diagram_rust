@@ -25,6 +25,7 @@ limitations under the License.
 
 //a Imports
 extern crate regex;
+extern crate num;
 #[macro_use]
 extern crate lazy_static;
 
