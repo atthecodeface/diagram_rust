@@ -80,7 +80,7 @@ impl <U> BitMask for BitMaskU<U>  where U:Maskable<U> {
     }
 
     #[inline]
-    fn clone(&self, n:usize) -> Self {
+    fn clone(&self, _n:usize) -> Self {
         Self { mask:self.mask }
     }
 

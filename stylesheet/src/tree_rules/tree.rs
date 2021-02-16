@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 
 //a Constants for debug
-const DEBUG_TREE_ITERATOR : bool = 1 == 0;
+// const DEBUG_TREE_ITERATOR : bool = 1 == 0;
 
 //a TreeIterOp
 //tp TreeIterOp
@@ -120,8 +120,8 @@ impl TreeIndexIter {
                     }
                 } else {
                     let child_node_index = tree.nodes[node_index].children[child_index];
+                    let depth            = tree.nodes[node_index].depth;
                     self.stack.push((node_index, child_index+1));
-                    let depth = self.stack.len();
                     self.stack.push((child_node_index, 0));
                     if child_index == 0 {
                         Some(TreeIterOp::Push((depth, child_node_index)))
@@ -271,7 +271,7 @@ impl <'a, V> Tree<'a, V> {
     }
 
     //mp iter_tree
-    pub fn iter_tree(&self) -> TreeIter<(V)> {
+    pub fn iter_tree(&self) -> TreeIter<V> {
         TreeIter::new(self)
     }
 

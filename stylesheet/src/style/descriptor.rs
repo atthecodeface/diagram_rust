@@ -17,8 +17,6 @@ limitations under the License.
  */
 
 //a Imports
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::{TypeValue, NamedTypeSet};
 
 //tp Descriptor
@@ -71,7 +69,6 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-pub type RrcDescriptor<'a, V> = Rc<RefCell<Descriptor<'a, V>>>;
 impl <'a, V:TypeValue> Descriptor<'a, V> {
     //fp new
     pub fn new(style_set:&'a NamedTypeSet<V>) -> Self {

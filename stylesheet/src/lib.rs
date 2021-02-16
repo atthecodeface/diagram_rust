@@ -34,7 +34,8 @@ mod tree_rules;
 
 pub use style::{TypeValue, ValueError, BaseValue};
 pub use style::{NamedTypeSet};
-pub use style::{StylableNode};
+pub use style::{StylableNode, StylableNodeAction, StylableNodeRule};
+pub use style::{Stylesheet};
 pub use style::{Descriptor};
 
 pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};

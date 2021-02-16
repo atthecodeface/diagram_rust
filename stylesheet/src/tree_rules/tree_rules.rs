@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 use super::bitmask::{BitMask, BitMaskU32, BitMaskU64, BitMaskX};
 use super::rules::{RuleResult, RuleFn, Action, RuleSet};
-use super::tree::{Tree, TreeIterOp, TreeNode};
+use super::tree::{TreeIterOp};
 
 //a Global constants for debug
 const DEBUG_RULE_TREE      : bool = 1 == 0;
@@ -194,6 +194,7 @@ pub type TreeApplicatorX<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskX>;
 //tm Test code
 #[cfg(test)]
 mod test_ruleset {
+    use crate::Tree;
     use super::*;
     #[derive(Debug)]
     struct UsizeNode {
@@ -214,7 +215,7 @@ mod test_ruleset {
         }
     }
     impl Action<UsizeNode> for ActionUsize<'_> {
-        fn apply(&self, rule:usize, depth:usize, value:&mut UsizeNode)  {
+        fn apply(&self, _rule:usize, _depth:usize, value:&mut UsizeNode)  {
             if (self.callback)(value) {
                 value.liked = true;
             }

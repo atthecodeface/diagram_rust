@@ -17,8 +17,6 @@ limitations under the License.
  */
 
 //a Imports
-use super::bitmask::{BitMask, BitMaskU32};
-use super::tree::{Tree, TreeIterOp, TreeNode};
 
 //a Global constants for debug
 // const DEBUG_      : bool = 1 == 0;
@@ -97,7 +95,7 @@ pub trait RuleFn<T> {
 /// rule to that value
 pub trait Action<T> {
     /// Apply the action to the value, at a given depth in the tree
-    fn apply(&self, rule:usize, depth:usize, _value:&mut T) {
+    fn apply(&self, _rule:usize, depth:usize, _value:&mut T) {
         println!("Application of action not defined {}", depth);
     }
 }

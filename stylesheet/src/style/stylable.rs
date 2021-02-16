@@ -17,10 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use std::cell::RefCell;
-use std::rc::Rc;
 use crate::{TypeValue, ValueError, Descriptor};
-use crate::{RuleResult, RuleFn, Action, RuleSet};
+use crate::{RuleResult, RuleFn, Action};
 
 //tp StylableNode
 /// A `StylableNode` is an element that is part of a hierarchy of elements, which
@@ -192,7 +190,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     }
 
     //mp has_class
-    pub fn has_classs(&self, s:&str) -> bool {
+    pub fn has_class(&self, s:&str) -> bool {
         for c in &self.classes { if c==s {return true;} }
         false
     }
@@ -253,7 +251,7 @@ impl <'a, V:TypeValue> StylableNodeAction<'a, V> {
     }
 }
 impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<'a, V> {
-    fn apply(&self, rule:usize, depth:usize, value:&mut StylableNode<'a, V>)  {
+    fn apply(&self, _rule:usize, _depth:usize, value:&mut StylableNode<'a, V>)  {
         for (n,v) in self.values {
             if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
                 *x = v.clone();
@@ -293,10 +291,10 @@ impl StylableNodeRule {
 impl <'a, V:TypeValue> RuleFn<StylableNode<'a, V>> for StylableNodeRule {
     fn apply(&self, depth:usize, value:&StylableNode<'a, V>) -> RuleResult {
         let matched = {
-            if let Some(s) = self.id_matches.as_ref() { true } else { false }
+            if let Some(s) = self.id_matches.as_ref() { value.has_id(s) } else { false }
         };
         let matched = matched || {
-            if let Some(sd) = self.has_class.as_ref() { true } else { false }
+            if let Some(s) = self.has_class.as_ref() { value.has_class(s) } else { false }
         };
         RuleResult::new(depth, matched, self.sideways, self.propagate_depth)
     }

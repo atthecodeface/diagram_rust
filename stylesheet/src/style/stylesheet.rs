@@ -17,29 +17,26 @@ limitations under the License.
  */
 
 //a Imports
-use std::cell::RefCell;
-use std::rc::Rc;
-use crate::{TypeValue, BaseValue, ValueError, Descriptor, NamedTypeSet};
-use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
-use crate::{BitMask, BitMaskU32};
-use crate::{RuleResult, RuleFn, Action, RuleSet};
-use crate::{Tree, TreeIterOp};
+use crate::{TypeValue, NamedTypeSet};
+use crate::{RuleSet};
+use crate::{Tree};
 use crate::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
+use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
 
 //a Constants for debug
-const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
+// const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
 
 //a Stylesheet
 //tp Stylesheet
 /// The Stylesheet
 pub struct Stylesheet <'a, V:TypeValue> {
-    descriptor : &'a NamedTypeSet<V>,
+    style_set  : &'a NamedTypeSet<V>,
     rules      : RuleSet<StylableNode<'a, V>, StylableNodeAction<'a, V>, StylableNodeRule>,
 }
 
 impl <'a, V:TypeValue> Stylesheet<'a, V> {
-    pub fn new(descriptor:&'a NamedTypeSet<V>) -> Self {
-        Self { descriptor,
+    pub fn new(style_set:&'a NamedTypeSet<V>) -> Self {
+        Self { style_set,
                rules : RuleSet::new(),
         }
     }
@@ -89,6 +86,7 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
 //tm Test code
 #[cfg(test)]
 mod test_stylesheet {
+    use crate::{BaseValue, Descriptor, NamedTypeSet};
     use super::*;
     struct Element <'a> {
         pub stylable : StylableNode<'a, BaseValue>,
@@ -115,7 +113,7 @@ mod test_stylesheet {
         pub fn create_tree<'b>(&'b mut self) -> Tree<'b, StylableNode<'a,BaseValue>> {
             let Self {stylable, children, ..} = self;
             let mut tree = Tree::new(stylable);
-            for c in self.children.iter_mut() {
+            for c in children.iter_mut() {
                 tree = c.add_to_tree(tree);
             }
             tree.close_container();
@@ -136,18 +134,18 @@ mod test_stylesheet {
         let mut stylesheet = Stylesheet::new(&style_set);
         let act0_nv = vec![("x",BaseValue::int(Some(7))),];
         let act_0  = stylesheet.add_action(StylableNodeAction::new(&act0_nv));
-        let rule_0 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
+        let _rule_0 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
         
         let mut node0_0 = StylableNode::new("pt", &d_pt);
-        node0_0.add_name_value("id", "pt0");
-        node0_0.add_name_value("x", "1");
-        node0_0.add_name_value("y", "0");
+        node0_0.add_name_value("id", "pt0").unwrap();
+        node0_0.add_name_value("x", "1").unwrap();
+        node0_0.add_name_value("y", "0").unwrap();
         let mut node0_1 = StylableNode::new("pt", &d_pt);
-        node0_1.add_name_value("id", "pt1");
-        node0_1.add_name_value("x", "2");
-        node0_1.add_name_value("y", "10");
+        node0_1.add_name_value("id", "pt1").unwrap();
+        node0_1.add_name_value("x", "2").unwrap();
+        node0_1.add_name_value("y", "10").unwrap();
         let mut group0 = StylableNode::new("g", &d_g);
-        group0.add_name_value("id", "group");
+        group0.add_name_value("id", "group").unwrap();
         let mut group0 = Element::new(group0);
         group0.add_child(Element::new(node0_0));
         group0.add_child(Element::new(node0_1));
