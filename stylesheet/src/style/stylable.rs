@@ -242,6 +242,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
 }
 
 //a Action
+#[derive(Debug)]
 pub struct StylableNodeAction <V:TypeValue> {
     values : Vec<(String, V)>,
 }
@@ -261,6 +262,7 @@ impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<V> {
 }
 
 //a StylableNodeRule
+#[derive(Debug)]
 pub struct StylableNodeRule {
     id_matches : Option<String>,
     has_class  : Option<String>,

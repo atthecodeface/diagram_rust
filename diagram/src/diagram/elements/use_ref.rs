@@ -21,6 +21,8 @@ use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 use crate::{Rectangle};
+use stylesheet::{StylableNode, Tree};
+use super::super::types::*;
 
 //a Use element
 //tp Use - an Element that is a reference to a group or other element
@@ -131,6 +133,13 @@ impl <'a> Use<'a> {
     pub fn add_string(&mut self, s:&str) -> Result<(),String> {
         self.strings.push(s.to_string());
         Ok(())
+    }
+    //fp tree_add_element
+    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+        for c in self.content.iter_mut() {
+            tree = c.tree_add_element(tree);
+        }
+        tree
     }
 
 }

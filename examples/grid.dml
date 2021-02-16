@@ -1,14 +1,14 @@
 #diagram
 ##defs{
 #shape id="blob" vertices=7 grid=1,1 bordercolor=green border=1 stroke=purple fill=pink stellate=5
-#use id=big    ref=blob width=50 fill=red stellate=40
-#use id=medium ref=blob width=20 fill=yellow
-#use id=small  ref=blob width=10 fill=orange
+#use id=big    class="big" ref=blob width=50 fill=red stellate=40
+#use id=medium class="med" ref=blob width=20 fill=yellow
+#use id=small  class="sml" ref=blob width=10 fill=orange
 ##defs}
 
 
 ;;; Top row - anchor the internal content to top left
-##layout grid=1,1 anchor=-1,-1
+##layout id=row1 grid=1,1 anchor=-1,-1
 
 ;; First on the top row of an outer grid, place a grid layout with 4 cells
 ;; The four cells each have a medium shape.
@@ -46,7 +46,7 @@
 
 ;;; Second row - anchor the internal content to top left
 ;; On the second row the effect of minx and miny can be seen
-##layout grid=1,2 anchor=-1,-1
+##layout id=row2 grid=1,2 anchor=-1,-1
 
 ;; First on the second row we have four cells in a grid:
 ;; The four cells each have a medium shape, but the whole grid has a big cell
@@ -84,10 +84,10 @@
 #layout}
 
 ;;; Third row - don't expand content, anchor to the left
-##layout grid=1,3 anchor=-1,-1
+##layout id=row3 grid=1,3 anchor=-1,-1
 
 ;; On the third row we have a layout of a grid of four shapes with no expansion
-###layout{ id=1_1 grid=1,1
+###layout{ id=3_1 grid=1,1
 #use id=g1_1     ref=medium grid=1,1
 #use id=g2_1     ref=medium grid=2,1
 #use id=g1_2     ref=medium grid=1,2
@@ -95,14 +95,19 @@
 #layout}
 
 ;;; Fourth row - expand content anchored on center (anchor does not matter for expanded layout though)
-##layout grid=1,4 expand=1,1 growx=-100,1.,100 growy=-100,1.,100
+##layout id=row4 grid=1,4 expand=1,1 growx=-100,1.,100 growy=-100,1.,100
 
 ;; On the fourth row we have a layout of a grid of four shapes with expansion
-###layout{ id=1_1 grid=1,1 expand=1,1 growx=1,1.0,2,2.0,3
+###layout{ id=4_1 grid=1,1 expand=1,1 growx=1,1.0,2,2.0,3
 #use id=g1_1     ref=medium grid=1,1 anchor=-1
 #use id=g2_1     ref=medium grid=2,1 anchor=-1
 #use id=g1_2     ref=medium grid=1,2 anchor=1
 #use id=g2_2     ref=medium grid=2,2 anchor=1
 #layout}
 
+##style id=StyleMe1 fill=orange
+##style id=StyleMe2 strokewidth=26
+##rule id=row2
+###rule class=big style=StyleMe2   ;  fill="purple"
+###rule class=med style=StyleMe1   ;  fill="purple"
 

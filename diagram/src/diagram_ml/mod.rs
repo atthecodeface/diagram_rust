@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 use hmlm;
 use std::io::prelude::{Read};
-use crate::{StyleSheet, Diagram, DiagramContents, DiagramDescriptor};
+use crate::{StyleSheet, StyleRule, StyleAction, Diagram, DiagramContents, DiagramDescriptor};
 use xml;
 use xml::reader::XmlEvent;
 use hmlm::{XmlEventWithPos, FilePosition};
@@ -37,6 +37,7 @@ fn to_nv(attributes:&Attributes) -> Vec<(String,String)> {
 pub enum MLError {
     EndOfStream,
     BadElementName(FilePosition, String),
+    BadAttributeName(FilePosition, String),
     BadElement(FilePosition, String),
     BadMLEvent(String),
     BadValue(FilePosition, String),
@@ -52,6 +53,11 @@ impl MLError {
     //fi bad_element_name
     fn bad_element_name(fp:&FilePosition, name:&str) -> Self {
         Self::BadElementName(fp.clone(), name.to_string())
+    }
+
+    //fi bad_attribute_name
+    fn bad_attribute_name(fp:&FilePosition, name:&str) -> Self {
+        Self::BadAttributeName(fp.clone(), name.to_string())
     }
 
     //mp bad_ml_event
@@ -86,6 +92,7 @@ impl std::fmt::Display for MLError {
         match self {
             MLError::EndOfStream          => write!(f, "Unexpected end of XML event stream - bug in event source"),
             MLError::BadElementName(fp,n) => write!(f, "Bad element '{}' at {}", n, fp),
+            MLError::BadAttributeName(fp,n) => write!(f, "Bad attribute '{}' at {}", n, fp),
             MLError::BadElement(fp,s)     => write!(f, "Element error '{}' at {}", s, fp),
             MLError::BadMLEvent(s)        => write!(f, "Bad XML event {}", s),
             MLError::BadValue(fp,s)       => write!(f, "Bad value '{}' at {}", s, fp),
@@ -356,11 +363,67 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
         self.read_definitions(descriptor)
     }
 
+    //mp read_rule - needs to support passing in of parent rule id
+    fn read_rule (&mut self, descriptor:&'a DiagramDescriptor, parent:Option<usize>, fp:&FilePosition, _name:&str, attributes:&Attributes) -> Result<(), MLError> {
+        let mut rule = StyleRule::new();
+        let mut action = None;
+        for attr in attributes {
+            match attr.name.local_name.as_str() {
+                "style" => {
+                    if let Some(a) = self.stylesheet.get_action_index(&attr.value) {
+                        action = Some(*a);
+                    } else {
+                        return Err(MLError::BadValue(fp.clone(),format!("unknown style id '{}' in rule", attr.value)));
+                    }
+                }
+                "id"    => {
+                    rule = rule.has_id(&attr.value);
+                }
+                "class"  => {
+                    rule = rule.has_class(&attr.value);
+                }
+                "depth"  => {
+                    // rule = rule.has_class(attr.value);
+                }
+                _ => {
+                    return Err(MLError::bad_attribute_name(&fp, &attr.name.local_name));
+                }
+            }
+        }
+        let rule_index = self.stylesheet.add_rule(parent, rule, action);
+        loop {
+            // should support an 'apply' subrule
+            match self.next_event()? {
+                (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
+                    match name.local_name.as_str() {
+                        "rule"  => {
+                            let e = self.read_rule(descriptor, Some(rule_index), &fp, &name.local_name, &attributes);
+                            self.errors.update(e);
+                        }
+                        _ => {
+                            let r = BadXMLElement::ml_new(self, descriptor, &fp, &name.local_name, &attributes);
+                            self.errors.update(r);
+                            return Err(MLError::bad_element_name(&fp,&name.local_name))
+                        }
+                    }
+                },
+                (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+                (_,_,XmlEvent::Comment(_))     => (), // continue
+                ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+            }
+        }
+    }
+
     //mp read_style
-    fn read_style (&mut self, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<(), MLError> {
+    fn read_style (&mut self, descriptor:&'a DiagramDescriptor, fp:&FilePosition, _name:&str, attributes:&Attributes) -> Result<(), MLError> {
         MLError::value_result(fp, self.stylesheet.add_action_from_name_values(&to_nv(attributes)))?;
         loop {
             match self.next_event()? {
+                (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
+                    let r = BadXMLElement::ml_new(self, descriptor, &fp, &name.local_name, &attributes);
+                    self.errors.update(r);
+                    return Err(MLError::bad_element_name(&fp,&name.local_name))
+                },
                 (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
                 (_,_,XmlEvent::Comment(_))     => (), // continue
                 ewp => { return Err(MLError::bad_ml_event(&ewp)); },
@@ -377,6 +440,10 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
                 match name.local_name.as_str() {
                     "style"  => {
                         let e = self.read_style(descriptor, &fp, &name.local_name, &attributes);
+                        self.errors.update(e);
+                    }
+                    "rule"  => {
+                        let e = self.read_rule(descriptor, None, &fp, &name.local_name, &attributes);
                         self.errors.update(e);
                     }
                     "defs" => {

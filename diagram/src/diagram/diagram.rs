@@ -21,6 +21,8 @@ use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementScope, ElementError};
 use crate::{Layout, LayoutRecord};
 use crate::{Rectangle, Transform};
+use stylesheet::{StylableNode, Tree};
+use super::types::*;
 
 //a DiagramError
 //tp DiagramError
@@ -153,6 +155,16 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
 
+    //mp apply_stylesheet
+    pub fn apply_stylesheet(&mut self) {
+        let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get("group").unwrap());
+        let mut tree = Tree::new(&mut x);
+        for c in self.contents.elements.iter_mut() {
+            tree = c.tree_add_element(tree);
+        }
+        tree.close_container();
+        self.stylesheet.apply_rules_to_tree(&mut tree);
+    }
     //mp style
     /// Style the contents of the diagram, using the stylesheet
     pub fn style(&mut self) -> Result<(),DiagramError> {

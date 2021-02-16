@@ -25,7 +25,7 @@ use crate::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
 use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
 
 //a Constants for debug
-// const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
+const DEBUG_STYLESHEETTREE : bool = 1 == 0;
 
 //a Stylesheet
 //tp Stylesheet
@@ -46,10 +46,12 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
     //mp add_action
     /// Add an action to the set
     pub fn add_action(&mut self, id:Option<&str>, action:StylableNodeAction<V>) -> usize {
+        if DEBUG_STYLESHEETTREE { println!("Adding action {:?}", action); }
         let index = self.rules.add_action(action);
         if let Some(s) = id {
             self.style_of_id.insert(s.to_string(), index);
         }
+        if DEBUG_STYLESHEETTREE { println!("Added {} with id {:?}", index, id); }
         index
     }
 
@@ -61,10 +63,20 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
         for (name, value) in name_values {
             if name == "id" {
                 id = Some(value.as_str());
+            } else if let Some((value_type, _)) = self.style_set.borrow_type(name) {
+                let mut v = value_type.new_value();
+                v.from_string(value)?;
+                styling.push( (name.to_string(), v) );
             } else {
+                return Err(ValueError::bad_value( &format!("unknown style name {} with value {}", name, value) ));
             }
         }
         Ok(self.add_action(id, StylableNodeAction::new(styling)))
+    }
+
+    //mp get_action_index
+    pub fn get_action_index(&self, s:&str) -> Option<&usize> {
+        self.style_of_id.get(s)
     }
     
     //mp add_rule
@@ -155,7 +167,12 @@ mod test_stylesheet {
         let mut stylesheet = Stylesheet::new(&style_set);
         let act0_nv = vec![("x".to_string(),BaseValue::int(Some(7))),];
         let act_0  = stylesheet.add_action(None, StylableNodeAction::new(act0_nv));
+        let act_1  = stylesheet.add_action_from_name_values(&(vec![("x","3"),
+                                                                 ("id","action_1"),
+                                                                 ("y","-99"),
+                                                                 ].iter().map(|(a,b)| (a.to_string(), b.to_string())).collect())).unwrap();
         let _rule_0 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
+        let _rule_1 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt0"), Some(act_1));
         
         let mut node0_0 = StylableNode::new("pt", &d_pt);
         node0_0.add_name_value("id", "pt0").unwrap();

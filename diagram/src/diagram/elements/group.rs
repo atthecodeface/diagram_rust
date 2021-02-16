@@ -22,6 +22,8 @@ use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementSco
 use crate::{Layout, LayoutRecord};
 use super::super::super::layout::{GridData};
 use crate::{Rectangle};
+use stylesheet::{StylableNode, Tree};
+use super::super::types::*;
 
 //a Group element
 //tp Group - an Element that contains just other Elements
@@ -240,6 +242,13 @@ impl <'a> Group<'a> {
     /// Add an element to the group; moves the element in to the content
     pub fn add_element(&mut self, element:Element<'a>) -> () {
         self.content.push(element);
+    }
+    //fp tree_add_element
+    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+        for c in self.content.iter_mut() {
+            tree = c.tree_add_element(tree);
+        }
+        tree
     }
 }
 

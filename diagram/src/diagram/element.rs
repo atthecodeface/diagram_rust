@@ -21,7 +21,7 @@ use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use crate::{Rectangle, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
-use stylesheet::StylableNode;
+use stylesheet::{StylableNode, Tree};
 pub use super::elements::{Group, Shape, Text, Use};
 use super::types::*;
     
@@ -246,6 +246,15 @@ impl <'a> ElementContent<'a> {
         }
     }
 
+    //fp tree_add_element
+    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+        match self {
+            Self::Group(ref mut g) => { g.tree_add_element(tree) },
+            Self::Use(ref mut g)   => { g.tree_add_element(tree) },
+            _ => tree
+        }
+    }
+    
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         match self {
@@ -358,7 +367,7 @@ impl ElementLayout {
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
-    pub stylable         : StylableNode<'a, StyleValue>,
+    pub stylable     : StylableNode<'a, StyleValue>,
     pub id_name      : Option<String>, // replicated from stylable
     pub layout_box   : LayoutBox,
     pub layout       : ElementLayout,
@@ -715,6 +724,14 @@ impl <'a> Element <'a> {
         }
         Ok(value)
     }
+
+    //fp tree_add_element
+    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+        tree.open_container(&mut self.header.stylable);
+        tree = self.content.tree_add_element(tree);
+        tree.close_container();
+        tree
+        }
 
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),ElementError> {

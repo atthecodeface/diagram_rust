@@ -83,7 +83,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //mp get_desired_geometry
     fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
         let rect = self.polygon.get_bbox();
-        rect.enlarge(self.stroke_width)
+        rect.enlarge(self.stroke_width/2.)
     }
 
     //zz All done
@@ -105,7 +105,7 @@ impl GenerateSvgElement for Shape {
             None      => {ele.add_attribute("fill","None");},
             Some(rgb) => {ele.add_color("fill",rgb);},
         }
-        ele.add_size("strokewidth",self.stroke_width);
+        ele.add_size("stroke-width",self.stroke_width);
         ele.add_polygon_path(&self.polygon);
         svg.add_subelement(ele);
         Ok(())

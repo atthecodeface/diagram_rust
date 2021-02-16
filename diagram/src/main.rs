@@ -81,6 +81,8 @@ fn main() {
     diagram.record_layout();
     println!("Uniqify");
     exit_on_err( diagram.uniquify() );
+    println!("Apply stylesheet");
+    diagram.apply_stylesheet();
     println!("Style");
     exit_on_err( diagram.style() );
     println!("Lay out");

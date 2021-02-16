@@ -194,7 +194,7 @@ pub (crate) use geometry::{Transform, Range, Float4, Polygon, Bezier};
 pub         use geometry::{Rectangle, Point};
 
 pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
-pub (crate) use diagram::{StyleSheet, DiagramContents}; // , Element, ElementError, };
+pub (crate) use diagram::{StyleSheet, StyleRule, StyleAction,DiagramContents}; // , Element, ElementError, };
 
 pub use diagram::{Diagram, DiagramDescriptor};
 pub use diagram::{Svg, GenerateSvg};
