@@ -187,8 +187,31 @@ pub type TreeApplicator32<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskU32>
 
 //tm Test code
 #[cfg(test)]
-mod test_types {
+mod test_ruleset {
     use super::*;
+    #[derive(Debug)]
+    struct UsizeNode {
+        pub value : usize,
+        pub liked : bool,
+    }
+    impl UsizeNode {
+        fn new(value:usize) -> Self {
+            Self { value, liked:false }
+        }
+    }
+    struct ActionUsize <'a> {
+        callback : Box<dyn Fn(&UsizeNode)->() + 'a>,
+    }
+    impl <'a> ActionUsize<'a> {
+        pub fn new(callback: impl Fn(&UsizeNode)->() + 'a) -> Self {
+            Self { callback:Box::new(callback) }
+        }
+    }
+    impl Action<UsizeNode> for ActionUsize<'_> {
+        fn apply(&self, rule:usize, depth:usize, value:&UsizeNode)  {
+            (self.callback)(value);
+        }
+    }
     #[derive(Default)]
     pub struct UsizeRule {
         min_value : usize,
@@ -212,6 +235,23 @@ mod test_types {
             self
         }
     }
+    impl RuleFn<UsizeNode> for UsizeRule {
+        fn apply(&self, _depth:usize, value:&UsizeNode) -> RuleResult {
+            if self.min_value < self.max_value {
+                if value.value >= self.min_value && value.value < self.max_value {
+                    RuleResult::MatchPropagateChildren
+                } else {
+                    RuleResult::MismatchPropagate
+                }
+            } else {
+                if (value.value & self.mask) == self.value {
+                    RuleResult::MatchPropagateChildren
+                } else {
+                    RuleResult::MismatchPropagate
+                }
+            }
+        }
+    }
     impl RuleFn<usize> for UsizeRule {
         fn apply(&self, _depth:usize, value:&usize) -> RuleResult {
             if self.min_value < self.max_value {
@@ -229,43 +269,25 @@ mod test_types {
             }
         }
     }
-}
-#[cfg(test)]
-mod test_ruleset {
-    struct ActionUsize <'a> {
-        callback : Box<dyn Fn(usize)->() + 'a>,
-    }
-    impl <'a> ActionUsize<'a> {
-        pub fn new(callback: impl Fn(usize)->() + 'a) -> Self {
-            Self { callback:Box::new(callback) }
-        }
-    }
-    impl Action<usize> for ActionUsize<'_> {
-        fn apply(&self, rule:usize, depth:usize, value:&usize)  {
-            (self.callback)(*value);
-        }
-    }
-    use super::*;
-    use super::test_types::*;
     #[test]
     fn test_apply() {
         let mut rules = RuleSet::new();
-        let act_0 = rules.add_action(ActionUsize::new(|s| {println!("like this {}",s);}));
-        let act_1 = rules.add_action(ActionUsize::new(|s| {println!("Really like this - odd inside ancestor with range 0 to 3 - {}",s);}));
+        let act_0 = rules.add_action(ActionUsize::new(|s| {println!("like this {} {}",s.value, s.liked);}));
+        let act_1 = rules.add_action(ActionUsize::new(|s| {println!("Really like this - odd inside ancestor with range 0 to 3 - {} {}",s.value, s.liked);}));
         let rule_0 = rules.add_rule(None, UsizeRule::new().range(0,4),      Some(act_0));
         rules.add_rule(Some(rule_0), UsizeRule::new().mask_value(1,1), Some(act_1));
         {
-            let mut root   = 16;
-            let mut group0 = 0; // liked
-            let mut node0_0 = 1; // liked and really liked
-            let mut node0_1 = 2; // liked
-            let mut node0_2 = 4;
-            let mut node0_3 = 8;
-            let mut group1 = 4;
-            let mut node1_0 = 1; // liked
-            let mut node1_1 = 2; // liked
-            let mut node1_2 = 4;
-            let mut node1_3 = 8;
+            let mut root    = UsizeNode::new(16);
+            let mut group0  = UsizeNode::new(0); // liked
+            let mut node0_0 = UsizeNode::new(1); // liked and really liked
+            let mut node0_1 = UsizeNode::new(2); // liked
+            let mut node0_2 = UsizeNode::new(4);
+            let mut node0_3 = UsizeNode::new(8);
+            let mut group1  = UsizeNode::new(4);
+            let mut node1_0 = UsizeNode::new(1); // liked
+            let mut node1_1 = UsizeNode::new(2); // liked
+            let mut node1_2 = UsizeNode::new(4);
+            let mut node1_3 = UsizeNode::new(8);
             let mut tree = Tree::new(&mut root);
             tree.open_container(&mut group0);
             tree.add_node(&mut node0_0);
@@ -279,6 +301,7 @@ mod test_ruleset {
             tree.add_node(&mut node1_2);
             tree.add_node(&mut node1_3);
             tree.close_container();
+            tree.close_container(); // closes root
 
             let mut applicator = TreeApplicator32::new(&rules);
             for n in tree.iter_tree() {

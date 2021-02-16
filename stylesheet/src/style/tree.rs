@@ -220,6 +220,17 @@ impl <'a, V> Tree<'a, V> {
     pub fn iter_tree(&self) -> TreeIter<V> {
         TreeIter::new(self)
     }
+    //fi borrow
+    pub fn borrow(&self, node_index:usize) -> &V {
+        self.nodes[node_index].borrow()
+    }
+    
+    //fi borrow_mut
+    pub fn borrow_mut(&mut self, node_index:usize) -> &mut V {
+        self.nodes[node_index].borrow_mut()
+    }
+    
+    //zz All done
 }
 
 //tm Test code
@@ -239,11 +250,11 @@ mod test_tree {
         d_pt.add_style("y");
         let d_g  = Descriptor::new(&style_set);
         let mut node0_0 = StylableNode::new("pt", &d_pt);
-        node0_0.add_name_value("x", "1");
-        node0_0.add_name_value("y", "0");
+        node0_0.add_name_value("x", "1").unwrap();
+        node0_0.add_name_value("y", "0").unwrap();
         let mut node0_1 = StylableNode::new("pt", &d_pt);
-        node0_1.add_name_value("x", "2");
-        node0_1.add_name_value("y", "10");
+        node0_1.add_name_value("x", "2").unwrap();
+        node0_1.add_name_value("y", "10").unwrap();
         let mut group0 = StylableNode::new("g", &d_g);
 
         {
