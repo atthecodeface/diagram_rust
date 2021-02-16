@@ -73,13 +73,13 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
     ///
     /// 
     fn try_rules(&mut self, mut active_mask:M, node:&TreeNode<V>) {
-        if DEBUG_RULE_TREE {println!("Try mask {:?} to node content {:?}", active_mask, node.borrow_node());}
+        if DEBUG_RULE_TREE {println!("Try mask {:?} to node content {:?}", active_mask, node.borrow());}
         let depth = self.active_stack.len();
         let mut result_mask = active_mask.clone(self.num_rules);
         for i in 0..self.num_rules {
             if active_mask.is_set(i) {
                 let action = {
-                    let result = self.rules.apply(i, depth, node.borrow_node());
+                    let result = self.rules.apply(i, depth, node.borrow());
                     if DEBUG_RULE_TREE {println!("Apply rule {} yields result {}", i, result);}
                     match result {
                         // No match, and dont propagate so clear mask bit
@@ -125,7 +125,7 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
                     }
                 };
                 if action {
-                    self.rules.fire(i, depth, node.borrow_node());
+                    self.rules.fire(i, depth, node.borrow());
                 }
             }
         }
@@ -255,7 +255,7 @@ mod test_ruleset {
         let rule_0 = rules.add_rule(None, UsizeRule::new().range(0,4),      Some(act_0));
         rules.add_rule(Some(rule_0), UsizeRule::new().mask_value(1,1), Some(act_1));
         {
-            let mut tree = Tree::new();
+            let mut root   = 16;
             let mut group0 = 0; // liked
             let mut node0_0 = 1; // liked and really liked
             let mut node0_1 = 2; // liked
@@ -266,6 +266,7 @@ mod test_ruleset {
             let mut node1_1 = 2; // liked
             let mut node1_2 = 4;
             let mut node1_3 = 8;
+            let mut tree = Tree::new(&mut root);
             tree.open_container(&mut group0);
             tree.add_node(&mut node0_0);
             tree.add_node(&mut node0_1);

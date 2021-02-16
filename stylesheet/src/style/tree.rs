@@ -36,7 +36,7 @@ const DEBUG_TREE_ITERATOR : bool = 1 == 0;
 ///  /      / \
 ///  J     K   L
 ///
-/// itetates as
+/// iterates as
 ///  Push(A)
 ///  Push(B)
 ///  Push(F)
@@ -65,9 +65,9 @@ pub enum TreeIterOp<V> {
 //tp TreeIter
 /// An iterator structure to permit iteration over an Svg object's elements
 pub struct TreeIter<'a, 'b, V> {
-    tree: &'a Tree<'b, V>,
-    root_index : usize,
-    stack : Vec<(&'a TreeNode<'b, V>, usize)>,
+    tree  : &'a Tree<'b, V>,
+    start : bool,
+    stack : Vec<(usize, usize)>,
 }
 
 //ip TreeIter
@@ -76,7 +76,7 @@ impl <'a, 'b, V> TreeIter<'a, 'b, V> {
     /// Create a new iterator
     pub fn new(tree:&'a Tree<'b, V>) -> Self {
         Self { tree,
-               root_index: 0,
+               start:true,
                stack:Vec::new(),
         }
     }
@@ -86,45 +86,37 @@ impl <'a, 'b, V> TreeIter<'a, 'b, V> {
 impl <'a, 'b, V> Iterator for TreeIter<'a, 'b, V> {
     type Item = TreeIterOp<&'a TreeNode<'b, V>>;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.stack.len() == 0 {
-            if self.root_index > self.tree.roots.len() {
-                None
-            }
-            else if self.root_index == self.tree.roots.len() {
-                self.root_index += 1;
-                Some(TreeIterOp::Pop)
-            } else {
-                let n = self.root_index;
-                self.root_index += 1;
-                self.stack.push((&self.tree.roots[n], 0));
-                if n == 0 {
-                    Some(TreeIterOp::Push(&self.tree.roots[n]))
+        match self.stack.pop() {
+            None => {
+                if self.start {
+                    self.stack.push((0, 0));
+                    self.start = false;
+                    Some(TreeIterOp::Push(&self.tree.nodes[0]))
                 } else {
-                    Some(TreeIterOp::Sibling(&self.tree.roots[n]))
+                    None
                 }
-            }
-        } else {
-            let (tn,child_index) = self.stack.pop().unwrap();
-            if child_index >= tn.children.len() {
-                if child_index == 0 {
-                    Some(TreeIterOp::NoChildren)
+            },
+            Some((node_index, child_index)) => {
+                if child_index >= self.tree.nodes[node_index].children.len() {
+                    if child_index == 0 {
+                        Some(TreeIterOp::NoChildren)
+                    } else {
+                        Some(TreeIterOp::Pop)
+                    }
                 } else {
-                    Some(TreeIterOp::Pop)
-                }
-            } else {
-                self.stack.push((tn, child_index+1));
-                self.stack.push((&tn.children[child_index], 0));
-                if child_index == 0 {
-                    Some(TreeIterOp::Push(&tn.children[child_index]))
-                } else {
-                    Some(TreeIterOp::Sibling(&tn.children[child_index]))
+                    let child_node_index = self.tree.nodes[node_index].children[child_index];
+                    self.stack.push((node_index, child_index+1));
+                    self.stack.push((child_node_index, 0));
+                    if child_index == 0 {
+                        Some(TreeIterOp::Push(&self.tree.nodes[child_node_index]))
+                    } else {
+                        Some(TreeIterOp::Sibling(&self.tree.nodes[child_node_index]))
+                    }
                 }
             }
         }
     }
 }
-
-// never cloned, only moved
 
 //a TreeNode and Tree
 //tp TreeNode
@@ -134,71 +126,96 @@ impl <'a, 'b, V> Iterator for TreeIter<'a, 'b, V> {
 /// V is the type of the element refered by the tree
 ///
 /// 'a is the lifetime of the tree
+///
+/// A TreeNode is never cloned.
 pub struct TreeNode<'a, V> {
     node     : &'a mut V,
-    children : Vec<TreeNode<'a, V>>,
+    parent   : Option<usize>,
+    depth    : usize,
+    children : Vec<usize>,
 }
 impl <'a, V> TreeNode<'a, V> {
-    pub fn new(node:&'a mut V) -> Self {
-        Self { node, children:Vec::new() }
+    pub fn new(node:&'a mut V, parent:Option<usize>, depth:usize) -> Self {
+        Self { node, parent, depth, children:Vec::new() }
     }
-    pub fn add_child(&mut self, child:Self) {
+    pub fn add_child(&mut self, child:usize) {
         self.children.push(child);
     }
     //mp borrow_node
-    pub fn borrow_node(&self) -> &V {
+    pub fn borrow(&self) -> &V {
         self.node
     }
+    //mp borrow_mut
+    pub fn borrow_mut(&mut self) -> &mut V {
+        self.node
+    }
+    //zz All done
 }
 
 //tp Tree
 pub struct Tree<'a, V> {
-    roots : Vec<TreeNode<'a, V>>,
-    stack : Vec<TreeNode<'a, V>>,
+    nodes : Vec<TreeNode<'a, V>>,
+    stack : Vec<usize>,
 }
 
 //ip Tree
 impl <'a, V> Tree<'a, V> {
     //fp new
-    pub fn new() -> Self {
-        Self { roots : Vec::new(),
-               stack : Vec::new(),
+    pub fn new(node:&'a mut V) -> Self {
+        let mut result = Self {
+            nodes : Vec::new(),
+            stack : Vec::new(),
+        };
+        result.push_node(node);
+        result
+    }
+    
+    //fi int_add_node
+    /// Add a node to the tree at the current stack depth and return
+    /// its node index and stack index
+    fn int_add_node(&mut self, node:&'a mut V) -> (usize, usize) {
+        let node_index = self.nodes.len();
+        let stack_depth = self.stack.len();
+        let parent = { if stack_depth == 0 {None} else {Some(self.stack[stack_depth-1])} };
+        let tree_node = TreeNode::new(node, parent, stack_depth);
+        if let Some(parent) = parent {
+            self.nodes[parent].add_child(node_index);
         }
+        self.nodes.push(tree_node);
+        (node_index, stack_depth)
     }
+    
     //fi push_node
+    /// Invoked by new and to open a container element that may have children
     fn push_node(&mut self, node:&'a mut V) {
-        let tree_node = TreeNode::new(node);
-        self.stack.push(tree_node);
+        let (node_index, _depth) = self.int_add_node(node);
+        self.stack.push(node_index);
     }
+    
     //fi pop_node
+    /// Invoked to close the container
     fn pop_node(&mut self) {
         assert!(self.stack.len() > 0);
-        let tree_node = self.stack.pop().unwrap(); // the tree node is no longer mutatable
-        self.add_tree_node(tree_node);
+        self.stack.pop();
     }
-    //fi add_tree_node
-    fn add_tree_node(&mut self, tree_node:TreeNode<'a, V>) {
-        if self.stack.len() == 0 {
-            self.roots.push(tree_node);
-        } else {
-            let mut parent = self.stack.pop().unwrap();
-            parent.add_child(tree_node);
-            self.stack.push(parent);
-        }
-    }
+
     //fi open_container
     pub fn open_container(&mut self, node:&'a mut V) {
         self.push_node(node);
     }
+
     //fi add_node
+    /// Add a leaf node that will not have children
+    /// This means the stack depth will not change
     pub fn add_node(&mut self, node:&'a mut V) {
-        let tree_node = TreeNode::new(node);
-        self.add_tree_node(tree_node);
+        self.int_add_node(node);
     }
+
     //fi close_container
     pub fn close_container(&mut self) {
         self.pop_node();
     }
+
     //fi iter_tree
     pub fn iter_tree(&self) -> TreeIter<V> {
         TreeIter::new(self)
@@ -230,8 +247,7 @@ mod test_tree {
         let mut group0 = StylableNode::new("g", &d_g);
 
         {
-            let mut tree = Tree::new();
-            tree.open_container(&mut group0);
+            let mut tree = Tree::new(&mut group0);
             tree.add_node(&mut node0_0);
             tree.add_node(&mut node0_1);
             tree.close_container();
