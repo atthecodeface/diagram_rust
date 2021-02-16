@@ -20,10 +20,10 @@ limitations under the License.
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::{TypeValue, BaseValue, ValueError, Descriptor, NamedTypeSet, StylableNode};
-
+use super::tree::{Tree, TreeIterOp, TreeNode};
 
 //a Constants for debug
-const DEBUG_TREE_ITERATOR : bool = 1 == 0;
+const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
 
 //a Stylesheet
 //tp Stylesheet
@@ -40,129 +40,42 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
     }
 }
 
-// never cloned, only moved
-//a Stylable Tree
-//a StylableTreeIter iterator
-//tp StylableTreeIter
-/// An iterator structure to permit iteration over an Svg object's elements
-pub struct StylableTreeIter<'a, 'b, V:TypeValue> {
-    tree: &'a StylableTree<'b, 'b, V>,
-    root_index : usize,
-    stack : Vec<(&'a StylableTreeNode<'b, 'b, V>, usize)>,
-}
-
-//ip StylableTreeIter
-impl <'a, 'b, V:TypeValue> StylableTreeIter<'a, 'b, V> {
-    //fp new
-    /// Create a new iterator
-    pub fn new(tree:&'a StylableTree<'b, 'b, V>) -> Self {
-        Self { tree,
-               root_index: 0,
-               stack:Vec::new(),
-        }
-    }
-}
-
-//ip Iterator for StylableTreeIter
-impl <'a, 'b, V:TypeValue> Iterator for StylableTreeIter<'a, 'b, V> {
-    type Item = &'a StylableTreeNode<'b, 'b, V>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.stack.len() == 0 {
-            if self.root_index >= self.tree.roots.len() {
-                None
-            } else {
-                let n = self.root_index;
-                self.root_index += 1;
-                self.stack.push((&self.tree.roots[n], 0));
-                Some(&self.tree.roots[n])
-            }
-        } else {
-            let (tn,child_index) = self.stack.pop().unwrap();
-            if child_index >= tn.children.len() {
-                self.next()
-            } else {
-                self.stack.push((tn, child_index+1));
-                self.stack.push((&tn.children[child_index], 0));
-                Some(&tn.children[child_index])
-            }
-        }
-    }
-}
-
-//tp StylableTreeNode
-pub struct StylableTreeNode<'a, 'b, V:TypeValue> {
-    node     : &'b mut StylableNode<'a, V>,
-    children : Vec<StylableTreeNode<'a, 'b, V>>,
-}
-impl <'a, 'b, V:TypeValue> StylableTreeNode<'a, 'b, V> {
-    pub fn new(node:&'b mut StylableNode<'a, V>) -> Self {
-        Self { node, children:Vec::new() }
-    }
-    pub fn add_child(&mut self, child:Self) {
-        self.children.push(child);
-    }
-}
-
-//tp StylableTree
-pub struct StylableTree<'a, 'b, V:TypeValue> {
-    stylesheet : &'b Stylesheet<'a, V>,
-    roots : Vec<StylableTreeNode<'a, 'b, V>>,
-    stack : Vec<StylableTreeNode<'a, 'b, V>>,
-}
-
-//ip StylableTree
-impl <'a, 'b, V:TypeValue> StylableTree<'a, 'b, V> {
-    //fp new
-    pub fn new(stylesheet:&'b Stylesheet<'a, V>) -> Self {
-        Self { stylesheet,
-               roots : Vec::new(),
-               stack : Vec::new(),
-        }
-    }
-    //fi push_node
-    fn push_node(&mut self, node:&'b mut StylableNode<'a, V>) {
-        let tree_node = StylableTreeNode::new(node);
-        self.stack.push(tree_node);
-    }
-    //fi pop_node
-    fn pop_node(&mut self) {
-        assert!(self.stack.len() > 0);
-        let tree_node = self.stack.pop().unwrap(); // the tree node is no longer mutatable
-        self.add_tree_node(tree_node);
-    }
-    //fi add_tree_node
-    fn add_tree_node(&mut self, tree_node:StylableTreeNode<'a, 'b, V>) {
-        if self.stack.len() == 0 {
-            self.roots.push(tree_node);
-        } else {
-            let mut parent = self.stack.pop().unwrap();
-            parent.add_child(tree_node);
-            self.stack.push(parent);
-        }
-    }
-    //fi open_container
-    pub fn open_container(&mut self, node:&'b mut StylableNode<'a, V>) {
-        self.push_node(node);
-    }
-    //fi add_node
-    pub fn add_node(&mut self, node:&'b mut StylableNode<'a, V>) {
-        let tree_node = StylableTreeNode::new(node);
-        self.add_tree_node(tree_node);
-    }
-    //fi close_container
-    pub fn close_container(&mut self) {
-        self.pop_node();
-    }
-    //fi iter_tree
-    pub fn iter_tree(&'b self) -> StylableTreeIter<'a, 'b, V> {
-        StylableTreeIter::new(self)
-    }
-}
-
 //tm Test code
 #[cfg(test)]
 mod test_stylesheet {
     use super::*;
+    struct Element <'a> {
+        pub stylable : StylableNode<'a, BaseValue>,
+        pub children : Vec<Element<'a>>,
+    }
+    impl <'a> Element <'a>{
+        pub fn new(stylable:StylableNode<'a, BaseValue>) -> Self {
+            Self { stylable, children:Vec::new() }
+        }
+        pub fn add_child(&mut self, child:Element<'a>) {
+            self.children.push(child);
+        }
+        pub fn add_to_tree<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a,BaseValue>>) -> Tree<'b, StylableNode<'a,BaseValue>>{
+            if self.children.len()>0 {
+                tree.open_container(&mut self.stylable);
+                for c in self.children.iter_mut() {
+                    tree = c.add_to_tree(tree);
+                }
+            } else {
+                tree.add_node(&mut self.stylable);
+            }
+            tree
+        }
+        pub fn create_tree<'b>(&'b mut self) -> Tree<'b, StylableNode<'a,BaseValue>> {
+            let Self {stylable, children, ..} = self;
+            let mut tree = Tree::new(stylable);
+            for c in self.children.iter_mut() {
+                tree = c.add_to_tree(tree);
+            }
+            tree.close_container();
+            tree
+        }
+    }
     #[test]
     fn test_simple() {
         let style_set = NamedTypeSet::<BaseValue>::new()
@@ -180,19 +93,21 @@ mod test_stylesheet {
         let mut node0_1 = StylableNode::new("pt", &d_pt);
         node0_1.add_name_value("x", "2");
         node0_1.add_name_value("y", "10");
-        let mut group0 = StylableNode::new("g", &d_g);
-
+        let mut group0 = Element::new(StylableNode::new("g", &d_g));
+        group0.add_child(Element::new(node0_0));
+        group0.add_child(Element::new(node0_1));
         {
-            let mut tree = StylableTree::new(&stylesheet);
-            tree.open_container(&mut group0);
-            tree.add_node(&mut node0_0);
-            tree.add_node(&mut node0_1);
-            tree.close_container();
-            for n in tree.iter_tree() {
-                println!("{:?} {:?} {:?}",n.node.id_name, n.node.node_type, n.node.values );
+            let mut tree = group0.create_tree();
+            let mut iter = tree.it_create();
+            loop {
+                if let Some((depth, stylable)) = tree.it_next_borrow_mut(&mut iter) {
+                    println!("{} {:?}", depth, stylable);
+                } else {
+                    break;
+                }
             }
         }
-        // assert!(false);
+        assert!(false);
     }
 }
 /*
