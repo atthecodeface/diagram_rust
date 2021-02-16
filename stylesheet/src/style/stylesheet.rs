@@ -20,7 +20,10 @@ limitations under the License.
 use std::cell::RefCell;
 use std::rc::Rc;
 use crate::{TypeValue, BaseValue, ValueError, Descriptor, NamedTypeSet, StylableNode};
+use super::bitmask::{BitMask, BitMaskU32};
+use super::rules::{RuleResult, RuleFn, Action, RuleSet};
 use super::tree::{Tree, TreeIterOp, TreeNode};
+use super::tree_rules::{TreeApplicator32};
 
 //a Constants for debug
 const DEBUG_STYLESHEETTREE_ITERATOR : bool = 1 == 0;
@@ -76,6 +79,48 @@ mod test_stylesheet {
             tree
         }
     }
+    struct StylableNodeAction <'a> {
+        values : &'a Vec<(&'a str, BaseValue)>,
+    }
+    impl <'a> StylableNodeAction<'a> {
+        pub fn new(values:&'a Vec<(&'a str, BaseValue)>) -> Self {
+            Self { values }
+        }
+    }
+    impl <'a> Action<StylableNode<'a, BaseValue>> for StylableNodeAction<'a> {
+        fn apply(&self, rule:usize, depth:usize, value:&mut StylableNode<'a, BaseValue>)  {
+            for (n,v) in self.values {
+                if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
+                    *x = v.clone();
+                }
+            }
+        }
+    }
+    pub struct StylableNodeRule {
+        id_matches : Option<String>,
+    }
+    impl StylableNodeRule {
+        pub fn new() -> Self {
+            Self { id_matches:None }
+        }
+        pub fn has_id(mut self, id:&str) -> Self {
+            self.id_matches = Some(id.to_string());
+            self
+        }
+    }
+    impl <'a> RuleFn<StylableNode<'a, BaseValue>> for StylableNodeRule {
+        fn apply(&self, _depth:usize, value:&StylableNode<'a, BaseValue>) -> RuleResult {
+            if let Some(id) = self.id_matches.as_ref() {
+                if value.has_id(id) {
+                    RuleResult::MatchPropagateChildren
+                } else {
+                    RuleResult::MismatchPropagate
+                }
+            } else {
+                RuleResult::MismatchPropagate
+            }
+        }
+    }
     #[test]
     fn test_simple() {
         let style_set = NamedTypeSet::<BaseValue>::new()
@@ -88,23 +133,36 @@ mod test_stylesheet {
         let d_g  = Descriptor::new(&style_set);
         let stylesheet = Stylesheet::new(&style_set);
         let mut node0_0 = StylableNode::new("pt", &d_pt);
+        node0_0.add_name_value("id", "pt0");
         node0_0.add_name_value("x", "1");
         node0_0.add_name_value("y", "0");
         let mut node0_1 = StylableNode::new("pt", &d_pt);
+        node0_1.add_name_value("id", "pt1");
         node0_1.add_name_value("x", "2");
         node0_1.add_name_value("y", "10");
-        let mut group0 = Element::new(StylableNode::new("g", &d_g));
+        let mut group0 = StylableNode::new("g", &d_g);
+        group0.add_name_value("id", "group");
+        let mut group0 = Element::new(group0);
         group0.add_child(Element::new(node0_0));
         group0.add_child(Element::new(node0_1));
+
+        let mut rules = RuleSet::new();
+        let act0_nv = vec![("x",BaseValue::int(Some(7))),];
+        let act_0 = rules.add_action(StylableNodeAction::new(&act0_nv));
+        let rule_0 = rules.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
+
         {
             let mut tree = group0.create_tree();
+            let mut applicator = TreeApplicator32::new(&rules);
             let mut iter = tree.it_create();
             loop {
-                if let Some((depth, stylable)) = tree.it_next_borrow_mut(&mut iter) {
-                    println!("{} {:?}", depth, stylable);
-                } else {
-                    break;
+                match tree.it_next(&mut iter) {
+                    Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
+                    None => {break;},
                 }
+            }
+            for top in tree.iter_tree() {
+                top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
             }
         }
         assert!(false);

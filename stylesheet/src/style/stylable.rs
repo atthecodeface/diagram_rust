@@ -204,37 +204,7 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         false
     }
 
-    /*
-    //fp delete_children
-    /// ```
-    ///  extern crate stylesheet;
-    ///  use std::rc::Rc;
-    ///  use stylesheet::{TypeValue, BaseValue, NamedTypeSet, StylableNode, Descriptor};
-    ///  let nts = NamedTypeSet::<BaseValue>::new()
-    ///       .add_type("width",  BaseValue::int(None), true)
-    ///       .add_type("height", BaseValue::int(None), true);
-    ///  let d = Descriptor::<BaseValue>::new();
-    ///  d.borrow_mut().add_styles(&nts, vec!["width", "height"]);
-    ///  let root    = StylableNode::new(None,               "graph", &d, vec![]);
-    ///  let child_1 = StylableNode::new(Some(root.clone()), "line",  &d, vec![]);
-    ///  assert_eq!(2, Rc::strong_count(&child_1));
-    ///  assert_eq!(2, Rc::strong_count(&root));
-    ///  root.borrow_mut().delete_children();
-    ///  assert_eq!(1, Rc::strong_count(&root));    // only root
-    ///  assert_eq!(1, Rc::strong_count(&child_1)); // only child_1
-    ///
-    /// ```
-    
-    pub fn delete_children(&mut self) -> () {
-        while self.children.len()>0 {
-            let c = self.children.pop().unwrap();
-            c.borrow_mut().parent = None;
-            c.borrow_mut().delete_children();
-        }
-    }
-     */
-
-    //mp get_style_value_of_name
+    //mp borrow_style_value_of_name
     pub fn get_style_value_of_name(&self, s:&str) -> Option<&V> {
         match self.find_style_index(s) {
             None => None,
@@ -244,6 +214,21 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                     Some(&self.values[n].1)
                 } else {
                     Some(&self.extra_sids[n-nv].1)
+                }
+            },
+        }
+    }
+
+    //mp borrow_mut_style_value_of_name
+    pub fn borrow_mut_style_value_of_name(&mut self, s:&str) -> Option<&mut V> {
+        match self.find_style_index(s) {
+            None => None,
+            Some(n) => {
+                let nv = self.values.len();
+                if n < nv {
+                    Some(&mut self.values[n].1)
+                } else {
+                    Some(&mut self.extra_sids[n-nv].1)
                 }
             },
         }
