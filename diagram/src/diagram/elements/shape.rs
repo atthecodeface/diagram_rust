@@ -25,9 +25,12 @@ use crate::{Rectangle, Polygon};
 //a Group element
 //tp Shape - an Element that contains a polygon (or path?)
 #[derive(Debug)]
+pub enum ShapeType {
+    Rect, Circle, Polygon
+}
+#[derive(Debug)]
 pub struct Shape {
-    // Possibly polygon
-    // has Fill, Stroke, StrokeWidth, Markers
+    pub shape_type : ShapeType,
     pub polygon : Polygon,
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
@@ -37,9 +40,18 @@ pub struct Shape {
 //ip DiagramElementContent for Shape
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp new
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
+
+        let shape_type = {
+            match name {
+                "circle" => ShapeType::Circle,
+                "rect"  =>  ShapeType::Rect,
+                _ =>        ShapeType::Polygon,
+            }
+        };
         let polygon = Polygon::new(0, 0.);
         Ok( Self {
+            shape_type,
             polygon,
             stroke_width:0.,
             stroke : None,
@@ -55,8 +67,12 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     }
 
     //fp get_style_names
-    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
-        vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"]
+    fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
+        match name {
+            "circle" => vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
+            "rect"  =>  vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
+            _ =>        vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"],
+        }
     }
 
     //mp style
@@ -72,9 +88,24 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
         let width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
         let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
         let stellate = header.get_style_of_name_float("stellate",Some(0.)).unwrap();
-        let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
-        self.polygon.set_vertices(vertices);
-        self.polygon.set_size(height, width/height);
+        match self.shape_type {
+            ShapeType::Polygon => {
+                let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
+                self.polygon.set_vertices(vertices);
+                self.polygon.set_size(height, width/height);
+            },
+            ShapeType::Circle => {
+                self.polygon.set_vertices(0);
+                self.polygon.set_size(height, width/height);
+            },
+            ShapeType::Rect => {
+                self.polygon.set_vertices(4);
+                let eccentricity = width / height;
+                let height       = height / (2.0_f64.sqrt());
+                self.polygon.set_size(height, height * eccentricity);
+            },
+        };
+
         self.polygon.set_rounding(round);
         if stellate != 0. { self.polygon.set_stellate_size(stellate); }
         Ok(())

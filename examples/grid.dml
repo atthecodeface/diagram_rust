@@ -1,6 +1,6 @@
 #diagram
 ##defs{
-#shape id="blob" vertices=7 grid=1,1 bordercolor=green border=1 stroke=purple fill=pink stellate=5
+#polygon id="blob" vertices=7 grid=1,1 bordercolor=green border=1 stroke=purple fill=pink stellate=5
 #use id=big    class="big" ref=blob width=50 fill=red stellate=40
 #use id=medium class="med" ref=blob width=20 fill=yellow
 #use id=small  class="sml" ref=blob width=10 fill=orange

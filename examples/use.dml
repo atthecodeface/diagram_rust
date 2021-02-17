@@ -1,21 +1,21 @@
 #diagram
 ##defs{
 #layout id="fifo4" grid=1,1 border=1 bordercolor="black" borderround=2
-##shape id="i0" grid=1,0 vertices=4 width=20 height=5 border=1 bordercolor="red" borderround=2 margin=1
-##shape id="i1" grid=1,1 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
-##shape id="i2" grid=1,2 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
-##shape id="i3" grid=1,3 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
+##polygon id="i0" grid=1,0 vertices=4 width=20 height=5 border=1 bordercolor="red" borderround=2 margin=1
+##polygon id="i1" grid=1,1 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
+##polygon id="i2" grid=1,2 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
+##polygon id="i3" grid=1,3 vertices=4 width=20 height=5 border=1 bordercolor="red" bg="pink" borderround=2 margin=1
 #layout id="2fifos"
 ##use id="f0" ref=fifo4 grid=1,1
 ##use id="f1" ref=fifo4 grid=2,1
 ##defs}
 
 ##layout grid=0,1 border=2 bordercolor="black" borderround=2 fill=red pad=1
-###shape id="box0" grid=0,1 vertices=4 width=20 border=2 margin=0.5 pad=0.5 bordercolor="black" borderround=2 fill=red
+###polygon id="box0" grid=0,1 vertices=4 width=20 border=2 margin=0.5 pad=0.5 bordercolor="black" borderround=2 fill=red
 
 ##use id="a" ref=fifo4 grid=1,1
 ##use id="b" ref=fifo4 grid=2,1
 
-##shape id="box2" grid=3,1 vertices=4 width=20 border=2 bordercolor="black" borderround=2 fill=red
+##polygon id="box2" grid=3,1 vertices=4 width=20 border=2 bordercolor="black" borderround=2 fill=red
 
 ##use id=c ref=2fifos grid=0,3,3,4

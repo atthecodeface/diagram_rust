@@ -191,11 +191,13 @@ impl <'a> ElementContent<'a> {
     //fp new
     pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
         match name {
-            "group"  => Ok(Self::Group(Group::new(&header, name)?)),
-            "layout" => Ok(Self::Group(Group::new(&header, name)?)),
-            "shape"  => Ok(Self::Shape(Shape::new(&header, name)?)),
-            "text"   => Ok(Self::Text(Text::new(&header, name)?)),
-            "use"    => Ok(Self::Use(Use::new(&header, name)?)),
+            "group"   => Ok(Self::Group(Group::new(&header, name)?)),
+            "layout"  => Ok(Self::Group(Group::new(&header, name)?)),
+            "rect"    => Ok(Self::Shape(Shape::new(&header, name)?)),
+            "circle"  => Ok(Self::Shape(Shape::new(&header, name)?)),
+            "polygon" => Ok(Self::Shape(Shape::new(&header, name)?)),
+            "text"    => Ok(Self::Text(Text::new(&header, name)?)),
+            "use"     => Ok(Self::Use(Use::new(&header, name)?)),
             _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
         }
     }
@@ -662,11 +664,13 @@ pub struct Element<'a> {
 impl <'a> Element <'a> {
     //fp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add_content_descriptor("use",    false, Use::get_style_names("use"));
-        descriptor.add_content_descriptor("group",  true,  Group::get_style_names("group"));
-        descriptor.add_content_descriptor("layout", true,  Group::get_style_names("layout"));
-        descriptor.add_content_descriptor("text",   true,  Text::get_style_names("text"));
-        descriptor.add_content_descriptor("shape",  true,  Shape::get_style_names("shape"));
+        descriptor.add_content_descriptor("use",      false, Use::get_style_names("use"));
+        descriptor.add_content_descriptor("group",    true,  Group::get_style_names("group"));
+        descriptor.add_content_descriptor("layout",   true,  Group::get_style_names("layout"));
+        descriptor.add_content_descriptor("text",     true,  Text::get_style_names("text"));
+        descriptor.add_content_descriptor("polygon",  true,  Shape::get_style_names("polygon"));
+        descriptor.add_content_descriptor("rect",     true,  Shape::get_style_names("rect"));
+        descriptor.add_content_descriptor("circle",   true,  Shape::get_style_names("circle"));
     }
 
     //mp borrow_id
