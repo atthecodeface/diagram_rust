@@ -78,6 +78,7 @@ fn main() {
     let svg_show_content = matches.is_present("svg_content");
     let svg_display      = matches.is_present("svg_display");
     let diag_display     = matches.is_present("diag_display");
+    let output_file      = matches.value_of("output").unwrap_or("a.svg");
     diagram.record_layout();
     println!("Uniqify");
     exit_on_err( diagram.uniquify() );
@@ -99,7 +100,7 @@ fn main() {
         .set_content_rectangles(svg_show_content);
     exit_on_err( diagram.generate_svg(&mut svg) );
     println!("Write SVG");
-    let file_out   = File::create("a.svg").unwrap();
+    let file_out   = File::create(output_file).unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
     let mut writer = xml::writer::EventWriter::new(file_out);
     for e in svg.iter_events() {
