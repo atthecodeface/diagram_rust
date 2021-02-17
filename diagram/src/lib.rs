@@ -177,6 +177,128 @@ A simple first example diagram consists of four shapes laid out in a 2-by-2 grid
 ##shape vertices=4 grid=2,2 fill=pink width=10 stellate=8
 ```
 
+# Status
+
+This is very much a 0.1 version.
+
+The diagram provides very simple text and polygons with the grid-based
+layout. It supports a first cut of the stylesheet mechanism.
+
+Diagrams written for this version may need to change for version 0.3;
+the likelihood is that #shape will change to #polygon, and #rect,
+#circle, #ellipse etc will be added, for example. Names of some
+attributes will be realigned with SVG - strokewidth will become
+stroke-width, and so on.
+
+## Upcoming changes
+
+### Attribute names
+
+For atributes that are effectively a two-part hierarchy (border ->
+color for example) the naming scheme of <decoration>-<aspect> will be
+used. Hence strokewidth to become stroke-width
+
+### Element names
+
+*Shape* will become *polygon*, with new elements *rect*, *circle*, *ellipse*.
+
+## Upcoming additions
+
+### Style rules
+
+The initial revision of style rules applies them in style-sheet order;
+last style that matches is applied. This will change to highest
+priority rule match - with each rule allowed to specify a priority,
+the default being its depth (supplying a 'longest rule wins' by
+default).
+
+### Label elements
+
+A new element *label* need to be added, which has no desired geometry,
+but is an element that is attached to a reference point that is on a
+path or object, and which has an offset from that reference point to
+the contents of the label.
+
+The label is rendered with its contents in a box of its desired
+geometry, and with a rendering of the callout from the reference point
+to the offset point as, for example, a line, or a callout bubble.
+
+An example would be to label a path on a diagram.
+
+### Connector elements
+
+A new element *connector* needs to be added, which has no desired
+geometry. It has attributes such as stroke, stroke-width, markers,
+round, etc. It will have a programmatic description of the points that
+it defines; it may be defined to be Manhattan style; it may be defined
+to have start and end points that are normals to their attachment
+points.
+
+The purpose of the path element is to provide for connectors between
+blocks on a diagram.
+
+### Path elements
+
+A new element *path* needs to be added that defines a set of lines and
+regions, where the lines may be straight, quadrative bezier, or cubic
+beziers. The path in the element may be static or programmatic.
+
+### Programmatic elements
+
+A simple byte-code interpreter is required that can interpret a
+byte-code similar to that used for Ocaml, using a stack and objects
+that are reference counted. The primary types supported are 63-bit
+integers and objects. The interpreter performs no type-checking
+itself. The interpreter is expected to be short-lived.
+
+The interpreter runs a code a program which provides operations to
+create a new stack frame of size N, do arithmetic operations on
+integer objects on the stack, and invoke functions based on the stack
+contents.
+
+The purpose is to support a simple compiler that implements any
+type-checking required, which generates the byte-code.
+
+The functions supported by the use of the interpreter in the diagram
+rendered will enable access to geometry and style attributes of
+elements, and to provide for the generation of path geometries for
+objects such as *path* elements and *connector*s.
+
+### Style propagation
+
+The design of the style system is based on inheriting the value of
+styles from the parent objects where this is specified. For example,
+one ought to be able to specify at a *layout* element that the
+contents should all have a particular border style, unless those
+elements override that.
+
+This inheritance is not yet supported.
+
+### Markup 'include's
+
+The markup should support '#include' tags that permit inclusion of
+other markup files as complete elements within the markup.
+
+This will provide for libraries and stylesheets to be specified within
+a document by default.
+
+### Style rule resolution
+
+A style *rule* specifies a *style* attribute that is a reference to a *style* with that *id*.
+
+The resolution of this id to a style currently occurs at the point in
+the markup that the rule is spotted. This precludes the use of
+stylesheets, and basically is wrong.
+
+The resolution of style names to styles must be performed at a
+stylesheet name resolution point.
+
+## Render binary additions
+
+The command-line tool for rendering diagrams must support a diagram
+description with multiple markup files; one for the diagram, others
+for stylesheets particular to rendering.
+
 !*/
 
 //a Crates
