@@ -360,6 +360,14 @@ impl BaseValue {
         }
     }
 
+    //mp as_strings
+    pub fn as_strings<'a> (&'a self, default:Option<&'a Vec<String>>) -> Option<&'a Vec<String>> {
+        match &self {
+            Self::StringArray(ref v) => { if v.len()==0 {default} else {Some(v)} },
+            _ => default,
+        }
+    }
+
     //mp has_token
     /// Test if the value contains a particular string. This can only return `true` if the value is a StringArray
     /// ```

@@ -291,6 +291,7 @@ impl <'a> ElementContent<'a> {
     /// transformation should be determined
     pub fn apply_placement(&mut self, layout:&Layout, rect:&Rectangle) {
         match self {
+            Self::Path(ref mut g)  => { g.apply_placement(layout, rect) },
             Self::Group(ref mut g) => { g.apply_placement(layout, rect) },
             Self::Use(ref mut g)   => { g.apply_placement(layout, rect) },
             _ => (),
@@ -444,7 +445,9 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_opt_style_value_of_name
     pub fn get_opt_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
-        self.stylable.get_style_value_of_name(name).map(|a| a.clone())
+        let r = self.stylable.get_style_value_of_name(name).map(|a| a.clone());
+        println!("Debug {} {} {:?}", self.borrow_id(), name, r);
+        r
     }
 
     //mp get_style_rgb_of_name
@@ -467,6 +470,14 @@ impl <'a> ElementHeader <'a> {
     pub fn get_style_floats_of_name(&self, name:&str) -> StyleValue {
         match self.get_opt_style_value_of_name(name) {
             None        => StyleValue::float_array(),
+            Some(value) => value,
+        }
+    }
+
+    //mp get_style_strings_of_name
+    pub fn get_style_strings_of_name(&self, name:&str) -> StyleValue {
+        match self.get_opt_style_value_of_name(name) {
+            None        => StyleValue::string_array(),
             Some(value) => value,
         }
     }
@@ -609,6 +620,7 @@ impl <'a> ElementHeader <'a> {
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
     pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
+        println!("Set layout properties!!!");
         self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
         self.layout_box.set_border_width(self.layout.border_width);
         self.layout_box.set_border_round(self.layout.border_round);

@@ -299,6 +299,20 @@ The command-line tool for rendering diagrams must support a diagram
 description with multiple markup files; one for the diagram, others
 for stylesheets particular to rendering.
 
+## Move Diagram to Element
+
+Must make the toplevel of a diagram a single Layout group, so that it may have the attributes required.
+This will also ease other parts of the implementation.
+
+# Open issues
+
+no grid leads to a panic
+
+layout does not take border and bordercolor from a style
+
+border should be  border-width
+borderwidth should be the color
+Rotated by 90 does not work
 !*/
 
 //a Crates

@@ -382,10 +382,11 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
         self.read_definitions(descriptor)
     }
 
-    //mp read_rule - needs to support passing in of parent rule id
+    //mp read_rule
     fn read_rule (&mut self, descriptor:&'a DiagramDescriptor, parent:Option<usize>, fp:&FilePosition, _name:&str, attributes:&Attributes) -> Result<(), MLError> {
         let mut rule = StyleRule::new();
         let mut action = None;
+        let mut blob = Vec::new();
         for attr in attributes {
             match attr.name.local_name.as_str() {
                 "style" => {
@@ -404,10 +405,14 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
                 "depth"  => {
                     // rule = rule.has_class(attr.value);
                 }
-                _ => {
-                    return Err(MLError::bad_attribute_name(&fp, &attr.name.local_name));
+                name => {
+                    blob.push( (name.to_string(), attr.value.clone()) );
                 }
             }
+        }
+        if blob.len() > 0 {
+            assert!(action.is_none());
+            action = Some(MLError::value_result(fp, self.stylesheet.add_action_from_name_values(&blob))?);
         }
         let rule_index = self.stylesheet.add_rule(parent, rule, action);
         loop {

@@ -36,6 +36,7 @@ pub struct Path {
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
     pub stroke_width : f64,
+    pub markers : (Option<String>, Option<String>, Option<String>),
 }
 
 //ip DiagramElementContent for Path
@@ -52,6 +53,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
             stroke_width:0.,
             stroke : None,
             fill : None,
+            markers : (None, None, None),
         } )
     }
 
@@ -84,6 +86,24 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
                 self.coords.push(Point::new(x,y));
             }
         }
+        if let Some(v) = header.get_style_strings_of_name("markers").as_strings(None) {
+            match v.len() {
+                1 => {
+                    self.markers.0 = Some(v[0].clone());
+                },
+                2 => {
+                    if v[0] != "none" {
+                        self.markers.0 = Some(v[0].clone());
+                    }
+                    self.markers.2 = Some(v[1].clone());
+                },
+                _ => {
+                    self.markers.0 = Some(v[0].clone());
+                    self.markers.1 = Some(v[1].clone());
+                    self.markers.2 = Some(v[2].clone());
+                },
+            }
+        }
         self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
         let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
         self.width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
@@ -99,6 +119,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
 
     //fp apply_placement
     fn apply_placement(&mut self, _layout:&Layout, rect:&Rectangle) {
+        // Policy decision not to reduce by stroke_width
+        // let (c,w,h) = rect.clone().reduce(self.stroke_width).get_cwh();
         let (c,w,h) = rect.get_cwh();
         self.center = c;
         self.width  = w;
@@ -131,6 +153,7 @@ impl GenerateSvgElement for Path {
             None      => {ele.add_attribute("fill","None");},
             Some(rgb) => {ele.add_color("fill",rgb);},
         }
+        ele.add_markers(&self.markers);
         ele.add_size("stroke-width",self.stroke_width);
         let mut coords = Vec::new();
         let bl = self.center.clone().add(&Point::new(self.width*-0.5, self.height*-0.5), 1.);

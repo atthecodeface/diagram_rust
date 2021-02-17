@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use std::collections::VecDeque;
 use super::{Element, ElementHeader, ElementContent, Diagram};
 use crate::{LayoutRecord, Transform};
 use crate::{Polygon, Bezier, Point};
@@ -102,6 +103,19 @@ impl SvgElement {
         let b = (value.2 * 255.).round() as u32;
         let rgb = (b<<0) | (g<<8) | (r<<16); // this order for SVG
         self.add_attribute(name, &format!("#{:06x}", rgb));
+    }
+
+    //fp add_markers
+    pub fn add_markers(&mut self, markers:&(Option<String>, Option<String>, Option<String>)) {
+        if let Some(ref s) = markers.0 {
+            self.add_attribute("marker-start", &format!("url(#{})",s));
+        }            
+        if let Some(ref s) = markers.1 {
+            self.add_attribute("marker-mid", &format!("url(#{})",s));
+        }            
+        if let Some(ref s) = markers.2 {
+            self.add_attribute("marker-end", &format!("url(#{})",s));
+        }            
     }
 
     //fp add_path
@@ -437,6 +451,7 @@ impl <'a> GenerateSvg for ElementHeader<'a> {
 //ip GenerateSvg for Element
 impl <'a> GenerateSvg for Element<'a> {
     fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
+        println!("Generate svg with header layout {:?}", self.header.layout);
         if self.header.layout.bg.is_some() {
             let mut ele = SvgElement::new("path");
             ele.add_attribute("stroke","None");
@@ -516,7 +531,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         let mut ele = SvgElement::new("svg");
         ele.add_attribute("xmlns:svg","http://www.w3.org/2000/svg");
         ele.add_attribute("xmlns","http://www.w3.org/2000/svg");
-        ele.add_attribute("version","1.1");
+        ele.add_attribute("version","2.0");
         ele.add_attribute("width" ,&format!("{}mm", svg.width));
         ele.add_attribute("height",&format!("{}mm", svg.height));
         ele.add_attribute("viewBox",
@@ -527,6 +542,46 @@ impl <'a> GenerateSvg for Diagram<'a> {
                                    self.contents.content_bbox.y1-self.contents.content_bbox.y0,
                                    ) );
         svg.push_element(ele);
+
+        let mut ele = SvgElement::new("defs");
+        svg.push_element(ele);
+
+        let mut ele = SvgElement::new("marker");
+        ele.add_attribute("id","arrow");
+        ele.add_attribute("viewBox","0 0 10 10");
+        ele.add_attribute("refX","5");
+        ele.add_attribute("refY","5");
+        ele.add_attribute("markerWidth","6");
+        ele.add_attribute("markerHeight","6");
+        ele.add_attribute("orient", "auto-start-reverse");
+        svg.push_element(ele);
+        let mut ele = SvgElement::new("path");
+        ele.add_attribute("fill", "context-stroke");
+        ele.add_attribute("d", "M 0 0 L 10 5 L 0 10 z");
+        svg.add_subelement(ele);
+        let ele = svg.pop_element();
+        svg.add_subelement(ele);
+        
+        let mut ele = SvgElement::new("marker");
+        ele.add_attribute("id","dot");
+        ele.add_attribute("viewBox","0 0 10 10");
+        ele.add_attribute("refX","5");
+        ele.add_attribute("refY","5");
+        ele.add_attribute("markerWidth","5");
+        ele.add_attribute("markerHeight","5");
+        svg.push_element(ele);
+        let mut ele = SvgElement::new("circle");
+        ele.add_attribute("cx", "5");
+        ele.add_attribute("cy", "5");
+        ele.add_attribute("r", "5");
+        ele.add_attribute("fill", "context-stroke");
+        svg.add_subelement(ele);
+        let ele = svg.pop_element();
+        svg.add_subelement(ele);
+        
+        let ele = svg.pop_element();
+        svg.add_subelement(ele);
+
         let mut ele = SvgElement::new("g");
         ele.add_transform(&self.contents.content_transform);
         svg.push_element(ele);

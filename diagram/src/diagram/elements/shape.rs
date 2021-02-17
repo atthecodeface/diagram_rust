@@ -22,7 +22,7 @@ use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, Eleme
 use crate::{Layout};
 use crate::{Rectangle, Polygon};
 
-//a Group element
+//a Shape element
 //tp Shape - an Element that contains a polygon (or path?)
 #[derive(Debug)]
 pub enum ShapeType {
@@ -35,6 +35,7 @@ pub struct Shape {
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
     pub stroke_width : f64,
+    pub markers : (Option<String>, Option<String>, Option<String>),
 }
 
 //ip DiagramElementContent for Shape
@@ -56,6 +57,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
             stroke_width:0.,
             stroke : None,
             fill : None,
+            markers : (None, None, None),
         } )
     }
 
@@ -92,17 +94,17 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
             ShapeType::Polygon => {
                 let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
                 self.polygon.set_vertices(vertices);
-                self.polygon.set_size(height, width/height);
+                self.polygon.set_size(height/2., width/height);
             },
             ShapeType::Circle => {
                 self.polygon.set_vertices(0);
-                self.polygon.set_size(height, width/height);
+                self.polygon.set_size(height/2., width/height);
             },
             ShapeType::Rect => {
                 self.polygon.set_vertices(4);
                 let eccentricity = width / height;
                 let height       = height / (2.0_f64.sqrt());
-                self.polygon.set_size(height, height * eccentricity);
+                self.polygon.set_size(height/2., height * eccentricity);
             },
         };
 
@@ -136,6 +138,7 @@ impl GenerateSvgElement for Shape {
             None      => {ele.add_attribute("fill","None");},
             Some(rgb) => {ele.add_color("fill",rgb);},
         }
+        ele.add_markers(&self.markers);
         ele.add_size("stroke-width",self.stroke_width);
         ele.add_polygon_path(&self.polygon, true);
         svg.add_subelement(ele);

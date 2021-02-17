@@ -25,7 +25,3 @@
 ##polygon class="row4 col4" vertices="6" grid="4,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
 ##polygon class="row4 col5" vertices="7" grid="5,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
 
-##style id=StyleMe1 fill=purple ; gridx=2
-##style id=StyleMe2 stroke=grey ; gridx=2
-##rule class=row1 style=StyleMe1   ;  fill="purple"
-##rule id=a       style=StyleMe2   ;  fill="purple"

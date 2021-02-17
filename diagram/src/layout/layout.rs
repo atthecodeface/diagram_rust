@@ -256,6 +256,7 @@ impl LayoutBox {
     ///
     /// This also creates any border shape required later
     fn inner_within_outer(&mut self, rectangle:Rectangle) -> () {
+        if DEBUG_LAYOUT { println!("Create inner within outer rectangle {} {} {}", rectangle, self.border_width, self.border_round);}
         let mut inner = rectangle.clone();
         self.outer = Some(rectangle);
         inner = self.margin.map_or(inner, |r| inner.shrink(&r, 1.));
