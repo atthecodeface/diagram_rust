@@ -22,7 +22,7 @@ use crate::{Layout, LayoutBox};
 use crate::{Rectangle, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, Tree};
-pub use super::elements::{Group, Shape, Text, Use};
+pub use super::elements::{Group, Shape, Path, Text, Use};
 use super::types::*;
     
 //a DiagramElement trait
@@ -183,6 +183,7 @@ pub enum ElementContent<'a> {
     Group(Group<'a>),
     Text(Text),
     Shape(Shape),
+    Path(Path),    
     Use(Use<'a>), // use of a definition
 }
 
@@ -193,6 +194,7 @@ impl <'a> ElementContent<'a> {
         match name {
             "group"   => Ok(Self::Group(Group::new(&header, name)?)),
             "layout"  => Ok(Self::Group(Group::new(&header, name)?)),
+            "path"    => Ok(Self::Path(Path::new(&header, name)?)),
             "rect"    => Ok(Self::Shape(Shape::new(&header, name)?)),
             "circle"  => Ok(Self::Shape(Shape::new(&header, name)?)),
             "polygon" => Ok(Self::Shape(Shape::new(&header, name)?)),
@@ -226,6 +228,7 @@ impl <'a> ElementContent<'a> {
         match self {
             Self::Group(ref c) => Ok(Self::Group(ElementError::of_result(&header,c.clone(header, scope))?)),
             Self::Shape(ref c) => Ok(Self::Shape(ElementError::of_result(&header,c.clone(header, scope))?)),
+            Self::Path(ref c)  => Ok(Self::Path(ElementError::of_result(&header,c.clone(header, scope))?)),
             Self::Text(ref c)  => Ok(Self::Text(ElementError::of_result(&header,c.clone(header, scope))?)),
             Self::Use(ref c)   => Ok(Self::Use(ElementError::of_result(&header,c.clone(header, scope))?)),
         }
@@ -261,6 +264,7 @@ impl <'a> ElementContent<'a> {
     pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         match self {
             Self::Shape(ref mut s) => { s.style(descriptor, header) },
+            Self::Path(ref mut s)  => { s.style(descriptor, header) },
             Self::Group(ref mut g) => { g.style(descriptor, header) },
             Self::Text(ref mut t)  => { t.style(descriptor, header) },
             Self::Use(ref mut t)   => { t.style(descriptor, header) },
@@ -271,6 +275,7 @@ impl <'a> ElementContent<'a> {
     pub fn get_desired_geometry(&mut self, layout:&mut Layout) -> Rectangle {
         match self {
             Self::Shape(ref mut s) => { s.get_desired_geometry(layout) },
+            Self::Path(ref mut s)  => { s.get_desired_geometry(layout) },
             Self::Group(ref mut g) => { g.get_desired_geometry(layout) },
             Self::Text(ref mut t)  => { t.get_desired_geometry(layout) },
             Self::Use(ref mut t)   => { t.get_desired_geometry(layout) },
@@ -296,6 +301,7 @@ impl <'a> ElementContent<'a> {
     pub fn display(&self, indent:usize, indent_str:&str) {
         match self {
             Self::Shape(ref s) => { println!("{}  Shape",indent_str); s.display(indent, indent_str);},
+            Self::Path(ref s)  => { println!("{}  Path",indent_str);  s.display(indent, indent_str);},
             Self::Group(ref g) => { println!("{}  Group",indent_str); g.display(indent, indent_str);},
             Self::Text(ref t)  => { println!("{}  Text",indent_str);  t.display(indent, indent_str);},
             Self::Use(ref t)   => { println!("{}  Use",indent_str);   t.display(indent, indent_str);},
@@ -671,6 +677,7 @@ impl <'a> Element <'a> {
         descriptor.add_content_descriptor("polygon",  true,  Shape::get_style_names("polygon"));
         descriptor.add_content_descriptor("rect",     true,  Shape::get_style_names("rect"));
         descriptor.add_content_descriptor("circle",   true,  Shape::get_style_names("circle"));
+        descriptor.add_content_descriptor("path",     true,  Path::get_style_names("path"));
     }
 
     //mp borrow_id

@@ -23,7 +23,7 @@ use crate::{StyleSheet, StyleRule, StyleAction, Diagram, DiagramContents, Diagra
 use xml;
 use xml::reader::XmlEvent;
 use hmlm::{XmlEventWithPos, FilePosition};
-use crate::diagram::{Element, Use, Group, Text, Shape};
+use crate::diagram::{Element, Use, Group, Text, Shape, Path};
 
 type Attributes = Vec<xml::attribute::OwnedAttribute>;
 
@@ -232,6 +232,22 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
     }
 }
 
+//ii MLEvent for Path
+impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Path {
+    fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
+        let path = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+        Self::ml_event(path, reader, descriptor)
+    }
+    fn ml_event (s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
+        match reader.next_event()? {
+            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
+            (_,_,XmlEvent::Comment(_))     => (), // continue
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+        }
+        Self::ml_event(s, reader, descriptor)
+    }
+}
+
 //ii MLEvent for Shape
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
     fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
@@ -269,6 +285,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
     fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
+            "path"     => Ok(Path::ml_new(reader, descriptor, fp, name, attributes)?),
             "rect"     => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
             "circle"   => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
             "polygon"  => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),

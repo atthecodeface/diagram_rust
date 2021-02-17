@@ -73,6 +73,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type("strokewidth", StyleValue::float(None),   true)
             .add_type("width",       StyleValue::float(None),   true)
             .add_type("height",      StyleValue::float(None),   true)
+            .add_type("coords",      StyleValue::float_array(), false)
             .add_type("round",       StyleValue::float(None),   true)
             .add_type("stellate",    StyleValue::float(None),   true)
             .add_type("markers",     StyleValue::string_array(),  true)

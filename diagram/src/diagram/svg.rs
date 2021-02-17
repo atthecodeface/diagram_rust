@@ -104,20 +104,25 @@ impl SvgElement {
         self.add_attribute(name, &format!("#{:06x}", rgb));
     }
 
-    //fp add_polygon_path
-    pub fn add_polygon_path(&mut self, p:&Polygon) {
-        let v = p.as_paths(Vec::new());
+    //fp add_path
+    pub fn add_path(&mut self, v:&Vec<Bezier>, closed:bool) {
         let mut r = String::new();
         r.push_str(&format!("M {}",pt_as_str(v[0].get_pt(0))));
-        for b in &v {
+        for b in v {
             match b {
                 Bezier::Linear(_,p1) => r.push_str(&format!(" L {}",pt_as_str(p1))),
                 Bezier::Quadratic(_,c,p1) => r.push_str(&format!(" Q {} {}",pt_as_str(c),pt_as_str(p1))),
                 Bezier::Cubic(_,c0,c1,p1) => r.push_str(&format!(" C {} {} {}",pt_as_str(c0),pt_as_str(c1),pt_as_str(p1))),
             }
         }
-        r.push_str(" z");
+        if closed { r.push_str(" z"); }
         self.add_attribute("d", &r);
+    }
+
+    //fp add_polygon_path
+    pub fn add_polygon_path(&mut self, p:&Polygon, closed:bool) {
+        let v = p.as_paths(Vec::new());
+        self.add_path(&v, closed);
     }
 
     //fp display
@@ -394,6 +399,7 @@ impl <'a> GenerateSvgElement for ElementContent<'a> {
     //mp generate_svg
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         match self {
+            ElementContent::Path(ref s)  => { s.generate_svg(svg, header) },
             ElementContent::Shape(ref s) => { s.generate_svg(svg, header) },
             ElementContent::Text(ref t)  => { t.generate_svg(svg, header) },
             ElementContent::Group(ref g) => { g.generate_svg(svg, header) },
@@ -435,7 +441,7 @@ impl <'a> GenerateSvg for Element<'a> {
             let mut ele = SvgElement::new("path");
             ele.add_attribute("stroke","None");
             ele.add_color("fill",&self.header.layout.bg.unwrap());
-            ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap());
+            ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap(), true);
             svg.add_subelement(ele);
         }
         if svg.show_content_rectangles {
@@ -457,7 +463,7 @@ impl <'a> GenerateSvg for Element<'a> {
             ele.add_color("stroke",&self.header.layout.border_color.unwrap());
             ele.add_size("stroke-width",self.header.layout.border_width);
             ele.add_attribute("fill","None");
-            ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap());
+            ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap(), true);
             svg.add_subelement(ele);
         }
         Ok(())

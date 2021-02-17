@@ -1,0 +1,6 @@
+#diagram
+##path width=100 height=100 strokewidth=3 stroke=red grid=1,1 coords="0.,0. 1.,0., 1.,1., 0.,1."
+##layout grid=1,2
+###text grid=1,1 fill="black" "Some text"
+###path grid=1,2 coords="0,1 1,1" strokewidth=1 stroke=green width=30 height=0
+

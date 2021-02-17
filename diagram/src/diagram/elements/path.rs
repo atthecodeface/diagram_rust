@@ -12,47 +12,43 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    group.rs
-@brief   Diagram group element
+@file    path.rs
+@brief   Diagram path element
  */
 
 //a Imports
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
-use crate::{Rectangle, Polygon};
+use crate::{Rectangle, Bezier, Point};
 
-//a Group element
-//tp Shape - an Element that contains a polygon (or path?)
+//a Path element
+//tp Path - an Element that contains a path
 #[derive(Debug)]
-pub enum ShapeType {
-    Rect, Circle, Polygon
-}
-#[derive(Debug)]
-pub struct Shape {
-    pub shape_type : ShapeType,
-    pub polygon : Polygon,
+pub struct Path {
+    pub closed : bool,
+    // shape type - cubic, quadratic, linear
+    // markers?
+    pub center : Point,
+    pub width : f64,
+    pub height : f64,
+    pub coords : Vec<Point>, // relative to actual width and height
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
     pub stroke_width : f64,
 }
 
-//ip DiagramElementContent for Shape
-impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
+//ip DiagramElementContent for Path
+impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp new
     fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
-
-        let shape_type = {
-            match name {
-                "circle" => ShapeType::Circle,
-                "rect"  =>  ShapeType::Rect,
-                _ =>        ShapeType::Polygon,
-            }
-        };
-        let polygon = Polygon::new(0, 0.);
+        let closed=false;
         Ok( Self {
-            shape_type,
-            polygon,
+            closed,
+            center:Point::origin(),
+            width : 0.,
+            height : 0.,
+            coords : Vec::new(),
             stroke_width:0.,
             stroke : None,
             fill : None,
@@ -67,12 +63,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     }
 
     //fp get_style_names
-    fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
-        match name {
-            "circle" => vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
-            "rect"  =>  vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
-            _ =>        vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"],
-        }
+    fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
+        vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height", "coords"]
     }
 
     //mp style
@@ -83,48 +75,51 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
         if let Some(v) = header.get_style_rgb_of_name("stroke").as_floats(None) {
             self.stroke = Some((v[0],v[1],v[2]));
         }
+        if let Some(v) = header.get_style_floats_of_name("coords").as_floats(None) {
+            // v : Vec<f64>
+            self.coords = Vec::new();
+            for i in 0..v.len()/2 {
+                let x = v[i*2];
+                let y = v[i*2+1];
+                self.coords.push(Point::new(x,y));
+            }
+        }
         self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
         let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
-        let width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
-        let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
-        let stellate = header.get_style_of_name_float("stellate",Some(0.)).unwrap();
-        match self.shape_type {
-            ShapeType::Polygon => {
-                let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
-                self.polygon.set_vertices(vertices);
-                self.polygon.set_size(height, width/height);
-            },
-            ShapeType::Circle => {
-                self.polygon.set_vertices(0);
-                self.polygon.set_size(height, width/height);
-            },
-            ShapeType::Rect => {
-                self.polygon.set_vertices(4);
-                let eccentricity = width / height;
-                let height       = height / (2.0_f64.sqrt());
-                self.polygon.set_size(height, height * eccentricity);
-            },
-        };
-
-        self.polygon.set_rounding(round);
-        if stellate != 0. { self.polygon.set_stellate_size(stellate); }
+        self.width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
+        self.height   = header.get_style_of_name_float("height",Some(self.width)).unwrap();
         Ok(())
     }
 
     //mp get_desired_geometry
     fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
-        let rect = self.polygon.get_bbox();
-        rect.enlarge(self.stroke_width/2.)
+        Rectangle::of_cwh(self.center, self.width, self.height)
+            .enlarge(self.stroke_width/2.)
+    }
+
+    //fp apply_placement
+    fn apply_placement(&mut self, _layout:&Layout, rect:&Rectangle) {
+        let (c,w,h) = rect.get_cwh();
+        self.center = c;
+        self.width  = w;
+        self.height = h;
+    }
+    
+    //mp display
+    /// Display - using indent_str + 2 indent, or an indent of indent spaces
+    /// Content should be invoked with indent+4
+    fn display(&self, indent:usize, indent_str:&str) {
+        println!("{}  path {} {} {}",indent_str, self.center, self.width, self.height);
     }
 
     //zz All done
 }
-//ip Shape
-impl Shape {
+//ip Path
+impl Path {
 }
 
-//ip GenerateSvgElement for Shape
-impl GenerateSvgElement for Shape {
+//ip GenerateSvgElement for Path
+impl GenerateSvgElement for Path {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         let mut ele = SvgElement::new("path");
         header.svg_add_transform(&mut ele);
@@ -137,7 +132,16 @@ impl GenerateSvgElement for Shape {
             Some(rgb) => {ele.add_color("fill",rgb);},
         }
         ele.add_size("stroke-width",self.stroke_width);
-        ele.add_polygon_path(&self.polygon, true);
+        let mut coords = Vec::new();
+        let bl = self.center.clone().add(&Point::new(self.width*-0.5, self.height*-0.5), 1.);
+        for c in &self.coords {
+            coords.push( c.scale_xy(self.width, self.height).add(&bl, 1.) );
+        }
+        let mut path = Vec::new();
+        for i in 0..coords.len()-1 {
+            path.push( Bezier::line(&coords[i], &coords[i+1]) );
+        }
+        ele.add_path(&path, self.closed);
         svg.add_subelement(ele);
         Ok(())
     }

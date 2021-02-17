@@ -21,6 +21,8 @@ impl std::fmt::Display for Bezier {
 
     //zz All done
 }
+
+//ip Bezier
 impl Bezier {
     pub fn get_pt(&self, index:usize) -> &Point {
         match self {
