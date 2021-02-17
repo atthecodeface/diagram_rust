@@ -147,9 +147,14 @@ impl GenerateSvgElement for Text {
             ele.add_size("x",t.x);
             ele.add_size("y",t.y);
             ele.add_size("font-size",font_size);
-            if let Some(f) = &self.font        { ele.add_attribute("font-family", f); }
-            if let Some(f) = &self.font_style  { ele.add_attribute("font-style", f); }
-            if let Some(f) = &self.font_weight { ele.add_attribute("font-weight", f); }
+            ele.add_attribute("stroke","None"); // ImageMagic will stroke it otherwise
+            let mut style = String::new();
+            if let Some(f) = &self.font        { style.push_str(&format!("font-family:{};",f)); }
+            if let Some(f) = &self.font_style  { style.push_str(&format!("font-style:{};",f)); }
+            if let Some(f) = &self.font_weight { style.push_str(&format!("font-weight:{};",f)); }
+            if style != "" {
+                ele.add_attribute("style", &style);
+            }
             ele.add_string(t.text);
             svg.add_subelement(ele);
         }
