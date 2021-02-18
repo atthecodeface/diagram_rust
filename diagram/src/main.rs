@@ -30,6 +30,11 @@ fn main() {
              .help("Sets the output file to use")
              .required(false)
              .takes_value(true))
+        .arg(Arg::with_name("svg_version")
+             .long("svg_version")
+             .help("Specify SVG version for output - 2.0 by default")
+             .required(false)
+             .takes_value(true))
         .arg(Arg::with_name("debug")
              .short("d")
              .multiple(true))
@@ -73,6 +78,13 @@ fn main() {
             }
         },
     }
+    let svg_version      = {
+        match matches.value_of("svg_version") {
+            Some("1.0") => 10,
+            Some("1.1") => 11,
+            _     => 20,
+        }
+    };
     let svg_show_grid    = matches.is_present("svg_grid");
     let svg_show_layout  = matches.is_present("svg_layout");
     let svg_show_content = matches.is_present("svg_content");
@@ -94,6 +106,7 @@ fn main() {
     if diag_display { diagram.display(); }
     println!("Create SVG");
     let mut svg = Svg::new()
+        .set_version(svg_version)
         .set_grid(svg_show_grid)
         .set_layout(svg_show_layout)
         .set_display(svg_display)

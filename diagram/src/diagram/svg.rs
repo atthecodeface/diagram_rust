@@ -286,6 +286,7 @@ impl <'a> Iterator for ElementIter<'a> {
 pub struct Svg {
     pub(super) width  : f64, // in mm
     pub(super) height : f64, // in mm
+    pub(super) version : usize,
     pub(super) show_grid : bool,
     pub(super) show_layout : bool,
     pub(super) show_content_rectangles : bool,
@@ -301,6 +302,7 @@ impl Svg {
         Self {
             width  : 297.,
             height : 210.,
+            version : 20,
             stack : Vec::new(),
             show_grid : false,
             show_layout : false,
@@ -309,6 +311,14 @@ impl Svg {
         }
     }
 
+    //cp set_version
+    /// Used in a construction, to update the `Svg` instance to enable
+    /// or disable the incorporation of a version in to the SVG output
+    pub fn set_version(mut self, version:usize) -> Self {
+        self.version = version;
+        self
+    }
+    
     //cp set_grid
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a grid in to the SVG output
@@ -531,9 +541,9 @@ impl <'a> GenerateSvg for Diagram<'a> {
         let mut ele = SvgElement::new("svg");
         ele.add_attribute("xmlns:svg","http://www.w3.org/2000/svg");
         ele.add_attribute("xmlns","http://www.w3.org/2000/svg");
-        ele.add_attribute("version","2.0");
-        ele.add_attribute("width" ,&format!("{}mm", svg.width));
-        ele.add_attribute("height",&format!("{}mm", svg.height));
+        ele.add_attribute("version",&format!("{:.1}", (svg.version as f64)/10.));
+        ele.add_attribute("width" , &format!("{}mm", svg.width));
+        ele.add_attribute("height", &format!("{}mm", svg.height));
         ele.add_attribute("viewBox",
                           &format!("{} {} {} {}",
                                    self.contents.content_bbox.x0,
@@ -543,6 +553,12 @@ impl <'a> GenerateSvg for Diagram<'a> {
                                    ) );
         svg.push_element(ele);
 
+        let marker_stroke = {
+            match svg.version {
+                20 => "context-stroke",
+                _ => "black",
+            }
+        };
         let mut ele = SvgElement::new("defs");
         svg.push_element(ele);
 
@@ -556,7 +572,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("orient", "auto-start-reverse");
         svg.push_element(ele);
         let mut ele = SvgElement::new("path");
-        ele.add_attribute("fill", "context-stroke");
+        ele.add_attribute("fill", marker_stroke);
         ele.add_attribute("d", "M 0 0 L 10 5 L 0 10 z");
         svg.add_subelement(ele);
         let ele = svg.pop_element();
@@ -574,7 +590,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("cx", "5");
         ele.add_attribute("cy", "5");
         ele.add_attribute("r", "5");
-        ele.add_attribute("fill", "context-stroke");
+        ele.add_attribute("fill", marker_stroke);
         svg.add_subelement(ele);
         let ele = svg.pop_element();
         svg.add_subelement(ele);

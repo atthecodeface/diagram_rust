@@ -11,5 +11,5 @@
 ##rule  id=a grid=1,5 border=1.   bordercolor=blue bg=yellow fill=purple width=10. 
 ##rule  id=b grid=1,4 border=0.2. bordercolor=blue bg=yellow fill=purple width=10. 
 ##rule  id=c grid=2,4 border=0.5. bordercolor=blue bg=yellow fill=purple width=10. 
-##rule  id=p grid=2,5 border=0.5. bordercolor=blue bg=yellow stroke=grey strokewidth=0.1 coords=0,0.1,0.97,0.1 expand=1,1
+##rule  id=p grid=2,5 border=0.5. bordercolor=blue bg=yellow stroke=lime strokewidth=0.1 coords=0,0.1,0.97,0.1 expand=1,1
 ##rule  id=l  grid=2,3 minx=1,0.5,2,23.0,3 border=3. bordercolor=red bg=green
