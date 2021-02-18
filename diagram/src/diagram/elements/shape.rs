@@ -104,7 +104,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
                 self.polygon.set_vertices(4);
                 let eccentricity = width / height;
                 let height       = height / (2.0_f64.sqrt());
-                self.polygon.set_size(height/2., height * eccentricity);
+                self.polygon.set_size(height, eccentricity);
             },
         };
 

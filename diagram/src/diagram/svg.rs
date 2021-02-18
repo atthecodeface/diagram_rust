@@ -451,7 +451,7 @@ impl <'a> GenerateSvg for ElementHeader<'a> {
 //ip GenerateSvg for Element
 impl <'a> GenerateSvg for Element<'a> {
     fn generate_svg(&self, svg:&mut Svg) -> Result<(), SvgError> {
-        println!("Generate svg with header layout {:?}", self.header.layout);
+        // println!("Generate svg with header layout {:?}", self.header.layout);
         if self.header.layout.bg.is_some() {
             let mut ele = SvgElement::new("path");
             ele.add_attribute("stroke","None");

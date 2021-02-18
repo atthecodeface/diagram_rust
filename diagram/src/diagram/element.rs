@@ -16,6 +16,9 @@ limitations under the License.
 @brief   Diagram elements
  */
 
+//a Constants
+const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
+
 //a Imports
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
@@ -446,7 +449,7 @@ impl <'a> ElementHeader <'a> {
     //mp get_opt_style_value_of_name
     pub fn get_opt_style_value_of_name(&self, name:&str) -> Option<StyleValue> {
         let r = self.stylable.get_style_value_of_name(name).map(|a| a.clone());
-        println!("Debug {} {} {:?}", self.borrow_id(), name, r);
+        if DEBUG_ELEMENT_HEADER {println!("Debug {} {} {:?}", self.borrow_id(), name, r);}
         r
     }
 
@@ -620,7 +623,6 @@ impl <'a> ElementHeader <'a> {
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
     pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
-        println!("Set layout properties!!!");
         self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
         self.layout_box.set_border_width(self.layout.border_width);
         self.layout_box.set_border_round(self.layout.border_round);

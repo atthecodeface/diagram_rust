@@ -279,6 +279,7 @@ impl LayoutBox {
     fn content_within_inner(&mut self) -> () {
         if DEBUG_LAYOUT { println!("{:?} {:?}",self.inner, self.content_desired); }
         let (ic, iw, ih)  = self.inner.unwrap().get_cwh();
+
         // If scale is 1. and rotation is 0. then we should be able to use a translation of ic-dc
         // so that is what we should get...
         let (aw, ah)      = Self::find_wh_of_largest_area_within(iw, ih, self.content_rotation);
@@ -303,8 +304,14 @@ impl LayoutBox {
         self.content = Some(Rectangle::none().to_ranges(ci_x_range, ci_y_range)
                             .translate(&Point::new(x_translation,y_translation),-1.)
                             .scale(1.0/self.content_scale));
+
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
-        let transform = Transform::of_trs(Point::new(x_translation,y_translation), self.content_rotation, self.content_scale );
+        let transform = Transform::of_trs(Point::new(x_translation,y_translation).rotate(self.content_rotation),
+                                          self.content_rotation,
+                                          self.content_scale );
+        // if cd.get_center().len() > 0.001 {
+        //     println!("Transform of {} for {:?}", transform, cd);
+        // }
         self.content_to_layout = Some(transform)
     }
 

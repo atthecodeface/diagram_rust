@@ -54,6 +54,9 @@ their edges drawn; they may have rounded corners.
 
 Text elements are multiple lines of text
 
+Path elements are single or multiple line segments defined by
+coordinates relative to the box they are placed within.
+
 ### Group element
 
 The group element is purely a collection of elements; it will be laid
@@ -142,7 +145,7 @@ To permit the styling of the layout the grid may also be provided
 An example layout could be just two elements:
 
 ```text
-#layout ##shape id=a grid=1,1 ##shape id=b grid=2,1
+#layout ##circle id=a grid=1,1 ##circle id=b grid=2,1
 ```
 
 This specifies two shapes, one at grid cell (1,1,2,2) (there is a
@@ -159,7 +162,7 @@ If the shapes are of different size, but the desire is to have the
  than that) then one can provide the minimum sizes:
 
 ```text
-#layout minx=1,50.,2,50.,3 ##shape id=a grid=1,1 ##shape id=b grid=2,1
+#layout minx=1,50.,2,50.,3 ##circle id=a grid=1,1 ##circle id=b grid=2,1
 ```
 
 Now the minimum width (X dimension) between cell 1 and cell 2 will
@@ -171,10 +174,10 @@ A simple first example diagram consists of four shapes laid out in a 2-by-2 grid
 
 ```text
 #diagram
-##shape vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1 
-##shape vertices=4 grid=1,2 fill=pink width=10
-##shape vertices=3 grid=2,1 fill=blue width=10 stellate=8 stroke=yellow strokewidth=1 
-##shape vertices=4 grid=2,2 fill=pink width=10 stellate=8
+##polygon vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1 
+##polygon vertices=4 grid=1,2 fill=pink width=10
+##polygon vertices=3 grid=2,1 fill=blue width=10 stellate=8 stroke=yellow strokewidth=1 
+##polygon vertices=4 grid=2,2 fill=pink width=10 stellate=8
 ```
 
 # Status
@@ -184,11 +187,11 @@ This is very much a 0.1 version.
 The diagram provides very simple text and polygons with the grid-based
 layout. It supports a first cut of the stylesheet mechanism.
 
-Diagrams written for this version may need to change for version 0.3;
-the likelihood is that #shape will change to #polygon, and #rect,
-#circle, #ellipse etc will be added, for example. Names of some
+Diagrams written for this version may need to change for version 0.3.
+Names of some
 attributes will be realigned with SVG - strokewidth will become
 stroke-width, and so on.
+Path support for bezier curves and closed paths will be added.
 
 ## Upcoming changes
 
@@ -197,10 +200,6 @@ stroke-width, and so on.
 For atributes that are effectively a two-part hierarchy (border ->
 color for example) the naming scheme of <decoration>-<aspect> will be
 used. Hence strokewidth to become stroke-width
-
-### Element names
-
-*Shape* will become *polygon*, with new elements *rect*, *circle*, *ellipse*.
 
 ## Upcoming additions
 
@@ -236,12 +235,6 @@ points.
 
 The purpose of the path element is to provide for connectors between
 blocks on a diagram.
-
-### Path elements
-
-A new element *path* needs to be added that defines a set of lines and
-regions, where the lines may be straight, quadrative bezier, or cubic
-beziers. The path in the element may be static or programmatic.
 
 ### Programmatic elements
 
@@ -313,6 +306,7 @@ layout does not take border and bordercolor from a style
 border should be  border-width
 borderwidth should be the color
 Rotated by 90 does not work
+
 !*/
 
 //a Crates
