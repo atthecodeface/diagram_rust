@@ -542,8 +542,8 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("xmlns:svg","http://www.w3.org/2000/svg");
         ele.add_attribute("xmlns","http://www.w3.org/2000/svg");
         ele.add_attribute("version",&format!("{:.1}", (svg.version as f64)/10.));
-        ele.add_attribute("width" , &format!("{}mm", svg.width));
-        ele.add_attribute("height", &format!("{}mm", svg.height));
+        ele.add_attribute("width" , &format!("{}mm", self.contents.content_bbox.x1-self.contents.content_bbox.x0)); // svg.width));
+        ele.add_attribute("height", &format!("{}mm", self.contents.content_bbox.y1-self.contents.content_bbox.y0)); // svg.height));
         ele.add_attribute("viewBox",
                           &format!("{} {} {} {}",
                                    self.contents.content_bbox.x0,
@@ -569,7 +569,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("refY","5");
         ele.add_attribute("markerWidth","6");
         ele.add_attribute("markerHeight","6");
-        ele.add_attribute("orient", "auto-start-reverse");
+        ele.add_attribute("orient", "auto");
         svg.push_element(ele);
         let mut ele = SvgElement::new("path");
         ele.add_attribute("fill", marker_stroke);
