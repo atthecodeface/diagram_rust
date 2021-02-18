@@ -306,9 +306,14 @@ impl LayoutBox {
                             .scale(1.0/self.content_scale));
 
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
-        let transform = Transform::of_trs(Point::new(x_translation,y_translation).rotate(self.content_rotation),
+        let transform = Transform::of_trs(Point::new(x_translation,y_translation), // This helped .rotate(self.content_rotation),
                                           self.content_rotation,
                                           self.content_scale );
+        let dc = cd.get_center();
+        let t2 = Transform::of_translation(Point::new(-dc.x, -dc.y));
+        let transform = transform.apply(&t2);
+        let t2 = Transform::of_translation(Point::new(dc.x, dc.y));
+        let transform = t2.apply(&transform);
         // if cd.get_center().len() > 0.001 {
         //     println!("Transform of {} for {:?}", transform, cd);
         // }
