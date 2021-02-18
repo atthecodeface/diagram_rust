@@ -5,6 +5,7 @@ version = "0.1.0"
 [dependencies]
 clap = "~2.27.0"
 xml-rs = "0.8.3"
+lazy_static = "1.2.0"
 hmlm  = { path="../hmlm", version="0.1.0" }
 stylesheet  = { path="../stylesheet", version="0.1.0" }
 

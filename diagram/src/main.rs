@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::fs::File;
 extern crate xml;
 extern crate hmlm;
@@ -20,6 +23,7 @@ fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
     }
 }
 
+static mut svg_indent_str :String = String::new();
 fn main() {
     let matches = App::new("diagram")
         .about("SVG creator from a diagram descriptor")
@@ -33,6 +37,11 @@ fn main() {
         .arg(Arg::with_name("svg_version")
              .long("svg_version")
              .help("Specify SVG version for output - 2.0 by default")
+             .required(false)
+             .takes_value(true))
+        .arg(Arg::with_name("svg_indent")
+             .long("svg_indent")
+             .help("Put XML elements in SVG on newlines and indent using this string; use '' for git-friendly svg output")
              .required(false)
              .takes_value(true))
         .arg(Arg::with_name("debug")
@@ -85,6 +94,7 @@ fn main() {
             _     => 20,
         }
     };
+    let svg_indent       = matches.value_of("svg_indent").map(|s| s.to_string());
     let svg_show_grid    = matches.is_present("svg_grid");
     let svg_show_layout  = matches.is_present("svg_layout");
     let svg_show_content = matches.is_present("svg_content");
@@ -115,7 +125,16 @@ fn main() {
     println!("Write SVG");
     let file_out   = File::create(output_file).unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
-    let mut writer = xml::writer::EventWriter::new(file_out);
+    let mut emitter_config = xml::writer::EmitterConfig::new();
+    if let Some(indent) = svg_indent {
+        unsafe {
+            svg_indent_str = indent.clone();
+            emitter_config = emitter_config.perform_indent(true).indent_string(&svg_indent_str);
+        }
+    }
+    let mut writer = xml::writer::EventWriter::new_with_config(file_out,
+                                                               emitter_config
+    );
     for e in svg.iter_events() {
         match e.as_writer_event() {
             None => (),
