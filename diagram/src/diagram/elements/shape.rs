@@ -24,7 +24,7 @@ use crate::{Rectangle, Polygon};
 
 //a Shape element
 //tp Shape - an Element that contains a polygon (or path?)
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum ShapeType {
     Rect, Circle, Polygon
 }
@@ -64,7 +64,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
-        let clone = Self::new(header, "")?;
+        let mut clone = Self::new(header, "")?;
+        clone.shape_type = self.shape_type;
         Ok( clone )
     }
 
