@@ -225,9 +225,11 @@ impl <'a> Diagram <'a> {
     //mp display
     /// Display the diagram in a human-parseable form, generally for debugging
     pub fn display(&self) {
-        println!("Layout");
-        println!("    X grid {:?}", self.layout.grid_placements.0 );
-        println!("    Y grid {:?}", self.layout.grid_placements.1 );
+        println!("{}Layout","");
+        println!("{}    X grid", "");
+        self.layout.grid_placements.0.display("");
+        println!("{}    Y grid", "");
+        self.layout.grid_placements.1.display("");
         for e in self.iter_elements() {
             e.display(2);
         }

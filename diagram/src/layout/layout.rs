@@ -335,6 +335,20 @@ impl LayoutBox {
     pub fn get_content_rectangle(&self) -> Rectangle  {
         self.content.unwrap()
     }
+    
+    //mp display
+    // Display with an indent of indent_str plus two spaces
+    pub fn display(&self, indent_str:&str) {
+        println!("{}  Layout box", indent_str);
+        println!("{}    Margin {:?}",indent_str, self.margin);
+        println!("{}    Border w:{} r:{}",indent_str, self.border_width, self.border_round);
+        println!("{}    Padding {:?}",indent_str, self.margin);
+        println!("{}    Outer {:?}",indent_str, self.outer);
+        println!("{}    Inner {:?}",indent_str, self.inner);
+        println!("{}    Content {:?}",indent_str, self.content);
+    }
+
+    //zz All done
 }
 
 //mt Test for LayoutBox
@@ -480,6 +494,11 @@ impl Layout {
         result
     }
 
+    //mp display
+    // Display with an indent of indent_str plus two spaces
+    pub fn display(&self, indent_str:&str) {
+        println!("{}  Layout NOT DONE", indent_str);
+    }
     //zz All done
 }
 

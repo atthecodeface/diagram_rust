@@ -324,6 +324,21 @@ enum LayoutPlacement {
     Grid(isize,isize,isize,isize),
 }
 
+//ip Display for LayoutPlacement
+impl std::fmt::Display for LayoutPlacement {
+    //mp fmt - format for display
+    /// Display
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Place(p) => write!(f, "PlaceAt{}", p),
+            Self::Grid(x0,y0,x1,y1) => write!(f, "Grid[({},{}) -> ({},{})]", x0,y0,x1,y1),
+            _ => write!(f, "Not placed or gridded"),
+        }
+    }
+
+    //zz All done
+}
+
 //tp ElementLayout
 #[derive(Debug)]
 pub struct ElementLayout {
@@ -665,8 +680,8 @@ impl <'a> ElementHeader <'a> {
    
     //mp display
     pub fn display(&self, indent_str:&str) {
-        println!("{}{:?} {:?}",indent_str, self.id_name, self.layout.placement);
-        // println!("{}  {:?}",indent_str, self.layout_box);
+        println!("{}{:?} {}",indent_str, self.id_name, self.layout.placement);
+        self.layout_box.display(indent_str);
     }
     //zz All done
 }

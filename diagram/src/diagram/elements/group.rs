@@ -183,8 +183,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     fn display(&self, indent:usize, indent_str:&str) {
         if let Some(layout) = &self.layout {
             println!("{}  layout",indent_str);
-            println!("{}    X grid {:?}",indent_str, layout.grid_placements.0 );
-            println!("{}    Y grid {:?}",indent_str, layout.grid_placements.1 );
+            println!("{}    X grid", indent_str);
+            layout.grid_placements.0.display(indent_str);
+            println!("{}    Y grid", indent_str);
+            layout.grid_placements.1.display(indent_str);
         } else {
             println!("{}  group only",indent_str);
         }

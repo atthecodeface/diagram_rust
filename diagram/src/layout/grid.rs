@@ -80,7 +80,7 @@ impl std::fmt::Display for GridCellDataEntry {
     //mp fmt - format a GridCellDataEntry
     /// Display the `GridCellDataEntry' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "({}->{}:{}]", self.start, self.end, self.size)
+        write!(f, "{}->{}:{}", self.start, self.end, self.size)
     }
 
     //zz All done
@@ -94,6 +94,20 @@ pub struct GridCellData {
     data : Vec<GridCellDataEntry>,
     start : isize,
     end   : isize
+}
+
+//ip Display for GridCellData
+impl std::fmt::Display for GridCellData {
+    //mp fmt - format for display
+    /// Display
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for d in &self.data {
+            write!(f, "{}, ", d)?;
+        }
+        Ok(())
+    }
+
+    //zz All done
 }
 
 //ip GridCellData
@@ -299,6 +313,17 @@ pub struct GridDimensionEntry {
     position : f64, // defaults to 0.
 }
 
+//ip Display for GridDimensionEntry
+impl std::fmt::Display for GridDimensionEntry {
+    //mp fmt - format for display
+    /// Display
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}->{}:({} @ {} + {})", self.start, self.end, self.size, self.position, self.growth)
+    }
+
+    //zz All done
+}
+
 //ip GridDimensionEntry
 impl GridDimensionEntry {
 
@@ -368,6 +393,20 @@ pub struct GridDimension {
     /// max_pos is calculated once positions are generated
     /// this will always be data[-1].pos+data[-1].size
     max_pos : f64,
+}
+
+//ip Display for GridDimension
+impl std::fmt::Display for GridDimension {
+    //mp fmt - format for display
+    /// Display
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for d in &self.data {
+            write!(f, "{}, ", d)?;
+        }
+        Ok(())
+    }
+
+    //zz All done
 }
 
 //ii GridDimension
@@ -834,6 +873,12 @@ impl GridPlacement {
         self.grid_dimension.iter_positions()
     }
 
+    // Display with an indent of indent_str plus six spaces
+    pub fn display(&self, indent_str:&str) {
+        println!("{}      {}", indent_str, self.cell_data);
+        println!("{}      {}", indent_str, self.grid_dimension);
+        println!("{}      {}", indent_str, self.growth_data);
+    }
     //zz All done
 }
 
