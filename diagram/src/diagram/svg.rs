@@ -569,6 +569,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("refY","5");
         ele.add_attribute("markerWidth","6");
         ele.add_attribute("markerHeight","6");
+        ele.add_attribute("markerUnits","strokeWidth");
         ele.add_attribute("orient", "auto");
         svg.push_element(ele);
         let mut ele = SvgElement::new("path");
@@ -585,6 +586,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
         ele.add_attribute("refY","5");
         ele.add_attribute("markerWidth","5");
         ele.add_attribute("markerHeight","5");
+        ele.add_attribute("markerUnits","strokeWidth");
         svg.push_element(ele);
         let mut ele = SvgElement::new("circle");
         ele.add_attribute("cx", "5");
