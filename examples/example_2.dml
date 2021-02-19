@@ -2,7 +2,7 @@
 
 ;; This is the first example in the documentation
 
-##polygon id=1_1 vertices=3 grid=1,1 fill=blue scale=0.9 rotate=10. width=10 stroke=yellow strokewidth=1 
-##polygon id=1_2 vertices=4 grid=1,2 fill=pink scale=0.5 width=10
-##text  id=2_1 grid=2,1 fill=blue fontsize=20. "This text is in" "grid cell (2,1)"
-##text  id=2_2 grid=2,2 rotate=30. fill=blue fontsize=20. "This text is in" "grid cell (2,2)"
+##polygon id=1_1 vertices=3 grid=1,1 fill-color=blue scale=0.9 rotate=10. width=10 stroke-color=yellow stroke-width=1 
+##polygon id=1_2 vertices=4 grid=1,2 fill-color=pink scale=0.5 width=10
+##text  id=2_1 grid=2,1 fill-color=blue font-size=20. "This text is in" "grid cell (2,1)"
+##text  id=2_2 grid=2,2 rotate=30. fill-color=blue font-size=20. "This text is in" "grid cell (2,2)"

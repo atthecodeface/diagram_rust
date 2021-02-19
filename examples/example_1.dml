@@ -2,7 +2,7 @@
 
 ;; This is the first example in the documentation
 
-##polygon vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1 
-##polygon vertices=4 grid=1,2 fill=pink width=10
-##polygon vertices=3 grid=2,1 fill=blue width=10 stellate=4 stroke=yellow strokewidth=1 
-##polygon vertices=4 grid=2,2 fill=pink width=10 stellate=4
+##polygon vertices=3 grid=1,1 fill-color=blue width=10 stroke-color=yellow stroke-width=1 
+##polygon vertices=4 grid=1,2 fill-color=pink width=10
+##polygon vertices=3 grid=2,1 fill-color=blue width=10 stellate=4 stroke-color=yellow stroke-width=1 
+##polygon vertices=4 grid=2,2 fill-color=pink width=10 stellate=4

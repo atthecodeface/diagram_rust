@@ -4,35 +4,35 @@
 #defs{
 
 #layout id="fifo3p"
-##layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
-###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
-###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
-###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
+##layout border-width=0.4 border-color="black" border-round=0 pad=0.6,2,0.6,0 grid=1,1
+###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="pink" border-round=1 margin=0.3
+###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="pink" border-round=1 margin=0.3
+###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="pink" border-round=1 margin=0.3
 
 #layout id="fifo3g"
-##layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
-###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
-###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
-###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##layout border-width=0.4 border-color="black" border-round=0 pad=0.6,2,0.6,0 grid=1,1
+###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="lightgreen" border-round=1 margin=0.3
+###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="lightgreen" border-round=1 margin=0.3
+###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="lightgreen" border-round=1 margin=0.3
 
 #layout id="fifo3mixed"
-##layout border=0.4 bordercolor="black" borderround=0 pad=0.6,2,0.6,0 grid=1,1
-###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
-###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="pink" borderround=1 margin=0.3
-###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border=0.2 bordercolor="grey" bg="lightgreen" borderround=1 margin=0.3
+##layout border-width=0.4 border-color="black" border-round=0 pad=0.6,2,0.6,0 grid=1,1
+###polygon id="i0" grid=1,1 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="lightgreen" border-round=1 margin=0.3
+###polygon id="i2" grid=1,2 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="pink" border-round=1 margin=0.3
+###polygon id="i3" grid=1,3 vertices=4 width=7 height=2 border-width=0.2 border-color="grey" bg="lightgreen" border-round=1 margin=0.3
 
 #layout id=bio_pink
 ##layout grid=1,1
-###text border=0.3 bordercolor="grey" borderround=1 bg=pink  fill=black grid=1,1 pad=2,1 "bio"
+###text border-width=0.3 border-color="grey" border-round=1 bg=pink  fill-color=black grid=1,1 pad=2,1 "bio"
 #layout id=bio_lightgreen
 ##layout grid=1,1
-###text border=0.3 bordercolor="grey" borderround=1 bg=lightgreen  fill=black grid=1,1 pad=2,1 "bio"
+###text border-width=0.3 border-color="grey" border-round=1 bg=lightgreen  fill-color=black grid=1,1 pad=2,1 "bio"
 #layout id=req_pink
 ##layout grid=1,1
-###text border=0.3 bordercolor="grey" borderround=1 bg=pink  fill=black grid=1,1 pad=2,1 "req"
+###text border-width=0.3 border-color="grey" border-round=1 bg=pink  fill-color=black grid=1,1 pad=2,1 "req"
 #layout id=req_lightgreen
 ##layout grid=1,1
-###text border=0.3 bordercolor="grey" borderround=1 bg=lightgreen  fill=black grid=1,1 pad=2,1 "req"
+###text border-width=0.3 border-color="grey" border-round=1 bg=lightgreen  fill-color=black grid=1,1 pad=2,1 "req"
 
 #defs}
 
@@ -50,23 +50,23 @@
          miny=-10,5.,0,5.,10,5.,12,5.,18,5.,20,5.,30,5.,60,5.,70,5.,80,5.,90,5.,100,5.,110
 
 #text grid=0,60,140,70  bg=#ffece0 ""
-#text fill="black" class="structure hardware"   border=0.3 bordercolor="black" borderround=1 grid="0,0,10,10"   "CPU Core"
-#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,20,10,30"  "VFS"
-#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,30,10,60"  "Block" "(blk-mq)" "& NVME"
-#text fill="black" class="structure kernel i10" border=0.3 bordercolor="black" borderround=1 grid="0,60,10,70"  "i10"
-#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,80,10,90"  "TCP/IP" "Stack"
-#text fill="black" class="structure kernel"     border=0.3 bordercolor="black" borderround=1 grid="0,100,10,110" "Device"
+#text fill-color="black" class="structure hardware"   border-width=0.3 border-color="black" border-round=1 grid="0,0,10,10"   "CPU Core"
+#text fill-color="black" class="structure kernel"     border-width=0.3 border-color="black" border-round=1 grid="0,20,10,30"  "VFS"
+#text fill-color="black" class="structure kernel"     border-width=0.3 border-color="black" border-round=1 grid="0,30,10,60"  "Block" "(blk-mq)" "& NVME"
+#text fill-color="black" class="structure kernel i10" border-width=0.3 border-color="black" border-round=1 grid="0,60,10,70"  "i10"
+#text fill-color="black" class="structure kernel"     border-width=0.3 border-color="black" border-round=1 grid="0,80,10,90"  "TCP/IP" "Stack"
+#text fill-color="black" class="structure kernel"     border-width=0.3 border-color="black" border-round=1 grid="0,100,10,110" "Device"
 
-#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="20,0,50,10" "X1"
+#text fill-color="black" class="cpu core"             border-width=0.3 border-color="black" border-round=1 grid="20,0,50,10" "X1"
 
-#text fill="black" class="app app1"             border=0.3 bordercolor="black" borderround=1 bg=pink grid="60,-10,100,0" "App1"
-#text fill="black" class="app app2"             border=0.3 bordercolor="black" borderround=1 bg=lightgreen grid="100,-10,120,0" "App2"
-#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="60,0,80,10" "X2"
-#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="80,0,120,10" "X3"
+#text fill-color="black" class="app app1"             border-width=0.3 border-color="black" border-round=1 bg=pink grid="60,-10,100,0" "App1"
+#text fill-color="black" class="app app2"             border-width=0.3 border-color="black" border-round=1 bg=lightgreen grid="100,-10,120,0" "App2"
+#text fill-color="black" class="cpu core"             border-width=0.3 border-color="black" border-round=1 grid="60,0,80,10" "X2"
+#text fill-color="black" class="cpu core"             border-width=0.3 border-color="black" border-round=1 grid="80,0,120,10" "X3"
 
-#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="60,12,120,18" "I/O syscalls"
+#text fill-color="black" class="cpu core"             border-width=0.3 border-color="black" border-round=1 grid="60,12,120,18" "I/O syscalls"
 
-#text fill="black" class="cpu core"             border=0.3 bordercolor="black" borderround=1 grid="130,0,170,10" "X4"
+#text fill-color="black" class="cpu core"             border-width=0.3 border-color="black" border-round=1 grid="130,0,170,10" "X4"
 
 #layout id="target1" grid=20,30,30,60
 ##use id=x ref=bio_pink    grid=10,10,20,20
@@ -79,11 +79,11 @@
 #use  id=pi10io_1  ref=fifo3p grid=40,60,50,70
 #use  id=pi10txp_1 ref=fifo3p grid=40,80,50,90
 
-#text fill="black" class="structure kernel i10" gridx=50,60   gridy=60,70  "per-i10-lane" "I/O queue"
-#text fill="black" class="structure kernel i10" gridx=50,60   gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
+#text fill-color="black" class="structure kernel i10" gridx=50,60   gridy=60,70  "per-i10-lane" "I/O queue"
+#text fill-color="black" class="structure kernel i10" gridx=50,60   gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
 
-#text fill="black" class="structure kernel i10" gridx=120,130 gridy=60,70  "per-i10-lane" "I/O queue"
-#text fill="black" class="structure kernel i10" gridx=120,130 gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
+#text fill-color="black" class="structure kernel i10" gridx=120,130 gridy=60,70  "per-i10-lane" "I/O queue"
+#text fill-color="black" class="structure kernel i10" gridx=120,130 gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
 
 #layout id="host" grid=60,30,120,60 expand=1 growx=0,1.,100 growy=0,1.,100
 ##use id=host_app1_bio1 ref=bio_pink        gridx=10,20 gridy=10,20

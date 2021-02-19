@@ -94,7 +94,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
     fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
-        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
+        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
         self.font         = header.get_style_of_name_string(at::FONT);

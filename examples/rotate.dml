@@ -12,9 +12,9 @@
 ##layout grid=1,1 class=T
 ###text   id=tr class="Z T" grid=1,1 "**"
 
-##rule class=X fill=red 
-##rule class=Y fill=blue   rotate=90.
-##rule class=Z fill=yellow rotate=45.
+##rule class=X fill-color=red 
+##rule class=Y fill-color=blue   rotate=90.
+##rule class=Z fill-color=yellow rotate=45.
 
-##rule class=T border=0.5 bordercolor=lime
+##rule class=T border-width=0.5 border-color=lime
 

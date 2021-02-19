@@ -7,7 +7,7 @@
 ###text  class=text grid=3,1  rotate=90. "Text 3"
 ###text  class=text grid=4,1  rotate=90. "Text 4"
 
-##rule class=text   border=0.1 bordercolor=yellow fill=black
-##rule class=text1 bordercolor=orange
-##rule class=outer_layout border=0.3 bordercolor=purple
-##rule class=inner_layout border=0.2 bordercolor=red
+##rule class=text   border-width=0.1 border-color=yellow fill-color=black
+##rule class=text1 border-color=orange
+##rule class=outer_layout border-width=0.3 border-color=purple
+##rule class=inner_layout border-width=0.2 border-color=red

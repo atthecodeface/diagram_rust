@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -66,18 +68,26 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
 
     //fp get_style_names
     fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
-        vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height", "coords"]
+        vec![at::FILL,
+             at::STROKE,
+             at::STROKEWIDTH,
+             at::ROUND,
+             at::MARKERS,
+             at::WIDTH,
+             at::HEIGHT,
+             at::COORDS,
+        ]
     }
 
     //mp style
     fn style(&mut self, _descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
-        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
+        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
-        if let Some(v) = header.get_style_rgb_of_name("stroke").as_floats(None) {
+        if let Some(v) = header.get_style_rgb_of_name(at::STROKE).as_floats(None) {
             self.stroke = Some((v[0],v[1],v[2]));
         }
-        if let Some(v) = header.get_style_floats_of_name("coords").as_floats(None) {
+        if let Some(v) = header.get_style_floats_of_name(at::COORDS).as_floats(None) {
             // v : Vec<f64>
             self.coords = Vec::new();
             for i in 0..v.len()/2 {
@@ -86,7 +96,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
                 self.coords.push(Point::new(x,y));
             }
         }
-        if let Some(v) = header.get_style_strings_of_name("markers").as_strings(None) {
+        if let Some(v) = header.get_style_strings_of_name(at::MARKERS).as_strings(None) {
             match v.len() {
                 1 => {
                     self.markers.0 = Some(v[0].clone());
@@ -104,10 +114,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
                 },
             }
         }
-        self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
-        let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
-        self.width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
-        self.height   = header.get_style_of_name_float("height",Some(self.width)).unwrap();
+        self.stroke_width = header.get_style_of_name_float(at::STROKEWIDTH,Some(0.)).unwrap();
+        let round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
+        self.width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
+        self.height   = header.get_style_of_name_float(at::HEIGHT,Some(self.width)).unwrap();
         Ok(())
     }
 

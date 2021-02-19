@@ -1,27 +1,39 @@
 #diagram
 ##polygon grid="1,1,6,5" margin="40" bg="yellow"
 
-##polygon id=a class="row1 col1" vertices="3" grid="1,1" bg="red" fill="blue" stroke="yellow" strokewidth="1" width="10" height="20"
-##polygon class="row1 col2" vertices="4" grid="2,1" bordercolor="green" border="4" fill="pink" width="20"
-##polygon class="row1 col3" vertices="5" grid="3,1" bordercolor="green" border="4" fill="pink" width="20"
-##polygon class="row1 col4" vertices="6" grid="4,1" bordercolor="green" border="4" fill="pink" width="20"
-##polygon class="row1 col5" vertices="7" grid="5,1" bordercolor="green" border="4" fill="pink" width="20"
+##polygon id=a class="row1 col1" vertices="3"
+##polygon class="row1 col2" vertices="4"
+##polygon class="row1 col3" vertices="5"
+##polygon class="row1 col4" vertices="6"
+##polygon class="row1 col5" vertices="7"
 
-##polygon class="row2 col1" vertices="3" grid="1,2" bg="red" fill="blue" stroke="yellow" strokewidth="1"  round="5" width="10" height="20"
-##polygon class="row2 col2" vertices="4" grid="2,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
-##polygon class="row2 col3" vertices="5" grid="3,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
-##polygon class="row2 col4" vertices="6" grid="4,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
-##polygon class="row2 col5" vertices="7" grid="5,2" bordercolor="green" border="4" fill="pink" width="20" round="5"
+##polygon class="row2 col1" vertices="3"
+##polygon class="row2 col2" vertices="4"
+##polygon class="row2 col3" vertices="5"
+##polygon class="row2 col4" vertices="6"
+##polygon class="row2 col5" vertices="7"
 
-##polygon class="row3 col1" vertices="3" grid="1,3" bg="red" fill="blue" stroke="yellow" strokewidth="1"  stellate="5" width="10" height="20"
-##polygon class="row3 col2" vertices="4" grid="2,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
-##polygon class="row3 col3" vertices="5" grid="3,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
-##polygon class="row3 col4" vertices="6" grid="4,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
-##polygon class="row3 col5" vertices="7" grid="5,3" bordercolor="green" border="4" fill="pink" width="20" stellate="5"
+##polygon class="row3 col1" vertices="3"
+##polygon class="row3 col2" vertices="4"
+##polygon class="row3 col3" vertices="5"
+##polygon class="row3 col4" vertices="6"
+##polygon class="row3 col5" vertices="7"
 
-##polygon class="row4 col1" vertices="3" grid="1,4" bg="red" fill="blue" stroke="yellow" strokewidth="1"  round="2" stellate="5" width="10" height="20"
-##polygon class="row4 col2" vertices="4" grid="2,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
-##polygon class="row4 col3" vertices="5" grid="3,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
-##polygon class="row4 col4" vertices="6" grid="4,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
-##polygon class="row4 col5" vertices="7" grid="5,4" bordercolor="green" border="4" fill="pink" width="20" round="2" stellate="5"
+##polygon class="row4 col1" vertices="3"
+##polygon class="row4 col2" vertices="4"
+##polygon class="row4 col3" vertices="5"
+##polygon class="row4 col4" vertices="6"
+##polygon class="row4 col5" vertices="7"
+
+##rule class=row1  gridy=1 border-color=green border-width=4 fill-color=pink width=20
+##rule class=row2  gridy=2 border-color=green border-width=4 fill-color=pink width=20 round=5
+##rule class=row3  gridy=3 border-color=green border-width=4 fill-color=pink width=20 stellate=5
+##rule class=row4  gridy=4 border-color=green border-width=4 fill-color=pink width=20 round=2 stellate=5
+##rule class=col1  bg=red fill-color=blue stroke-color=yellow stroke-width=1 width=10 height=20
+
+##rule class=col1  gridx=1 border-width=0 border-color=none
+##rule class=col2  gridx=2
+##rule class=col3  gridx=3
+##rule class=col4  gridx=4
+##rule class=col5  gridx=5
 
