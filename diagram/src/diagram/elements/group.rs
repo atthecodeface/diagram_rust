@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout, LayoutRecord};
@@ -53,7 +55,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
         let layout = {
             match name {
-                "layout" => Some(Layout::new()),
+                el::LAYOUT => Some(Layout::new()),
                 _ => None,
             }
         };
@@ -103,7 +105,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Layout supports minx/miny cell size descriptions
     fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
         match name {
-            "layout" => vec!["minx", "miny", "growx", "growy"],
+            el::LAYOUT => vec![at::MINX,
+                               at::MINY,
+                               at::GROWX,
+                               at::GROWY],
             _ => vec![],
         }
     }
@@ -112,16 +117,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
     fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
-        if let Some(v) = header.get_style_floats_of_name("minx").as_floats(None) {
+        if let Some(v) = header.get_style_floats_of_name(at::MINX).as_floats(None) {
             self.minx = self.read_cell_data(header, v)?;
         }
-        if let Some(v) = header.get_style_floats_of_name("miny").as_floats(None) {
+        if let Some(v) = header.get_style_floats_of_name(at::MINY).as_floats(None) {
             self.miny = self.read_cell_data(header, v)?;
         }
-        if let Some(v) = header.get_style_floats_of_name("growx").as_floats(None) {
+        if let Some(v) = header.get_style_floats_of_name(at::GROWX).as_floats(None) {
             self.growx = self.read_cell_data(header, v)?;
         }
-        if let Some(v) = header.get_style_floats_of_name("growy").as_floats(None) {
+        if let Some(v) = header.get_style_floats_of_name(at::GROWY).as_floats(None) {
             self.growy = self.read_cell_data(header, v)?;
         }
         if let Some(layout) = &mut self.layout {

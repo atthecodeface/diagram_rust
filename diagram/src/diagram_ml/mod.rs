@@ -20,6 +20,8 @@ limitations under the License.
 use hmlm;
 use std::io::prelude::{Read};
 use crate::{StyleSheet, StyleRule, StyleAction, Diagram, DiagramContents, DiagramDescriptor};
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use xml;
 use xml::reader::XmlEvent;
 use hmlm::{XmlEventWithPos, FilePosition};
@@ -285,14 +287,14 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
     fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
         match name {
-            "path"     => Ok(Path::ml_new(reader, descriptor, fp, name, attributes)?),
-            "rect"     => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            "circle"   => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            "polygon"  => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            "text"     => Ok(Text::ml_new(reader, descriptor, fp, name, attributes)?),
-            "group"    => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
-            "layout"   => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
-            "use"      => Ok(Use::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::PATH     => Ok(Path::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::RECT     => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::CIRCLE   => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::POLYGON  => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::TEXT     => Ok(Text::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::GROUP    => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::LAYOUT   => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::USE      => Ok(Use::ml_new(reader, descriptor, fp, name, attributes)?),
             _ => {
                 let r = BadXMLElement::ml_new(reader, descriptor, fp, name, attributes);
                 reader.errors.update(r);
@@ -537,10 +539,10 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
 /// let diagram_descriptor = DiagramDescriptor::new(&style_set);
 /// let mut diagram  = Diagram::new(&diagram_descriptor);
 /// let mut dml      = DiagramML::new(&mut diagram);
-/// dml.read_file("#diagram ##defs ###shape id=a ##shape ##group ###shape ##shape".as_bytes()).unwrap();
+/// dml.read_file("#diagram ##defs ###rect id=a ##rect ##group ###rect ##rect".as_bytes()).unwrap();
 /// let (_, contents) = diagram.borrow_contents_descriptor();
 /// assert_eq!(1, contents.definitions.len(), "One definition expected from this");
-/// assert_eq!(3, contents.elements.len(), "Three elements (shape, group, shape) expected from this");
+/// assert_eq!(3, contents.elements.len(), "Three elements (rect, group, rect) expected from this");
 /// ```
 pub struct DiagramML<'a, 'b> {
     diagram: &'a mut Diagram<'b>,

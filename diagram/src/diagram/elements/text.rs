@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -81,7 +83,11 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
 
     //fp get_style_names
     fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
-        vec!["fill", "font", "fontsize", "fontweight", "fontstyle"]
+        vec![at::FILL,
+             at::FONT,
+             at::FONTSIZE,
+             at::FONTWEIGHT,
+             at::FONTSTYLE]
     }
 
     //mp style
@@ -91,11 +97,10 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
         if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
-        self.font         = header.get_style_of_name_string("font");
-        self.font_weight  = header.get_style_of_name_string("fontweight");
-        self.font_style   = header.get_style_of_name_string("fontstyle");
-        self.font_size = header.get_style_of_name_float("fontsize",Some(10.)).unwrap();
-        // let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
+        self.font         = header.get_style_of_name_string(at::FONT);
+        self.font_weight  = header.get_style_of_name_string(at::FONTWEIGHT);
+        self.font_style   = header.get_style_of_name_string(at::FONTSTYLE);
+        self.font_size = header.get_style_of_name_float(at::FONTSIZE,Some(10.)).unwrap();
         let style = FontStyle::new(self.font_size, self.font_weight.as_ref(), self.font_style.as_ref());
         let font = descriptor.get_font();
         for t in &self.text {

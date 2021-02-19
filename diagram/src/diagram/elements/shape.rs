@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -45,8 +47,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
 
         let shape_type = {
             match name {
-                "circle" => ShapeType::Circle,
-                "rect"  =>  ShapeType::Rect,
+                el::CIRCLE => ShapeType::Circle,
+                el::RECT  =>  ShapeType::Rect,
                 _ =>        ShapeType::Polygon,
             }
         };
@@ -72,28 +74,53 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp get_style_names
     fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
         match name {
-            "circle" => vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
-            "rect"  =>  vec!["fill", "stroke", "strokewidth", "round", "markers", "width", "height"],
-            _ =>        vec!["fill", "stroke", "strokewidth", "round", "markers", "vertices", "stellate", "width", "height"],
+            el::CIRCLE => vec![
+                at::FILL,
+                at::STROKE,
+                at::STROKEWIDTH,
+                at::ROUND,
+                at::WIDTH,
+                at::HEIGHT,
+            ],
+            el::RECT  =>  vec![
+                at::FILL,
+                at::STROKE,
+                at::STROKEWIDTH,
+                at::ROUND,
+                at::MARKERS,
+                at::WIDTH,
+                at::HEIGHT,
+            ],
+            _ =>        vec![
+                at::FILL,
+                at::STROKE,
+                at::STROKEWIDTH,
+                at::ROUND,
+                at::MARKERS,
+                at::VERTICES,
+                at::STELLATE,
+                at::WIDTH,
+                at::HEIGHT,
+            ],
         }
     }
 
     //mp style
     fn style(&mut self, _descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
-        if let Some(v) = header.get_style_rgb_of_name("fill").as_floats(None) {
+        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
-        if let Some(v) = header.get_style_rgb_of_name("stroke").as_floats(None) {
+        if let Some(v) = header.get_style_rgb_of_name(at::STROKE).as_floats(None) {
             self.stroke = Some((v[0],v[1],v[2]));
         }
-        self.stroke_width = header.get_style_of_name_float("strokewidth",Some(0.)).unwrap();
-        let round    = header.get_style_of_name_float("round",Some(0.)).unwrap();
-        let width    = header.get_style_of_name_float("width",Some(1.)).unwrap();
-        let height   = header.get_style_of_name_float("height",Some(width)).unwrap();
-        let stellate = header.get_style_of_name_float("stellate",Some(0.)).unwrap();
+        self.stroke_width = header.get_style_of_name_float(at::STROKEWIDTH,Some(0.)).unwrap();
+        let round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
+        let width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
+        let height   = header.get_style_of_name_float(at::HEIGHT,Some(width)).unwrap();
+        let stellate = header.get_style_of_name_float(at::STELLATE,Some(0.)).unwrap();
         match self.shape_type {
             ShapeType::Polygon => {
-                let vertices = header.get_style_of_name_int("vertices",Some(4)).unwrap() as usize;
+                let vertices = header.get_style_of_name_int(at::VERTICES,Some(4)).unwrap() as usize;
                 self.polygon.set_vertices(vertices);
                 self.polygon.set_size(height/2., width/height);
             },

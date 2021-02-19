@@ -20,7 +20,10 @@ examples: build
 	${BIN} --output svg/group.svg      examples/group.dml
 	${BIN} --output svg/i10.svg        examples/i10.dml
 	${BIN} --output svg/overlay.svg    examples/overlay.dml
-	${BIN} --output svg/path.svg        examples/path.dml
+	${BIN} --output svg/path.svg       examples/path.dml
+	${BIN} --output svg/rotate.svg     examples/rotate.dml
+	${BIN} --output svg/rotate2.svg    examples/rotate2.dml
+	${BIN} --output svg/rotate3.svg    examples/rotate3.dml
 	${BIN} --output svg/simple.svg     examples/simple.dml
 	${BIN} --output svg/text.svg       examples/text.dml
 	${BIN} --output svg/use.svg        examples/use.dml

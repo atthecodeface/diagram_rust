@@ -1,0 +1,12 @@
+#diagram
+
+##text  class=text fill=black  grid=1,1 "Outermost text"
+##layout class=layout grid=1,2 rotate=30.
+###text class=text fill=red  grid=1,1 "First layout"
+###layout class=layout grid=1,2 rotate=30
+####text class=text fill=green  grid=1,1 "Second layout"
+####layout class=layout grid=1,2 rotate=30
+#####text class=text fill=blue  grid=1,1 "Third layout"
+
+##rule class=text   border=0.1 bordercolor=yellow
+##rule class=layout border=0.3 bordercolor=purple

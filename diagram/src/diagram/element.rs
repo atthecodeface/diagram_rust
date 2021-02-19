@@ -20,6 +20,8 @@ limitations under the License.
 const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use crate::{Rectangle, Point};
@@ -195,14 +197,14 @@ impl <'a> ElementContent<'a> {
     //fp new
     pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
         match name {
-            "group"   => Ok(Self::Group(Group::new(&header, name)?)),
-            "layout"  => Ok(Self::Group(Group::new(&header, name)?)),
-            "path"    => Ok(Self::Path(Path::new(&header, name)?)),
-            "rect"    => Ok(Self::Shape(Shape::new(&header, name)?)),
-            "circle"  => Ok(Self::Shape(Shape::new(&header, name)?)),
-            "polygon" => Ok(Self::Shape(Shape::new(&header, name)?)),
-            "text"    => Ok(Self::Text(Text::new(&header, name)?)),
-            "use"     => Ok(Self::Use(Use::new(&header, name)?)),
+            el::GROUP   => Ok(Self::Group(Group::new(&header, name)?)),
+            el::LAYOUT  => Ok(Self::Group(Group::new(&header, name)?)),
+            el::PATH    => Ok(Self::Path(Path::new(&header, name)?)),
+            el::RECT    => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::CIRCLE  => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::POLYGON => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::TEXT    => Ok(Self::Text(Text::new(&header, name)?)),
+            el::USE     => Ok(Self::Use(Use::new(&header, name)?)),
             _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
         }
     }
@@ -386,6 +388,143 @@ impl ElementLayout {
     pub fn set_place(&mut self, x:f64, y:f64) {
         self.placement = LayoutPlacement::Place(Point::new(x,y));
     }
+
+    //fp of_style
+    fn of_style(header:&ElementHeader) -> Result<Self,ElementError> {
+        let mut layout = Self::new();
+        if let Some(v) = header.get_style_floats_of_name(at::ANCHOR).as_floats(None) {
+            layout.anchor = Point::new(v[0],v[1]);
+        }
+        if let Some(v) = header.get_style_floats_of_name(at::EXPAND).as_floats(None) {
+            layout.expand = Point::new(v[0],v[1]);
+        }
+        if let Some(v) = header.get_style_of_name_float(at::BORDERWIDTH,None) {
+            layout.border_width = v;
+        }
+        if let Some(v) = header.get_style_of_name_float(at::BORDERROUND,None) {
+            layout.border_round = v;
+        }
+        if let Some(v) = header.get_style_of_name_float(at::SCALE,None) {
+            layout.scale = v;
+        }
+        if let Some(v) = header.get_style_of_name_float(at::ROTATE,None) {
+            layout.rotation = v;
+        }
+        if let Some(v) = header.get_style_rgb_of_name(at::BORDERCOLOR).as_floats(None) {
+            layout.border_color = Some((v[0],v[1],v[2]));
+        }
+        if let Some(v) = header.get_style_rgb_of_name(at::BG).as_floats(None) {
+            layout.bg = Some((v[0],v[1],v[2]));
+        }
+        if let Some(v) = header.get_style_floats_of_name(at::MARGIN).as_floats(None) {
+            layout.margin = Some( (v[0], v[1], v[2], v[3]) );
+        }
+        if let Some(v) = header.get_style_floats_of_name(at::PAD).as_floats(None) {
+            layout.pad = Some( (v[0], v[1], v[2], v[3]) );
+        }
+        if let Some(v) = header.get_style_floats_of_name(at::TRANSLATE).as_floats(None) {
+            layout.translate = Point::new(v[0],v[1]);
+        }
+        if let Some( (sx,sy,ex,ey) ) = {
+            let opt_gx = {
+                match header.get_style_ints_of_name(at::GRIDX).as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0], g[0]+1) ),
+                            _ => Some( (g[0], g[1]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            let opt_gy = {
+                match header.get_style_ints_of_name(at::GRIDY).as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0], g[0]+1) ),
+                            _ => Some( (g[0], g[1]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            let opt_grid = {
+                match header.get_style_ints_of_name(at::GRID).as_ints(None) {
+                    Some(g) => {
+                        match g.len() {
+                            0 => None,
+                            1 => Some( (g[0],g[0],g[0]+1,g[0]+1) ),
+                            2 => Some( (g[0],g[1],g[0]+1,g[1]+1) ),
+                            3 => Some( (g[0],g[1],g[2],g[1]+1) ),
+                            _ => Some( (g[0],g[1],g[2],g[3]) ),
+                        }
+                    },
+                    _ => None,
+                }
+            };
+            if let Some( (gx0, gx1) ) = opt_gx {
+                if let Some( (gy0, gy1) ) = opt_gy {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else if let Some( (_,gy0,_,gy1) ) = opt_grid {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else  {
+                    Some( (gx0, 1, gx1, 2) )
+                }
+            } else if let Some( (gy0, gy1) ) = opt_gy {
+                if let Some( (gx0,_,gx1,_) ) = opt_grid {
+                    Some( (gx0, gy0, gx1, gy1) )
+                } else  {
+                    Some( (1,gy0,2,gy1) )
+                }
+            } else {
+                opt_grid
+            }
+        } {
+            layout.set_grid(sx,sy,ex,ey);
+        }
+        if let Some( (x,y) ) = {
+            match header.get_style_ints_of_name(at::PLACE).as_floats(None) {
+                Some(g) => {
+                    match g.len() {
+                        0 => None,
+                        1 => Some( (g[0],g[0]) ),
+                        _ => Some( (g[0], g[1]) ),
+                    }
+                },
+                _ => None,
+            }
+        } {
+            layout.set_place(x,y);
+        }
+        Ok(layout)
+    }
+    
+    //mp set_layout_box
+    fn set_layout_box(&self, layout_box:&mut LayoutBox, content_desired:Rectangle) {
+        layout_box.set_content_geometry(content_desired, Point::origin(), self.scale, self.rotation);
+        layout_box.set_border_width(self.border_width);
+        layout_box.set_border_round(self.border_round);
+        layout_box.set_margin(&self.margin);
+        layout_box.set_padding(&self.pad);
+        layout_box.set_anchor_expand(self.anchor.clone(), self.expand.clone());
+    }
+
+    //mp set_layout_properties
+    fn set_layout_properties(&self, layout:&mut Layout, bbox:Rectangle) -> Rectangle{
+        match self.placement {
+            LayoutPlacement::None => bbox,
+            LayoutPlacement::Grid(sx,sy,ex,ey) => {
+                layout.add_grid_element( (sx,sy), (ex,ey), (bbox.width(), bbox.height() ));
+                Rectangle::none()
+            },
+            LayoutPlacement::Place(pt) => {
+                layout.add_placed_element( &pt, &self.ref_pt, &bbox );
+                Rectangle::none()
+            },
+        }
+    }
     
     //zz All done
 }
@@ -408,8 +547,8 @@ impl <'a> ElementHeader <'a> {
             let stylable = StylableNode::new(name, styles);
             let id_name = None;
             let layout_box = LayoutBox::new();
-            let layout = ElementLayout::new();
-            let mut hdr = ElementHeader{ stylable, id_name, layout_box, layout };
+            let layout     = ElementLayout::new();
+            let mut hdr    = ElementHeader{ stylable, id_name, layout_box, layout };
             for (name,value) in &name_values {
                 let result = hdr.stylable.add_name_value(name, value);
                 ElementError::of_result(&hdr, result)?;
@@ -437,7 +576,22 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_style_names
     pub fn get_style_names<'z> () -> Vec<&'z str> {
-        vec!["bbox", "grid", "gridx", "gridy", "place", "anchor", "expand", "rotate", "scale", "translate", "pad", "margin", "border", "bg", "bordercolor", "borderround"]
+        vec![at::BBOX,
+             at::GRID,
+             at::GRIDX,
+             at::GRIDY,
+             at::PLACE,
+             at::ANCHOR,
+             at::EXPAND,
+             at::ROTATE,
+             at::SCALE,
+             at::TRANSLATE,
+             at::PAD,
+             at::MARGIN,
+             at::BG,
+             at::BORDERWIDTH,
+             at::BORDERCOLOR,
+             at::BORDERROUND]
     }
 
     //mp override_values
@@ -526,136 +680,16 @@ impl <'a> ElementHeader <'a> {
 
     //mp style
     pub fn style(&mut self) -> Result<(),ElementError> {
-        if let Some(v) = self.get_style_floats_of_name("anchor").as_floats(None) {
-            self.layout.anchor = Point::new(v[0],v[1]);
-        }
-        if let Some(v) = self.get_style_floats_of_name("expand").as_floats(None) {
-            self.layout.expand = Point::new(v[0],v[1]);
-        }
-        if let Some(v) = self.get_style_of_name_float("border",None) {
-            self.layout.border_width = v;
-        }
-        if let Some(v) = self.get_style_of_name_float("borderround",None) {
-            self.layout.border_round = v;
-        }
-        if let Some(v) = self.get_style_of_name_float("scale",None) {
-            self.layout.scale = v;
-        }
-        if let Some(v) = self.get_style_of_name_float("rotate",None) {
-            self.layout.rotation = v;
-        }
-        if let Some(v) = self.get_style_rgb_of_name("bordercolor").as_floats(None) {
-            self.layout.border_color = Some((v[0],v[1],v[2]));
-        }
-        if let Some(v) = self.get_style_rgb_of_name("bg").as_floats(None) {
-            self.layout.bg = Some((v[0],v[1],v[2]));
-        }
-        if let Some(v) = self.get_style_floats_of_name("margin").as_floats(None) {
-            self.layout.margin = Some( (v[0], v[1], v[2], v[3]) );
-        }
-        if let Some(v) = self.get_style_floats_of_name("pad").as_floats(None) {
-            self.layout.pad = Some( (v[0], v[1], v[2], v[3]) );
-        }
-        if let Some(v) = self.get_style_floats_of_name("translate").as_floats(None) {
-            self.layout.translate = Point::new(v[0],v[1]);
-        }
-        if let Some( (sx,sy,ex,ey) ) = {
-            let opt_gx = {
-                match self.get_style_ints_of_name("gridx").as_ints(None) {
-                    Some(g) => {
-                        match g.len() {
-                            0 => None,
-                            1 => Some( (g[0], g[0]+1) ),
-                            _ => Some( (g[0], g[1]) ),
-                        }
-                    },
-                    _ => None,
-                }
-            };
-            let opt_gy = {
-                match self.get_style_ints_of_name("gridy").as_ints(None) {
-                    Some(g) => {
-                        match g.len() {
-                            0 => None,
-                            1 => Some( (g[0], g[0]+1) ),
-                            _ => Some( (g[0], g[1]) ),
-                        }
-                    },
-                    _ => None,
-                }
-            };
-            let opt_grid = {
-                match self.get_style_ints_of_name("grid").as_ints(None) {
-                    Some(g) => {
-                        match g.len() {
-                            0 => None,
-                            1 => Some( (g[0],g[0],g[0]+1,g[0]+1) ),
-                            2 => Some( (g[0],g[1],g[0]+1,g[1]+1) ),
-                            3 => Some( (g[0],g[1],g[2],g[1]+1) ),
-                            _ => Some( (g[0],g[1],g[2],g[3]) ),
-                        }
-                    },
-                    _ => None,
-                }
-            };
-            if let Some( (gx0, gx1) ) = opt_gx {
-                if let Some( (gy0, gy1) ) = opt_gy {
-                    Some( (gx0, gy0, gx1, gy1) )
-                } else if let Some( (_,gy0,_,gy1) ) = opt_grid {
-                    Some( (gx0, gy0, gx1, gy1) )
-                } else  {
-                    Some( (gx0, 1, gx1, 2) )
-                }
-            } else if let Some( (gy0, gy1) ) = opt_gy {
-                if let Some( (gx0,_,gx1,_) ) = opt_grid {
-                    Some( (gx0, gy0, gx1, gy1) )
-                } else  {
-                    Some( (1,gy0,2,gy1) )
-                }
-            } else {
-                opt_grid
-            }
-        } {
-            self.layout.set_grid(sx,sy,ex,ey);
-        }
-        if let Some( (x,y) ) = {
-            match self.get_style_ints_of_name("place").as_floats(None) {
-                Some(g) => {
-                    match g.len() {
-                        0 => None,
-                        1 => Some( (g[0],g[0]) ),
-                        _ => Some( (g[0], g[1]) ),
-                    }
-                },
-                _ => None,
-            }
-        } {
-            self.layout.set_place(x,y);
-        }
+        self.layout = ElementLayout::of_style(self)?;
         Ok(())
     }
     
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
     pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
-        self.layout_box.set_content_geometry(content_desired, Point::origin(), self.layout.scale, self.layout.rotation);
-        self.layout_box.set_border_width(self.layout.border_width);
-        self.layout_box.set_border_round(self.layout.border_round);
-        self.layout_box.set_margin(&self.layout.margin);
-        self.layout_box.set_padding(&self.layout.pad);
-        self.layout_box.set_anchor_expand(self.layout.anchor.clone(), self.layout.expand.clone());
+        self.layout.set_layout_box(&mut self.layout_box, content_desired);
         let bbox = self.layout_box.get_desired_bbox();
-        match self.layout.placement {
-            LayoutPlacement::None => bbox,
-            LayoutPlacement::Grid(sx,sy,ex,ey) => {
-                layout.add_grid_element( (sx,sy), (ex,ey), (bbox.width(), bbox.height() ));
-                Rectangle::none()
-            },
-            LayoutPlacement::Place(pt) => {
-                layout.add_placed_element( &pt, &self.layout.ref_pt, &bbox );
-                Rectangle::none()
-            },
-        }
+        self.layout.set_layout_properties(layout, bbox)
     }
                            
     //mp apply_placement
@@ -699,14 +733,14 @@ pub struct Element<'a> {
 impl <'a> Element <'a> {
     //fp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add_content_descriptor("use",      false, Use::get_style_names("use"));
-        descriptor.add_content_descriptor("group",    true,  Group::get_style_names("group"));
-        descriptor.add_content_descriptor("layout",   true,  Group::get_style_names("layout"));
-        descriptor.add_content_descriptor("text",     true,  Text::get_style_names("text"));
-        descriptor.add_content_descriptor("polygon",  true,  Shape::get_style_names("polygon"));
-        descriptor.add_content_descriptor("rect",     true,  Shape::get_style_names("rect"));
-        descriptor.add_content_descriptor("circle",   true,  Shape::get_style_names("circle"));
-        descriptor.add_content_descriptor("path",     true,  Path::get_style_names("path"));
+        descriptor.add_content_descriptor(el::USE,      false, Use::get_style_names(el::USE));
+        descriptor.add_content_descriptor(el::GROUP,    true,  Group::get_style_names(el::GROUP));
+        descriptor.add_content_descriptor(el::LAYOUT,   true,  Group::get_style_names(el::LAYOUT));
+        descriptor.add_content_descriptor(el::TEXT,     true,  Text::get_style_names(el::TEXT));
+        descriptor.add_content_descriptor(el::POLYGON,  true,  Shape::get_style_names(el::POLYGON));
+        descriptor.add_content_descriptor(el::RECT,     true,  Shape::get_style_names(el::RECT));
+        descriptor.add_content_descriptor(el::CIRCLE,   true,  Shape::get_style_names(el::CIRCLE));
+        descriptor.add_content_descriptor(el::PATH,     true,  Path::get_style_names(el::PATH));
     }
 
     //mp borrow_id

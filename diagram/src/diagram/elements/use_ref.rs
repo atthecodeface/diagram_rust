@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -44,7 +46,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     //fp new
     /// Create a new element of the given name
     fn new(header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
-        if let Some(id_ref) = header.get_style_of_name_string("ref") {
+        if let Some(id_ref) = header.get_style_of_name_string(at::REF) {
             Ok(Self { id_ref, strings:Vec::new(), content:Vec::new(), depth:0 })
         } else {
             Err(ElementError::of_string(header, "No 'ref' attribute found in use element"))
@@ -85,7 +87,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
 
     //fp get_style_names
     fn get_style_names<'z> (_name:&str) -> Vec<&'z str> {
-        vec!["ref"]
+        vec![at::REF]
     }
 
     //mp style
