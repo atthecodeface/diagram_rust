@@ -532,7 +532,14 @@ impl ElementLayout {
 
     //mp set_layout_box
     fn set_layout_box(&self, layout_box:&mut LayoutBox, content_desired:Rectangle) {
-        layout_box.set_content_geometry(content_desired, Point::origin(), self.scale, self.rotation);
+        let bbox = {
+            if self.bbox.is_none() {
+                content_desired
+            } else {
+                self.bbox
+            }
+        };
+        layout_box.set_content_geometry(bbox, Point::origin(), self.scale, self.rotation);
         layout_box.set_border_width(self.border_width);
         layout_box.set_border_round(self.border_round);
         layout_box.set_margin(&self.margin);
