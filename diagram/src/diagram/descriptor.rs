@@ -49,6 +49,7 @@ impl <'a> DiagramDescriptor<'a> {
     /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
         let style_set = StyleSet::new()
+            .add_type(at::DEBUG,       StyleValue::string(None),  false)            
             .add_type(at::BBOX,        StyleValue::float_array(), false)            
             .add_type(at::GRID,        StyleValue::int_array(),   false)
             .add_type(at::GRIDX,       StyleValue::int_array(),   false)

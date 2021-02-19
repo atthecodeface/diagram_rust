@@ -20,7 +20,7 @@ limitations under the License.
 use std::collections::VecDeque;
 use super::{Element, ElementHeader, ElementContent, Diagram};
 use crate::{LayoutRecord, Transform};
-use crate::{Polygon, Bezier, Point};
+use crate::{Polygon, Rectangle, Bezier, Point};
 use xml::attribute::{Attribute};
 use xml::name::{Name};
 use xml::namespace::{Namespace};
@@ -139,6 +139,40 @@ impl SvgElement {
         self.add_path(&v, closed);
     }
 
+    //fp new_grid
+    /// Create a grid element with given region, spacing, line
+    /// width and color
+    fn new_grid(rect:Rectangle, spacing:f64, line_width:f64, color:&str) -> Option<Self> {
+        let xmin = ((rect.x0 / spacing) + 0. ).floor() as isize;
+        let xmax = ((rect.x1 / spacing) + 1. ).floor() as isize;
+        let xlen = xmax - xmin;
+
+        let ymin = ((rect.y0 / spacing) + 0. ).floor() as isize;
+        let ymax = ((rect.y1 / spacing) + 1. ).floor() as isize;
+        let ylen = ymax - ymin;
+
+        if xlen < 2 || ylen < 2 { return None; }
+
+        let mut r = String::new();
+        for i in xmin .. xmax+1 {
+            let coord = (i as f64) * spacing;
+            r.push_str(&format!("M {},{} v {} ",coord,rect.y0,rect.y1-rect.y0));
+        }
+
+        for i in ymin .. ymax+1 {
+            let coord = (i as f64) * spacing;
+            r.push_str(&format!("M {},{} h {} ",rect.x0,coord,rect.x1-rect.x0));
+        }
+
+        let mut grid = SvgElement::new("path");
+        grid.add_attribute("fill","None");
+        grid.add_attribute("stroke",color);
+        grid.add_attribute("stroke-width",&format!("{}",line_width));
+        grid.add_attribute("d",&r);
+        Some(grid)
+    }
+    
+    
     //fp display
     pub fn display(&self, indent:usize) {
         let indent_str = &INDENT_STRING[0..indent];
@@ -367,30 +401,8 @@ impl Svg {
         self.stack[n-1].contents.push(e);
     }
 
-    //mi add_grid
-    /// Add a grid to the SVG file with given region, spacing, line
-    /// width and color
-    fn add_grid(&mut self, min:f64, max:f64, spacing:f64, line_width:f64, color:&str) {
-        let length = max-min;
-        let mut rx = String::new();
-        let mut ry = String::new();
-        let mut coord = min;
-        while coord <= max {
-            rx.push_str(&format!("M {},{} v {} ",coord,min,length));
-            ry.push_str(&format!("M {},{} h {} ",min,coord,length));
-            coord += spacing;
-        }
-        rx.push_str(&ry);
-        let mut grid = SvgElement::new("path");
-        grid.add_attribute("fill","None");
-        grid.add_attribute("stroke",color);
-        grid.add_attribute("stroke-width",&format!("{}",line_width));
-        grid.add_attribute("d",&rx);
-        self.add_subelement(grid);
-    }
-    
-    //mp generate_layout_recoved_svg
-    pub(super) fn generate_layout_recoved_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
+    //mp generate_layout_recoredd_svg
+    pub(super) fn generate_layout_recorded_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
         if self.show_layout {
             if let Some(lr) = layout_record.as_ref() {
                 lr.generate_svg( self )?;
@@ -469,6 +481,7 @@ impl <'a> GenerateSvg for Element<'a> {
             ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap(), true);
             svg.add_subelement(ele);
         }
+        
         if svg.show_content_rectangles {
             let rect = self.header.layout_box.get_content_rectangle();
             let (c,w,h) = rect.get_cwh();
@@ -482,7 +495,17 @@ impl <'a> GenerateSvg for Element<'a> {
             self.header.svg_add_transform(&mut ele);
             svg.add_subelement(ele);
         }
+        
         self.content.generate_svg(svg, &self.header)?;
+
+        if let Some((spacing, color)) = self.header.layout.debug_get_grid() {
+            let r = self.header.layout_box.get_content_rectangle();
+            if let Some(mut ele) = SvgElement::new_grid(r,spacing,0.05,color) {
+                self.header.svg_add_transform(&mut ele);
+                svg.add_subelement(ele);
+            }
+        }
+        
         if self.header.layout.border_color.is_some() {
             let mut ele = SvgElement::new("path");
             ele.add_color("stroke",&self.header.layout.border_color.unwrap());
@@ -600,30 +623,22 @@ impl <'a> GenerateSvg for Diagram<'a> {
         let ele = svg.pop_element();
         svg.add_subelement(ele);
 
-        let mut ele = SvgElement::new("g");
-        ele.add_transform(&self.contents.content_transform);
-        svg.push_element(ele);
-
         if svg.show_grid {
-            svg.add_grid(-200.,200.,10.,0.5,"grey");
-            svg.add_grid(-100.,100.,10.,1.0,"blue");
+            if let Some(ele) = SvgElement::new_grid(Rectangle::new(-100.,-100.,100.,100.),10.,0.1,"grey") {
+                svg.add_subelement(ele);
+            }
         }
 
         if let Some(element) = &self.contents.root_layout{
             element.generate_svg( svg )?;
         }
 
-        if svg.show_layout {
-            if let Some(lr) = &self.layout_record {
-                lr.generate_svg( svg )?;
-            }
-        }
-
-        let ele = svg.pop_element();
+        
         if svg.display {
+            let ele = svg.pop_element();
             ele.display(0);
+            svg.push_element(ele);
         }
-        svg.add_subelement(ele);
         Ok(())
     }
 }

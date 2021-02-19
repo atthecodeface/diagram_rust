@@ -1,18 +1,18 @@
 #diagram
 
-##circle id=c  class=X grid=1,1 width=10
-##rect   id=r0  class=X grid=1,0 width=10 height=5
-##rect   id=r10 class=X grid=0,1 width=5  height=10
-##rect   id=r12 class=X grid=2,1 width=5  height=10
-##rect   id=r2  class=X grid=1,2 width=10 height=5
+##circle id=c  class=X grid=1,1 width=30
+##rect   id=r0  class=X grid=1,0 width=30 height=15
+##rect   id=r10 class=X grid=0,1 width=15  height=30
+##rect   id=r12 class=X grid=2,1 width=15  height=30
+##rect   id=r2  class=X grid=1,2 width=30 height=15
 
-##circle id=cr class=Y grid=1,1 width=9
+##circle id=cr class=Y grid=1,1 width=27
 ##layout grid=1,1 class=T
 ###text   id=t  class="X T" grid=1,1 "**"
 ##layout grid=1,1 class=T
 ###text   id=tr class="Z T" grid=1,1 "**"
 
-##rule class=X fill=red
+##rule class=X fill=red 
 ##rule class=Y fill=blue   rotate=90.
 ##rule class=Z fill=yellow rotate=45.
 

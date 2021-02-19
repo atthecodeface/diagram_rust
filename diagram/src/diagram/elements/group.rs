@@ -269,7 +269,7 @@ impl <'a> GenerateSvgElement for Group <'a> {
             for e in &self.content {
                 e.generate_svg( svg )?;
             }
-            svg.generate_layout_recoved_svg( &self.layout_record )?;
+            svg.generate_layout_recorded_svg( &self.layout_record )?;
             let ele = svg.pop_element();
             svg.add_subelement(ele);
         } else {

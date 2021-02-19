@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="2.0" width="109.06250232219338mm" height="28mm" viewBox="-54.53125116109669 -14 109.06250232219338 28">
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" markerUnits="strokeWidth" orient="auto">
+<path fill="context-stroke" d="M 0 0 L 10 5 L 0 10 z" />
+</marker>
+<marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth">
+<circle cx="5" cy="5" r="5" fill="context-stroke" />
+</marker>
+</defs>
+<g>
+<path stroke="None" fill="#ff0000" d="M -46.0313,14.0000 L -46.0313,-14.0000 L -54.5313,-14.0000 L -54.5313,14.0000 L -46.0313,14.0000 z" />
+<path transform="translate(-49.0313 0.0000) " stroke="#ffff00" fill="#0000ff" stroke-width="1.0000" d="M 2.5000,8.6603 L 2.5000,-8.6603 L -5.0000,-0.0000 L 2.5000,8.6603 z" />
+<path transform="translate(-34.9602 0.0000) " stroke="None" fill="#ffc0cb" stroke-width="0.0000" d="M 7.0711,7.0711 L 7.0711,-7.0711 L -7.0711,-7.0711 L -7.0711,7.0711 L 7.0711,7.0711 z" />
+<path stroke="#008000" stroke-width="4.0000" fill="None" d="M -25.8891,12.0000 L -25.8891,-12.0000 L -44.0313,-12.0000 L -44.0313,12.0000 L -25.8891,12.0000 z" />
+<path transform="translate(-9.8891 0.0000) " stroke="None" fill="#ffc0cb" stroke-width="0.0000" d="M 8.0902,5.8779 L 8.0902,-5.8779 L -3.0902,-9.5106 L -10.0000,-0.0000 L -3.0902,9.5106 L 8.0902,5.8779 z" />
+<path stroke="#008000" stroke-width="4.0000" fill="None" d="M 0.2011,12.0000 L 0.2011,-12.0000 L -21.8891,-12.0000 L -21.8891,12.0000 L 0.2011,12.0000 z" />
+<path transform="translate(14.8613 0.0000) " stroke="None" fill="#ffc0cb" stroke-width="0.0000" d="M 8.6603,5.0000 L 8.6603,-5.0000 L 0.0000,-10.0000 L -8.6603,-5.0000 L -8.6603,5.0000 L -0.0000,10.0000 L 8.6603,5.0000 z" />
+<path stroke="#008000" stroke-width="4.0000" fill="None" d="M 25.5216,12.0000 L 25.5216,-12.0000 L 4.2011,-12.0000 L 4.2011,12.0000 L 25.5216,12.0000 z" />
+<path transform="translate(41.5216 0.0000) " stroke="None" fill="#ffc0cb" stroke-width="0.0000" d="M 9.0097,4.3388 L 9.0097,-4.3388 L 2.2252,-9.7493 L -6.2349,-7.8183 L -10.0000,-0.0000 L -6.2349,7.8183 L 2.2252,9.7493 L 9.0097,4.3388 z" />
+<path stroke="#008000" stroke-width="4.0000" fill="None" d="M 52.5313,12.0000 L 52.5313,-12.0000 L 29.5216,-12.0000 L 29.5216,12.0000 L 52.5313,12.0000 z" />
+</g>
+</svg>

@@ -1,4 +1,4 @@
-BIN = ./target/debug/diagram
+BIN = ./target/debug/diagram --svg_indent=""
 
 .PHONY: test
 test:
@@ -27,4 +27,8 @@ examples: build
 	${BIN} --output svg/simple.svg     examples/simple.dml
 	${BIN} --output svg/text.svg       examples/text.dml
 	${BIN} --output svg/use.svg        examples/use.dml
+
+.PHONY: is_gold
+is_gold: examples
+	diff -r svg svg.gold
 

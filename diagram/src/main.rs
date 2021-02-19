@@ -7,6 +7,8 @@ extern crate hmlm;
 extern crate clap;
 extern crate diagram;
 
+const DEBUG_MAIN : bool = 1 == 0;
+
 use clap::{App, Arg};
 use diagram::DiagramDescriptor;
 use diagram::Diagram;
@@ -101,20 +103,19 @@ fn main() {
     let svg_display      = matches.is_present("svg_display");
     let diag_display     = matches.is_present("diag_display");
     let output_file      = matches.value_of("output").unwrap_or("a.svg");
-    diagram.record_layout();
-    println!("Uniqify");
+    if DEBUG_MAIN{ println!("Uniqify"); }
     exit_on_err( diagram.uniquify() );
-    println!("Apply stylesheet");
+    if DEBUG_MAIN{ println!("Apply stylesheet"); }
     diagram.apply_stylesheet();
-    println!("Style");
+    if DEBUG_MAIN{ println!("Style"); }
     exit_on_err( diagram.style() );
-    println!("Lay out");
+    if DEBUG_MAIN{ println!("Lay out"); }
     // exit_on_err( diagram.layout(&Rectangle::new(0.,0.,297.,210.)) );
     exit_on_err( diagram.layout(&Rectangle::none()) );
-    println!("Generate geometry");
+    if DEBUG_MAIN{ println!("Generate geometry"); }
     exit_on_err( diagram.geometry() );
     if diag_display { diagram.display(); }
-    println!("Create SVG");
+    if DEBUG_MAIN{ println!("Create SVG"); }
     let mut svg = Svg::new()
         .set_version(svg_version)
         .set_grid(svg_show_grid)
@@ -122,7 +123,7 @@ fn main() {
         .set_display(svg_display)
         .set_content_rectangles(svg_show_content);
     exit_on_err( diagram.generate_svg(&mut svg) );
-    println!("Write SVG");
+    if DEBUG_MAIN{ println!("Write SVG"); }
     let file_out   = File::create(output_file).unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
     let mut emitter_config = xml::writer::EmitterConfig::new();
@@ -141,7 +142,7 @@ fn main() {
             Some(we) => writer.write(we).unwrap(),
         }
     }
-    println!("Complete");
+    if DEBUG_MAIN{ println!("Complete"); }
     
 }
 

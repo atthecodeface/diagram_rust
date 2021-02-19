@@ -60,7 +60,6 @@ impl From<ElementError> for DiagramError {
 pub struct DiagramContents<'a> {
     pub definitions       : Vec<Element<'a>>,
     pub root_layout       : Option<Element<'a>>,
-    pub content_transform : Transform,
     pub content_bbox      : Rectangle,
 }
 
@@ -71,7 +70,6 @@ impl <'a> DiagramContents<'a> {
     pub(self) fn new() -> Self {
         Self { definitions:Vec::new(),
                root_layout:None,
-               content_transform:Transform::new(),
                content_bbox : Rectangle::none(),
         }
     }
@@ -95,8 +93,6 @@ pub struct Diagram<'a> {
     descriptor    : &'a DiagramDescriptor<'a>,
     pub(super) stylesheet    : StyleSheet<'a>,
     pub(super) contents      : DiagramContents<'a>,
-    pub(super) layout : Layout,
-    pub(super) layout_record : Option<LayoutRecord>, 
 }
 
 //ti Diagram
@@ -110,8 +106,6 @@ impl <'a> Diagram <'a> {
         Self { descriptor,
                stylesheet,
                contents,
-               layout_record : None,
-               layout : Layout::new(),
         }
     }
 
@@ -126,15 +120,6 @@ impl <'a> Diagram <'a> {
         (&self.descriptor, &mut self.contents, &mut self.stylesheet)
     }
     
-    //mp record_layout
-    /// If there is no layout set for the diagram, then create one
-    pub fn record_layout(&mut self) {
-        match self.layout_record {
-            None => { self.layout_record = Some(LayoutRecord::new()); },
-            _ => (),
-        }
-    }
-
     //mp find_definition
     /// Find the definition of an id, if it exists in the contents
     /// 'definitions' section
@@ -169,6 +154,7 @@ impl <'a> Diagram <'a> {
         tree.close_container();
         self.stylesheet.apply_rules_to_tree(&mut tree);
     }
+
     //mp style
     /// Style the contents of the diagram, using the stylesheet
     pub fn style(&mut self) -> Result<(),DiagramError> {
@@ -192,24 +178,24 @@ impl <'a> Diagram <'a> {
     /// and so on
     ///
     pub fn layout(&mut self, within:&Rectangle) -> Result<(),DiagramError> {
-        if let Some(element) = &mut self.contents.root_layout{
-            element.set_layout_properties(&mut self.layout);
+        let mut layout = Layout::new();
+        if let Some(element) = &mut self.contents.root_layout {
+            element.set_layout_properties(&mut layout);
         }
         // specify expansions
-        let mut rect = self.layout.get_desired_geometry();
-        if !within.is_none() {
-            rect = within.clone();
-        }
-        self.layout.layout(&rect);
-        self.contents.content_transform = self.layout.get_layout_transform();
+        let rect = {
+            if within.is_none() {
+                layout.get_desired_geometry()
+            } else {
+                *within
+            }
+        };
+
         self.contents.content_bbox = rect;
-        // apply expansions - lay it out in a rectangle, generate transform?
         if let Some(element) = &mut self.contents.root_layout{
-            element.apply_placement(&self.layout);
+            element.apply_placement(&layout);
         }
-        if let Some(ref mut lr) = &mut self.layout_record {
-            lr.capture_grid(&self.layout);
-        }
+
         Ok(())
     }
 

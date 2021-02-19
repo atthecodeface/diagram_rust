@@ -30,6 +30,7 @@ macro_rules! tag {
 }
 
 pub mod attributes {
+    att!(DEBUG,       "debug");
     att!(BBOX,        "bbox");
 
     att!(GRID,        "grid");

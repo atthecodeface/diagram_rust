@@ -346,7 +346,9 @@ impl std::fmt::Display for LayoutPlacement {
 #[derive(Debug)]
 pub struct ElementLayout {
     placement : LayoutPlacement,
+    debug     : String,
     ref_pt    : Option<Point>,
+    bbox      : Rectangle,
     pub anchor    : Point,
     pub expand    : Point,
     pub scale     : f64,
@@ -365,7 +367,9 @@ impl ElementLayout {
     //fp new
     pub fn new() -> Self {
         Self { placement:LayoutPlacement::None,
+               debug  : "".to_string(),
                ref_pt : None,
+               bbox   : Rectangle::none(),
                anchor : Point::origin(),
                expand : Point::origin(),
                scale:1.,
@@ -379,20 +383,25 @@ impl ElementLayout {
                margin : None,
         }
     }
-    
-    //fp set_grid
-    pub fn set_grid(&mut self, sx:isize, sy:isize, ex:isize, ey:isize) {
-        self.placement = LayoutPlacement::Grid(sx,sy,ex,ey);
-    }
-    
-    //fp set_place
-    pub fn set_place(&mut self, x:f64, y:f64) {
-        self.placement = LayoutPlacement::Place(Point::new(x,y));
-    }
 
     //fp of_style
     fn of_style(header:&ElementHeader) -> Result<Self,ElementError> {
         let mut layout = Self::new();
+        if let Some(d) = header.get_style_of_name_string(at::DEBUG) {
+            layout.debug = d;
+        }
+        match header.get_style_floats_of_name(at::BBOX).as_floats(None) {
+            Some(g) => {
+                match g.len() {
+                    1 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[0]); },
+                    2 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[1]); },
+                    3 =>  { layout.bbox = Rectangle::of_cwh(Point::new(g[0], g[1]), g[2], g[2]); },
+                    _ =>  { layout.bbox = Rectangle::new(g[0], g[1], g[2], g[3]); },
+                    0 => (),
+                }
+            }
+            _ => (),
+        };
         if let Some(v) = header.get_style_floats_of_name(at::ANCHOR).as_floats(None) {
             layout.anchor = Point::new(v[0],v[1]);
         }
@@ -502,6 +511,25 @@ impl ElementLayout {
         Ok(layout)
     }
     
+    //mp debug_get_grid
+    pub fn debug_get_grid(&self) -> Option<(f64, &str)> {
+        if self.debug != "" {
+            Some((1.,"cyan"))
+        } else {
+            None
+        }
+    }
+    
+    //mp set_grid
+    pub fn set_grid(&mut self, sx:isize, sy:isize, ex:isize, ey:isize) {
+        self.placement = LayoutPlacement::Grid(sx,sy,ex,ey);
+    }
+    
+    //mp set_place
+    pub fn set_place(&mut self, x:f64, y:f64) {
+        self.placement = LayoutPlacement::Place(Point::new(x,y));
+    }
+
     //mp set_layout_box
     fn set_layout_box(&self, layout_box:&mut LayoutBox, content_desired:Rectangle) {
         layout_box.set_content_geometry(content_desired, Point::origin(), self.scale, self.rotation);
@@ -513,9 +541,12 @@ impl ElementLayout {
     }
 
     //mp set_layout_properties
-    fn set_layout_properties(&self, layout:&mut Layout, bbox:Rectangle) -> Rectangle{
+    fn set_layout_properties(&self, layout:&mut Layout, bbox:Rectangle) -> Rectangle {
         match self.placement {
-            LayoutPlacement::None => bbox,
+            LayoutPlacement::None => {
+                layout.add_placed_element( &Point::origin(), &None, &bbox );
+                Rectangle::none()
+            }
             LayoutPlacement::Grid(sx,sy,ex,ey) => {
                 layout.add_grid_element( (sx,sy), (ex,ey), (bbox.width(), bbox.height() ));
                 Rectangle::none()
@@ -577,7 +608,8 @@ impl <'a> ElementHeader <'a> {
 
     //mp get_style_names
     pub fn get_style_names<'z> () -> Vec<&'z str> {
-        vec![at::BBOX,
+        vec![at::DEBUG,
+             at::BBOX,
              at::GRID,
              at::GRIDX,
              at::GRIDY,
@@ -687,7 +719,7 @@ impl <'a> ElementHeader <'a> {
     
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
-    pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle{
+    pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle {
         self.layout.set_layout_box(&mut self.layout_box, content_desired);
         let bbox = self.layout_box.get_desired_bbox();
         self.layout.set_layout_properties(layout, bbox)
