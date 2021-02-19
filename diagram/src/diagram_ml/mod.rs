@@ -458,9 +458,12 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     }
 
     //mp read_diagram
-    fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
+    fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor, mut layout:Element<'a>) -> Result<(),MLError> {
         match self.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
+            (_,_,XmlEvent::EndElement{..}) => {
+                self.contents.set_root_element(layout);
+                return Ok(());
+            },
             (_,_,XmlEvent::Comment(_))     => (), // continue
             (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
                 match name.local_name.as_str() {
@@ -479,7 +482,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
                     _ => {
                         match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
                             Ok(element) => {
-                                self.contents.elements.push(element);
+                                layout.add_element(element);
                             },
                             e => { self.errors.update(e); },
                         }
@@ -488,15 +491,16 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
             },
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
-        self.read_diagram(descriptor)
+        self.read_diagram(descriptor, layout)
     }
 
     //mp read_document
     fn read_document(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
-            (fp,_,XmlEvent::StartElement{name, ..}) => {
+            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
                 if name.local_name=="diagram" {
-                    self.read_diagram(descriptor)?;
+                    let layout = MLError::value_result(&fp, Element::new(descriptor, &name.local_name, to_nv(&attributes)))?;
+                    self.read_diagram(descriptor, layout)?;
                     match self.next_event()? {
                         (_,_,XmlEvent::EndDocument) => { Ok (()) },
                         ewp => Err(MLError::bad_ml_event(&ewp)),

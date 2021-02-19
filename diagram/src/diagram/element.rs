@@ -197,6 +197,7 @@ impl <'a> ElementContent<'a> {
     //fp new
     pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
         match name {
+            el::DIAGRAM => Ok(Self::Group(Group::new(&header, name)?)),
             el::GROUP   => Ok(Self::Group(Group::new(&header, name)?)),
             el::LAYOUT  => Ok(Self::Group(Group::new(&header, name)?)),
             el::PATH    => Ok(Self::Path(Path::new(&header, name)?)),
@@ -734,6 +735,7 @@ impl <'a> Element <'a> {
     //fp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
         descriptor.add_content_descriptor(el::USE,      false, Use::get_style_names(el::USE));
+        descriptor.add_content_descriptor(el::DIAGRAM,  true,  Group::get_style_names(el::DIAGRAM));
         descriptor.add_content_descriptor(el::GROUP,    true,  Group::get_style_names(el::GROUP));
         descriptor.add_content_descriptor(el::LAYOUT,   true,  Group::get_style_names(el::LAYOUT));
         descriptor.add_content_descriptor(el::TEXT,     true,  Text::get_style_names(el::TEXT));

@@ -609,8 +609,8 @@ impl <'a> GenerateSvg for Diagram<'a> {
             svg.add_grid(-100.,100.,10.,1.0,"blue");
         }
 
-        for e in self.iter_elements() {
-            e.generate_svg( svg )?;
+        if let Some(element) = &self.contents.root_layout{
+            element.generate_svg( svg )?;
         }
 
         if svg.show_layout {

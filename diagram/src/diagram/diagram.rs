@@ -58,8 +58,8 @@ impl From<ElementError> for DiagramError {
 /// during construction, whereas other parts of a diagram are
 /// immutable (such as its DiagramDescriptor).
 pub struct DiagramContents<'a> {
-    pub definitions : Vec<Element<'a>>,
-    pub elements    : Vec<Element<'a>>,
+    pub definitions       : Vec<Element<'a>>,
+    pub root_layout       : Option<Element<'a>>,
     pub content_transform : Transform,
     pub content_bbox      : Rectangle,
 }
@@ -70,12 +70,17 @@ impl <'a> DiagramContents<'a> {
     /// Create a new empty `DiagramContents`
     pub(self) fn new() -> Self {
         Self { definitions:Vec::new(),
-               elements:Vec::new(),
+               root_layout:None,
                content_transform:Transform::new(),
                content_bbox : Rectangle::none(),
         }
     }
 
+    //mp set_root_element
+    pub fn set_root_element(&mut self, element:Element<'a>) {
+        self.root_layout = Some(element);
+    }
+    
     //zz All done
 }
 
@@ -148,9 +153,8 @@ impl <'a> Diagram <'a> {
     /// definition too along with the ids therein
     pub fn uniquify(&mut self) -> Result<(),DiagramError> {
         let scope = ElementScope::new("", &self.contents.definitions);
-        let n = self.contents.elements.len();
-        for i in 0..n {
-            self.contents.elements[i].uniquify(&scope)?
+        if let Some(element) = &mut self.contents.root_layout{
+            element.uniquify(&scope)?;
         }
         Ok(())
     }
@@ -159,8 +163,8 @@ impl <'a> Diagram <'a> {
     pub fn apply_stylesheet(&mut self) {
         let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get("group").unwrap());
         let mut tree = Tree::new(&mut x);
-        for c in self.contents.elements.iter_mut() {
-            tree = c.tree_add_element(tree);
+        if let Some(element) = &mut self.contents.root_layout{
+            tree = element.tree_add_element(tree);
         }
         tree.close_container();
         self.stylesheet.apply_rules_to_tree(&mut tree);
@@ -168,8 +172,8 @@ impl <'a> Diagram <'a> {
     //mp style
     /// Style the contents of the diagram, using the stylesheet
     pub fn style(&mut self) -> Result<(),DiagramError> {
-        for e in self.contents.elements.iter_mut() {
-            e.style(self.descriptor)?;
+        if let Some(element) = &mut self.contents.root_layout{
+            element.style(self.descriptor)?;
         }
         Ok(())
     }
@@ -188,8 +192,8 @@ impl <'a> Diagram <'a> {
     /// and so on
     ///
     pub fn layout(&mut self, within:&Rectangle) -> Result<(),DiagramError> {
-        for e in self.contents.elements.iter_mut() {
-            e.set_layout_properties(&mut self.layout);
+        if let Some(element) = &mut self.contents.root_layout{
+            element.set_layout_properties(&mut self.layout);
         }
         // specify expansions
         let mut rect = self.layout.get_desired_geometry();
@@ -200,8 +204,8 @@ impl <'a> Diagram <'a> {
         self.contents.content_transform = self.layout.get_layout_transform();
         self.contents.content_bbox = rect;
         // apply expansions - lay it out in a rectangle, generate transform?
-        for e in self.contents.elements.iter_mut() {
-            e.apply_placement(&self.layout);
+        if let Some(element) = &mut self.contents.root_layout{
+            element.apply_placement(&self.layout);
         }
         if let Some(ref mut lr) = &mut self.layout_record {
             lr.capture_grid(&self.layout);
@@ -216,44 +220,14 @@ impl <'a> Diagram <'a> {
         Ok(())
     }
 
-    //mp iter_elements
-    /// Iterate over all the elements in the contents
-    pub fn iter_elements<'b> (&'b self) -> DiagramElements<'a,'b> {
-        DiagramElements { contents:&self.contents, n: 0 }
-    }
-    
     //mp display
     /// Display the diagram in a human-parseable form, generally for debugging
     pub fn display(&self) {
-        println!("{}Layout","");
-        println!("{}    X grid", "");
-        self.layout.grid_placements.0.display("");
-        println!("{}    Y grid", "");
-        self.layout.grid_placements.1.display("");
-        for e in self.iter_elements() {
-            e.display(2);
+        if let Some(element) = &self.contents.root_layout{
+            element.display(0);
         }
     }
 
     //zz All done
 }
 
-//tp DiagramElements
-pub struct DiagramElements<'a, 'b> {
-    contents : &'b DiagramContents<'a>,
-    n : usize,
-}
-
-//ip Iterator for DiagramElements
-impl <'a, 'b> Iterator for DiagramElements<'a, 'b> {
-    type Item = &'b Element<'a>;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.n>=self.contents.elements.len() {
-            None
-        } else {
-            let i=self.n;
-            self.n = self.n + 1;
-            Some(&self.contents.elements[i])
-        }
-    }
-}

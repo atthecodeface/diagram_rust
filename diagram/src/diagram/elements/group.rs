@@ -55,8 +55,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
         let layout = {
             match name {
-                el::LAYOUT => Some(Layout::new()),
-                _ => None,
+                el::GROUP => None,
+                _ => Some(Layout::new()),
             }
         };
         // println!("Group created using name '{}' layout {:?}",  name, layout);
@@ -105,11 +105,11 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     /// Layout supports minx/miny cell size descriptions
     fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
         match name {
-            el::LAYOUT => vec![at::MINX,
-                               at::MINY,
-                               at::GROWX,
-                               at::GROWY],
-            _ => vec![],
+            el::GROUP => vec![],
+            _ => vec![at::MINX,
+                      at::MINY,
+                      at::GROWX,
+                      at::GROWY],
         }
     }
 

@@ -357,7 +357,7 @@ impl <'a> GridDimensionIter<'a> {
 impl <'a> Iterator for GridDimensionIter<'a> {
     type Item = (isize, f64);
     fn next(&mut self) -> Option<Self::Item> {
-        if self.index > self.n {
+        if self.index > self.n || self.n == 0 {
             None
         } else if self.index == self.n {
             let i = self.index - 1;
