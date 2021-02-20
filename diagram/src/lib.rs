@@ -48,7 +48,7 @@ over earlier elements.
 The rendered elements in a drawing are currently shapes and
 text.
 
-Shapes are regular polygons or regula stars, circles or
+Shapes are regular polygons or regular stars, circles or
 ellipses; they may be filled with a solid color, and they may have
 their edges drawn; they may have rounded corners.
 
@@ -84,6 +84,11 @@ of columns.
 A diagram may contain definitions of collections of elements, such as
 (for example) a queue may be defined to be a layout of four rounded
 rectangles. This definition may be given, for example an 'id' of 'Queue'.
+
+```text
+#defs
+##rect id=Queue stroke-color=red round=1. width=10. height=5.
+```
 
 The diagram contents may then *use* this definition, for example with:
 
@@ -188,18 +193,11 @@ The diagram provides very simple text and polygons with the grid-based
 layout. It supports a first cut of the stylesheet mechanism.
 
 Diagrams written for this version may need to change for version 0.3.
-Names of some
-attributes will be realigned with SVG - strokewidth will become
-stroke-width, and so on.
 Path support for bezier curves and closed paths will be added.
 
 ## Upcoming changes
 
-### Attribute names
-
-For atributes that are effectively a two-part hierarchy (border ->
-color for example) the naming scheme of <decoration>-<aspect> will be
-used. Hence strokewidth to become stroke-width
+Nothing imminent
 
 ## Upcoming additions
 
