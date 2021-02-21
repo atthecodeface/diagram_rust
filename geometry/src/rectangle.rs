@@ -166,8 +166,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(0.,0., 10.,5.);
     /// assert_eq!( r.pt_within(Point::origin()).x, 0. );
     /// assert_eq!( r.pt_within(Point::origin()).y, 0. );
@@ -218,8 +218,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(0.,0., 10.,5.);
     /// assert_eq!( r.xrange().x, 0. );
     /// assert_eq!( r.xrange().y, 10. );
@@ -235,8 +235,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(0.,0., 10.,5.);
     /// assert_eq!( r.yrange().x, 0. );
     /// assert_eq!( r.yrange().y, 5. );
@@ -251,8 +251,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(15.,12., 29., 30.);
     /// assert_eq!( r.width(), 14. );
     /// # assert_eq!( r.height(), 18. );
@@ -265,8 +265,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(15.,12., 29., 30.);
     /// # assert_eq!( r.width(), 14. );
     /// assert_eq!( r.height(), 18. );
@@ -286,8 +286,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(15.,12., 29., 30.)
     ///         .scale(2.);
     /// assert_eq!( r.x0, 30. );
@@ -310,8 +310,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(15.,12., 29., 30.)
     ///         .enlarge(1.);
     /// assert_eq!( r.x0, 14. );
@@ -333,8 +333,8 @@ impl Rectangle {
     /// # Example
     ///
     /// ```
-    /// # extern crate diagram;
-    /// # use diagram::{Point, Rectangle};
+    /// # extern crate geometry;
+    /// # use geometry::{Point, Rectangle};
     /// let r = Rectangle::new(15.,12., 29., 30.)
     ///         .reduce(1.);
     /// assert_eq!( r.x0, 16. );

@@ -19,8 +19,7 @@ limitations under the License.
 //a Imports
 use hmlm;
 use std::io::prelude::{Read};
-use crate::{StyleSheet, StyleRule, StyleAction, Diagram, DiagramContents, DiagramDescriptor};
-use crate::constants::attributes as at;
+use crate::{StyleSheet, StyleRule, Diagram, DiagramContents, DiagramDescriptor};
 use crate::constants::elements   as el;
 use xml;
 use xml::reader::XmlEvent;
@@ -58,9 +57,9 @@ impl MLError {
     }
 
     //fi bad_attribute_name
-    fn bad_attribute_name(fp:&FilePosition, name:&str) -> Self {
-        Self::BadAttributeName(fp.clone(), name.to_string())
-    }
+    // fn bad_attribute_name(fp:&FilePosition, name:&str) -> Self {
+    // Self::BadAttributeName(fp.clone(), name.to_string())
+    // }
 
     //mp bad_ml_event
     fn bad_ml_event(ewp:&XmlEventWithPos) -> Self {
@@ -544,9 +543,9 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
 /// let mut diagram  = Diagram::new(&diagram_descriptor);
 /// let mut dml      = DiagramML::new(&mut diagram);
 /// dml.read_file("#diagram ##defs ###rect id=a ##rect ##group ###rect ##rect".as_bytes()).unwrap();
-/// let (_, contents) = diagram.borrow_contents_descriptor();
+/// let (_, contents, _) = diagram.borrow_contents_descriptor();
 /// assert_eq!(1, contents.definitions.len(), "One definition expected from this");
-/// assert_eq!(3, contents.elements.len(), "Three elements (rect, group, rect) expected from this");
+/// // assert_eq!(3, contents.root.elements.len(), "Three elements (rect, group, rect) expected from this");
 /// ```
 pub struct DiagramML<'a, 'b> {
     diagram: &'a mut Diagram<'b>,
@@ -592,6 +591,5 @@ mod tests {
         dml.read_file("#diagram".as_bytes()).unwrap();
         let (_, contents, _) = diagram.borrow_contents_descriptor();
         assert_eq!(0, contents.definitions.len());
-        assert_eq!(0, contents.elements.len());
     }
 }

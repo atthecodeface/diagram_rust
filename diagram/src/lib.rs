@@ -310,7 +310,7 @@ mod diagram;
 mod diagram_ml;
 
 pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
-pub (crate) use diagram::{StyleSheet, StyleRule, StyleAction,DiagramContents}; // , Element, ElementError, };
+pub (crate) use diagram::{StyleSheet, StyleRule, DiagramContents};
 
 pub use diagram::{Diagram, DiagramDescriptor};
 pub use diagram::{Svg, GenerateSvg};

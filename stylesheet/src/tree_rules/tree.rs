@@ -184,13 +184,13 @@ impl <'a, 'b, V> Iterator for TreeIter<'a, 'b, V> {
 /// A TreeNode is never cloned.
 pub struct TreeNode<'a, V> {
     node     : &'a mut V,
-    parent   : Option<usize>,
+    _parent   : Option<usize>,
     depth    : usize,
     children : Vec<usize>,
 }
 impl <'a, V> TreeNode<'a, V> {
     pub fn new(node:&'a mut V, parent:Option<usize>, depth:usize) -> Self {
-        Self { node, parent, depth, children:Vec::new() }
+        Self { node, _parent:parent, depth, children:Vec::new() }
     }
     pub fn add_child(&mut self, child:usize) {
         self.children.push(child);

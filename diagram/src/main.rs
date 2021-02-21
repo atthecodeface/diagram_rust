@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate lazy_static;
+// #[macro_use]
+// extern crate lazy_static;
 
 use std::fs::File;
 extern crate xml;
@@ -26,7 +26,7 @@ fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
     }
 }
 
-static mut svg_indent_str :String = String::new();
+static mut SVG_INDENT_STR :String = String::new();
 fn main() {
     let matches = App::new("diagram")
         .about("SVG creator from a diagram descriptor")
@@ -130,8 +130,8 @@ fn main() {
     let mut emitter_config = xml::writer::EmitterConfig::new();
     if let Some(indent) = svg_indent {
         unsafe {
-            svg_indent_str = indent.clone();
-            emitter_config = emitter_config.perform_indent(true).indent_string(&svg_indent_str);
+            SVG_INDENT_STR = indent.clone();
+            emitter_config = emitter_config.perform_indent(true).indent_string(&SVG_INDENT_STR);
         }
     }
     let mut writer = xml::writer::EventWriter::new_with_config(file_out,

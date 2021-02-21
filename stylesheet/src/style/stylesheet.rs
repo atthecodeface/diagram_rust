@@ -195,17 +195,7 @@ mod test_stylesheet {
                 top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
             }
         }
-        assert!(false);
+        // FIXME make this a useful test
+        // assert!(false);
     }
 }
-/*
-(*f create *)
-let create () = {
-    entity_list = [];
-    roots = [];
-    ids = Style_ids.create ();
-    default_style = Style.create [];
-    rules = [];
-    built_descs = [];
-  }
- */

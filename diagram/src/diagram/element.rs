@@ -258,7 +258,7 @@ impl <'a> ElementContent<'a> {
     }
 
     //fp tree_add_element
-    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+    pub fn tree_add_element<'b>(&'b mut self, tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
         match self {
             Self::Group(ref mut g) => { g.tree_add_element(tree) },
             Self::Use(ref mut g)   => { g.tree_add_element(tree) },
@@ -393,11 +393,11 @@ impl ElementLayout {
         match header.get_style_floats_of_name(at::BBOX).as_floats(None) {
             Some(g) => {
                 match g.len() {
+                    0 => (),
                     1 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[0]); },
                     2 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[1]); },
                     3 =>  { layout.bbox = Rectangle::of_cwh(Point::new(g[0], g[1]), g[2], g[2]); },
                     _ =>  { layout.bbox = Rectangle::new(g[0], g[1], g[2], g[3]); },
-                    0 => (),
                 }
             }
             _ => (),

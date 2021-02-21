@@ -17,12 +17,11 @@ limitations under the License.
  */
 
 //a Imports
+use geometry::{Rectangle, Bezier, BezierPath, Point};
 use crate::constants::attributes as at;
-use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
-use geometry::{Rectangle, Bezier, Point};
 
 //a Path element
 //tp Path - an Element that contains a path
@@ -34,6 +33,7 @@ pub struct Path {
     pub center : Point,
     pub width : f64,
     pub height : f64,
+    pub round  : f64,
     pub coords : Vec<Point>, // relative to actual width and height
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
@@ -44,13 +44,14 @@ pub struct Path {
 //ip DiagramElementContent for Path
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp new
-    fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         let closed=false;
         Ok( Self {
             closed,
             center:Point::origin(),
             width : 0.,
             height : 0.,
+            round : 0.,
             coords : Vec::new(),
             stroke_width:0.,
             stroke : None,
@@ -115,7 +116,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
             }
         }
         self.stroke_width = header.get_style_of_name_float(at::STROKEWIDTH,Some(0.)).unwrap();
-        let round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
+        self.round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
         self.width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
         self.height   = header.get_style_of_name_float(at::HEIGHT,Some(self.width)).unwrap();
         Ok(())
@@ -140,8 +141,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4
-    fn display(&self, indent:usize, indent_str:&str) {
-        println!("{}  path {} {} {}",indent_str, self.center, self.width, self.height);
+    fn display(&self, _indent:usize, indent_str:&str) {
+        println!("{}  path {} {} {} {}",indent_str, self.center, self.width, self.height, self.round);
     }
 
     //zz All done
@@ -170,11 +171,11 @@ impl GenerateSvgElement for Path {
         for c in &self.coords {
             coords.push( c.scale_xy(self.width, self.height).add(&bl, 1.) );
         }
-        let mut path = Vec::new();
+        let mut path = BezierPath::new();
         for i in 0..coords.len()-1 {
-            path.push( Bezier::line(&coords[i], &coords[i+1]) );
+            path.add_bezier( Bezier::line(&coords[i], &coords[i+1]) );
         }
-        ele.add_path(&path, self.closed);
+        ele.add_bezier_path(&path, self.closed);
         svg.add_subelement(ele);
         Ok(())
     }

@@ -20,7 +20,6 @@ limitations under the License.
 use geometry::{Rectangle};
 use stylesheet::{StylableNode, Tree};
 use crate::constants::attributes as at;
-use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};

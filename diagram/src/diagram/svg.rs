@@ -17,8 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::VecDeque;
-use geometry::{Polygon, Rectangle, Bezier, Point, Transform};
+use geometry::{Polygon, Rectangle, Bezier, BezierPath, Point, Transform};
 use xml::attribute::{Attribute};
 use xml::name::{Name};
 use xml::namespace::{Namespace};
@@ -118,8 +117,8 @@ impl SvgElement {
         }            
     }
 
-    //fp add_path
-    pub fn add_path(&mut self, v:&Vec<Bezier>, closed:bool) {
+    //fp old_add_path
+    pub fn old_add_path(&mut self, v:&Vec<Bezier>, closed:bool) {
         let mut r = String::new();
         r.push_str(&format!("M {}",pt_as_str(v[0].get_pt(0))));
         for b in v {
@@ -133,10 +132,24 @@ impl SvgElement {
         self.add_attribute("d", &r);
     }
 
+    //fp add_bezier_path
+    pub fn add_bezier_path(&mut self, bp:&BezierPath, closed:bool) {
+        let mut r = String::new();
+        r.push_str(&format!("M {}",pt_as_str(&bp.get_pt(0))));
+        for b in bp.iter_beziers() {
+            match b {
+                Bezier::Linear(_,p1) => r.push_str(&format!(" L {}",pt_as_str(p1))),
+                Bezier::Quadratic(_,c,p1) => r.push_str(&format!(" Q {} {}",pt_as_str(c),pt_as_str(p1))),
+                Bezier::Cubic(_,c0,c1,p1) => r.push_str(&format!(" C {} {} {}",pt_as_str(c0),pt_as_str(c1),pt_as_str(p1))),
+            }
+        }
+        if closed { r.push_str(" z"); }
+        self.add_attribute("d", &r);
+    }
+
     //fp add_polygon_path
     pub fn add_polygon_path(&mut self, p:&Polygon, closed:bool) {
-        let v = p.as_paths(Vec::new());
-        self.add_path(&v, closed);
+        self.add_bezier_path(&p.as_paths(), closed);
     }
 
     //fp new_grid
@@ -318,8 +331,6 @@ impl <'a> Iterator for ElementIter<'a> {
 ///
 /// This method requires the `GenerateSvg` to be brought in to scope.
 pub struct Svg {
-    pub(super) width  : f64, // in mm
-    pub(super) height : f64, // in mm
     pub(super) version : usize,
     pub(super) show_grid : bool,
     pub(super) show_layout : bool,
@@ -334,8 +345,6 @@ impl Svg {
     /// Create a new `Svg` instance, to render a `Diagram` into
     pub fn new() -> Self  {
         Self {
-            width  : 297.,
-            height : 210.,
             version : 20,
             stack : Vec::new(),
             show_grid : false,
@@ -582,7 +591,7 @@ impl <'a> GenerateSvg for Diagram<'a> {
                 _ => "black",
             }
         };
-        let mut ele = SvgElement::new("defs");
+        let ele = SvgElement::new("defs");
         svg.push_element(ele);
 
         let mut ele = SvgElement::new("marker");

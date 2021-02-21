@@ -17,11 +17,11 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::{Rectangle, Transform};
+use geometry::{Rectangle};
 use stylesheet::{StylableNode, Tree};
 use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementScope, ElementError};
-use crate::{Layout, LayoutRecord};
+use crate::{Layout};
 use super::types::*;
 
 //a DiagramError
@@ -145,6 +145,13 @@ impl <'a> Diagram <'a> {
     }
 
     //mp apply_stylesheet
+    /// Apply the document's stylesheet
+    ///
+    /// This must be invoked after uniquify and before style.
+    ///
+    /// It updates the element's style attributes based on the
+    /// stylesheet and its rules; the actually styling is then
+    /// appllied in `style`.
     pub fn apply_stylesheet(&mut self) {
         let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get("group").unwrap());
         let mut tree = Tree::new(&mut x);

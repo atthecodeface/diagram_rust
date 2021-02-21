@@ -20,6 +20,7 @@ limitations under the License.
 use super::Point;
 use super::Rectangle;
 use super::Bezier;
+use super::BezierPath;
 
 //tp Polygon
 /// A polygon here defines an n-gon, from which one can generate a bezier path
@@ -142,13 +143,33 @@ impl Polygon {
         }
     }
     
-    //mp as_paths
+    //mp old)as_paths
     /// Append the polygon as a set of Beziers
-    pub fn as_paths(&self, v:Vec<Bezier>) -> Vec<Bezier> {
+    pub fn old_as_paths(&self, v:Vec<Bezier>) -> Vec<Bezier> {
         match self.vertices {
             0 => self.elliptical_paths(v),
             1 => v,
             _ => self.polygon_paths(v),
+        }
+    }
+
+    //mp as_paths
+    /// Append the polygon as a set of Beziers
+    pub fn as_paths(&self) -> BezierPath {
+        match self.vertices {
+            0 => {
+                BezierPath::of_ellipse( &Point::origin(),
+                                         self.size,
+                                         self.eccentricity,
+                                         self.rotation )
+            }
+            1 => {
+                BezierPath::new()
+            }
+            _ => {
+                let corners = self.get_points();
+                BezierPath::of_points(&corners, self.rounding)
+            }
         }
     }
 
@@ -262,7 +283,7 @@ mod tests_polygon {
     fn test_circle() {
         let x = Polygon::new_circle(1.0);
         let v = Vec::new();
-        let v = x.as_paths(v);
+        let v = x.old_as_paths(v);
         bezier_eq(&v[0], vec![(1.,0.),  (1.,0.5522847498307935),   (0.5522847498307935,1.), (0.,1.)]);
         bezier_eq(&v[1], vec![(0., 1.), (-0.5522847498307935, 1.), (-1.,0.5522847498307935), (-1.,0.)]);
         bezier_eq(&v[2], vec![(-1.,0.), (-1.,-0.5522847498307935),   (-0.5522847498307935,-1.), (0.,-1.)]);
