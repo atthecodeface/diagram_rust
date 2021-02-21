@@ -96,6 +96,14 @@ impl Point {
         (self.x*self.x + self.y*self.y).sqrt()
     }
 
+    //mp distance_to
+    /// Return the distance between this and another point
+    pub fn distance(&self, other:&Self) -> f64 {
+        let dx = self.x-other.x;
+        let dy = self.y-other.y;
+        (dx*dx + dy*dy).sqrt()
+    }
+
     //mp dot
     /// Return the dot product of this and another point
     pub fn dot(&self, other:&Point) -> f64 {
