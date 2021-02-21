@@ -17,12 +17,12 @@ limitations under the License.
  */
 
 //a Imports
+use crate::{Layout};
+use geometry::{Rectangle};
 use crate::constants::attributes as at;
 use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
-use crate::{Layout};
-use crate::{Rectangle};
 use super::super::font::*;
 use super::super::text::*;
 

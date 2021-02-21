@@ -5,6 +5,7 @@ use std::fs::File;
 extern crate xml;
 extern crate hmlm;
 extern crate clap;
+extern crate geometry;
 extern crate diagram;
 
 const DEBUG_MAIN : bool = 1 == 0;
@@ -13,7 +14,7 @@ use clap::{App, Arg};
 use diagram::DiagramDescriptor;
 use diagram::Diagram;
 use diagram::DiagramML;
-use diagram::Rectangle;
+use geometry::Rectangle;
 use diagram::{Svg, GenerateSvg};
 fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
     match result {

@@ -20,13 +20,13 @@ limitations under the License.
 const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use geometry::{Rectangle, Point};
+use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
+use stylesheet::{StylableNode, Tree};
 use crate::constants::attributes as at;
 use crate::constants::elements   as el;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
-use crate::{Rectangle, Point};
-use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
 pub use super::elements::{Group, Shape, Path, Text, Use};
 use super::types::*;
     

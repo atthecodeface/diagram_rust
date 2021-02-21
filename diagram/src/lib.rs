@@ -300,17 +300,14 @@ borderwidth should be the color
 //a Crates
 extern crate xml;
 extern crate hmlm;
+extern crate geometry;
 extern crate stylesheet;
 
 //a Imports and exports
-mod geometry;
 mod layout;
 mod constants;
 mod diagram;
 mod diagram_ml;
-
-pub (crate) use geometry::{Transform, Range, Float4, Polygon, Bezier};
-pub         use geometry::{Rectangle, Point};
 
 pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
 pub (crate) use diagram::{StyleSheet, StyleRule, StyleAction,DiagramContents}; // , Element, ElementError, };

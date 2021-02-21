@@ -17,11 +17,11 @@ limitations under the License.
  */
 
 //a Imports
+use geometry::{Rectangle, Transform};
+use stylesheet::{StylableNode, Tree};
 use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementScope, ElementError};
 use crate::{Layout, LayoutRecord};
-use crate::{Rectangle, Transform};
-use stylesheet::{StylableNode, Tree};
 use super::types::*;
 
 //a DiagramError

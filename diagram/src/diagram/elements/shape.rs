@@ -22,7 +22,7 @@ use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
-use crate::{Rectangle, Polygon};
+use geometry::{Rectangle, Polygon};
 
 //a Shape element
 //tp Shape - an Element that contains a polygon (or path?)

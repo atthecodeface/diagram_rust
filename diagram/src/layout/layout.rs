@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{Transform, Point, Range, Rectangle, Float4, Polygon};
+use geometry::{Transform, Point, Range, Rectangle, Float4, Polygon};
 use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
 

@@ -18,14 +18,14 @@ limitations under the License.
 
 //a Imports
 use std::collections::VecDeque;
-use super::{Element, ElementHeader, ElementContent, Diagram};
-use crate::{LayoutRecord, Transform};
-use crate::{Polygon, Rectangle, Bezier, Point};
+use geometry::{Polygon, Rectangle, Bezier, Point, Transform};
 use xml::attribute::{Attribute};
 use xml::name::{Name};
 use xml::namespace::{Namespace};
 use xml::reader::XmlEvent;
 use xml::common::XmlVersion;
+use super::{Element, ElementHeader, ElementContent, Diagram};
+use crate::{LayoutRecord};
 
 //a Useful stuff
 fn pt_as_str(pt:&Point) -> String {

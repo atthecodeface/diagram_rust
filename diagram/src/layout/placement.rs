@@ -17,19 +17,27 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{Range};
+use geometry::{Range};
 
 //a Types
+//tp Placements
+/// A set of placements for a single dimension, where items when
+/// placed have a range that they fit within
 #[derive(Debug)]
 pub struct Placements {
     elements : Vec<Range>
 }
 
+//ip Placements
 impl Placements {
+
+    //fp new
     pub fn new() -> Self {
         Self { elements:Vec::new(),
         }
     }
+
+    //fp mp add_element
     pub fn add_element(&mut self, placement:f64, ref_value:Option<f64>, min:f64, max:f64) {
         let ref_value = ref_value.unwrap_or(0.);
         // actual bounds are such that 'ref_value' is at 'placement'
@@ -37,6 +45,9 @@ impl Placements {
         let max = max + placement - ref_value;
         self.elements.push(Range::new(min,max));
     }
+
+    //mp get_desired_geometry
+    /// Get the union of all the content
     pub fn get_desired_geometry(&self) -> Range {
         match self.elements.len() {
             0 => Range::none(),
@@ -49,4 +60,6 @@ impl Placements {
             },
         }
     }
+
+    //zz All done
 }

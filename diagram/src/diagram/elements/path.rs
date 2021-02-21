@@ -22,7 +22,7 @@ use crate::constants::elements   as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
-use crate::{Rectangle, Bezier, Point};
+use geometry::{Rectangle, Bezier, Point};
 
 //a Path element
 //tp Path - an Element that contains a path
