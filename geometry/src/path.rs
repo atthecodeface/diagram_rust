@@ -50,35 +50,15 @@ impl BezierPath {
     //fp of_points
     /// Generate a set of Beziers that join the corners
     pub fn of_points(corners:&Vec<Point>, rounding:f64) -> Self {
-        let mut v = Vec::new();
+        let mut bp = Self::new();
         let n = corners.len();
-        if rounding == 0. {
-            for i in 0..n {
-                let i_1 = (i+1) % n;
-                v.push(Bezier::line(&corners[i], &corners[i_1]));
-            }
-        } else {
-            let mut corner_beziers = Vec::new();
-            for i in 0..n {
-                let i_1 = (i+1) % n;
-                let i_2 = (i+2) % n;
-                let v0     = corners[i_1].clone().add(&corners[i ], -1.);
-                let v1     = corners[i_1].clone().add(&corners[i_2], -1.);
-                corner_beziers.push(Bezier::of_round_corner(&corners[i_1], &v0, &v1, rounding));
-            }
-            let mut edge_beziers = Vec::new();
-            for i in 0..n {
-                let i_1 = (i+1) % n;
-                let p0 = corner_beziers[i  ].borrow_pt(1);
-                let p1 = corner_beziers[i_1].borrow_pt(0);
-                edge_beziers.push(Bezier::line(p0, p1));
-            }
-            for (e,c) in edge_beziers.iter().zip(corner_beziers.iter()) {
-                v.push(*c);
-                v.push(*e);
-            }
+        for i in 0..n {
+            let i_0 = (i  )  % n;
+            let i_1 = (i+1) % n;
+            bp.add_bezier(Bezier::line(&corners[i_0], &corners[i_1]));
         }
-        Self { elements:v }
+        bp.round(rounding, true);
+        bp
     }
 
     //mp round
@@ -99,7 +79,6 @@ impl BezierPath {
                 let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
                 let v0 = self.elements[i  ].tangent_at(1.);
                 let v1 = self.elements[i_1].tangent_at(0.).scale_xy(-1.,-1.);
-                println!("{} {} {}",corner, v0, v1);
                 let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding);
                 let np00 = self.elements[i].borrow_pt(0).clone();
                 let np01 = bezier.borrow_pt(0).clone();

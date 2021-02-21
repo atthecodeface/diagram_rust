@@ -1,6 +1,6 @@
 #diagram
 ##path width=100 height=100 stroke-width=3 stroke-color=red grid=1,1 coords="0.,0. 0.97,0., 0.97,0.97, 0.,0.97" round=10.
-##path width=50 height=50 fill-color=green stroke-width=2 stroke-color=blue grid=1,1 coords="0.5,0, 1,0.5, 0.5,1, " round=5 flags=1
+##path width=50 height=50 fill-color=green stroke-width=2 stroke-color=blue grid=1,1 coords="0.5,0, 1,0.5, 0.5,1, 0,0.5" round=5 flags=1
 ##layout grid=1,2
 ###text grid=1,1 fill-color="black" "Some text"
 ###path grid=1,2 coords="0,1 1,1" stroke-width=1 stroke-color=green width=30 height=0

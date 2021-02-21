@@ -29,7 +29,7 @@
 ##rule class=row2  gridy=2 border-color=green border-width=4 fill-color=pink width=20 round=5
 ##rule class=row3  gridy=3 border-color=green border-width=4 fill-color=pink width=20 stellate=5
 ##rule class=row4  gridy=4 border-color=green border-width=4 fill-color=pink width=20 round=2 stellate=5
-##rule class=col1  bg=red fill-color=blue stroke-color=yellow stroke-width=1 width=10 height=20
+##rule class=col1  bg=red fill-color=blue stroke-color=yellow stroke-width=1 width=18 height=20
 
 ##rule class=col1  gridx=1 border-width=0 border-color=none
 ##rule class=col2  gridx=2
