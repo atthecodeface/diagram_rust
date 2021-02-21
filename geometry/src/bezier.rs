@@ -1,8 +1,37 @@
+/*a Copyright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+@file    bexier.rs
+@brief   Part of geometry library
+ */
+
+//a Imports
 use super::point::Point;
+
+//a Types
+//tp Bezier
+/// This library supports Bezier curves of up to order 3 - i.e. up to
+/// Cubic; these have two control poits.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Bezier {
+    /// Linear is a straight line between two points
     Linear(Point, Point),
+    /// Quadratic is a Bezier whose point p at parameter t is:
+    /// (1-t)^2.p0 + 2t.(1-t).c + t^2.p1
     Quadratic(Point, Point, Point),
+    /// Cubic is a Bezier whose point p at parameter t is:
+    /// (1-t)^3.p0 + 3.t.(1-t)^2.c0 + 3.t^2.(1-t).c1 + t^3.p1
     Cubic(Point, Point, Point, Point),
 }
 
@@ -24,6 +53,9 @@ impl std::fmt::Display for Bezier {
 
 //ip Bezier
 impl Bezier {
+    //mp get_pt
+    /// Get the start or end point of the Bezier - index 0 gives the
+    /// start point, index 1 the end point
     pub fn get_pt(&self, index:usize) -> &Point {
         match self {
             Self::Linear(p0,p1) => { if index==0 {p0} else {p1} },
@@ -31,9 +63,15 @@ impl Bezier {
             Self::Cubic(p0,_,_,p1) => { if index==0 {p0} else {p1} },
         }
     }
+
+    //fp line
+    /// Create a new Bezier that is a line between two points
     pub fn line(p0:&Point, p1:&Point) -> Self {
         Self::Linear(p0.clone(), p1.clone())
     }
+
+    //cp scale_xy
+    /// Consume the Bezier and return a new Bezier scaled separately in X and Y by two scaling parameters
     pub fn scale_xy(mut self, sx:f64, sy:f64) -> Self {
         match &mut self {
             Self::Linear(ref mut p0, ref mut p1) => {
@@ -54,6 +92,10 @@ impl Bezier {
         }
         self
     }
+
+    //cp rotate
+    /// Consume the Bezier and return a new Bezier rotated
+    /// anticlockwise around the origin by the angle in degrees
     pub fn rotate(mut self, degrees:f64) -> Self {
         match &mut self {
             Self::Linear(ref mut p0, ref mut p1) => {
@@ -74,8 +116,10 @@ impl Bezier {
         }
         self
     }
-    /// v0 and v1 are vectors in to the point
-    /// round does *not* work if the corner is < 180 degrees
+
+    //fp round
+    /// Create a Cubic Bezier that is a circular arc focused on the corner point,
+    /// with v0 and v1 are vectors in to the point
     pub fn round(corner:&Point, v0:&Point, v1:&Point, radius:f64) -> Self {
         // println!("corner {} vec0 {} vec1 {} radius {}",corner,v0,v1,radius);
         let reverse = v0.x*v1.y - v1.x*v0.y > 0.;
@@ -104,6 +148,11 @@ impl Bezier {
         // println!("Bezier {}",bezier);
         bezier
     }
+
+    //fp arc
+    /// Create a Cubic Bezier that approximates closely a circular arc
+    /// given a centre point and a radius, of a certain angle, rotated
+    /// around the origin by the rotate parameter
     pub fn arc(angle:f64, radius:f64, center:&Point, rotate:f64) -> Self {
         let half_angle = (0.5*angle).to_radians();
         let s = half_angle.sin();
@@ -122,6 +171,8 @@ impl Bezier {
         let c1 = Point::new(center.x+d1c*radius+lambda*d1s,center.y+d1s*radius-lambda*d1c);
         Self::Cubic(p0,c0,c1,p1)
     }
+
+    //zz All done
 }
 
 //a Test

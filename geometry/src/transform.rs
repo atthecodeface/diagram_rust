@@ -30,10 +30,14 @@ use super::Point;
 ///
 #[derive(Debug, Clone)]
 pub struct Transform {
+    /// Translation - applied last
     pub translation : Point,
+    /// Rotation around the origin
     pub rotation : f64,
+    /// Scale factor
     pub scale : f64,
 }
+
 //ti Transform
 impl Transform {
     //fp new

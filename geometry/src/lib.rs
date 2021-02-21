@@ -21,6 +21,14 @@ limitations under the License.
 #![warn(missing_doc_code_examples)]
 /*!
 # Geometry library
+
+This library provides for two-dimensional geometrical objects,
+particularly *Point*s, *Bezier* curves, and *Polygon*s, but also
+*Rectangle*s and some other useful items.
+
+The library was originally written for the *diagram* utility, and so
+some of its features are focused in that direction.
+
 !*/
 
 //a Crates
