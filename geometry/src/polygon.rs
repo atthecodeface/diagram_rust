@@ -143,16 +143,6 @@ impl Polygon {
         }
     }
     
-    //mp old)as_paths
-    /// Append the polygon as a set of Beziers
-    pub fn old_as_paths(&self, v:Vec<Bezier>) -> Vec<Bezier> {
-        match self.vertices {
-            0 => self.elliptical_paths(v),
-            1 => v,
-            _ => self.polygon_paths(v),
-        }
-    }
-
     //mp as_paths
     /// Append the polygon as a set of Beziers
     pub fn as_paths(&self) -> BezierPath {
@@ -221,42 +211,6 @@ impl Polygon {
         corners
     }
 
-    //mp polygon_paths
-    /// Get a set of paths that make a non-elliptical polygon
-    fn polygon_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
-        let mut corners = self.get_points();
-        let n = corners.len();
-        if self.rounding == 0. {
-            corners.push(corners[0].clone());
-            for i in 0..n {
-                v.push(Bezier::line(&corners[i], &corners[i+1]));
-            }
-        } else {
-            corners.push(corners[0].clone());
-            corners.push(corners[1].clone());
-            let mut corner_beziers = Vec::new();
-            for i in 0..n {
-                let v0     = corners[i+1].clone().add(&corners[i+0], -1.);
-                let v1     = corners[i+1].clone().add(&corners[i+2], -1.);
-                corner_beziers.push(Bezier::round(&corners[i+1], &v0, &v1, self.rounding));
-            }
-            let mut edge_beziers = Vec::new();
-            for i in 0..n {
-                let p0 = corner_beziers[i].get_pt(1);
-                let p1 = corner_beziers[(i+1)%n].get_pt(0);
-                edge_beziers.push(Bezier::line(p0, p1));
-            }
-            for (e,c) in edge_beziers.iter().zip(corner_beziers.iter()) {
-                v.push(*c);
-                v.push(*e);
-            }
-            // for b in &v {
-            //     println!("{}",b);
-            // }
-        }
-        v
-    }
-
     //zz All done
 }
 
@@ -282,8 +236,10 @@ mod tests_polygon {
     #[test]
     fn test_circle() {
         let x = Polygon::new_circle(1.0);
-        let v = Vec::new();
-        let v = x.old_as_paths(v);
+        let mut v = Vec::new();
+        for b in x.as_paths().iter_beziers() {
+            v.push(b.clone());
+        }
         bezier_eq(&v[0], vec![(1.,0.),  (1.,0.5522847498307935),   (0.5522847498307935,1.), (0.,1.)]);
         bezier_eq(&v[1], vec![(0., 1.), (-0.5522847498307935, 1.), (-1.,0.5522847498307935), (-1.,0.)]);
         bezier_eq(&v[2], vec![(-1.,0.), (-1.,-0.5522847498307935),   (-0.5522847498307935,-1.), (0.,-1.)]);

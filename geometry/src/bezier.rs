@@ -109,14 +109,14 @@ impl std::fmt::Display for Bezier {
 
 //ip Bezier
 impl Bezier {
-    //mp get_pt
+    //mp borrow_pt
     /// Get the start or end point of the Bezier - index 0 gives the
     /// start point, index 1 the end point
-    pub fn get_pt(&self, index:usize) -> &Point {
+    pub fn borrow_pt(&self, index:usize) -> &Point {
         match self {
-            Self::Linear(p0,p1) => { if index==0 {p0} else {p1} },
+            Self::Linear(p0,p1) =>      { if index==0 {p0} else {p1} },
             Self::Quadratic(p0,_,p1) => { if index==0 {p0} else {p1} },
-            Self::Cubic(p0,_,_,p1) => { if index==0 {p0} else {p1} },
+            Self::Cubic(p0,_,_,p1) =>   { if index==0 {p0} else {p1} },
         }
     }
 
@@ -158,6 +158,24 @@ impl Bezier {
     /// with two absolute control points
     pub fn cubic(p0:&Point, c0:&Point, c1:&Point, p1:&Point) -> Self {
         Self::Cubic(p0.clone(), c0.clone(), c1.clone(), p1.clone())
+    }
+
+    //mp is_line
+    /// Returns true if the Bezier is a straight line
+    pub fn is_line(&self) -> bool {
+        match self { Self::Linear(_,_) => true, _ => false }
+    }
+
+    //mp is_quadratic
+    /// Returns true if the Bezier is a quadratic
+    pub fn is_quadratic(&self) -> bool {
+        match self { Self::Quadratic(_,_,_) => true, _ => false }
+    }
+
+    //mp is_cubic
+    /// Returns true if the Bezier is a cubic
+    pub fn is_cubic(&self) -> bool {
+        match self { Self::Cubic(_,_,_,_) => true, _ => false }
     }
 
     //mp bisect
@@ -283,10 +301,10 @@ impl Bezier {
         self
     }
 
-    //fp round
+    //fp of_round_corner
     /// Create a Cubic Bezier that is a circular arc focused on the corner point,
     /// with v0 and v1 are vectors in to the point
-    pub fn round(corner:&Point, v0:&Point, v1:&Point, radius:f64) -> Self {
+    pub fn of_round_corner(corner:&Point, v0:&Point, v1:&Point, radius:f64) -> Self {
         // println!("corner {} vec0 {} vec1 {} radius {}",corner,v0,v1,radius);
         let reverse = v0.x*v1.y - v1.x*v0.y > 0.;
         let rl0 = 1.0/v0.len();
@@ -587,13 +605,13 @@ mod test_bezier {
         bezier_eq(&x, vec![(1.,0.), (1.,magic), (magic,1.), (0.,1.)]);
         let x = Bezier::arc(90.,1.,&Point::new(0.,0.),-90.);
         bezier_eq(&x, vec![(0.,-1.), (magic,-1.), (1.,-magic), (1.,0.)]);
-        let x = Bezier::round(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 1.);
+        let x = Bezier::of_round_corner(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 1.);
         bezier_eq(&x, vec![(1.,0.), (1.,magic), (magic,1.), (0.,1.)]);
-        let x = Bezier::round(&Point::new(sqrt2,0.), &Point::new(1.,1.), &Point::new(1.,-1.), 1.);
+        let x = Bezier::of_round_corner(&Point::new(sqrt2,0.), &Point::new(1.,1.), &Point::new(1.,-1.), 1.);
         bezier_eq(&x, vec![(r_sqrt2, -r_sqrt2), (r_sqrt2+magic2 , -r_sqrt2+magic2), (r_sqrt2+magic2, r_sqrt2-magic2), (r_sqrt2, r_sqrt2)]);
-        pt_eq(x.get_pt(0), r_sqrt2, -r_sqrt2);
-        pt_eq(x.get_pt(1), r_sqrt2, r_sqrt2);
-        let x = Bezier::round(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 0.5);
+        pt_eq(x.borrow_pt(0), r_sqrt2, -r_sqrt2);
+        pt_eq(x.borrow_pt(1), r_sqrt2, r_sqrt2);
+        let x = Bezier::of_round_corner(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 0.5);
         println!("{:?}",x);
         // assert_eq!(true,false);
     }

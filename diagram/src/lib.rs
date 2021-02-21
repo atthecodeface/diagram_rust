@@ -79,6 +79,39 @@ styling to specify how the rows and columns are laid out; each leaf
 element is laid out within a cell occupying a span of rows and a span
 of columns.
 
+### Path element
+
+A path element consist of lines (only) at present.
+
+They may be rounded, and closed
+
+If closed *and* the path does not end up at the same point at which it
+starts then an extra point, copied from the first point, is added to
+the path.
+
+### Rect element - a *shape*
+
+Rectangles are polygonan shape with four vertices, a width and a
+height; the height defaults to the width.
+
+### Circle element - a *shape*
+
+Circles are polygonan shape with zero vertices, a width and a height;
+the height defaults to the width. This permits them, in fact, to be
+ellipses. They are actually approximations using four cubic Bezier
+curves - but the approximation is to within about .15% at worst.
+
+### Polygon element - a *shape*
+
+Polygon elements have any number of vertices (of three or more), and
+have a *width* that is actually the distance of the points from the
+center of the polygon. The polygon is a regular polygon, with points
+at angles of multiples of 360/N offset by half.
+
+The polygons may be *stellate*d, where an additional N points are
+placed between each of the polygon points at a distance of *stellate*
+from the centre.
+
 ## Definitions and Uses
 
 A diagram may contain definitions of collections of elements, such as

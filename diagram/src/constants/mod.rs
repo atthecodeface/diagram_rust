@@ -69,6 +69,7 @@ pub mod attributes {
     att!(FONTWEIGHT,  "font-weight");
     att!(FONTSTYLE,   "font-style");
     att!(VERTICES,    "vertices");
+    att!(FLAGS,       "flags");
     att!(REF,         "ref");
 }
 pub mod elements {

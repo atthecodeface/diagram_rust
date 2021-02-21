@@ -84,6 +84,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type(at::FONTWEIGHT,  StyleValue::string(None),  true)
             .add_type(at::FONTSTYLE,   StyleValue::string(None),  true)
             .add_type(at::VERTICES,    StyleValue::int(None),     true)
+            .add_type(at::FLAGS,       StyleValue::int(None),     true)
             .add_type(at::REF,         StyleValue::string(None),  false)
             ;
         style_set

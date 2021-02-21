@@ -27,13 +27,13 @@ use crate::{Layout};
 //tp Path - an Element that contains a path
 #[derive(Debug)]
 pub struct Path {
-    pub closed : bool,
     // shape type - cubic, quadratic, linear
     // markers?
     pub center : Point,
     pub width : f64,
     pub height : f64,
     pub round  : f64,
+    pub closed : bool,
     pub coords : Vec<Point>, // relative to actual width and height
     pub fill   : Option<(f64,f64,f64)>,
     pub stroke : Option<(f64,f64,f64)>,
@@ -45,13 +45,12 @@ pub struct Path {
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp new
     fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
-        let closed=false;
         Ok( Self {
-            closed,
             center:Point::origin(),
             width : 0.,
             height : 0.,
             round : 0.,
+            closed : false,
             coords : Vec::new(),
             stroke_width:0.,
             stroke : None,
@@ -77,11 +76,15 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
              at::WIDTH,
              at::HEIGHT,
              at::COORDS,
+             at::FLAGS,
         ]
     }
 
     //mp style
     fn style(&mut self, _descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
+        if let Some(i) = header.get_style_of_name_int(at::FLAGS, None) {
+            self.closed = (i & 1) == 1;
+        }
         if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
             self.fill = Some((v[0],v[1],v[2]));
         }
@@ -119,13 +122,17 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
         self.round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
         self.width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
         self.height   = header.get_style_of_name_float(at::HEIGHT,Some(self.width)).unwrap();
+        if self.closed && self.coords.len() > 2 {
+            if self.coords[0].distance(&self.coords[self.coords.len()-1]) > 1E-6 {
+                self.coords.push(self.coords[0].clone());
+            }
+        }
         Ok(())
     }
 
     //mp get_desired_geometry
     fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
         Rectangle::of_cwh(self.center, self.width, self.height)
-            .enlarge(self.stroke_width/2.)
     }
 
     //fp apply_placement
@@ -175,6 +182,7 @@ impl GenerateSvgElement for Path {
         for i in 0..coords.len()-1 {
             path.add_bezier( Bezier::line(&coords[i], &coords[i+1]) );
         }
+        path.round(self.round, self.closed);
         ele.add_bezier_path(&path, self.closed);
         svg.add_subelement(ele);
         Ok(())

@@ -62,15 +62,15 @@ impl BezierPath {
             for i in 0..n {
                 let i_1 = (i+1) % n;
                 let i_2 = (i+2) % n;
-                let v0     = corners[i+1].clone().add(&corners[i ], -1.);
-                let v1     = corners[i+1].clone().add(&corners[i_2], -1.);
-                corner_beziers.push(Bezier::round(&corners[i_1], &v0, &v1, rounding));
+                let v0     = corners[i_1].clone().add(&corners[i ], -1.);
+                let v1     = corners[i_1].clone().add(&corners[i_2], -1.);
+                corner_beziers.push(Bezier::of_round_corner(&corners[i_1], &v0, &v1, rounding));
             }
             let mut edge_beziers = Vec::new();
             for i in 0..n {
                 let i_1 = (i+1) % n;
-                let p0 = corner_beziers[i  ].get_pt(1);
-                let p1 = corner_beziers[i_1].get_pt(0);
+                let p0 = corner_beziers[i  ].borrow_pt(1);
+                let p1 = corner_beziers[i_1].borrow_pt(0);
                 edge_beziers.push(Bezier::line(p0, p1));
             }
             for (e,c) in edge_beziers.iter().zip(corner_beziers.iter()) {
@@ -81,27 +81,60 @@ impl BezierPath {
         Self { elements:v }
     }
 
+    //mp round
+    /// Run through the path; for every adjacent pair of Beziers that
+    /// are *line*s add an intermediate Bezier that is a rounded
+    /// corner of the correct radius.
+    ///
+    /// If the path is closed, thenn treat the first Bezier is
+    /// adjacent to the last Bezier
+    pub fn round(&mut self, rounding:f64, closed:bool) {
+        let mut n = self.elements.len();
+        if n < 2 || rounding == 0. { return; }
+        let mut i = n-1;
+        if !closed { i -= 1; }
+        loop {
+            let i_1 = (i+1) % n;
+            if self.elements[i].is_line() && self.elements[i_1].is_line() {
+                let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
+                let v0 = self.elements[i  ].tangent_at(1.);
+                let v1 = self.elements[i_1].tangent_at(0.).scale_xy(-1.,-1.);
+                println!("{} {} {}",corner, v0, v1);
+                let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding);
+                let np00 = self.elements[i].borrow_pt(0).clone();
+                let np01 = bezier.borrow_pt(0).clone();
+                let np10 = bezier.borrow_pt(1).clone();
+                let np11 = self.elements[i_1].borrow_pt(1).clone();
+                self.elements[i]   = Bezier::line(&np00, &np01);
+                self.elements[i_1] = Bezier::line(&np10, &np11);
+                self.elements.insert(i+1, bezier);
+                n += 1; // Not really required but it keeps n == self.elements.len()
+            }
+            if i == 0 {break;}
+            i -= 1;
+        }
+    }
 
-    //fp get_pt
+    //mp get_pt
     /// Get the start or the end point
     pub fn get_pt(&self, index:usize) -> Point {
         let n = self.elements.len();
         if n == 0 {
             Point::origin()
         } else if index == 0 {
-            self.elements[0].get_pt(0).clone()
+            self.elements[0].borrow_pt(0).clone()
         } else {
-            self.elements[n-1].get_pt(1).clone()
+            self.elements[n-1].borrow_pt(1).clone()
         }
     }
 
-    //fp add_bezier
+    //mp add_bezier
     /// Add a Bezier at the end of the path
     pub fn add_bezier(&mut self, b:Bezier) {
         self.elements.push(b);
     }
 
-    //fp iter_beziers
+    //mp iter_beziers
     /// Iterate through all the Beziers
     pub fn iter_beziers(&self) -> impl Iterator<Item = &Bezier> {
         self.elements.iter()
@@ -112,7 +145,7 @@ impl BezierPath {
 
 //a Test
 #[cfg(test)]
-mod test_bezier {
+mod test_path {
     use super::*;
     pub fn pt_eq(pt:&Point, x:f64, y:f64) {
         assert!((pt.x-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
@@ -120,6 +153,10 @@ mod test_bezier {
     }
     pub fn bezier_eq(bez:&Bezier, v:Vec<(f64,f64)>) {
         match bez {
+            Bezier::Linear(p0,p1) => {
+                pt_eq(p0, v[0].0, v[0].1);
+                pt_eq(p1, v[1].0, v[1].1);
+            }
             Bezier::Cubic(p0,c0,c1,p1) => {
                 pt_eq(p0, v[0].0, v[0].1);
                 pt_eq(c0, v[1].0, v[1].1);
@@ -130,23 +167,47 @@ mod test_bezier {
         }
     }
     #[test]
-    fn test_arc() {
-        let sqrt2 = 2.0_f64.sqrt();
-        let r_sqrt2 = 1.0 / sqrt2;
-        let magic = 0.5522847498307935;
-        let magic2 = magic * r_sqrt2;
-        let x = Bezier::arc(90.,1.,&Point::new(0.,0.),0.);
-        bezier_eq(&x, vec![(1.,0.), (1.,magic), (magic,1.), (0.,1.)]);
-        let x = Bezier::arc(90.,1.,&Point::new(0.,0.),-90.);
-        bezier_eq(&x, vec![(0.,-1.), (magic,-1.), (1.,-magic), (1.,0.)]);
-        let x = Bezier::round(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 1.);
-        bezier_eq(&x, vec![(1.,0.), (1.,magic), (magic,1.), (0.,1.)]);
-        let x = Bezier::round(&Point::new(sqrt2,0.), &Point::new(1.,1.), &Point::new(1.,-1.), 1.);
-        bezier_eq(&x, vec![(r_sqrt2, -r_sqrt2), (r_sqrt2+magic2 , -r_sqrt2+magic2), (r_sqrt2+magic2, r_sqrt2-magic2), (r_sqrt2, r_sqrt2)]);
-        pt_eq(x.get_pt(0), r_sqrt2, -r_sqrt2);
-        pt_eq(x.get_pt(1), r_sqrt2, r_sqrt2);
-        let x = Bezier::round(&Point::new(1.,1.), &Point::new(0.,3.), &Point::new(0.5,0.), 0.5);
-        println!("{:?}",x);
-        // assert_eq!(true,false);
+    fn test_round_open() {
+        let p0 = Point::origin();
+        let p1 = Point::new(1.,0.);
+        let p2 = Point::new(1.,1.);
+        let p3 = Point::new(0.,1.);
+        let mut bp = BezierPath::new();
+        bp.add_bezier( Bezier::line( &p0, &p1 ) );
+        bp.add_bezier( Bezier::line( &p1, &p2 ) );
+        bp.add_bezier( Bezier::line( &p2, &p3 ) );
+        bp.add_bezier( Bezier::line( &p3, &p0 ) );
+
+        bp.round(0.1,false);
+        for b in bp.iter_beziers() {
+            println!("Bezier {}", b);
+        }
+        bezier_eq(&bp.elements[0], vec![(0.,0.), (0.9,0.0)]);
+        bezier_eq(&bp.elements[2], vec![(1.,0.1), (1.,0.9)]);
+        bezier_eq(&bp.elements[4], vec![(0.9,1.0), (0.1,1.)]);
+        bezier_eq(&bp.elements[6], vec![(0.,0.9), (0.,0.)]);
+        assert_eq!(bp.elements.len(), 7, "Path should be 7 elements");
+    }
+    #[test]
+    fn test_round_closed() {
+        let p0 = Point::origin();
+        let p1 = Point::new(1.,0.);
+        let p2 = Point::new(1.,1.);
+        let p3 = Point::new(0.,1.);
+        let mut bp = BezierPath::new();
+        bp.add_bezier( Bezier::line( &p0, &p1 ) );
+        bp.add_bezier( Bezier::line( &p1, &p2 ) );
+        bp.add_bezier( Bezier::line( &p2, &p3 ) );
+        bp.add_bezier( Bezier::line( &p3, &p0 ) );
+
+        bp.round(0.1,true);
+        for b in bp.iter_beziers() {
+            println!("Bezier {}", b);
+        }
+        bezier_eq(&bp.elements[0], vec![(0.,0.), (0.9,0.0)]);
+        bezier_eq(&bp.elements[2], vec![(1.,0.1), (1.,0.9)]);
+        bezier_eq(&bp.elements[4], vec![(0.9,1.0), (0.1,1.)]);
+        bezier_eq(&bp.elements[6], vec![(0.,0.9), (0.,0.)]);
+        assert_eq!(bp.elements.len(), 8, "Path should be 8 elements");
     }
 }

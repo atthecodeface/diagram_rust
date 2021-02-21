@@ -117,21 +117,6 @@ impl SvgElement {
         }            
     }
 
-    //fp old_add_path
-    pub fn old_add_path(&mut self, v:&Vec<Bezier>, closed:bool) {
-        let mut r = String::new();
-        r.push_str(&format!("M {}",pt_as_str(v[0].get_pt(0))));
-        for b in v {
-            match b {
-                Bezier::Linear(_,p1) => r.push_str(&format!(" L {}",pt_as_str(p1))),
-                Bezier::Quadratic(_,c,p1) => r.push_str(&format!(" Q {} {}",pt_as_str(c),pt_as_str(p1))),
-                Bezier::Cubic(_,c0,c1,p1) => r.push_str(&format!(" C {} {} {}",pt_as_str(c0),pt_as_str(c1),pt_as_str(p1))),
-            }
-        }
-        if closed { r.push_str(" z"); }
-        self.add_attribute("d", &r);
-    }
-
     //fp add_bezier_path
     pub fn add_bezier_path(&mut self, bp:&BezierPath, closed:bool) {
         let mut r = String::new();
