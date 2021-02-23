@@ -21,27 +21,21 @@ use hmlm;
 use std::io::prelude::{Read};
 use crate::{StyleSheet, StyleRule, Diagram, DiagramContents, DiagramDescriptor};
 use crate::constants::elements   as el;
-use xml;
-use xml::reader::XmlEvent;
-use hmlm::{XmlEventWithPos, FilePosition};
+use hmlm::{MarkupEvent, MarkupName, MarkupAttributes, HmlFilePosition};
 use crate::diagram::{Element, Use, Group, Text, Shape, Path};
 
-type Attributes = Vec<xml::attribute::OwnedAttribute>;
-
-fn to_nv(attributes:&Attributes) -> Vec<(String,String)> {
-    attributes.iter().map(|a| (a.name.local_name.clone(), a.value.clone())).collect()
-}
+type FileBounds = (HmlFilePosition, HmlFilePosition);
 
 //a MLError type
 //tp MLError
 #[derive(Debug)]
 pub enum MLError {
     EndOfStream,
-    BadElementName(FilePosition, String),
-    BadAttributeName(FilePosition, String),
-    BadElement(FilePosition, String),
+    BadElementName(HmlFilePosition, String),
+    BadAttributeName(HmlFilePosition, String),
+    BadElement(FileBounds, String),
     BadMLEvent(String),
-    BadValue(FilePosition, String),
+    BadValue(FileBounds, String),
     ParseError(String),
 }
 
@@ -52,33 +46,33 @@ impl MLError {
         Self::EndOfStream
     }
     //fi bad_element_name
-    fn bad_element_name(fp:&FilePosition, name:&str) -> Self {
+    fn bad_element_name(fp:&HmlFilePosition, name:&str) -> Self {
         Self::BadElementName(fp.clone(), name.to_string())
     }
 
     //fi bad_attribute_name
-    // fn bad_attribute_name(fp:&FilePosition, name:&str) -> Self {
+    // fn bad_attribute_name(fp:&HmlFilePosition, name:&str) -> Self {
     // Self::BadAttributeName(fp.clone(), name.to_string())
     // }
 
     //mp bad_ml_event
-    fn bad_ml_event(ewp:&XmlEventWithPos) -> Self {
-        Self::BadMLEvent(format!("{:?} at {}",ewp.2, ewp.0))
+    fn bad_ml_event(ewp:&MarkupEvent<HmlFilePosition>) -> Self {
+        Self::BadMLEvent(format!("{:?}", ewp))
     }
 
     //fi value_result
-    fn value_result<V, E:std::fmt::Display>(fp:&FilePosition, result:Result<V,E>) -> Result<V,Self> {
+    fn value_result<V, E:std::fmt::Display>(bounds:&FileBounds, result:Result<V,E>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
-            Err(e) => Err(MLError::BadValue(fp.clone(), e.to_string())),
+            Err(e) => Err(MLError::BadValue(bounds.clone(), e.to_string())),
         }
     }
 
     //fi element_result
-    fn element_result<V, E:std::fmt::Display>(fp:&FilePosition, result:Result<V,E>) -> Result<V,Self> {
+    fn element_result<V, E:std::fmt::Display>(bounds:&FileBounds, result:Result<V,E>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
-            Err(e) => Err(MLError::BadElement(fp.clone(), e.to_string())),
+            Err(e) => Err(MLError::BadElement(bounds.clone(), e.to_string())),
         }
     }
 
@@ -91,22 +85,22 @@ impl std::fmt::Display for MLError {
     /// Display the `MLError` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            MLError::EndOfStream          => write!(f, "Unexpected end of XML event stream - bug in event source"),
-            MLError::BadElementName(fp,n) => write!(f, "Bad element '{}' at {}", n, fp),
+            MLError::EndOfStream            => write!(f, "Unexpected end of XML event stream - bug in event source"),
+            MLError::BadElementName(fp,n)   => write!(f, "Bad element '{}' at {}", n, fp),
             MLError::BadAttributeName(fp,n) => write!(f, "Bad attribute '{}' at {}", n, fp),
-            MLError::BadElement(fp,s)     => write!(f, "Element error '{}' at {}", s, fp),
-            MLError::BadMLEvent(s)        => write!(f, "Bad XML event {}", s),
-            MLError::BadValue(fp,s)       => write!(f, "Bad value '{}' at {}", s, fp),
-            MLError::ParseError(s)        => f.write_str(s),
+            MLError::BadElement(bounds,s)   => write!(f, "Element error '{}' at {}:{}", s, bounds.0, bounds.1),
+            MLError::BadMLEvent(s)          => write!(f, "Bad XML event {}", s),
+            MLError::BadValue(bounds,s )    => write!(f, "Bad value '{}' at {}:{}", s, bounds.0, bounds.1),
+            MLError::ParseError(s)          => f.write_str(s),
         }
     }
 
     //zz All done
 }
 
-//ip From<hmlm::reader::ParseError> for MLError
-impl From<hmlm::reader::ParseError> for MLError {
-    fn from(e: hmlm::reader::ParseError) -> MLError {
+//ip From<hmlm::ParseError> for MLError
+impl From<hmlm::ParseError<HmlFilePosition>> for MLError {
+    fn from(e: hmlm::ParseError<HmlFilePosition>) -> MLError {
         MLError::ParseError(e.to_string())
     }
 }
@@ -186,22 +180,22 @@ impl std::fmt::Display for MLErrorList {
 //tt MLEvent - internal trait to enable extension of type implementations
 trait MLEvent <'a, R:Read, S:Sized> {
     /// ml_new is invoked from StartElement(<element type>, <atttributes>, _<namespace>)
-    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<S, MLError>;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<S, MLError>;
     /// ml_event is invoked after an object is created
     fn ml_event (s:S, _reader:&mut MLReader<R>, _descriptor:&'a DiagramDescriptor) -> Result<S, MLError> { Ok(s) }
 }
 
 //ti MLEvent for Use
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Use<'a> {
-    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let use_ref = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
+        let use_ref = MLError::value_result(bounds, Element::new(descriptor, name, attributes.to_name_values()))?;
         Self::ml_event(use_ref, reader, descriptor)
     }
     fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the use
-            (fp,_,XmlEvent::Characters(c))  => { MLError::element_result(&fp, s.add_string(&c))?; },
-            (_,_,XmlEvent::Comment(_))     => (), // continue
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::Content{bounds, data}  => { MLError::element_result(&bounds, s.add_string(data.borrow_str()))?; },
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader, descriptor)
@@ -211,16 +205,16 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Use<'a> {
 //ii MLEvent for Group
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
     //fp ml_new
-    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let group = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
+        let group = MLError::value_result(bounds, Element::new(descriptor, name, attributes.to_name_values()))?;
         Self::ml_event(group, reader, descriptor)
     }
     fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
-            (_,_,XmlEvent::Comment(_))     => (), // continue
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => { // content of group
-                match Element::ml_new(reader, descriptor, &fp, &name.local_name, &attributes) {
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of group
+                match Element::ml_new(reader, descriptor, &bounds, &name.name, &attributes) {
                     Ok(element) => {
                         s.add_element(element);
                     },
@@ -235,14 +229,14 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Group<'a> {
 
 //ii MLEvent for Path
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Path {
-    fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let path = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
+        let path = MLError::value_result(bounds, Element::new(descriptor, name, attributes.to_name_values()))?;
         Self::ml_event(path, reader, descriptor)
     }
     fn ml_event (s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
-            (_,_,XmlEvent::Comment(_))     => (), // continue
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader, descriptor)
@@ -251,14 +245,14 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Path {
 
 //ii MLEvent for Shape
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
-    fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let shape = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
+        let shape = MLError::value_result(bounds, Element::new(descriptor, name, attributes.to_name_values()))?;
         Self::ml_event(shape, reader, descriptor)
     }
     fn ml_event (s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
-            (_,_,XmlEvent::Comment(_))     => (), // continue
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader, descriptor)
@@ -267,15 +261,15 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Shape {
 
 //ii MLEvent for Text
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
-    fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Element<'a>, MLError> {
-        let text = MLError::value_result(fp, Element::new(descriptor, name, to_nv(attributes)))?;
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
+        let text = MLError::value_result(bounds, Element::new(descriptor, name, attributes.to_name_values()))?;
         Self::ml_event(text, reader, descriptor)
     }
     fn ml_event (mut s:Element<'a>, reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor) -> Result<Element<'a>, MLError> {
         match reader.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
-            (fp,_,XmlEvent::Characters(c))  => { MLError::element_result(&fp, s.add_string(&c))?; },
-            (_,_,XmlEvent::Comment(_))     => (), // continue
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::Content{bounds, data}  => { MLError::element_result(&bounds, s.add_string(data.borrow_str()))?; },
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader, descriptor)
@@ -284,20 +278,20 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Text {
 
 //ii MLEvent for Element
 impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
-    fn ml_new (reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, fp:&FilePosition, name:&str, attributes:&Attributes) -> Result<Self, MLError> {
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Element<'a>, MLError> {
         match name {
-            el::PATH     => Ok(Path::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::RECT     => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::CIRCLE   => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::POLYGON  => Ok(Shape::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::TEXT     => Ok(Text::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::GROUP    => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::LAYOUT   => Ok(Group::ml_new(reader, descriptor, fp, name, attributes)?),
-            el::USE      => Ok(Use::ml_new(reader, descriptor, fp, name, attributes)?),
+            el::PATH     => Ok(Path  ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::RECT     => Ok(Shape ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::CIRCLE   => Ok(Shape ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::POLYGON  => Ok(Shape ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::TEXT     => Ok(Text  ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::GROUP    => Ok(Group ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::LAYOUT   => Ok(Group ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::USE      => Ok(Use   ::ml_new(reader, descriptor, bounds, name, attributes)?),
             _ => {
-                let r = BadXMLElement::ml_new(reader, descriptor, fp, name, attributes);
+                let r = BadXMLElement::ml_new(reader, descriptor, bounds, name, attributes);
                 reader.errors.update(r);
-                return Err(MLError::bad_element_name(fp,name))
+                return Err(MLError::bad_element_name(&bounds.0, name))
             }
         }
     }
@@ -309,21 +303,19 @@ struct BadXMLElement {
 
 //ii MLEvent for BadXMLElement
 impl <'a, R:Read> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
-    fn ml_new (reader:&mut MLReader<R>, descriptor:&DiagramDescriptor, _fp:&FilePosition, _name:&str, _attributes:&Attributes) -> Result<Self, MLError> {
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, _bounds:&FileBounds, name:&str, attributes:&MarkupAttributes) -> Result<Self, MLError> {
         let s = Self {};
         Self::ml_event(s, reader, descriptor)
     }
     fn ml_event (s:Self, reader:&mut MLReader<R>, descriptor:&DiagramDescriptor) -> Result<Self, MLError> {
         match reader.next_event()? {
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                let r = BadXMLElement::ml_new(reader, descriptor, &fp, &name.local_name, &attributes);
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // element in bad element - just consume
+                let r = BadXMLElement::ml_new(reader, descriptor, &bounds, &name.name, &attributes);
                 reader.errors.update(r);
             }
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(s); } // end the group
-            (_,_,XmlEvent::Comment(_))     => (), // continue
-            (_,_,XmlEvent::Whitespace(_))  => (), // continue
-            (_,_,XmlEvent::Characters(_))  => (), // continue
-            (_,_,XmlEvent::CData(_))       => (), // continue
+            MarkupEvent::EndElement{..}         => { return Ok(s); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::Content{..}            => (), // continue
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },
         }
         Self::ml_event(s, reader, descriptor)
@@ -336,7 +328,7 @@ impl <'a, R:Read> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
 struct MLReader<'a, 'b, R:Read> {
     pub contents    : &'b mut DiagramContents<'a>,
     pub stylesheet  : &'b mut StyleSheet<'a>,
-    pub reader      : hmlm::reader::EventReader<R>,
+    pub reader      : hmlm::EventReader<R>,
     errors          : MLErrorList,
 }
 
@@ -346,7 +338,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     pub fn new<'c, 'd> ( // descriptor: &'d DiagramDescriptor<'c>,
                          contents:    &'d mut DiagramContents<'c>,
                          stylesheet:  &'d mut StyleSheet<'c>,
-                         reader:hmlm::reader::EventReader<R> ) -> MLReader<'c, 'd, R> {
+                         reader:hmlm::EventReader<R> ) -> MLReader<'c, 'd, R> {
         MLReader {
             // descriptor,
             contents,
@@ -357,7 +349,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     }
 
     //mp next_event
-    fn next_event(&mut self) -> Result<XmlEventWithPos,MLError> {
+    fn next_event(&mut self) -> Result<MarkupEvent<HmlFilePosition>, MLError> {
         match self.reader.next() {
             None => Err(MLError::unexpected_end_of_stream()),
             Some(Err(e)) => Err(MLError::from(e)),
@@ -368,10 +360,10 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     //mp read_definitions
     fn read_definitions (&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
-            (_,_,XmlEvent::Comment(_))     => (), // continue
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
+            MarkupEvent::EndElement{..}         => { return Ok(()); } // end the use
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                match Element::ml_new(self, descriptor, &bounds, &name.name, &attributes) {
                     Ok(element) => {
                         self.contents.definitions.push(element);
                     },
@@ -384,73 +376,73 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     }
 
     //mp read_rule
-    fn read_rule (&mut self, descriptor:&'a DiagramDescriptor, parent:Option<usize>, fp:&FilePosition, _name:&str, attributes:&Attributes) -> Result<(), MLError> {
+    fn read_rule (&mut self, descriptor:&'a DiagramDescriptor, parent:Option<usize>, bounds:&FileBounds, _name:&str, attributes:&MarkupAttributes) -> Result<(), MLError> {
         let mut rule = StyleRule::new();
         let mut action = None;
         let mut blob = Vec::new();
-        for attr in attributes {
-            match attr.name.local_name.as_str() {
+        for (name, value) in attributes.iter_name_values() {
+            match name {
                 "style" => {
-                    if let Some(a) = self.stylesheet.get_action_index(&attr.value) {
+                    if let Some(a) = self.stylesheet.get_action_index(value) {
                         action = Some(*a);
                     } else {
-                        return Err(MLError::BadValue(fp.clone(),format!("unknown style id '{}' in rule", attr.value)));
+                        return Err(MLError::BadValue( bounds.clone(), format!("unknown style id '{}' in rule", value)));
                     }
                 }
                 "id"    => {
-                    rule = rule.has_id(&attr.value);
+                    rule = rule.has_id(value);
                 }
                 "class"  => {
-                    rule = rule.has_class(&attr.value);
+                    rule = rule.has_class(value);
                 }
                 "depth"  => {
                     // rule = rule.has_class(attr.value);
                 }
                 name => {
-                    blob.push( (name.to_string(), attr.value.clone()) );
+                    blob.push( (name.to_string(), value.to_string() ) );
                 }
             }
         }
         if blob.len() > 0 {
             assert!(action.is_none());
-            action = Some(MLError::value_result(fp, self.stylesheet.add_action_from_name_values(&blob))?);
+            action = Some(MLError::value_result(bounds, self.stylesheet.add_action_from_name_values(&blob))?);
         }
         let rule_index = self.stylesheet.add_rule(parent, rule, action);
         loop {
             // should support an 'apply' subrule
             match self.next_event()? {
-                (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                    match name.local_name.as_str() {
+                MarkupEvent::EndElement{..}         => { return Ok(()); } // end the use
+                MarkupEvent::Comment{..}            => (), // continue
+                MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                    match name.name.as_str() {
                         "rule"  => {
-                            let e = self.read_rule(descriptor, Some(rule_index), &fp, &name.local_name, &attributes);
+                            let e = self.read_rule(descriptor, Some(rule_index), &bounds, &name.name, &attributes);
                             self.errors.update(e);
                         }
                         _ => {
-                            let r = BadXMLElement::ml_new(self, descriptor, &fp, &name.local_name, &attributes);
+                            let r = BadXMLElement::ml_new(self, descriptor, &bounds, &name.name, &attributes);
                             self.errors.update(r);
-                            return Err(MLError::bad_element_name(&fp,&name.local_name))
+                            return Err(MLError::bad_element_name(&bounds.0,&name.name))
                         }
                     }
                 },
-                (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
-                (_,_,XmlEvent::Comment(_))     => (), // continue
                 ewp => { return Err(MLError::bad_ml_event(&ewp)); },
             }
         }
     }
 
     //mp read_style
-    fn read_style (&mut self, descriptor:&'a DiagramDescriptor, fp:&FilePosition, _name:&str, attributes:&Attributes) -> Result<(), MLError> {
-        MLError::value_result(fp, self.stylesheet.add_action_from_name_values(&to_nv(attributes)))?;
+    fn read_style (&mut self, descriptor:&'a DiagramDescriptor, bounds:&FileBounds, _name:&str, attributes:&MarkupAttributes) -> Result<(), MLError> {
+        MLError::value_result(bounds, self.stylesheet.add_action_from_name_values(&attributes.to_name_values()))?;
         loop {
             match self.next_event()? {
-                (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                    let r = BadXMLElement::ml_new(self, descriptor, &fp, &name.local_name, &attributes);
+                MarkupEvent::EndElement{..}         => { return Ok(()); } // end the use
+                MarkupEvent::Comment{..}            => (), // continue
+                MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                    let r = BadXMLElement::ml_new(self, descriptor, &bounds, &name.name, &attributes);
                     self.errors.update(r);
-                    return Err(MLError::bad_element_name(&fp,&name.local_name))
+                    return Err(MLError::bad_element_name(&bounds.0, &name.name))
                 },
-                (_,_,XmlEvent::EndElement{..}) => { return Ok(()); },
-                (_,_,XmlEvent::Comment(_))     => (), // continue
                 ewp => { return Err(MLError::bad_ml_event(&ewp)); },
             }
         }
@@ -459,19 +451,19 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     //mp read_diagram
     fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor, mut layout:Element<'a>) -> Result<(),MLError> {
         match self.next_event()? {
-            (_,_,XmlEvent::EndElement{..}) => {
+            MarkupEvent::EndElement{..} => {
                 self.contents.set_root_element(layout);
                 return Ok(());
             },
-            (_,_,XmlEvent::Comment(_))     => (), // continue
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                match name.local_name.as_str() {
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                match name.name.as_str() {
                     "style"  => {
-                        let e = self.read_style(descriptor, &fp, &name.local_name, &attributes);
+                        let e = self.read_style(descriptor, &bounds, &name.name, &attributes);
                         self.errors.update(e);
                     }
                     "rule"  => {
-                        let e = self.read_rule(descriptor, None, &fp, &name.local_name, &attributes);
+                        let e = self.read_rule(descriptor, None, &bounds, &name.name, &attributes);
                         self.errors.update(e);
                     }
                     "defs" => {
@@ -479,7 +471,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
                         self.errors.update(e);
                     }
                     _ => {
-                        match Element::ml_new(self, descriptor, &fp, &name.local_name, &attributes) {
+                        match Element::ml_new(self, descriptor, &bounds, &name.name, &attributes) {
                             Ok(element) => {
                                 layout.add_element(element);
                             },
@@ -496,16 +488,16 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     //mp read_document
     fn read_document(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
-            (fp,_,XmlEvent::StartElement{name, attributes, ..}) => {
-                if name.local_name=="diagram" {
-                    let layout = MLError::value_result(&fp, Element::new(descriptor, &name.local_name, to_nv(&attributes)))?;
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                if name.name == "diagram" {
+                    let layout = MLError::value_result(&bounds, Element::new(descriptor, &name.name, attributes.to_name_values()))?;
                     self.read_diagram(descriptor, layout)?;
                     match self.next_event()? {
-                        (_,_,XmlEvent::EndDocument) => { Ok (()) },
+                        MarkupEvent::EndDocument{..} => { Ok (()) },
                         ewp => Err(MLError::bad_ml_event(&ewp)),
                     }
                 } else {
-                    Err(MLError::bad_element_name(&fp, &name.local_name))
+                    Err(MLError::bad_element_name(&bounds.0, &name.name))
                 }
             },
             ewp => Err(MLError::bad_ml_event(&ewp)),
@@ -515,7 +507,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     //mp read_file
     fn read_file(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLErrorList> {
         match self.next_event() {
-            Ok( (_,_,XmlEvent::StartDocument{..}) ) => {
+            Ok( MarkupEvent::StartDocument{..} ) => {
                 let x = self.read_document(descriptor);
                 self.errors.update(x);
             },
@@ -570,7 +562,7 @@ impl <'a, 'b> DiagramML<'a, 'b> {
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
     pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLErrorList> {
-        let event_reader = hmlm::reader::EventReader::new(f); // Can use an xml::reader
+        let event_reader = hmlm::EventReader::new(f); // Can use an xml::reader
         let (descriptor, contents, stylesheet) = self.diagram.borrow_contents_descriptor();
         MLReader::new(contents, stylesheet, event_reader).read_file(descriptor)
     }

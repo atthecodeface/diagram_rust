@@ -11,8 +11,7 @@
 
 //a Imports
 use std::io::prelude::Read;
-use std::fmt::Write;
-use crate::FilePosition;
+use crate::types::{Char, CharResult, CharError, FilePosition};
 
 //a Constants
 /// `BUFFER_SIZE` is the maximum number of bytes held in the UTF-8
@@ -29,76 +28,10 @@ const BUFFER_SIZE  : usize = 2048;
 const BUFFER_SLACK : usize = 4;
 
 //a CharReader trait
-pub trait CharReader {
-    fn next_char(&mut self) -> CharResult;
-    fn pos(&self) -> FilePosition;
+pub trait CharReader<F:FilePosition> {
+    fn next_char(&mut self) -> CharResult<F>;
+    fn pos(&self) -> F;
 }
-
-//a Character result and error
-//tp Char
-/// `Char` represents a unicode character or EOF marker
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Char {
-    /// Eof indicates end of stream/file reached; once a reader returns Eof, it should continue to do so
-    Eof,
-    /// NoData indicates that the stream/file did not supply data, but this is configured to not be EOF
-    /// This can only be returned by the reader if `eof_on_no_data` is false
-    NoData,
-    /// Char indicates a valid Unicode character
-    Char(char)
-}
-
-//ip std::fmt::Display for Char
-impl std::fmt::Display for Char {
-    //mp fmt - format a character for display
-    /// Display the character as either the character itself, or '<EOF>'
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            Char::Eof    => write!(f, "<EOF>"),
-            Char::NoData => write!(f, "<NoData>"),
-            Char::Char(ref ch) => f.write_char(*ch),
-        }
-    }
-}
-
-//tp CharError
-/// `CharError` represents an error from a UTF-8 character reader,
-/// either an IO error from the reader or a malformed UTF-8 encoded
-/// set of bytes
-#[derive(Debug)]
-pub enum CharError {
-    /// An `IoError` is passed through from a reader as a `CharError`
-    IoError(std::io::Error),
-    /// A MalformedUtf8 error occurs when a byte stream contains
-    /// invalid UTF-8; the Unicode-character position of the error is
-    /// recorded, and the number of bytes that form the invalid UTF-8
-    /// encoding (which will be from 1 to 3)
-    MalformedUtf8(usize, FilePosition),
-}
-
-//ip From IO Error to CharError
-/// Provides an implicit conversion from a std::io::Error to a CharError
-impl From<std::io::Error> for CharError {
-    fn from(e: std::io::Error) -> CharError {
-        CharError::IoError(e)
-    }
-}
-
-//ip std::fmt::Display for CharError
-impl std::fmt::Display for CharError {
-    //mp fmt - format a `CharError` for display
-    /// Display the `CharError` in a human-readable form
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            CharError::MalformedUtf8(n, pos) => write!(f, "malformed UTF-8 of {} bytes at {}", n, pos),
-            CharError::IoError(ref e) => write!(f, "IO error: {}", e),
-        }
-    }
-}
-
-//tp CharResult
-/// `CharResult` represents the result of fetching a character
-pub type CharResult = std::result::Result<Char,CharError>;
 
 //a Reader
 //tp Reader
@@ -132,11 +65,11 @@ pub type CharResult = std::result::Result<Char,CharError>;
 /// The `Reader`, though, can be used over any object supporting `Read` such
 /// as a std::net::TcpStream
 ///
-pub struct Reader<R:Read> {
+pub struct Reader<R:Read, F:FilePosition> {
     /// The reader from which data is to be fetched
     buf_reader : R,
     /// Position within the file of the next character to be decoded
-    cursor     : FilePosition,
+    cursor     : F,
     /// `eof_on_no_data` defaults to true; it can be set to false to indicate that
     /// if the stream has no data then the reader should return Char::NoData
     /// when its buffer does not contain a complete UTF-8 character
@@ -160,14 +93,14 @@ pub struct Reader<R:Read> {
 }
 
 //ip Reader
-impl <R:Read> Reader<R> {
+impl <R:Read, F:FilePosition> Reader<R, F> {
 
     //fp new
     /// Returns a new UTF-8 character reader, with a file position of the start of the file
-    pub fn new (buf_reader: R) -> Reader<R> {
+    pub fn new (buf_reader: R) -> Reader<R, F> {
         Reader {
             buf_reader,
-            cursor: FilePosition::new(),
+            cursor: F::new(),
             eof_on_no_data : true,
             eof:    false,
             current : [0; BUFFER_SIZE],
@@ -179,7 +112,7 @@ impl <R:Read> Reader<R> {
 
     //mp complete
     /// Return `true` if the reader has consumed all the data available on the stream
-    pub fn complete(&mut self) -> Result<bool, CharError> {
+    pub fn complete(&mut self) -> Result<bool, CharError<F>> {
         if self.eof {
             Ok(true)
         } else if self.start!=self.end {
@@ -229,10 +162,10 @@ impl <R:Read> Reader<R> {
     //zz All done
 }
 
-impl <R:Read> CharReader for Reader<R> {
+impl <R:Read, F:FilePosition> CharReader<F> for Reader<R, F> {
     //mp pos
     /// Return the file position of the next character to be decoded from the stream
-    fn pos(&self) -> FilePosition {
+    fn pos(&self) -> F {
         self.cursor
     }
 
@@ -242,7 +175,7 @@ impl <R:Read> CharReader for Reader<R> {
     /// # Errors
     ///
     /// May return CharError::MalformedUtf8 if 
-    fn next_char(&mut self) -> CharResult {
+    fn next_char(&mut self) -> CharResult<F> {
         if self.eof {
             Ok(Char::Eof)
         } else if self.start == self.end { // no data present, try reading data
@@ -294,7 +227,7 @@ impl <R:Read> CharReader for Reader<R> {
 }
 
 //ip Iterator for Reader - iterate over characters
-impl <R:Read> Iterator for Reader<R> {
+impl <R:Read, F:FilePosition> Iterator for Reader<R, F> {
     // we will be counting with usize
     type Item = char;
 
@@ -313,13 +246,14 @@ impl <R:Read> Iterator for Reader<R> {
 //a Test
 #[cfg(test)]
 mod tests {
+    use crate::types::*;
     use super::*;
     #[test]
     fn test_reader() {
         let buf = "This is a \u{2764} string\nWith a newline\n\u{0065}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}\u{1f600}";
         let char_list : Vec<char> = buf.chars().collect();
         let mut buf_bytes = buf.as_bytes();
-        let reader = Reader::new(&mut buf_bytes);
+        let reader = Reader::<_, HmlFilePosition>::new(&mut buf_bytes);
         for (i,ch) in reader.enumerate() {
             assert_eq!(ch, char_list[i], "Mismatch in characters from string {} {}", char_list[i], ch );//, reader.pos(), );
         }

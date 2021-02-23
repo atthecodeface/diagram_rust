@@ -25,7 +25,7 @@ fn main() {
     // let file          = std::io::BufReader::new(file);
     // let parser_config = xml::reader::ParserConfig::new().ignore_comments(false);
     // let event_reader        = xml::reader::EventReader::new_with_config(file, parser_config);
-    let event_reader = hmlm::reader::EventReader::new(file);
+    let event_reader = hmlm::EventReader::new(file);
 
     let file_out   = File::create(output_file).unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
@@ -33,8 +33,8 @@ fn main() {
     let mut writer = xml::writer::EventWriter::new(file_out);
     for e in event_reader {
         match e {
-            Ok((_,_,e)) => {
-                match e.as_writer_event() {
+            Ok(event) => {
+                match event.as_xml_writer_event() {
                     None => (),
                     Some(we) => writer.write(we).unwrap(),
                 }
