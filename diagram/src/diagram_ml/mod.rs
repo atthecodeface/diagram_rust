@@ -448,6 +448,37 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
         }
     }
 
+    //mp read_library
+    fn read_library(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
+        match self.next_event()? {
+            MarkupEvent::EndElement{..} => {
+                return Ok(());
+            },
+            MarkupEvent::Comment{..}            => (), // continue
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                match name.name.as_str() {
+                    "style"  => {
+                        let e = self.read_style(descriptor, &bounds, &name.name, &attributes);
+                        self.errors.update(e);
+                    }
+                    "rule"  => {
+                        let e = self.read_rule(descriptor, None, &bounds, &name.name, &attributes);
+                        self.errors.update(e);
+                    }
+                    "defs" => {
+                        let e = self.read_definitions(descriptor);
+                        self.errors.update(e);
+                    }
+                    _ => {
+                        return Err(MLError::bad_element_name(&bounds.0, &name.name));
+                    }
+                }
+            },
+            ewp => { return Err(MLError::bad_ml_event(&ewp)); },
+        }
+        self.read_library(descriptor)
+    }
+
     //mp read_diagram
     fn read_diagram(&mut self, descriptor:&'a DiagramDescriptor, mut layout:Element<'a>) -> Result<(),MLError> {
         match self.next_event()? {
@@ -485,8 +516,26 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
         self.read_diagram(descriptor, layout)
     }
 
-    //mp read_document
-    fn read_document(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
+    //mp read_library_document
+    fn read_library_document(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
+        match self.next_event()? {
+            MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
+                if name.name == "library" {
+                    self.read_library(descriptor)?;
+                    match self.next_event()? {
+                        MarkupEvent::EndDocument{..} => { Ok (()) },
+                        ewp => Err(MLError::bad_ml_event(&ewp)),
+                    }
+                } else {
+                    Err(MLError::bad_element_name(&bounds.0, &name.name))
+                }
+            },
+            ewp => Err(MLError::bad_ml_event(&ewp)),
+        }
+    }
+
+    //mp read_diagram_document
+    fn read_diagram_document(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLError> {
         match self.next_event()? {
             MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
                 if name.name == "diagram" {
@@ -505,11 +554,16 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
     }
 
     //mp read_file
-    fn read_file(&mut self, descriptor:&'a DiagramDescriptor) -> Result<(),MLErrorList> {
+    fn read_file(&mut self, descriptor:&'a DiagramDescriptor, is_library:bool) -> Result<(),MLErrorList> {
         match self.next_event() {
             Ok( MarkupEvent::StartDocument{..} ) => {
-                let x = self.read_document(descriptor);
-                self.errors.update(x);
+                if is_library {
+                    let x = self.read_library_document(descriptor);
+                    self.errors.update(x);
+                } else {
+                    let x = self.read_diagram_document(descriptor);
+                    self.errors.update(x);
+                }
             },
             Ok(ewp) => { self.errors.add(MLError::bad_ml_event(&ewp)); }
             Err(e) =>  { self.errors.add(e); }
@@ -561,10 +615,10 @@ impl <'a, 'b> DiagramML<'a, 'b> {
     //mp read_file
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
-    pub fn read_file<R:Read>(&mut self, f:R) -> Result<(),MLErrorList> {
+    pub fn read_file<R:Read>(&mut self, f:R, is_library:bool) -> Result<(),MLErrorList> {
         let event_reader = hmlm::EventReader::new(f); // Can use an xml::reader
         let (descriptor, contents, stylesheet) = self.diagram.borrow_contents_descriptor();
-        MLReader::new(contents, stylesheet, event_reader).read_file(descriptor)
+        MLReader::new(contents, stylesheet, event_reader).read_file(descriptor, is_library)
     }
     
     //zz All done

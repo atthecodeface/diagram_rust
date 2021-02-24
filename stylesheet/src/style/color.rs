@@ -230,8 +230,21 @@ pub fn of_string(s:&str) -> Option<u32> {
             if s.bytes().nth(0)!=Some(35) {
                 None
             } else {
+                let short_rgb = s.len() < 7;
                 match u32::from_str_radix(s.split_at(1).1,16) {
-                    Ok(rgb) => Some(rgb & 0xffffff),
+                    Ok(rgb) => {
+                        if short_rgb {
+                            let b = (rgb >> 8) & 0xf;
+                            let g = (rgb >> 4) & 0xf;
+                            let r = (rgb >> 0) & 0xf;
+                            let rgb = (b <<20) | (b<<16) |
+                            (g<<12) | (g<<8) |
+                            (r<< 4) | (r<<0);
+                            Some(rgb)
+                        } else {
+                            Some(rgb & 0xffffff)
+                        }
+                    },
                     _ => None,
                 }
             }

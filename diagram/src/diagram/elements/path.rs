@@ -174,9 +174,8 @@ impl GenerateSvgElement for Path {
         ele.add_markers(&self.markers);
         ele.add_size("stroke-width",self.stroke_width);
         let mut coords = Vec::new();
-        let bl = self.center.clone().add(&Point::new(self.width*-0.5, self.height*-0.5), 1.);
         for c in &self.coords {
-            coords.push( c.scale_xy(self.width, self.height).add(&bl, 1.) );
+            coords.push( c.scale_xy(self.width*0.5, self.height*0.5).add(&self.center, 1.) );
         }
         let mut path = BezierPath::new();
         for i in 0..coords.len()-1 {

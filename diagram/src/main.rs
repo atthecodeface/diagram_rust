@@ -71,7 +71,7 @@ fn main() {
              .help("Display diagram hierarchy")
              .multiple(false))
         .arg(Arg::with_name("file")
-             .help("Input files to read")
+             .help("Input files to read; first must be a diagram, others must be library")
              .multiple(true))
         .get_matches();
 
@@ -84,9 +84,11 @@ fn main() {
         },
         Some(vf) => {
             let mut diagram_ml = DiagramML::new(&mut diagram);
+            let mut is_library = false;
             for filename in vf {
                 let file = File::open(filename).unwrap();
-                exit_on_err( diagram_ml.read_file(file) );
+                exit_on_err( diagram_ml.read_file(file, is_library) );
+                is_library = true;
             }
         },
     }

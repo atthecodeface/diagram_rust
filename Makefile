@@ -25,6 +25,8 @@ examples: build
 	${BIN} --output svg/rotate2.svg    examples/rotate2.dml
 	${BIN} --output svg/rotate3.svg    examples/rotate3.dml
 	${BIN} --output svg/simple.svg     examples/simple.dml
+	${BIN} --output svg/style.svg      examples/style.dml
+	${BIN} --output svg/styled.svg     examples/style.dml examples/stylesheet.dml
 	${BIN} --output svg/text.svg       examples/text.dml
 	${BIN} --output svg/use.svg        examples/use.dml
 

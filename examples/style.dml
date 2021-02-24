@@ -1,15 +1,24 @@
 #diagram
 
+##defs
+###circle id=x_marks_the_spot
+
 ##layout{ grid=1,1 id=l
 
 #circle id=a 
 #circle id=b 
 #circle id=c
 #path   id=p markers="none arrow"
+
+; x_marks_the_spot is in the stylesheet.dml
+
+#use ref=x_marks_the_spot class=X
 ##layout}
 
-##rule  id=a grid=1,5 border=1.   bordercolor=blue bg=yellow fill=purple width=10. 
-##rule  id=b grid=1,4 border=0.2. bordercolor=blue bg=yellow fill=purple width=10. 
-##rule  id=c grid=2,4 border=0.5. bordercolor=blue bg=yellow fill=purple width=10. 
-##rule  id=p grid=2,5 border=0.5. bordercolor=blue bg=yellow stroke=lime strokewidth=0.1 coords=0,0.1,0.97,0.1 expand=1,1
-##rule  id=l  grid=2,3 minx=1,0.5,2,23.0,3 border=3. bordercolor=red bg=green
+##rule  id=a  gridx=1 gridy=5 border-width=1.   border-color=blue bg=yellow fill-color=#f80 width=10. 
+##rule  id=b  gridx=1 gridy=4 border-width=0.2. border-color=blue bg=yellow fill-color=#f08 width=10. 
+##rule  id=c  gridx=2 gridy=4 border-width=0.5. border-color=blue bg=yellow fill-color=#08f width=10. 
+##rule  id=p  gridx=2 gridy=5 border-width=0.5. border-color=blue bg=yellow stroke-color=lime stroke-width=0.1 coords=0,0.1,0.97,0.1 expand=1,1
+##rule  id=l  gridx=2 gridy=3 minx=1,0.5,2,23.0,3 border-width=3. border-color=red bg=green
+
+##rule class=X gridx=1,3 gridy=3,5

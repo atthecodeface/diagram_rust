@@ -1,0 +1,7 @@
+#library
+
+##defs{
+
+#path id=x_marks_the_spot expand=1,1 coords="-1,-1,1,1, 0,0, 1,-1, -1,1" flags=0 stroke-width=1 stroke-color=black
+
+##defs}
