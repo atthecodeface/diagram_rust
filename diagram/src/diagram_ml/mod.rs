@@ -286,6 +286,7 @@ impl <'a, R:Read> MLEvent <'a, R, Element<'a>> for Element<'a> {
             el::POLYGON  => Ok(Shape ::ml_new(reader, descriptor, bounds, name, attributes)?),
             el::TEXT     => Ok(Text  ::ml_new(reader, descriptor, bounds, name, attributes)?),
             el::GROUP    => Ok(Group ::ml_new(reader, descriptor, bounds, name, attributes)?),
+            el::MARKER   => Ok(Group ::ml_new(reader, descriptor, bounds, name, attributes)?),
             el::LAYOUT   => Ok(Group ::ml_new(reader, descriptor, bounds, name, attributes)?),
             el::USE      => Ok(Use   ::ml_new(reader, descriptor, bounds, name, attributes)?),
             _ => {
@@ -363,11 +364,23 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
             MarkupEvent::EndElement{..}         => { return Ok(()); } // end the use
             MarkupEvent::Comment{..}            => (), // continue
             MarkupEvent::StartElement{bounds, name, attributes, ..} => { // content of definitions must be elements
-                match Element::ml_new(self, descriptor, &bounds, &name.name, &attributes) {
-                    Ok(element) => {
-                        self.contents.definitions.push(element);
-                    },
-                    e => { self.errors.update(e); },
+                match name.name.as_str() {
+                    "marker" => {
+                        match Element::ml_new(self, descriptor, &bounds, &name.name, &attributes) {
+                            Ok(element) => {
+                                self.contents.markers.push(element);
+                            },
+                            e => { self.errors.update(e); },
+                        }
+                    }
+                    _ => {
+                        match Element::ml_new(self, descriptor, &bounds, &name.name, &attributes) {
+                            Ok(element) => {
+                                self.contents.definitions.push(element);
+                            },
+                            e => { self.errors.update(e); },
+                        }
+                    }
                 }
             },
             ewp => { return Err(MLError::bad_ml_event(&ewp)); },

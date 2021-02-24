@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use stylesheet::{StylableNode, Tree};
-use geometry::{Rectangle};
+use geometry::{Rectangle, Point};
 
 use crate::constants::attributes as at;
 use crate::constants::elements   as el;
@@ -30,6 +30,14 @@ use super::super::super::layout::{GridData};
 use super::super::types::*;
 
 //a Group element
+//tp GroupType
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum GroupType {
+    Marker,
+    Layout,
+    Group,
+}
+
 //tp Group - an Element that contains just other Elements
 /// The Group supplies simple grouping of elements
 ///
@@ -40,6 +48,8 @@ use super::super::types::*;
 /// of the group.
 #[derive(Debug)]
 pub struct Group<'a> {
+    /// Group
+    group_type : GroupType,
     /// The elements that are part of this group
     pub content : Vec<Element<'a>>,
     layout : Option<Layout>,
@@ -48,6 +58,18 @@ pub struct Group<'a> {
     miny  : Vec<GridData>,
     growx : Vec<GridData>,
     growy : Vec<GridData>,
+    bbox : Rectangle,
+
+    // For markers ONLY
+    // Reference point - 
+    pub ref_pt:Point,
+    /// Flags - other than default
+    /// Default is orient auto, markerunits strokeWidth
+    pub flags:usize,
+    // Width - width in the parent to squish the viewbox into - if not given, uses 1
+    pub width :f64,
+    // Height - height in the parent to squish the viewbox into - if not given, uses width
+    pub height :f64,
 }
 
 //ip DiagramElementContent for Group
@@ -55,14 +77,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     //fp new
     /// Create a new group
     fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
-        let layout = {
+        let (group_type, layout) = {
             match name {
-                el::GROUP => None,
-                _ => Some(Layout::new()),
+                el::GROUP  => (GroupType::Group,  None),
+                el::MARKER => (GroupType::Marker, Some(Layout::new())),
+                _ =>          (GroupType::Layout, Some(Layout::new())),
             }
         };
         // println!("Group created using name '{}' layout {:?}",  name, layout);
         Ok( Self {
+            group_type,
             content:Vec::new(),
             layout,
             layout_record : None,
@@ -70,14 +94,21 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             miny  : Vec::new(),
             growx : Vec::new(),
             growy : Vec::new(),
+            bbox  : Rectangle::none(),
+            ref_pt : Point::origin(), // for markers
+            flags : 0,
+            width : 0.,
+            height : 0.,
         } )
     }
 
     //fp clone
     /// Clone element given clone of header within scope
+    /// This is called *before* the element is styled, so contents may be basically empty
     fn clone(&self, _header:&ElementHeader<'a>, scope:&ElementScope<'a,'b> ) -> Result<Self,ElementError>{
         let layout = {if self.layout.is_some() {Some(Layout::new())} else {None}};
         let mut clone = Self {
+            group_type : self.group_type,
             content:Vec::new(),
             layout,
             layout_record : None,
@@ -85,6 +116,11 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             miny  : Vec::new(),
             growx : Vec::new(),
             growy : Vec::new(),
+            bbox  : Rectangle::none(),
+            ref_pt : Point::origin(), // for markers
+            flags : 0,
+            width : 0.,
+            height : 0.,
         };
         for e in &self.content {
             clone.content.push(e.clone(scope)?);
@@ -108,10 +144,19 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
         match name {
             el::GROUP => vec![],
-            _ => vec![at::MINX,
+            el::LAYOUT => vec![at::MINX,
                       at::MINY,
                       at::GROWX,
                       at::GROWY],
+            _ => vec![at::MINX,
+                      at::MINY,
+                      at::GROWX,
+                      at::GROWY,
+                      at::POINT,
+                      at::WIDTH,
+                      at::HEIGHT,
+                      at::FLAGS,
+                      ],
         }
     }
 
@@ -135,6 +180,22 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             layout.grid_expand.0 = header.layout.expand.x;
             layout.grid_expand.1 = header.layout.expand.y;
         }
+        // width, height, flags, ref point are only used in markers
+        match header.get_style_floats_of_name(at::POINT).as_floats(None) {
+            Some(g) => {
+                match g.len() {
+                    0 => {},
+                    1 => { self.ref_pt = Point::new(g[0], g[0]); },
+                    _ => { self.ref_pt = Point::new(g[0], g[1]); },
+                }
+            },
+            _ => {},
+        }
+        if let Some(i) = header.get_style_of_name_int(at::FLAGS, None) {
+            self.flags = i as usize;
+        }
+        self.width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
+        self.height   = header.get_style_of_name_float(at::HEIGHT,Some(self.width)).unwrap();
         for e in self.content.iter_mut() {
             e.style(descriptor)?;
         }
@@ -150,6 +211,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             layout.add_min_cell_data(&self.minx, &self.miny);
             layout.add_grow_cell_data(&self.growx, &self.growy);
             let rect = layout.get_desired_geometry();
+            self.bbox = rect;
             // println!("Group layout desires rectangle of {}", rect);
             rect
         } else {
@@ -264,9 +326,27 @@ impl <'a> Group<'a> {
 //ip GenerateSvgElement for Group
 impl <'a> GenerateSvgElement for Group <'a> {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
+        let is_marker = self.group_type == GroupType::Marker;
+        if is_marker {
+            let mut ele = SvgElement::new("marker");
+            header.svg_add_transform(&mut ele);
+            ele.add_attribute("viewBox",
+                              &format!("{} {} {} {}",
+                                       self.bbox.x0,
+                                       self.bbox.y0,
+                                       self.bbox.x1-self.bbox.x0,
+                                       self.bbox.y1-self.bbox.y0,));
+            ele.add_size("refX", self.ref_pt.x);
+            ele.add_size("refY", self.ref_pt.y);
+            ele.add_size("markerWidth",  self.width  );
+            ele.add_size("markerHeight", self.height );
+            ele.add_attribute("markerUnits","strokeWidth");
+            ele.add_attribute("orient", "auto");
+            svg.push_element(ele);
+        }
         if let Some(_layout) = &self.layout {
             let mut ele = SvgElement::new("g");
-            header.svg_add_transform(&mut ele);
+            if !is_marker { header.svg_add_transform(&mut ele); }
             svg.push_element(ele);
             for e in &self.content {
                 e.generate_svg( svg )?;
@@ -279,8 +359,13 @@ impl <'a> GenerateSvgElement for Group <'a> {
                 e.generate_svg( svg )?;
             }
         }
+        if self.group_type == GroupType::Marker {
+            let ele = svg.pop_element();
+            svg.add_subelement(ele);
+        }
 
         Ok(())
     }
 }
+
 

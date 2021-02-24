@@ -579,41 +579,10 @@ impl <'a> GenerateSvg for Diagram<'a> {
         let ele = SvgElement::new("defs");
         svg.push_element(ele);
 
-        let mut ele = SvgElement::new("marker");
-        ele.add_attribute("id","arrow");
-        ele.add_attribute("viewBox","0 0 10 10");
-        ele.add_attribute("refX","5");
-        ele.add_attribute("refY","5");
-        ele.add_attribute("markerWidth","6");
-        ele.add_attribute("markerHeight","6");
-        ele.add_attribute("markerUnits","strokeWidth");
-        ele.add_attribute("orient", "auto");
-        svg.push_element(ele);
-        let mut ele = SvgElement::new("path");
-        ele.add_attribute("fill", marker_stroke);
-        ele.add_attribute("d", "M 0 0 L 10 5 L 0 10 z");
-        svg.add_subelement(ele);
-        let ele = svg.pop_element();
-        svg.add_subelement(ele);
-        
-        let mut ele = SvgElement::new("marker");
-        ele.add_attribute("id","dot");
-        ele.add_attribute("viewBox","0 0 10 10");
-        ele.add_attribute("refX","5");
-        ele.add_attribute("refY","5");
-        ele.add_attribute("markerWidth","5");
-        ele.add_attribute("markerHeight","5");
-        ele.add_attribute("markerUnits","strokeWidth");
-        svg.push_element(ele);
-        let mut ele = SvgElement::new("circle");
-        ele.add_attribute("cx", "5");
-        ele.add_attribute("cy", "5");
-        ele.add_attribute("r", "5");
-        ele.add_attribute("fill", marker_stroke);
-        svg.add_subelement(ele);
-        let ele = svg.pop_element();
-        svg.add_subelement(ele);
-        
+        for e in &self.contents.markers {
+            e.generate_svg( svg )?;
+        }
+
         let ele = svg.pop_element();
         svg.add_subelement(ele);
 
@@ -627,7 +596,6 @@ impl <'a> GenerateSvg for Diagram<'a> {
             element.generate_svg( svg )?;
         }
 
-        
         if svg.display {
             let ele = svg.pop_element();
             ele.display(0);

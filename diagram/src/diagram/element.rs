@@ -185,10 +185,15 @@ impl <'a, 'b> ElementScope<'a, 'b> {
 //tp ElementContent 
 #[derive(Debug)]
 pub enum ElementContent<'a> {
+    /// Group is used for Marker, Layout and Group
     Group(Group<'a>),
+    /// Text is used for all text boxes
     Text(Text),
+    /// Shape is used for circles, polygons, rectangles
     Shape(Shape),
-    Path(Path),    
+    /// Path is used for custom shapes
+    Path(Path),
+    /// Use describes a reference to a defined element
     Use(Use<'a>), // use of a definition
 }
 
@@ -200,6 +205,7 @@ impl <'a> ElementContent<'a> {
             el::DIAGRAM => Ok(Self::Group(Group::new(&header, name)?)),
             el::GROUP   => Ok(Self::Group(Group::new(&header, name)?)),
             el::LAYOUT  => Ok(Self::Group(Group::new(&header, name)?)),
+            el::MARKER  => Ok(Self::Group(Group::new(&header, name)?)),
             el::PATH    => Ok(Self::Path(Path::new(&header, name)?)),
             el::RECT    => Ok(Self::Shape(Shape::new(&header, name)?)),
             el::CIRCLE  => Ok(Self::Shape(Shape::new(&header, name)?)),
@@ -777,6 +783,7 @@ impl <'a> Element <'a> {
         descriptor.add_content_descriptor(el::DIAGRAM,  true,  Group::get_style_names(el::DIAGRAM));
         descriptor.add_content_descriptor(el::GROUP,    true,  Group::get_style_names(el::GROUP));
         descriptor.add_content_descriptor(el::LAYOUT,   true,  Group::get_style_names(el::LAYOUT));
+        descriptor.add_content_descriptor(el::MARKER,   true,  Group::get_style_names(el::MARKER));
         descriptor.add_content_descriptor(el::TEXT,     true,  Text::get_style_names(el::TEXT));
         descriptor.add_content_descriptor(el::POLYGON,  true,  Shape::get_style_names(el::POLYGON));
         descriptor.add_content_descriptor(el::RECT,     true,  Shape::get_style_names(el::RECT));
@@ -896,4 +903,5 @@ impl <'a> Element <'a> {
 
     //zz All done
 }
+
 

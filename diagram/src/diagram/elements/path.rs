@@ -163,6 +163,9 @@ impl GenerateSvgElement for Path {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         let mut ele = SvgElement::new("path");
         header.svg_add_transform(&mut ele);
+        if self.coords.is_empty() {
+            return Ok(());
+        }
         match &self.stroke {
             None      => {ele.add_attribute("stroke","None");},
             Some(rgb) => {ele.add_color("stroke",rgb);},

@@ -1,0 +1,35 @@
+#library
+##defs{
+
+; For this angle (60 degree point half angle 30) with width 10 height 10 you need 5-10/x as the ref point
+; for width=1 you need -5  
+; for width=2 you need 0.0 
+; for width=3 you need 1.5 
+; for width=6 you need 3.333
+; for width=20 you need 4.5
+#marker id=arrow width=2 point=0.,0
+##path width=10 height=10 coords=-1,-1,1,0,-1,1 fill-color=black
+
+; For this angle (60 degree point half angle 45) with width 5 height 10 you need 2.5-5/x as the ref point
+; for width=1 you need -2.5  
+; for width=2 you need 0.0 
+#marker id=fatarrow width=2 point=0,0
+##path width=5 height=10 coords=-1,-1,1,0,-1,1 fill-color=black
+
+; for width=2 you need 1.7
+#marker id=dblarrow_old width=2 point=1.7,0
+##path width=10 height=10 coords="1,0,-0.33,-1,-0.33,0, 0.33,0,-1.,-1, -1.,1,0.33,0, -0.33,0,-0.33,1,1,0" fill-color=black
+
+; Same as arrow, but doubled
+; note that this is 1.5 arrows 'wide' so width of 3 here is same as width 2 in arrow
+; for marker width=3 you need 2.75
+; for marker width=4.5 you need 4.25
+#marker id=dblarrow width=4.5 height=20 point=4.25,0
+##path width=15 height=10 coords="1,0,-0.33,-1,-0.33,0, 0.33,0,-1.,-1, -1.,1,0.33,0, -0.33,0,-0.33,1,1,0" fill-color=black
+
+#marker id=circle width=1.5 height=1.5
+##circle width=20 height=20 fill-color=black
+
+
+#defs}
+

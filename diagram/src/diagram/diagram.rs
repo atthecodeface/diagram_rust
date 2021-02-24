@@ -59,6 +59,7 @@ impl From<ElementError> for DiagramError {
 /// immutable (such as its DiagramDescriptor).
 pub struct DiagramContents<'a> {
     pub definitions       : Vec<Element<'a>>,
+    pub markers           : Vec<Element<'a>>, // All these elements MUST be markers
     pub root_layout       : Option<Element<'a>>,
     pub content_bbox      : Rectangle,
 }
@@ -69,6 +70,7 @@ impl <'a> DiagramContents<'a> {
     /// Create a new empty `DiagramContents`
     pub(self) fn new() -> Self {
         Self { definitions:Vec::new(),
+               markers    :Vec::new(),
                root_layout:None,
                content_bbox : Rectangle::none(),
         }
@@ -141,6 +143,9 @@ impl <'a> Diagram <'a> {
         if let Some(element) = &mut self.contents.root_layout{
             element.uniquify(&scope)?;
         }
+        for element in &mut self.contents.markers {
+            element.uniquify(&scope)?;
+        }
         Ok(())
     }
 
@@ -158,6 +163,9 @@ impl <'a> Diagram <'a> {
         if let Some(element) = &mut self.contents.root_layout{
             tree = element.tree_add_element(tree);
         }
+        for element in &mut self.contents.markers {
+            tree = element.tree_add_element(tree);
+        }
         tree.close_container();
         self.stylesheet.apply_rules_to_tree(&mut tree);
     }
@@ -166,6 +174,9 @@ impl <'a> Diagram <'a> {
     /// Style the contents of the diagram, using the stylesheet
     pub fn style(&mut self) -> Result<(),DiagramError> {
         if let Some(element) = &mut self.contents.root_layout{
+            element.style(self.descriptor)?;
+        }
+        for element in &mut self.contents.markers {
             element.style(self.descriptor)?;
         }
         Ok(())
@@ -199,10 +210,16 @@ impl <'a> Diagram <'a> {
         };
 
         self.contents.content_bbox = rect;
-        if let Some(element) = &mut self.contents.root_layout{
+        if let Some(element) = &mut self.contents.root_layout {
             element.apply_placement(&layout);
         }
 
+        for element in &mut self.contents.markers {
+            let mut layout = Layout::new();
+            element.set_layout_properties(&mut layout);
+            element.apply_placement(&layout);
+        }
+        
         Ok(())
     }
 
@@ -217,6 +234,9 @@ impl <'a> Diagram <'a> {
     /// Display the diagram in a human-parseable form, generally for debugging
     pub fn display(&self) {
         if let Some(element) = &self.contents.root_layout{
+            element.display(0);
+        }
+        for element in &self.contents.markers {
             element.display(0);
         }
     }

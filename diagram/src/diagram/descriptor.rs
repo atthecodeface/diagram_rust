@@ -70,6 +70,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type(at::SCALE,       StyleValue::float(None),   true)
             .add_type(at::ROTATE,      StyleValue::float(None),   true)
             .add_type(at::TRANSLATE,   StyleValue::floats(2),     true)
+            .add_type(at::POINT,       StyleValue::floats(2),     true)
             .add_type(at::FILL,        StyleValue::rgb(None),     true)
             .add_type(at::STROKE,      StyleValue::rgb(None),     true)
             .add_type(at::STROKEWIDTH, StyleValue::float(None),   true)

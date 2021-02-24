@@ -71,8 +71,10 @@ pub mod attributes {
     att!(VERTICES,    "vertices");
     att!(FLAGS,       "flags");
     att!(REF,         "ref");
+    att!(POINT,       "point");
 }
 pub mod elements {
+    tag!(MARKER,   "marker");
     tag!(USE,      "use");
     tag!(DIAGRAM,  "diagram");
     tag!(GROUP,    "group");
