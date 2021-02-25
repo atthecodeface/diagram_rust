@@ -15,7 +15,7 @@ use diagram::DiagramDescriptor;
 use diagram::Diagram;
 use diagram::DiagramML;
 use geometry::Rectangle;
-use diagram::{Svg, GenerateSvg};
+use diagram::{Svg};
 fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
     match result {
         Err(e) => {

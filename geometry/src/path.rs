@@ -113,6 +113,53 @@ impl BezierPath {
         self.elements.push(b);
     }
 
+    //mp apply_relief
+    /// Attempt to remove `distance` from the start or end of the path
+    /// but leave rest of path the same
+    pub fn apply_relief(&mut self, index:usize, straightness:f64, distance:f64) {
+        if self.elements.is_empty() { return; }
+        if index == 0 {
+            let b = self.elements[0];
+            let l = b.length(straightness);
+            // println!("Applying relief to start of bezier path {} straightness {} distance {} length {}",b, straightness, distance, l);
+            if distance > l {
+                self.elements.remove(0);
+                self.apply_relief(index, straightness, distance-l)
+            } else {
+                let (t,in_bezier) = b.t_of_distance(straightness, distance);
+                if t == 0. {
+                    ()
+                } else if t == 1. {
+                    self.elements.remove(0);
+                    ()
+                } else {
+                    self.elements[0] = b.bezier_between(t, 1.);
+                    ()
+                }
+            }
+        } else {
+            let n = self.elements.len();
+            let b = self.elements[n-1];
+            let l = b.length(straightness);
+            // println!("Applying relief to end of bezier path {} straightness {} distance {} length {}",b, straightness, distance, l);
+            if distance > l {
+                self.elements.pop();
+                self.apply_relief(index, straightness, distance-l)
+            } else {
+                let (t,in_bezier) = b.t_of_distance(straightness, l-distance);
+                if t == 0. {
+                    self.elements.pop();
+                    ()
+                } else if t == 1. {
+                    ()
+                } else {
+                    self.elements[n-1] = b.bezier_between(0., t);
+                    ()
+                }
+            }
+        }
+    }
+    
     //mp iter_beziers
     /// Iterate through all the Beziers
     pub fn iter_beziers(&self) -> impl Iterator<Item = &Bezier> {

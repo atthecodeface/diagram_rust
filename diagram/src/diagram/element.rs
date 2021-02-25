@@ -263,6 +263,14 @@ impl <'a> ElementContent<'a> {
         }
     }
 
+    //mp borrow_group
+    pub fn borrow_group<'z>(&'z self) -> Option<&'z Group<'a>> {
+        match self {
+            Self::Group(ref g) => { Some(g) },
+            _ => None,
+        }
+    }
+
     //fp tree_add_element
     pub fn tree_add_element<'b>(&'b mut self, tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
         match self {
@@ -845,6 +853,14 @@ impl <'a> Element <'a> {
             }
         }
         Ok(value)
+    }
+
+    //mp borrow_marker
+    pub fn borrow_marker<'z> (&'z self) -> Option<(&'z ElementHeader<'a>, &'z Group<'a>)> {
+        match self.content.borrow_group() {
+            None => None,
+            Some(x) => Some((&self.header, x))
+        }
     }
 
     //fp tree_add_element

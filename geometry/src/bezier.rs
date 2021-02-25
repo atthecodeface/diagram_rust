@@ -205,6 +205,27 @@ impl Bezier {
         }
     }
         
+    //mp bezier_between
+    /// Returns the Bezier between two parameters 0 <= t0 < t1 <= 1
+    pub fn bezier_between(&self, t0:f64, t1:f64) -> Self {
+        match self {
+            Self::Linear(p0,p1) => {
+                let pd = p1.clone().add(p0,-1.);
+                let r0 = p0.clone().add(&pd,t0);
+                let r1 = p0.clone().add(&pd,t1);
+                Self::Linear(r0, r1)
+            },
+            Self::Quadratic(p0,c,p1) => {
+                panic!("Bezier between not implemented for Quadratic");
+                self.clone()
+            },
+            Self::Cubic(p0,c0,c1,p1) => {
+                panic!("Bezier between not implemented for Cubic");
+                self.clone()
+            },
+        }
+    }
+        
     //mp point_at
     /// Returns the point at parameter 't' along the Bezier
     pub fn point_at(&self, t:f64) -> Point {

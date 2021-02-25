@@ -61,8 +61,10 @@ pub struct Group<'a> {
     bbox : Rectangle,
 
     // For markers ONLY
-    // Reference point - 
+    // Reference point - where the 'end' of the marker is in its content
     pub ref_pt:Point,
+    // Relief - amount of relief to apply to start and end in terms of stroke-width units
+    pub relief : (f64, f64),
     /// Flags - other than default
     /// Default is orient auto, markerunits strokeWidth
     pub flags:usize,
@@ -96,6 +98,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             growy : Vec::new(),
             bbox  : Rectangle::none(),
             ref_pt : Point::origin(), // for markers
+            relief : (0.,0.),
             flags : 0,
             width : 0.,
             height : 0.,
@@ -117,7 +120,8 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             growx : Vec::new(),
             growy : Vec::new(),
             bbox  : Rectangle::none(),
-            ref_pt : Point::origin(), // for markers
+            ref_pt  : Point::origin(), // for markers
+            relief : (0.,0.),
             flags : 0,
             width : 0.,
             height : 0.,
@@ -153,6 +157,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
                       at::GROWX,
                       at::GROWY,
                       at::POINT,
+                      at::RELIEF,
                       at::WIDTH,
                       at::HEIGHT,
                       at::FLAGS,
@@ -187,6 +192,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
                     0 => {},
                     1 => { self.ref_pt = Point::new(g[0], g[0]); },
                     _ => { self.ref_pt = Point::new(g[0], g[1]); },
+                }
+            },
+            _ => {},
+        }
+        match header.get_style_floats_of_name(at::RELIEF).as_floats(None) {
+            Some(g) => {
+                match g.len() {
+                    0 => {},
+                    1 => { self.relief = (g[0], g[0]); },
+                    _ => { self.relief = (g[0], g[1]); },
                 }
             },
             _ => {},
@@ -314,19 +329,31 @@ impl <'a> Group<'a> {
     pub fn add_element(&mut self, element:Element<'a>) -> () {
         self.content.push(element);
     }
-    //fp tree_add_element
+    //mp tree_add_element
     pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
         for c in self.content.iter_mut() {
             tree = c.tree_add_element(tree);
         }
         tree
     }
+    //mp get_relief
+    pub fn get_relief(&self, index:usize) -> f64 {
+        if index == 0 { self.relief.0 } else { self.relief.1 }
+    }
+    
+    //zz All done
 }
 
 //ip GenerateSvgElement for Group
 impl <'a> GenerateSvgElement for Group <'a> {
     fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
         let is_marker = self.group_type == GroupType::Marker;
+        // let marker_stroke = {
+        //     match svg.version {
+        //         20 => "context-stroke",
+        //         _ => "black",
+        //     }
+        // };
         if is_marker {
             let mut ele = SvgElement::new("marker");
             header.svg_add_transform(&mut ele);

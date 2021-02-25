@@ -16,7 +16,7 @@
 <path stroke="None" fill="#000000" stroke-width="0.0000" d="M 5.0000,0.0000 L -1.6500,-5.0000 L -1.6500,0.0000 L 1.6500,0.0000 L -5.0000,-5.0000 L -5.0000,5.0000 L 1.6500,0.0000 L -1.6500,0.0000 L -1.6500,5.0000 L 5.0000,0.0000" />
 </g>
 </marker>
-<marker id="dblarrow" viewBox="-7.5 -5 15 10" refX="4.2500" refY="0.0000" markerWidth="4.5000" markerHeight="20.0000" markerUnits="strokeWidth" orient="auto">
+<marker id="dblarrow" viewBox="-7.5 -5 15 10" refX="-7.5000" refY="0.0000" markerWidth="3.0000" markerHeight="3.0000" markerUnits="strokeWidth" orient="auto">
 <g>
 <path stroke="None" fill="#000000" stroke-width="0.0000" d="M 7.5000,0.0000 L -2.4750,-5.0000 L -2.4750,0.0000 L 2.4750,0.0000 L -7.5000,-5.0000 L -7.5000,5.0000 L 2.4750,0.0000 L -2.4750,0.0000 L -2.4750,5.0000 L 7.5000,0.0000" />
 </g>
@@ -29,7 +29,7 @@
 </defs>
 <g>
 <path transform="translate(0.0000 -2.4694) " stroke="#0088ff" fill="None" stroke-width="0.5000" d="M -25.0000,30.0000 L 25.0000,30.0000" />
-<path transform="translate(0.0000 -2.4694) " stroke="#ff0000" fill="None" marker-start="url(#arrow)" marker-mid="url(#arrow)" marker-end="url(#dblarrow)" stroke-width="3.0000" d="M -50.0000,-50.0000 L 40.0000,-50.0000 C 45.5228,-50.0000 50.0000,-45.5228 50.0000,-40.0000 L 50.0000,40.0000 C 50.0000,45.5228 45.5228,50.0000 40.0000,50.0000 L 10.0000,50.0000 C 4.4772,50.0000 0.0000,45.5228 0.0000,40.0000 L 0.0000,30.0000" />
+<path transform="translate(0.0000 -2.4694) " stroke="#ff0000" fill="None" marker-start="url(#arrow)" marker-mid="url(#arrow)" marker-end="url(#dblarrow)" stroke-width="3.0000" d="M -50.0000,-50.0000 L 40.0000,-50.0000 C 45.5228,-50.0000 50.0000,-45.5228 50.0000,-40.0000 L 50.0000,40.0000 C 50.0000,45.5228 45.5228,50.0000 40.0000,50.0000 L 10.0000,50.0000 C 4.4772,50.0000 0.0000,45.5228 0.0000,40.0000 L 0.0000,39.0000" />
 <path transform="translate(0.0000 -2.4694) " stroke="#0000ff" fill="#008000" stroke-width="2.0000" d="M 3.5355,-21.4645 L 21.4645,-3.5355 C 23.4171,-1.5829 23.4171,1.5829 21.4645,3.5355 L 3.5355,21.4645 C 1.5829,23.4171 -1.5829,23.4171 -3.5355,21.4645 L -21.4645,3.5355 C -23.4171,1.5829 -23.4171,-1.5829 -21.4645,-3.5355 L -3.5355,-21.4645 C -1.5829,-23.4171 1.5829,-23.4171 3.5355,-21.4645 z" />
 <g transform="translate(0.0000 50.0000) ">
 <text transform="translate(-7.9375 -2.4694) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Some text</text>

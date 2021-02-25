@@ -72,6 +72,7 @@ pub mod attributes {
     att!(FLAGS,       "flags");
     att!(REF,         "ref");
     att!(POINT,       "point");
+    att!(RELIEF,      "relief");
 }
 pub mod elements {
     tag!(MARKER,   "marker");

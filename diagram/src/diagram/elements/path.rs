@@ -23,6 +23,9 @@ use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
 
+//a Constants
+const BEZIER_STRAIGHTNESS : f64 = 1E-2;
+
 //a Path element
 //tp Path - an Element that contains a path
 #[derive(Debug)]
@@ -185,6 +188,22 @@ impl GenerateSvgElement for Path {
             path.add_bezier( Bezier::line(&coords[i], &coords[i+1]) );
         }
         // apply marker relief of stroke-width * relief for start and end markers
+        if let Some(m) = &self.markers.0 {
+            if let Some((_,m)) = svg.diagram.borrow_marker(&m).map(|e| e.borrow_marker().unwrap()) {
+                let relief = m.get_relief(0);
+                if relief > 0. {
+                    path.apply_relief(0, BEZIER_STRAIGHTNESS, relief*self.stroke_width);
+                }
+            }
+        }
+        if let Some(m) = &self.markers.2 {
+            if let Some((_,m)) = svg.diagram.borrow_marker(&m).map(|e| e.borrow_marker().unwrap()) {
+                let relief = m.get_relief(1);
+                if relief > 0. {
+                    path.apply_relief(1, BEZIER_STRAIGHTNESS, relief*self.stroke_width);
+                }
+            }
+        }
         path.round(self.round, self.closed);
         ele.add_bezier_path(&path, self.closed);
         svg.add_subelement(ele);

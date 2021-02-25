@@ -137,7 +137,18 @@ impl <'a> Diagram <'a> {
     //mp find_marker
     /// Find the marker of an id, if it exists in the contents
     /// 'markers' section
-    pub fn find_marker<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
+    pub fn find_marker<'z>(&'z self, name:&str) -> Option<&'z Element<'a>> {
+        for i in &self.contents.markers {
+            if i.has_id(name) {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    //mp borrow_marker
+    /// Borrow the marker header and content of a marker
+    pub fn borrow_marker<'z>(&'z self, name:&str) -> Option<&'z Element<'a>> {
         for i in &self.contents.markers {
             if i.has_id(name) {
                 return Some(i);
