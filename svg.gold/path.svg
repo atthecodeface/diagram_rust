@@ -1,19 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="2.0" width="100mm" height="104.9388888888889mm" viewBox="-50 -52.46944444444445 100 104.9388888888889">
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="2.0" width="106mm" height="110.9388888888889mm" viewBox="-53 -55.46944444444445 106 110.9388888888889">
 <defs>
-<marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" markerUnits="strokeWidth" orient="auto">
-<path fill="context-stroke" d="M 0 0 L 10 5 L 0 10 z" />
+<marker id="arrow" viewBox="-5 -5 10 10" refX="0.0000" refY="0.0000" markerWidth="2.0000" markerHeight="2.0000" markerUnits="strokeWidth" orient="auto">
+<g>
+<path stroke="None" fill="#000000" stroke-width="0.0000" d="M -5.0000,-5.0000 L 5.0000,0.0000 L -5.0000,5.0000" />
+</g>
 </marker>
-<marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth">
-<circle cx="5" cy="5" r="5" fill="context-stroke" />
+<marker id="fatarrow" viewBox="-2.5 -5 5 10" refX="0.0000" refY="0.0000" markerWidth="2.0000" markerHeight="2.0000" markerUnits="strokeWidth" orient="auto">
+<g>
+<path stroke="None" fill="#000000" stroke-width="0.0000" d="M -2.5000,-5.0000 L 2.5000,0.0000 L -2.5000,5.0000" />
+</g>
+</marker>
+<marker id="dblarrow_old" viewBox="-5 -5 10 10" refX="1.7000" refY="0.0000" markerWidth="2.0000" markerHeight="2.0000" markerUnits="strokeWidth" orient="auto">
+<g>
+<path stroke="None" fill="#000000" stroke-width="0.0000" d="M 5.0000,0.0000 L -1.6500,-5.0000 L -1.6500,0.0000 L 1.6500,0.0000 L -5.0000,-5.0000 L -5.0000,5.0000 L 1.6500,0.0000 L -1.6500,0.0000 L -1.6500,5.0000 L 5.0000,0.0000" />
+</g>
+</marker>
+<marker id="dblarrow" viewBox="-7.5 -5 15 10" refX="4.2500" refY="0.0000" markerWidth="4.5000" markerHeight="20.0000" markerUnits="strokeWidth" orient="auto">
+<g>
+<path stroke="None" fill="#000000" stroke-width="0.0000" d="M 7.5000,0.0000 L -2.4750,-5.0000 L -2.4750,0.0000 L 2.4750,0.0000 L -7.5000,-5.0000 L -7.5000,5.0000 L 2.4750,0.0000 L -2.4750,0.0000 L -2.4750,5.0000 L 7.5000,0.0000" />
+</g>
+</marker>
+<marker id="circle" viewBox="-10 -10 20 20" refX="0.0000" refY="0.0000" markerWidth="1.5000" markerHeight="1.5000" markerUnits="strokeWidth" orient="auto">
+<g>
+<path stroke="None" fill="#000000" stroke-width="0.0000" d="M 10.0000,0.0000 C 10.0000,5.5228 5.5228,10.0000 0.0000,10.0000 C -5.5228,10.0000 -10.0000,5.5228 -10.0000,0.0000 C -10.0000,-5.5228 -5.5228,-10.0000 -0.0000,-10.0000 C 5.5228,-10.0000 10.0000,-5.5228 10.0000,-0.0000 z" />
+</g>
 </marker>
 </defs>
 <g>
-<path transform="translate(0.0000 -2.4694) " stroke="#ff0000" fill="None" stroke-width="3.0000" d="M -50.0000,-50.0000 L 37.0000,-50.0000 C 42.5228,-50.0000 47.0000,-45.5228 47.0000,-40.0000 L 47.0000,37.0000 C 47.0000,42.5228 42.5228,47.0000 37.0000,47.0000 L -50.0000,47.0000" />
+<path transform="translate(0.0000 -2.4694) " stroke="#0088ff" fill="None" stroke-width="0.5000" d="M -25.0000,30.0000 L 25.0000,30.0000" />
+<path transform="translate(0.0000 -2.4694) " stroke="#ff0000" fill="None" marker-start="url(#arrow)" marker-mid="url(#arrow)" marker-end="url(#dblarrow)" stroke-width="3.0000" d="M -50.0000,-50.0000 L 40.0000,-50.0000 C 45.5228,-50.0000 50.0000,-45.5228 50.0000,-40.0000 L 50.0000,40.0000 C 50.0000,45.5228 45.5228,50.0000 40.0000,50.0000 L 10.0000,50.0000 C 4.4772,50.0000 0.0000,45.5228 0.0000,40.0000 L 0.0000,30.0000" />
 <path transform="translate(0.0000 -2.4694) " stroke="#0000ff" fill="#008000" stroke-width="2.0000" d="M 3.5355,-21.4645 L 21.4645,-3.5355 C 23.4171,-1.5829 23.4171,1.5829 21.4645,3.5355 L 3.5355,21.4645 C 1.5829,23.4171 -1.5829,23.4171 -3.5355,21.4645 L -21.4645,3.5355 C -23.4171,1.5829 -23.4171,-1.5829 -21.4645,-3.5355 L -3.5355,-21.4645 C -1.5829,-23.4171 1.5829,-23.4171 3.5355,-21.4645 z" />
 <g transform="translate(0.0000 50.0000) ">
 <text transform="translate(-7.9375 -2.4694) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Some text</text>
-<path transform="translate(0.0000 2.4694) " stroke="#008000" fill="None" stroke-width="1.0000" d="M -15.0000,0.0000 L 15.0000,0.0000" />
+<path transform="translate(0.0000 2.4694) " stroke="#008000" fill="None" marker-start="url(#circle)" marker-mid="url(#circle)" marker-end="url(#circle)" stroke-width="1.0000" d="M -15.0000,0.0000 L 0.0000,0.0000 L 15.0000,0.0000" />
 </g>
 </g>
 </svg>

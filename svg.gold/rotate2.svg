@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="2.0" width="45.19584353997511mm" height="51.91319171814689mm" viewBox="-22.597921769987554 -25.956595859073445 45.19584353997511 51.91319171814689">
-<defs>
-<marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" markerUnits="strokeWidth" orient="auto">
-<path fill="context-stroke" d="M 0 0 L 10 5 L 0 10 z" />
-</marker>
-<marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" markerUnits="strokeWidth">
-<circle cx="5" cy="5" r="5" fill="context-stroke" />
-</marker>
-</defs>
+<defs />
 <g>
 <text transform="translate(-12.3472 -25.8566) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Outermost text</text>
 <path stroke="#ffff00" stroke-width="0.1000" fill="None" d="M 22.5479,-20.8677 L 22.5479,-25.9066 L -22.5479,-25.9066 L -22.5479,-20.8677 L 22.5479,-20.8677 z" />
