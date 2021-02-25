@@ -390,6 +390,50 @@ impl Bezier {
         }
     }
         
+    //mp t_of_distance
+    /// Calculates the parameter 't' at a certain distance along the Bezier given a straightness
+    ///
+    /// `straightness` is independent of the length of the Bezier
+    ///
+    /// Returns t,true if the distance is along the Bezier
+    /// Returns 0.,false if the distance is before the start of the Bezier
+    /// Returns 1.,false if the distance is beyond the end of the Bezier
+    pub fn t_of_distance(&self, straightness:f64, distance:f64) -> (f64, bool) {
+        if distance < 0. {
+            (0.,false)
+        } else {
+            match self.t_of_distance_rec(straightness, distance, 0., 1., 0.) {
+                (None, _)    => (1., false),
+                (Some(t), _) => (t, true),
+            }
+        }
+    }
+    fn t_of_distance_rec(&self, straightness:f64, distance:f64, t_start:f64, t_scale:f64, acc_length:f64) -> (Option<f64>, f64) {
+        // println!("t_of_distance_rec {} {} {} {} {}",straightness, distance, t_start, t_scale, acc_length);
+        if distance <= acc_length {
+            (Some(t_start), 0.)
+        } else if self.is_straight(straightness) {
+            let d     = self.get_distance();
+            if distance > acc_length+d {
+                (None, acc_length+d)
+            } else if d < 1E-8 {
+                (Some(t_start + t_scale), acc_length+d)
+            } else {
+                let rel_d = distance - acc_length;
+                (Some(t_start + t_scale * rel_d / d), acc_length+d)
+            }
+        } else {
+            let t_subscale = t_scale / 2.;
+            let (b0, b1) = self.bisect();
+            match b0.t_of_distance_rec(straightness, distance, t_start, t_subscale, acc_length) {
+                (None, length) => {
+                    b1.t_of_distance_rec( straightness, distance, t_start + t_subscale, t_subscale, length )
+                }
+                r => r
+            }
+        }
+    }    
+        
     //mp as_lines
     /// Iterate over line segments that are 'straight' enough
     pub fn as_lines(&self, straightness:f64) -> BezierLineIter {
@@ -541,8 +585,12 @@ mod test_bezier {
 
         let x = Bezier::arc(90.,1.,&Point::new(0.,0.),0.);
         use std::f64::consts::PI;
-        approx_eq( 0.5, x.length(0.001) / PI, 0.001, "Length of 90-degree arc of circle radius 1 should be 0.5");
+        approx_eq( 0.5, x.length(0.001) / PI, 0.001, "Length of 90-degree arc of circle radius 1 should be PI/2");
 
+        approx_eq( 0.5,   x.t_of_distance(0.001, PI/4.).0, 0.001, "t of half-way round 90-degree arc of circle radius 1");
+        approx_eq( 0.245, x.t_of_distance(0.001, PI/8.).0, 0.001, "t of quarter-way round 90-degree arc of circle radius 1");
+        approx_eq( 0.755, x.t_of_distance(0.001, PI*3./8.).0, 0.001, "t of three-quarters-way round 90-degree arc of circle radius 1");
+        
         let mut v = Vec::new();
         v.clear();
         for (a,_b) in b.as_lines(0.1) {

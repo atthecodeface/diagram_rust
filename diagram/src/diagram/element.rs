@@ -143,7 +143,7 @@ impl std::fmt::Display for ElementError {
 pub struct ElementScope<'a, 'b> {
     id_prefix   : String,
     definitions : &'b Vec<Element<'a>>,
-    pub depth       : usize,
+    pub depth   : usize,
 }
 
 //ip ElementScope

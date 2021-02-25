@@ -54,7 +54,7 @@ pub trait CharReader<F:FilePosition> {
 ///     use hmlm::reader::char::Reader;    
 ///     let str = "This is a \u{1f600} string\nWith a newline\n";
 ///     let mut buf_bytes = str.as_bytes();
-///     let reader    = Reader::new(&mut buf_bytes);
+///     let reader    = Reader::<_,hmlm::HmlFilePosition>::new(&mut buf_bytes);
 ///     for x in reader {
 ///         // use char x
 ///     }

@@ -184,6 +184,7 @@ impl GenerateSvgElement for Path {
         for i in 0..coords.len()-1 {
             path.add_bezier( Bezier::line(&coords[i], &coords[i+1]) );
         }
+        // apply marker relief of stroke-width * relief for start and end markers
         path.round(self.round, self.closed);
         ele.add_bezier_path(&path, self.closed);
         svg.add_subelement(ele);

@@ -134,6 +134,18 @@ impl <'a> Diagram <'a> {
         None
     }
 
+    //mp find_marker
+    /// Find the marker of an id, if it exists in the contents
+    /// 'markers' section
+    pub fn find_marker<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
+        for i in &self.contents.markers {
+            if i.has_id(name) {
+                return Some(i);
+            }
+        }
+        None
+    }
+
     //mp uniquify
     /// Convert all 'use <id_ref>'s in to copies of the definition
     /// that has id==<id_ref>, uniquifying the contents within that

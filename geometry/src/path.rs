@@ -157,6 +157,8 @@ mod test_path {
         bp.add_bezier( Bezier::line( &p2, &p3 ) );
         bp.add_bezier( Bezier::line( &p3, &p0 ) );
 
+        // After open rounding of 0.1 the straight lines are 0.1-0.9 on each side except first and last
+        // and 7 elements with round corners except at origin
         bp.round(0.1,false);
         for b in bp.iter_beziers() {
             println!("Bezier {}", b);
@@ -179,14 +181,16 @@ mod test_path {
         bp.add_bezier( Bezier::line( &p2, &p3 ) );
         bp.add_bezier( Bezier::line( &p3, &p0 ) );
 
+        // After closed rounding of 0.1 the straight lines are 0.1-0.9 on each side
+        // and 8 elements
         bp.round(0.1,true);
         for b in bp.iter_beziers() {
             println!("Bezier {}", b);
         }
-        bezier_eq(&bp.elements[0], vec![(0.,0.), (0.9,0.0)]);
+        bezier_eq(&bp.elements[0], vec![(0.1,0.), (0.9,0.0)]);
         bezier_eq(&bp.elements[2], vec![(1.,0.1), (1.,0.9)]);
         bezier_eq(&bp.elements[4], vec![(0.9,1.0), (0.1,1.)]);
-        bezier_eq(&bp.elements[6], vec![(0.,0.9), (0.,0.)]);
+        bezier_eq(&bp.elements[6], vec![(0.,0.9), (0.,0.1)]);
         assert_eq!(bp.elements.len(), 8, "Path should be 8 elements");
     }
 }

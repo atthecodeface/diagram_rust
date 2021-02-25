@@ -601,7 +601,7 @@ impl <'a, 'b, R:Read> MLReader<'a, 'b, R> {
 /// let diagram_descriptor = DiagramDescriptor::new(&style_set);
 /// let mut diagram  = Diagram::new(&diagram_descriptor);
 /// let mut dml      = DiagramML::new(&mut diagram);
-/// dml.read_file("#diagram ##defs ###rect id=a ##rect ##group ###rect ##rect".as_bytes()).unwrap();
+/// dml.read_file("#diagram ##defs ###rect id=a ##rect ##group ###rect ##rect".as_bytes(), false).unwrap();
 /// let (_, contents, _) = diagram.borrow_contents_descriptor();
 /// assert_eq!(1, contents.definitions.len(), "One definition expected from this");
 /// // assert_eq!(3, contents.root.elements.len(), "Three elements (rect, group, rect) expected from this");
@@ -647,7 +647,7 @@ mod tests {
         let diagram_descriptor = DiagramDescriptor::new(&style_set);
         let mut diagram = Diagram::new(&diagram_descriptor);
         let mut dml     = DiagramML::new(&mut diagram);
-        dml.read_file("#diagram".as_bytes()).unwrap();
+        dml.read_file("#diagram".as_bytes(),false).unwrap();
         let (_, contents, _) = diagram.borrow_contents_descriptor();
         assert_eq!(0, contents.definitions.len());
     }
