@@ -119,7 +119,7 @@ fn main() {
     exit_on_err( diagram.geometry() );
     if diag_display { diagram.display(); }
     if DEBUG_MAIN{ println!("Create SVG"); }
-    let mut svg = Svg::new()
+    let mut svg = Svg::new(&diagram)
         .set_version(svg_version)
         .set_grid(svg_show_grid)
         .set_layout(svg_show_layout)
