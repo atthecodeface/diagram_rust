@@ -125,7 +125,7 @@ fn main() {
         .set_layout(svg_show_layout)
         .set_display(svg_display)
         .set_content_rectangles(svg_show_content);
-    exit_on_err( diagram.generate_svg(&mut svg) );
+    exit_on_err( svg.generate_diagram() );
     if DEBUG_MAIN{ println!("Write SVG"); }
     let file_out   = File::create(output_file).unwrap();
     let file_out   = std::io::BufWriter::new(file_out);
