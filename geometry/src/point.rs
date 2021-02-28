@@ -66,6 +66,15 @@ impl Point {
         self
     }
 
+    //cp scale
+    /// Consume the point and return a new point that is the original
+    /// scaled in x and y by a single scaling factors
+    pub fn scale(mut self, s:f64) -> Self {
+        self.x = self.x*s;
+        self.y = self.y*s;
+        self
+    }
+
     //cp scale_xy
     /// Consume the point and return a new point that is the original
     /// scaled in x and y by two different scaling factors

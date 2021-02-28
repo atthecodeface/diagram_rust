@@ -19,21 +19,51 @@ limitations under the License.
 //a Imports
 use super::point::Point;
 
-//a Types
+//a BezierLineIter
 //tp BezierLineIter
+/// An iterator of straight lines that form a single Bezier curve
+///
+/// An iteration will provide (Pa, Pb) pairs of points, with
+/// the next iteration providing (Pb, Pc), then (Pc, Pd), etc;
+/// sharing the end/start points.
 pub struct BezierLineIter {
+    /// Maximum curviness of the line segments returned
     straightness: f64,
+    /// A stack of future beziers to examine
+    /// The top of the stack is p0->p1; below that is p1->p2, etc
+    /// These beziers will need to be split to achieve the maximum
+    /// curviness
     stack : Vec<Bezier>
 }
+
+//pi BezierLineIter
 impl BezierLineIter {
+    //fp new
+    /// Create a new Bezier line iterator for a given Bezier and
+    /// straightness
+    ///
+    /// This clones the Bezier.
     pub fn new(bezier:&Bezier, straightness:f64) -> Self {
         let mut stack = Vec::new();
         stack.push(bezier.clone());
         Self { straightness, stack }
     }
+    
+    //zz All done
 }
+
+//ip Iterator for BezierLineIter
 impl Iterator for BezierLineIter {
+    /// Item is a pair of points that make a straight line
     type Item = (Point,Point);
+    /// next - return None or Some(pa,pb)
+    ///
+    /// It pops the first Bezier from the stack: this is (pa,px); if
+    /// this is straight enough then return it, else split it in two
+    /// (pa,pm), (pm,px) and push them in reverse order, then recurse.
+    ///
+    /// This forces the segment returned (eventually!) to be (pa,pb)
+    /// and to leave the top of the stack starting with pb.
     fn next(&mut self) -> Option<Self::Item> {
         match self.stack.pop() {
             None => None,
@@ -49,36 +79,122 @@ impl Iterator for BezierLineIter {
             }
         }
     }
+    
+    //zz All done
 }
 
-//tp PointIter
+//a BezierPointIter
+//tp BezierPointIter
+/// An iterator of points that form a single Bezier curve where the
+/// steps between points would be lines that are 'straight enough'
+///
+/// This iterator returns the points that BezierLineIter uses, in the
+/// same order (pa, pb, ...)
 pub struct BezierPointIter {
+    /// A line iterator that returns the next line segment required;
+    /// usually the first point of this segment that this iterator
+    /// provides is returned as the next point.
+    ///
+    /// When this returns none, the end-point of the previous
+    /// iteration needs to be returned as the last point.
     lines : BezierLineIter,
+    /// The last point to be returned - if this is valid then the line
+    /// iterator has finished, and just the last point on the Bezier
+    /// needs to be returned.
     last_point : Option<Point>,
 }
+
+//ip BezierPointIter
 impl BezierPointIter {
+    //fp new
+    /// Create a new point iterator from a line iterator
     pub fn new(lines:BezierLineIter) -> Self {
         Self { lines, last_point:None }
     }
+    
+    //zz All done
 }
+
+//ii BezierPointIter
 impl Iterator for BezierPointIter {
+    /// Iterator returns Point's
     type Item = Point;
+
+    /// Return the first point of any line segment provided by the
+    /// line iterator, but record the endpoint of that segment first;
+    /// if the line iterator has finished then return any recorded
+    /// endpoint, deleting it first.
     fn next(&mut self) -> Option<Self::Item> {
         if let Some( (p0, p1) ) = self.lines.next() {
             self.last_point = Some(p1);
             Some(p0)
-        } else if let Some(p) = self.last_point {
-            self.last_point = None;
-            Some(p)
         } else {
-            None
+            let p = self.last_point;
+            self.last_point = None;
+            p
         }
     }
+    
+    //zz All done
 }
 
+//a Bezier
 //tp Bezier
 /// This library supports Bezier curves of up to order 3 - i.e. up to
 /// Cubic; these have two control poits.
+///
+/// Note: in this section we use u=1-t
+///
+/// A linear Bezier has two points, p0 and p1, and provides points
+/// along the line as:
+///    p(t,u=1-t) = u*p0 + t*p1
+///
+/// A linear Bezier may be split at t into (p0, u*p0+t*p1); (u*p0+t*p1, p1).
+///
+/// A quadratic Bezier has three points, p0, c and p1, and provides
+/// points along the curve as:
+///
+///    p(t,u=1-t) = u^2.p0 + 2.t.u.c + t^2.p1
+///
+/// or, viewing it is a linear Bezier between two linear beziers:
+///
+///    p(t) = u(u.p0 + t.c) + t(u.c + t.p1)
+///
+/// To split a quadratic bezier at t is simple: the split point is p(t),
+/// and the two control points (cl, cr) are:
+///
+///   cl(t) = u.p0 + t.c ; cr = u.c + t.p1
+///
+/// Hence the Quadratic Bezier between t0 and t1 can be calculated
+/// by splitting to get the right-hand Bezier of t0->1, and splitting
+/// this to get the left-hand Bezier at (t1-t0)/u0 = (t2,u2)
+///
+///    Note t2 = (t1-t0)/u0; u2=1-t2 = (u0+t0-t1)/u0 = (1-t1)/u0 = u1/u0
+///
+///    cl(t0) = u0.p0 + t0.c
+///    cr(t0) = u0.c  + t1.p1
+///     p(t0) = u0.cl(t0)  + t0.cr(t0)
+/// 
+///    Bezier t0->1 : p(t0), cr(t0), p1
+///
+///  c(t0,t1)  = u2.p(t0)  + t2.cr(t0)
+///            = u2.u0.cl(t0) + u2.t0.cr(t0) + t2.cr(t0)
+///            = u2.u0.cl(t0) + (u2.t0+t2).cr(t0)
+///  But u2.u0    = u1
+///  And u2.t0+t2 = u1/u0.t0+(t1-t0)/u0
+///               = (t0.u1+t1-t0)/u0
+///               = (t0 - t1.t0 + t1 - t0) / u0
+///               = (t1 - t1.t0) / u0
+///               = t1(1-t0) / (1-t0)
+///               = t1
+///  Hence
+///  c(t0,t1)  = u1.cl(t0) + t1.cr(t0)
+///            = u0.u1.p0 + u1.t0.c + u0.t1.c + t0.t1.p1
+///            = u0.u1.p0 + (u1.t0+u0.t1).c + t0.t1.p1
+///  And the points are:
+///      p(t0) = u0.u0.p0 + 2(u0.t0).c + t0.t0.p1
+///      p(t1) = u1.u1.p0 + 2(u1.t1).c + t1.t1.p1
+///
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Bezier {
     /// Linear is a straight line between two points
@@ -210,18 +326,31 @@ impl Bezier {
     pub fn bezier_between(&self, t0:f64, t1:f64) -> Self {
         match self {
             Self::Linear(p0,p1) => {
-                let pd = p1.clone().add(p0,-1.);
-                let r0 = p0.clone().add(&pd,t0);
-                let r1 = p0.clone().add(&pd,t1);
+                let u0 = 1. - t0;
+                let u1 = 1. - t1;
+                let r0 = p0.clone().scale(u0).add(&p1,t0);
+                let r1 = p0.clone().scale(u1).add(&p1,t1);
                 Self::Linear(r0, r1)
             },
             Self::Quadratic(p0,c,p1) => {
-                panic!("Bezier between not implemented for Quadratic");
-                self.clone()
+                let u0 = 1. - t0;
+                let u1 = 1. - t1;
+                let rp0 = p0.clone().scale(u0*u0).add(&c, 2.*u0*t0).add(&p1,t0*t0);
+                let rp1 = p0.clone().scale(u1*u1).add(&c, 2.*u1*t1).add(&p1,t1*t1);
+                let rc0 = p0.clone().scale(u0*u1).add(&c, u0*t1+u1*t0).add(&p1,t1*t0);
+                Self::Quadratic(rp0, rc0, rp1)
             },
             Self::Cubic(p0,c0,c1,p1) => {
-                panic!("Bezier between not implemented for Cubic");
-                self.clone()
+                // simply: c0 = p0 + tangent(0)/3
+                // and if we scale the curve to t1-t0 in size, tangents scale the same
+                let rp0 = self.point_at(t0);
+                let rt0 = self.tangent_at(t0);
+                let rt1 = self.tangent_at(t1);
+                let rp1 = self.point_at(t1);
+                let t1_m_t0 = t1 - t0;
+                let rc0 = rp0.clone().add(&rt0,t1_m_t0/3.);
+                let rc1 = rp1.clone().add(&rt1,-t1_m_t0/3.);
+                Self::Cubic(rp0, rc0, rc1, rp1)
             },
         }
     }
@@ -232,20 +361,20 @@ impl Bezier {
         let omt = 1. - t;
         match self {
             Self::Linear(p0,p1) => {
-                p0.clone().scale_xy(omt,omt).add(p1,t)
+                p0.clone().scale(omt).add(p1,t)
             },
             Self::Quadratic(p0,c,p1) => {
                 let p0_sc = omt*omt;
                 let c_sc  = omt*t*2.;
                 let p1_sc = t*t;
-                c.clone().scale_xy(c_sc,c_sc).add(p0,p0_sc).add(p1,p1_sc)
+                c.clone().scale(c_sc).add(p0,p0_sc).add(p1,p1_sc)
             },
             Self::Cubic(p0,c0,c1,p1) => {
                 let p0_sc = omt*omt*omt;
                 let c0_sc = omt*omt*t*3.;
                 let c1_sc = omt*t*t*3.;
                 let p1_sc = t*t*t*1.;
-                c0.clone().scale_xy(c0_sc,c0_sc).add(p0,p0_sc).add(c1,c1_sc).add(p1,p1_sc)
+                c0.clone().scale(c0_sc).add(p0,p0_sc).add(c1,c1_sc).add(p1,p1_sc)
             },
         }
     }
@@ -263,14 +392,14 @@ impl Bezier {
                 let p0_sc = 2.*t - 2.; // d/dt (1-t)^2 
                 let c_sc  = 2. - 4.*t; // d/dt 2t(1-t)
                 let p1_sc = 2.*t     ; // d/dt t^2
-                c.clone().scale_xy(c_sc,c_sc).add(p0,p0_sc).add(p1,p1_sc)
+                c.clone().scale(c_sc).add(p0,p0_sc).add(p1,p1_sc)
             },
             Self::Cubic(p0,c0,c1,p1) => {
                 let p0_sc = 6.*t - 3.*t*t - 3. ; // d/dt (1-t)^3 
                 let c0_sc = 9.*t*t - 12.*t + 3.; // d/dt 3t(1-t)^2
                 let c1_sc = 6.*t - 9.*t*t      ; // d/dt 3t^2(1-t)
                 let p1_sc = 3.*t*t             ; // d/dt t^3
-                c0.clone().scale_xy(c0_sc,c0_sc).add(p0,p0_sc).add(c1,c1_sc).add(p1,p1_sc)
+                c0.clone().scale(c0_sc).add(p0,p0_sc).add(c1,c1_sc).add(p1,p1_sc)
             },
         }
     }
@@ -516,6 +645,19 @@ mod test_bezier {
             pt_eq(&b1.point_at(t), p1.x, p1.y);
         }
     }
+    //fi does_split
+    fn does_split(bezier:&Bezier, t0:f64, t1:f64) {
+        let b = bezier.bezier_between(t0, t1);
+        for i in 0..21 {
+            let bt = (i as f64) / 20.0;
+            let t  = t0 + (t1 - t0) * bt;
+            let p  = bezier.point_at(t);
+            let pb = b.point_at(bt);
+            println!("t {} : {} : {}",t,p,pb);
+            approx_eq(p.x, pb.x, 1E-6, &format!("Bezier split x {} {} {} : {} : {}", t, t0, t1, bezier, b));
+            approx_eq(p.y, pb.y, 1E-6, &format!("Bezier split y {} {} {} : {} : {}", t, t0, t1, bezier, b));
+        }
+    }
     //fi test_line
     #[test]
     fn test_line() {
@@ -536,6 +678,17 @@ mod test_bezier {
         pt_eq( &b01.bisect().0.point_at(1.), (p0.x+p1.x)/2., (p0.y+p1.y)/2. );
         pt_eq( &b01.bisect().1.point_at(0.), (p0.x+p1.x)/2., (p0.y+p1.y)/2. );
         pt_eq( &b01.bisect().1.point_at(1.), p1.x, p1.y );
+
+
+        does_split(&b01, 0., 1.);
+        does_split(&b01, 0.1, 0.3);
+        does_split(&b01, 0.3, 0.7);
+        does_split(&b01, 0.7, 1.0);
+
+        does_split(&b02, 0., 1.);
+        does_split(&b02, 0.1, 0.3);
+        does_split(&b02, 0.3, 0.7);
+        does_split(&b02, 0.7, 1.0);
 
         does_bisect(&b01);
         does_bisect(&b02);
@@ -567,6 +720,11 @@ mod test_bezier {
         pt_eq( &b.point_at(1.), p2.x, p2.y );
 
         does_bisect(&b);
+
+        does_split(&b, 0., 1.);
+        does_split(&b, 0.1, 0.3);
+        does_split(&b, 0.3, 0.7);
+        does_split(&b, 0.7, 1.0);
 
         pt_eq( &b.tangent_at(0.),  2.*(p1.x-p0.x), 2.*(p1.y-p0.y) );
         // pt_eq( &b.tangent_at(0.5), p1.x-p0.x, p1.y-p0.y );
@@ -604,6 +762,11 @@ mod test_bezier {
 
         does_bisect(&b);
 
+        does_split(&b, 0., 1.);
+        does_split(&b, 0.1, 0.3);
+        does_split(&b, 0.3, 0.7);
+        does_split(&b, 0.7, 1.0);
+        
         let x = Bezier::arc(90.,1.,&Point::new(0.,0.),0.);
         use std::f64::consts::PI;
         approx_eq( 0.5, x.length(0.001) / PI, 0.001, "Length of 90-degree arc of circle radius 1 should be PI/2");
