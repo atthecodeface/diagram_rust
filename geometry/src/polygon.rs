@@ -31,13 +31,13 @@ use super::BezierPath;
 ///
 #[derive(Debug, PartialEq)]
 pub struct Polygon {
-    center   : Point,
-    vertices : usize,
+    center        : Point,
+    vertices      : usize,
     size          : f64,     // height
     stellate_size : f64,     // if not 0., then double the points and make a star
-    eccentricity: f64, // width/height; i.e. width = size*eccentricity
-    rotation : f64,  // rotation in degrees (after eccentricity)
-    rounding : f64,  // 0 for no rounding of corners
+    eccentricity  : f64, // width/height; i.e. width = size*eccentricity
+    rotation      : f64,  // rotation in degrees (after eccentricity)
+    rounding      : f64,  // 0 for no rounding of corners
 }
 
 //ip std::fmt::Display for Polygon
@@ -142,7 +142,7 @@ impl Polygon {
                rounding : self.rounding,
         }
     }
-    
+
     //mp as_paths
     /// Append the polygon as a set of Beziers
     pub fn as_paths(&self) -> BezierPath {
@@ -175,7 +175,7 @@ impl Polygon {
 
     //mp elliptical_paths
     /// Create a set of paths that make an ellipse
-    fn elliptical_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
+    fn elliptical_paths(&self, mut v:Vec<Bezier<f64,2>>) -> Vec<Bezier<f64,2>> {
         let origin = Point::new(0.,0.);
         v.push( Bezier::arc(90.,self.size,&origin,  0.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
         v.push( Bezier::arc(90.,self.size,&origin, 90.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
@@ -222,7 +222,7 @@ mod tests_polygon {
         assert!((pt.x-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
         assert!((pt.y-y).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
     }
-    pub fn bezier_eq(bez:&Bezier, v:Vec<(f64,f64)>) {
+    pub fn bezier_eq(bez:&Bezier<F64,2>, v:Vec<(f64,f64)>) {
         match bez {
             Bezier::Cubic(p0,c0,c1,p1) => {
                 pt_eq(p0, v[0].0, v[0].1);

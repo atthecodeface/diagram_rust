@@ -1,0 +1,10 @@
+[package]
+name = "ogl"
+version = "0.1.0"
+
+[dependencies]
+gl = "0.10.0"
+sdl2 = {version = "0.31.0", features = ["bundled", "static-link"]}
+geometry    = { path="../geometry", version="0.1.0" }
+gl_model    = { path="../gl_model", version="0.1.0" }
+

@@ -1,8 +1,11 @@
 [workspace]
 members = [
-	"hmlm",
+	# "hmlm",
 	"geometry",
-	"stylesheet",
-	"diagram",
+    "gl_model",
+    # "gltf",
+    "ogl",
+	# "stylesheet",
+	# "diagram",
 ]
 

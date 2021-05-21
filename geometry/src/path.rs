@@ -17,19 +17,19 @@ limitations under the License.
  */
 
 //a Imports
-use super::Point;
+use super::vector::{Vector, VectorCoord};
 use super::Bezier;
 
 //a Types
 //tp BezierPath
 /// A path is a set of Beziers that start and end at the same points
 #[derive(Debug)]
-pub struct BezierPath {
-    elements : Vec<Bezier>,
+pub struct BezierPath <V:VectorCoord, const D:usize> {
+    elements : Vec<Bezier<V,D>>,
 }
 
 //ip BezierPath
-impl BezierPath {
+impl <V:VectorCoord, const D:usize> BezierPath<V,D> {
     //fp new
     /// Create a new BezierPath
     pub fn new() -> Self {
@@ -38,7 +38,7 @@ impl BezierPath {
 
     //fp of_ellipse
     /// Create a set of paths that make an ellipse
-    pub fn of_ellipse(origin:&Point, radius:f64, eccentricity:f64, degrees:f64) -> Self {
+    pub fn of_ellipse(origin:&Vector<V,D>, radius:V, eccentricity:V, degrees:V) -> Self {
         let mut v = Vec::new();
         v.push( Bezier::arc(90.,radius,origin,  0.).scale_xy(eccentricity,1.).rotate(degrees));
         v.push( Bezier::arc(90.,radius,origin, 90.).scale_xy(eccentricity,1.).rotate(degrees));
@@ -49,7 +49,7 @@ impl BezierPath {
 
     //fp of_points
     /// Generate a set of Beziers that join the corners
-    pub fn of_points(corners:&Vec<Point>, rounding:f64) -> Self {
+    pub fn of_points(corners:&Vec<Vector<V,D>>, rounding:V) -> Self {
         let mut bp = Self::new();
         let n = corners.len();
         for i in 0..n {
@@ -68,7 +68,7 @@ impl BezierPath {
     ///
     /// If the path is closed, thenn treat the first Bezier is
     /// adjacent to the last Bezier
-    pub fn round(&mut self, rounding:f64, closed:bool) {
+    pub fn round(&mut self, rounding:V, closed:bool) {
         let mut n = self.elements.len();
         if n < 2 || rounding == 0. { return; }
         let mut i = n-1;
@@ -96,10 +96,10 @@ impl BezierPath {
 
     //mp get_pt
     /// Get the start or the end point
-    pub fn get_pt(&self, index:usize) -> Point {
+    pub fn get_pt(&self, index:usize) -> Vector<V,D> {
         let n = self.elements.len();
         if n == 0 {
-            Point::origin()
+            Vector::origin()
         } else if index == 0 {
             self.elements[0].borrow_pt(0).clone()
         } else {
@@ -109,14 +109,14 @@ impl BezierPath {
 
     //mp add_bezier
     /// Add a Bezier at the end of the path
-    pub fn add_bezier(&mut self, b:Bezier) {
+    pub fn add_bezier(&mut self, b:Bezier<V,D>) {
         self.elements.push(b);
     }
 
     //mp apply_relief
     /// Attempt to remove `distance` from the start or end of the path
     /// but leave rest of path the same
-    pub fn apply_relief(&mut self, index:usize, straightness:f64, distance:f64) {
+    pub fn apply_relief(&mut self, index:usize, straightness:V, distance:V) {
         if self.elements.is_empty() { return; }
         if index == 0 {
             let b = self.elements[0];
@@ -159,10 +159,10 @@ impl BezierPath {
             }
         }
     }
-    
+
     //mp iter_beziers
     /// Iterate through all the Beziers
-    pub fn iter_beziers(&self) -> impl Iterator<Item = &Bezier> {
+    pub fn iter_beziers(&self) -> impl Iterator<Item = &Bezier<V,D>> {
         self.elements.iter()
     }
 

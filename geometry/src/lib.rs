@@ -32,19 +32,39 @@ some of its features are focused in that direction.
 !*/
 
 //a Crates
+#![feature(const_evaluatable_checked)]
+#![feature(const_generics)]
+extern crate num_traits;
 
 //a Imports and exports
+mod vector_op;
+mod quaternion_op;
+mod matrixr_op;
+mod matrix_op;
+// mod vector;
 mod point;
-mod bezier;
-mod path;
-mod rectangle;
-mod polygon;
+// mod range;
+// mod bezier;
+// mod bezier_line;
+// mod bezier_point;
+// mod path;
+// mod rectangle;
+// mod polygon;
 mod transform;
 
 pub use self::transform::Transform;
-pub use self::point::{Point, Range};
-pub use self::bezier::Bezier;
-pub use self::path::{BezierPath};
-pub use self::rectangle::{Rectangle, Float4};
-pub use self::polygon::Polygon;
+// pub use self::range::{Range};
+pub use self::point::{Point};
+pub use vector_op::{VectorCoord};
+/// Vector library
+pub mod vector   { pub use super::vector_op::* ; }
+/// Quaternion library
+pub mod quat     { pub use super::quaternion_op::* ; }
+/// Matrix library
+pub mod matrix   { pub use super::matrixr_op::* ;
+                   pub use super::matrix_op::* ;}
+// pub use self::bezier::Bezier;
+// pub use self::path::{BezierPath};
+// pub use self::rectangle::{Rectangle, Float4};
+// pub use self::polygon::Polygon;
 
