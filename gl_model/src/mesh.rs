@@ -24,7 +24,7 @@ limitations under the License.
 use super::types::*;
 use crate::shader::ShaderClass;
 use crate::primitive::Primitive;
-use super::drawable::{ShaderDrawableSet};
+use super::shader;
 
 pub struct Mesh<'a>
 {
@@ -43,11 +43,9 @@ impl <'a> Mesh <'a> {
     pub fn add_primitive(&mut self, primitive:Primitive<'a>) {
         self.primitives.push(primitive);
     }
-    pub fn add_shader<S:ShaderClass>(&mut self, shader:&S) -> ShaderDrawableSet {
-        let mut sds = ShaderDrawableSet::new();
-        for p in self.primitives.iter_mut() {
-            p.add_drawables(shader, &mut sds);
+    pub fn add_shader_drawables<'z, S:ShaderClass>(&self, shader:&S, instantiable:&'z mut shader::Instantiable) {
+        for p in &self.primitives {
+            p.add_shader_drawables(shader, instantiable);
         }
-        sds
     }
 }

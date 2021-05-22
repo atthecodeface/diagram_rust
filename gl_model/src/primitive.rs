@@ -24,7 +24,8 @@ limitations under the License.
 use std::cell::RefCell;
 use super::types::*;
 use crate::buffer;
-use super::drawable::{Drawable, ShaderDrawableSet};
+use super::drawable::Drawable;
+use super::shader;
 use buffer::Indices as BufferIndices;
 use buffer::View    as BufferView;
 use crate::shader::ShaderClass;
@@ -141,12 +142,10 @@ impl <'a> Primitive<'a> {
     pub fn add_element(&mut self, e:Drawable) {
         self.elements.push(e);
     }
-    // The ShaderDrawableSet is instantiable with a mesh matrix and an array of bonesmatrices
-    // Add mesh index and bones matrices range?
-    pub fn add_drawables<S:ShaderClass> (&mut self, shader:&S, drawable_set:&mut ShaderDrawableSet) {
+    pub fn add_shader_drawables<'z, S:ShaderClass>(&self, shader:&S, instantiable:&'z mut shader::Instantiable) {
         self.vertices.gl_create();
         let vao = self.vertices.gl_bind_to_shader(shader);
-        drawable_set.add_drawables(vao, &self.elements);
+        instantiable.add_drawables(vao, &self.elements);
     }
 }
 

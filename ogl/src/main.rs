@@ -58,8 +58,14 @@ fn main() {
     let mut triangle_mesh = gl_model::mesh::Mesh::new("triangle");
     triangle_mesh.add_primitive(triangle);
 
+    let mut obj = gl_model::object::Object::new();
+    obj.add_node(None, Some(&triangle_mesh), None);
+
+    let instantiable = obj.create_instantiable();
+    let shader_instantiable = obj.bind_shader(&instantiable, &shader_program);
+    let instance = instantiable.instantiate();
     // Create the OpenGL buffers and data etc for the mesh for the shader
-    let sds = triangle_mesh.add_shader(&shader_program);
+    // let sds = triangle_mesh.add_shader(&shader_program);
 
     // Can now drop all data except shader_program and sds
 
@@ -87,7 +93,8 @@ fn main() {
 
         // draw triangle
         shader_program.set_used();
-        sds.gl_draw();
+    shader_instantiable.gl_draw(&instance);
+        // sds.gl_draw();
         window.gl_swap_window();
     }
 }

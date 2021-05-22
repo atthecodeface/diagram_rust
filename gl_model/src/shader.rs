@@ -79,6 +79,7 @@ impl <'a> Instantiable<'a> {
         Self { instantiable, vaos, drawables }
     }
     pub fn add_drawables(&mut self, vao:Vao, drawables:&[drawable::Drawable]) {
+        println!("add_drawables {}",vao);
         if !self.vaos.contains(&vao) { self.vaos.push(vao); }
         let drawables = Vec::from(drawables);
         self.drawables.push( (vao, 0, drawables ) );
@@ -94,7 +95,7 @@ impl <'a> Instantiable<'a> {
                 unsafe { gl::BindVertexArray(*vao) };
                 last_vao = *vao;
             }
-            let mesh_data = self.instantiable.borrow_mesh_data(mesh_index);
+            let mesh_data = self.instantiable.borrow_mesh_data(*mesh_index);
             if first || (mesh_data.mesh_matrix_index != last_mesh_mat_index) {
                 // set mesh matrix uniform if shader needs it
                 last_mesh_mat_index = mesh_data.mesh_matrix_index;

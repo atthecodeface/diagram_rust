@@ -21,8 +21,8 @@ limitations under the License.
 //
 
 //a Imports
-use super::types::*;
 use geometry::matrix;
+use super::types::*;
 use super::transformation::Transformation;
 use super::bone::BoneSet;
 use super::bone_pose::BonePoseSet;
@@ -120,10 +120,10 @@ impl Instantiable {
     }
     //mp add_mesh
     /// Add a mesh with an optional parent mesh_data index (and hence parent transformation) and bone_matrices
-    pub fn add_mesh(&mut self, parent:Option<usize>, transformation:&Option<Mat4>, bone_matrices:(usize,usize)) -> usize {
+    pub fn add_mesh(&mut self, parent:&Option<usize>, transformation:&Option<Mat4>, bone_matrices:&(usize,usize)) -> usize {
         let mesh_matrix_index = {
             if let Some(parent) = parent {
-                let parent = self.mesh_data[parent].mesh_matrix_index;
+                let parent = self.mesh_data[*parent].mesh_matrix_index;
                 if let Some(transformation) = transformation {
                     let n = self.mesh_matrices.len();
                     // let t = transformation.mat4();
@@ -146,7 +146,7 @@ impl Instantiable {
             }
         };
         let n = self.mesh_data.len();
-        self.mesh_data.push( MeshIndexData {mesh_matrix_index, bone_matrices} );
+        self.mesh_data.push( MeshIndexData {mesh_matrix_index, bone_matrices:*bone_matrices} );
         n
     }
     //mp add_bone_set
@@ -155,7 +155,9 @@ impl Instantiable {
         (0,0)
     }
     //mp borrow_mesh_data
-    pub fn borrow_mesh_data<'a> (&self) -> &'a
+    pub fn borrow_mesh_data<'a> (&'a self, index:usize) -> &'a MeshIndexData {
+        &self.mesh_data[index]
+    }
     //mp instantiate
     /// Create an `Instance` from this instantiable - must be used with accompanying mesh data in the appropriate form for the client
     pub fn instantiate<'a>(&'a self) -> Instance<'a> {
@@ -171,6 +173,7 @@ impl Instantiable {
 }
 
 
+/*
 //tp ShaderDrawableSet
 /// An array of primitives that can be drawn by a single shader
 ///
@@ -222,3 +225,4 @@ impl Drop for ShaderDrawableSet {
     }
 }
 
+*/

@@ -81,6 +81,9 @@ impl <T> Hierarchy<T> {
             }
         }
     }
+    pub fn borrow_node(&self, index:usize) -> &T {
+        &self.elements[index].data
+    }
     pub fn borrow_mut(&mut self) -> (&Vec<usize>, &mut Vec<Node<T>>) {
         (&self.roots, &mut self.elements)
     }
@@ -106,14 +109,14 @@ pub enum NodeIterOp<T> {
     /// Pushing in to the hierachy to new node index, and true if node has children
     Push(T, bool),
     /// Popping out to the hierachy to node index
-    Pop(T),
+    Pop(T, bool),
 }
 
 impl <T> NodeIterOp<T> {
     #[inline]
     pub fn is_pop(&self) -> bool {
         match self {
-            Self::Pop(_) => true,
+            Self::Pop(_,_) => true,
             _ => false
         }
     }
@@ -230,7 +233,8 @@ impl <'a, T> Iterator for NodeEnum<'a, T> {
                     self.next()
                 },
                 NodeEnumState::PostChildren(x) => { // Push(x) and all children ops have happened
-                    Some(NodeIterOp::Pop(x))
+                    let has_children = self.hierarchy[x].has_children();
+                    Some(NodeIterOp::Pop(x, has_children))
                 },
             }
         }
@@ -251,14 +255,14 @@ impl <'a, T> NodeIter<'a, T> {
 
 //ip Iterator for NodeIter
 impl <'a, T> Iterator for NodeIter<'a, T> {
-    type Item = NodeIterOp<&'a T>;
+    type Item = NodeIterOp<(usize, &'a T)>;
     fn next(&mut self) -> Option<Self::Item> {
         match self.node_enum.next() {
             Some(NodeIterOp::Push(x,c)) => {
-                Some(NodeIterOp::Push(&self.node_enum.hierarchy[x].data, c))
+                Some(NodeIterOp::Push((x, &self.node_enum.hierarchy[x].data), c))
             },
-            Some(NodeIterOp::Pop(x)) => {
-                Some(NodeIterOp::Pop(&self.node_enum.hierarchy[x].data))
+            Some(NodeIterOp::Pop(x,c)) => {
+                Some(NodeIterOp::Pop((x, &self.node_enum.hierarchy[x].data), c))
             },
             None => None,
         }
@@ -307,17 +311,17 @@ mod test_node {
         assert_eq!(ops, vec![ NodeIterOp::Push(0,true),
                               NodeIterOp::Push(1,true),
                               NodeIterOp::Push(2,false),
-                              NodeIterOp::Pop(2),
+                              NodeIterOp::Pop(2,false),
                               NodeIterOp::Push(3,false),
-                              NodeIterOp::Pop(3),
-                              NodeIterOp::Pop(1),
+                              NodeIterOp::Pop(3,false),
+                              NodeIterOp::Pop(1, true),
                               NodeIterOp::Push(4,false),
-                              NodeIterOp::Pop(4),
+                              NodeIterOp::Pop(4,false),
                               NodeIterOp::Push(5,true),
                               NodeIterOp::Push(6,false),
-                              NodeIterOp::Pop(6),
-                              NodeIterOp::Pop(5),
-                              NodeIterOp::Pop(0),        ],
+                              NodeIterOp::Pop(6,false),
+                              NodeIterOp::Pop(5, true),
+                              NodeIterOp::Pop(0, true),        ],
                    "Recipe mismatch" );
     }
 }
