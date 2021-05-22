@@ -21,7 +21,6 @@ limitations under the License.
 //
 
 //a Imports
-use super::types::*;
 use crate::shader::ShaderClass;
 use crate::primitive::Primitive;
 use super::shader;

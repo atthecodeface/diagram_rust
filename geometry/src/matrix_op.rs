@@ -18,6 +18,7 @@ limitations under the License.
 
 //a Imports
 use num_traits::{Float};
+use super::matrixr_op;
 use crate::{VectorCoord};
 
 //fp identity
@@ -125,6 +126,36 @@ pub fn determinant4<V:VectorCoord> (m:&[V;16]) -> V {
                   ( m[4+1] * (m[8+2]*m[12+0]-m[8+0]*m[12+2])) +
                   (m[4+2] * (m[8+0]*m[12+1]-m[8+1]*m[12+0])) )
 
+}
+
+//fp multiply2
+/// Multiply two square 2x2 matrices and produce a result
+pub fn multiply2<V:VectorCoord+Float>(a:&[V;4], b:&[V;4]) -> [V;4] {
+    matrixr_op::multiply::<V,2,2,2>( a, b )
+}
+
+//fp transform_vec2
+/// Multiply a vec2 by a 2x2 matrix
+pub fn transform_vec2<V:VectorCoord+Float>(m:&[V;4], v:&[V;2]) -> [V;2] {
+    matrixr_op::transform_vec::<V,2,2>( m, v )
+}
+
+//fp multiply3
+/// Multiply two square 3x3 matrices and produce a result
+pub fn multiply3<V:VectorCoord+Float>(a:&[V;9], b:&[V;9]) -> [V;9] {
+    matrixr_op::multiply::<V,3,3,3>( a, b )
+}
+
+//fp transform_vec3
+/// Multiply a vec3 by a 3x3 matrix
+pub fn transform_vec3<V:VectorCoord+Float>(m:&[V;9], v:&[V;3]) -> [V;3] {
+    matrixr_op::transform_vec::<V,3,3>( m, v )
+}
+
+//fp multiply4
+/// Multiply two square 4x4 matrices and produce a result
+pub fn multiply4<V:VectorCoord+Float>(a:&[V;16], b:&[V;16]) -> [V;16] {
+    matrixr_op::multiply::<V,4,4,4>( a, b )
 }
 
 //fp translate4

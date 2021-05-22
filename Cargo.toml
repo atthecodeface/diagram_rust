@@ -2,6 +2,7 @@
 members = [
 	# "hmlm",
 	"geometry",
+	"bezier",
     "gl_model",
     # "gltf",
     "ogl",

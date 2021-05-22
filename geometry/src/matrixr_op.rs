@@ -21,9 +21,11 @@ use num_traits::{Float};
 use crate::{vector_op, VectorCoord};
 
 //fp zero
+/// Crate a new matrix which is all zeros
 pub fn zero<V:VectorCoord,const R:usize,const C:usize> () -> [V; R*C] { [V::zero();R*C] }
 
 //mp set_zero
+/// Set the matrix to have all elements of zero
 pub fn set_zero<V:VectorCoord,const R:usize,const C:usize> (m:&mut [V;R*C]) {
     vector_op::set_zero(m)
 }

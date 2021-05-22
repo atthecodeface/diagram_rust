@@ -16,6 +16,14 @@ limitations under the License.
 @brief   Part of geometry library
  */
 
+//a Documentation
+
+/*!
+
+Vector library
+
+!*/
+
 //a Imports
 use num_traits::{Float};
 use super::vector_op as VOp;

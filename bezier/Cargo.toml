@@ -1,0 +1,9 @@
+[package]
+name = "bezier"
+version = "0.1.0"
+
+[dependencies]
+geometry    = { path="../geometry", version="0.1.0" }
+
+[dependencies.num-traits]
+num-traits = "0.2.1"

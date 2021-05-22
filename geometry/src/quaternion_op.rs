@@ -155,6 +155,7 @@ pub fn get_axis_angle<V:VectorCoord+Float>(q:&[V;4]) -> ([V;3], V) {
 }
 
 //fp to_euler
+/// Convert the quaternion to a bank, heading, altitude tuple - applied in that order
 pub fn to_euler<V:VectorCoord+Float>(q:&[V;4]) -> (V,V,V) {
     let i=q[0];
     let j=q[1];
@@ -182,6 +183,8 @@ pub fn to_euler<V:VectorCoord+Float>(q:&[V;4]) -> (V,V,V) {
     (bank, heading, attitude)
 }
 
+//fp nlerp
+/// A simple normalized LERP from one quaterion to another (not spherical)
 pub fn nlerp<V:VectorCoord+Float>(t:V, in0:&[V;4], in1:&[V;4]) -> [V;4] {
     let mut r = [V::zero(); 4];
     let tn = V::one() - t;
@@ -192,51 +195,10 @@ pub fn nlerp<V:VectorCoord+Float>(t:V, in0:&[V;4], in1:&[V;4]) -> [V;4] {
     r
 }
 
-//
-//    Note that R . axis = axis
-//    RI = (R - I*999/1000)
-//    Then RI . axis = axis/1000
-//    Then det(RI) is going to be 1/1000 * at most 2 * at most 2
-//    And if na is perp to axis, then RI.na = R.na - 999/1000.na, which is perp to axis
-//    Then |R.na| < 2|na|
-//    If RI' . RI = I, then consider v' = RI' . v for some v=(a*axis + b*na0 + c*na1)
-//    (a'*axis + b'*na0 + c'*na1) = RI' . (a*axis + b*na0 + c*na1)
-//    Then RI . (a'*axis + b'*na0 + c'*na1) = (a*axis + b*na0 + c*na1)
-//    Then a'*RI.axis + b'*RI.na0 + c'*RI.na1 = a*axis + b*na0 + c*na1
-//    Then a'/1000*axis + b'*(R.na0-0.999.na0) + c'*(R.na1-0.999.na1) = a*axis + b*na0 + c*na1
-//    Then a = a'/1000, and
-//    -0.999b' + b'cos(angle) + c'sin(angle) = b, etc
-//    If we set |v| to be 1, then |v'| must be det(RI') = 1/det(RI) > 100
-//    If angle is not close to zero, then a' / b' >> 1
-//    This can be repeated:
-//    v' = normalize(RI' . v)
-//    v'' = normalize(RI' . v')
-//    v''' = normalize(RI' . v'') etc
-//    This gets closer and closer to the axis
-pub fn axis_of_rotation<V:VectorCoord+Float>(rotation:&[V;9]) -> [V;3] {
-    let mut rot_min_id = rotation.clone();
-    let almost_one  = V::from(99999).unwrap() / V::from(100000).unwrap();
-    let almost_zero = V::one() / V::from(100000).unwrap();
-    rot_min_id[0] = rot_min_id[8] - almost_one;
-    rot_min_id[4] = rot_min_id[8] - almost_one;
-    rot_min_id[8] = rot_min_id[8] - almost_one;
-    let rot_min_id_i = matrix::inverse3(&rot_min_id);
-    for j in 0..3 {
-        let mut v = [V::zero(); 3];
-        v[j] = V::one();
-        let mut last_v = [V::zero(); 3];
-        for _ in 0..10 {
-            last_v = v;
-            v = matrixr::transform_vec::<V,3,3>( &rot_min_id_i, &v );
-            vector::normalize(&mut v, V::epsilon());
-        }
-        if vector::distance_to2(&v, &last_v) < almost_zero { return v; }
-    }
-    [V::zero(); 3]
-}
-
+//fp of_rotation
+/// Find the quaternion of a Matrix3 assuming it is purely a rotation
 pub fn of_rotation<V:VectorCoord+Float>(rotation:&[V;9]) -> [V;4] {
-    let axis = axis_of_rotation(rotation);
+    let axis = vector::axis_of_rotation3(rotation);
 
     // Find a decent vector not parallel to the axis
     let mut w = [V::one(), V::zero(), V::zero()];
@@ -249,8 +211,8 @@ pub fn of_rotation<V:VectorCoord+Float>(rotation:&[V;9]) -> [V;4] {
     vector::normalize(&mut na1, V::epsilon());
 
     // Rotate na0, na1 around the axis of rotation by angle A - i.e. apply 'rotation'
-    let na0_r = matrixr::transform_vec::<V,3,3>( &rotation, &na0 );
-    let na1_r = matrixr::transform_vec::<V,3,3>( &rotation, &na1 );
+    let na0_r = matrix::transform_vec3( &rotation, &na0 );
+    let na1_r = matrix::transform_vec3( &rotation, &na1 );
 
     //  Get angle of rotation
     let cos_angle =  vector::inner_product(&na0, &na0_r);

@@ -22,11 +22,11 @@ limitations under the License.
 /*!
 # Geometry library
 
-This library provides for two-dimensional geometrical objects,
-particularly *Point*s, *Bezier* curves, and *Polygon*s, but also
+This library provides for N-dimensional geometrical objects,
+particularly *Vector*s, *Matrix*, *Quaternion*, *Bezier* curves, and *Polygon*s, but also
 *Rectangle*s and some other useful items.
 
-The library was originally written for the *diagram* utility, and so
+The library was originally written for OpenGL projects and the *diagram* utility, and so
 some of its features are focused in that direction.
 
 !*/
@@ -41,9 +41,8 @@ mod vector_op;
 mod quaternion_op;
 mod matrixr_op;
 mod matrix_op;
-// mod vector;
 mod point;
-// mod range;
+pub mod range;
 // mod bezier;
 // mod bezier_line;
 // mod bezier_point;

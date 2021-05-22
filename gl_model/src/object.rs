@@ -22,9 +22,7 @@ limitations under the License.
 
 //a Imports
 use geometry::matrix;
-use super::types::*;
 use crate::shader::ShaderClass;
-use crate::primitive::Primitive;
 use super::drawable;
 use super::bone::BoneSet;
 use super::mesh::Mesh;
