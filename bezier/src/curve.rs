@@ -162,13 +162,21 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
     /// Returns true if the Bezier is a cubic
     pub fn is_cubic(&self) -> bool { self.num == 4 }
 
-    //cp scale
+    //mp scale
     /// Consume the Bezier and return a new Bezier scaled separately in X and Y by two scaling parameters
-    pub fn scale(mut self, s:V) -> Self {
+    pub fn scale(&mut self, s:V)  {
         for i in 0..self.pts.len() {
             self.pts[i] = vector::scale(self.pts[i], s);
         }
-        self
+    }
+
+    //mp rotate_around
+    /// Rotate the Bezier and return a new Bezier rotated around a
+    /// *pivot* point anticlockwise by the specified angle
+    pub fn rotate_around(&mut self, pivot:&[V;D], angle:V, c0:usize, c1:usize) {
+        for p in self.pts.iter_mut() {
+            *p = vector::rotate_around(*p, pivot, angle, c0, c1);
+        }
     }
 
     //mp vector_of
