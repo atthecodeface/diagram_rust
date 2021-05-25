@@ -18,14 +18,14 @@ limitations under the License.
 
 //a Imports
 use num_traits::{Num, Float};
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use super::matrix_op as matrix;
 use super::matrixr_op as matrixr;
 
 //a VectorCoord
 //tp VectorCoord
 /// Trait required for a vector coordinate - satisfied by f32 and f64
-pub trait VectorCoord : std::ops::Neg<Output=Self>+Num+Clone+Copy+PartialEq+Display {
+pub trait VectorCoord : std::ops::Neg<Output=Self>+Num+Clone+Copy+PartialEq+Display+Debug {
 }
 
 //fp origin
@@ -151,8 +151,8 @@ pub fn normalize<V:VectorCoord+Float,const D:usize> (v:&mut [V;D], eps:V) {
 //cp rotate_around
 /// Consume the vector and return a new vector rotated around a
 /// *pivot* point by the specified angle
-pub fn rotate_around<V:VectorCoord+Float,const D:usize> (mut v:[V;D], pivot:&[V;D], degrees:V, c0:usize, c1:usize) -> [V;D] {
-    let (s,c) = degrees.to_radians().sin_cos();
+pub fn rotate_around<V:VectorCoord+Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
+    let (s,c) = angle.sin_cos();
     let dx = v[c0] - pivot[c0];
     let dy = v[c1] - pivot[c1];
     let x1 = c*dx - s*dy;
