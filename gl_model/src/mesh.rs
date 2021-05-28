@@ -29,15 +29,15 @@ pub struct Mesh<'a>
 {
     name       : String,
     primitives : Vec<Primitive<'a>>,
-    shader_vaos : Vec<Vec<usize>>,
+    // shader_vaos : Vec<Vec<usize>>,
 }
 
 impl <'a> Mesh <'a> {
     pub fn new(name: &str) -> Self {
         let name = String::from(name);
         let primitives  = Vec::new();
-        let shader_vaos = Vec::new();
-        Self { name, primitives, shader_vaos }
+        // let shader_vaos = Vec::new();
+        Self { name, primitives }
     }
     pub fn add_primitive(&mut self, primitive:Primitive<'a>) {
         self.primitives.push(primitive);

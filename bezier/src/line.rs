@@ -17,9 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use num_traits::Float;
-use geometry::vector;
-use self::vector::VectorCoord;
+use geometry::Float;
 use crate::Bezier;
 
 //a BezierLineIter
@@ -29,7 +27,7 @@ use crate::Bezier;
 /// An iteration will provide (Pa, Pb) pairs of points, with
 /// the next iteration providing (Pb, Pc), then (Pc, Pd), etc;
 /// sharing the end/start points.
-pub struct BezierLineIter<V:VectorCoord+Float, const D:usize> {
+pub struct BezierLineIter<V:Float, const D:usize> {
     /// Maximum curviness of the line segments returned
     straightness: V,
     /// A stack of future beziers to examine
@@ -40,7 +38,7 @@ pub struct BezierLineIter<V:VectorCoord+Float, const D:usize> {
 }
 
 //pi BezierLineIter
-impl <V:VectorCoord+Float, const D:usize> BezierLineIter<V,D> {
+impl <V:Float, const D:usize> BezierLineIter<V,D> {
     //fp new
     /// Create a new Bezier line iterator for a given Bezier and
     /// straightness
@@ -56,7 +54,7 @@ impl <V:VectorCoord+Float, const D:usize> BezierLineIter<V,D> {
 }
 
 //ip Iterator for BezierLineIter
-impl <V:VectorCoord+Float, const D:usize> Iterator for BezierLineIter<V,D> {
+impl <V:Float, const D:usize> Iterator for BezierLineIter<V,D> {
     /// Item is a pair of points that make a straight line
     type Item = ([V;D], [V;D]);
     /// next - return None or Some(pa,pb)

@@ -17,45 +17,68 @@ limitations under the License.
  */
 
 //a Imports
-use num_traits::{Num, Float};
-use std::fmt::{Debug, Display};
+use crate::{Num, Float};
 use super::matrix_op as matrix;
-use super::matrixr_op as matrixr;
 
-//a VectorCoord
-//tp VectorCoord
-/// Trait required for a vector coordinate - satisfied by f32 and f64
-pub trait VectorCoord : std::ops::Neg<Output=Self>+Num+Clone+Copy+PartialEq+Display+Debug {
-}
-
-//fp origin
+//a Num
+//fp zero
 /// Create a zero vector of the correct size
-pub fn origin<V:VectorCoord,const D:usize> () -> [V; D] { [V::zero();D] }
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::zero::<f32, 4>();
+/// assert_eq!( a, [0., 0., 0., 0.]);
+/// ```
+///
+pub fn zero<V:Num,const D:usize> () -> [V; D] { [V::zero();D] }
 
 //mp set_zero
-/// Set the vector to be zero
-pub fn set_zero<V:VectorCoord,const D:usize> (v:&mut [V;D]) {
+/// Set the vector in-place to be zero
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let mut a = [1., 2., 3.];
+/// vector::set_zero(&mut a);
+/// assert_eq!( a, [0., 0., 0.]);
+/// ```
+///
+pub fn set_zero<V:Num,const D:usize> (v:&mut [V;D]) {
     for c in v.iter_mut() { c.set_zero(); }
 }
 
-//cp zero
-/// Set the vector to be zero
-pub fn zero<V:VectorCoord,const D:usize> (mut v:[V;D]) -> [V;D] {
-    for c in &mut v { c.set_zero(); }
-    v
-}
-
 //fp is_zero
-/// Return true if the point is the origin
-pub fn is_zero<V:VectorCoord,const D:usize> (v:&[V;D]) -> bool {
+/// Return true if the vector is all zeros
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let mut a = [1., 2., 3.];
+/// vector::set_zero(&mut a);
+/// assert!( vector::is_zero(&a) );
+/// ```
+///
+pub fn is_zero<V:Num,const D:usize> (v:&[V;D]) -> bool {
     for c in v { if !c.is_zero() {return false;}}
     true
 }
 
 //cp scale
-/// Consume the vector and return a new vector that is the original
-/// scaled in each coordinate a single scaling factor
-pub fn scale<V:VectorCoord,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
+/// Scale ever element of a vector by a single scaling factor
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::scale([1., 2., 3.], 2.);
+/// assert_eq!( a, [2., 4., 6.]);
+/// ```
+///
+pub fn scale<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
     for c in &mut v { *c = (*c) * s; }
     v
 }
@@ -63,23 +86,49 @@ pub fn scale<V:VectorCoord,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
 //cp scale_coords
 /// Consume the vector and return a new vector that is the original
 /// scaled in each coordinate a different scale factor
-pub fn scale_coords<V:VectorCoord,const D:usize> (mut v:[V;D], s:&[V;D]) -> [V;D] {
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::scale_coords([2., 4., 6.], &[1., 0., 2.]);
+/// assert_eq!( a, [2., 0., 12.]);
+/// ```
+///
+pub fn scale_coords<V:Num,const D:usize> (mut v:[V;D], s:&[V;D]) -> [V;D] {
     for i in 0..D { v[i] = v[i] * s[i]; }
     v
 }
 
 //cp reduce
-/// Consume the vector and return a new vector that is the original
-/// reduces in scale in each coordinate by a single scaling factor
-pub fn reduce<V:VectorCoord,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
+/// Reduce ever element of a vector by a single scaling factor
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::reduce([2., 4., 6.], 2.);
+/// assert_eq!( a, [1., 2., 3.]);
+/// ```
+///
+pub fn reduce<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
     for c in &mut v { *c = (*c) / s; }
     v
 }
 
 //cp add
-/// Consume the vector, and return a new vector that is the sum of
-/// this and a borrowed other vector scaled
-pub fn add<V:VectorCoord,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
+/// Add another vector scaled by a value to a vector, returning the sum
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = [3., 1.];
+/// let b = [2., 3.];
+/// assert_eq!( vector::add( a, &b, 3.), [9., 10.]);
+/// ```
+///
+pub fn add<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
     for i in 0..D {
         v[i] = v[i] + other[i] * scale;
     }
@@ -89,16 +138,24 @@ pub fn add<V:VectorCoord,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> 
 //cp sub
 /// Consume the vector, and return a new vector that is the sum of
 /// this and a borrowed other vector scaled
-pub fn sub<V:VectorCoord,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
+pub fn sub<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
     for i in 0..D {
         v[i] = v[i] - other[i] * scale;
     }
     v
 }
 
-//mp len2
+//mp len_sq
 /// Return the length^2 of the vector
-pub fn len2<V:VectorCoord> (v:&[V]) -> V {
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::len_sq(&[3., 4.]), 25. );
+/// ```
+///
+pub fn len_sq<V:Num> (v:&[V]) -> V {
     let mut r = V::zero();
     for c in v.iter() { r = r + (*c) * (*c) }
     r
@@ -106,13 +163,29 @@ pub fn len2<V:VectorCoord> (v:&[V]) -> V {
 
 //mp len
 /// Return the length of the vector
-pub fn len<V:VectorCoord+Float> (v:&[V]) -> V {
-    len2(v).sqrt()
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::len(&[3., 4.]), 5. );
+/// ```
+///
+pub fn len<V:Float> (v:&[V]) -> V {
+    len_sq(v).sqrt()
 }
 
-//mp distance_to2
+//mp distance_to_sq
 /// Return the distance square between two vectors
-pub fn distance_to2<V:VectorCoord,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance_to_sq(&[1.,-1.], &[4., 3.]), 25. );
+/// ```
+///
+pub fn distance_to_sq<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
     let mut r = V::zero();
     for i in 0..D {
         let d = v[i] - other[i];
@@ -123,13 +196,29 @@ pub fn distance_to2<V:VectorCoord,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
 
 //mp distance_to
 /// Return the distance between two vectors
-pub fn distance_to<V:VectorCoord+Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    distance_to2(v,other).sqrt()
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance_to(&[1.,-1.], &[4., 3.]), 5. );
+/// ```
+///
+pub fn distance_to<V:Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    distance_to_sq(v,other).sqrt()
 }
 
 //mp inner_product
-/// Return the inner product (dot product) of this and another vector
-pub fn inner_product<V:VectorCoord,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+/// Return the inner product (aka dot product or scalar product) of this and another vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::inner_product(&[1.,-1.], &[4., 1.]), 3. );
+/// ```
+///
+pub fn inner_product<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
     let mut r = V::zero();
     for i in 0..D {
         r = r + v[i]*other[i];
@@ -137,21 +226,52 @@ pub fn inner_product<V:VectorCoord,const D:usize> (v:&[V;D], other:&[V;D]) -> V 
     r
 }
 
-//mp normalize
-/// Create a new vector with zeros
-pub fn normalize<V:VectorCoord+Float,const D:usize> (v:&mut [V;D], eps:V) {
-    let l = len(v);
-    if l < eps {
-        set_zero(v);
+//cp normalize
+/// Normalize (make unit length) a vector if possible
+///
+/// If its length is too close to 0, then return the zero vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::normalize([1.,-1.]), [1./(2.0f64).sqrt(),-1./(2.0f64).sqrt()] );
+/// assert_eq!( vector::normalize([0.,0.]), [0.,0.] );
+/// ```
+///
+pub fn normalize<V:Float,const D:usize> (mut v:[V;D]) -> [V;D] {
+    let l = len(&v);
+    if l < V::epsilon() {
+        set_zero(&mut v);
     } else {
-        *v = reduce(*v, l);
+        v = reduce(v, l);
     }
+    v
 }
 
 //cp rotate_around
-/// Consume the vector and return a new vector rotated around a
+/// Rotate a vector within a plane around a
 /// *pivot* point by the specified angle
-pub fn rotate_around<V:VectorCoord+Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
+///
+/// The plane of rotation is specified by providing two vector indices for the elements to adjust. For a 2D rotation then the values of c0 and c1 should be 0 and 1.
+///
+/// For a 3D rotation about the Z axis, they should be 0 and 1; for
+/// rotation about the Y axis they should be 2 and 0; and for rotation
+/// about the X axis they should be 1 and 2.
+///
+/// # Examples
+///
+/// ```
+/// use geometry::vector;
+/// let a = [3., 4., 5.];
+/// let pivot = [3., 3., 0.];
+/// // Rotate by 90 degress anticlockwise about the Z-axis pivoting on (3,3,0)
+/// assert!( vector::distance_to_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 0, 1 ), &[2., 3., 5.] ) < 1E-8 );
+/// // Rotate by 90 degress anticlockwise about the X-axis pivoting on (3,3,0)
+/// assert!( vector::distance_to_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 1, 2 ), &[3., -2., 1.] ) < 1E-8 );
+/// ```
+///
+pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
     let (s,c) = angle.sin_cos();
     let dx = v[c0] - pivot[c0];
     let dy = v[c1] - pivot[c1];
@@ -163,8 +283,26 @@ pub fn rotate_around<V:VectorCoord+Float,const D:usize> (mut v:[V;D], pivot:&[V;
 }
 
 //mp cross_product3
-/// Return the inner product (dot product) of this and another vector
-pub fn cross_product3<V:VectorCoord> (x:&[V;3], y:&[V;3]) -> [V;3] {
+/// Return the outer product (cross product) of two 3-dimensional vectors
+///
+/// The outer product of two 3D vectors A and B is perpendicular to both A and B.
+///
+/// # Examples
+///
+/// ```
+/// use geometry::vector;
+/// let a = [3., 4., 5.];
+/// let b = [2., 17., 1.];
+/// let x = vector::cross_product3(&a, &b);
+/// assert!( vector::inner_product( &a, &x ) < 1E-8 );
+/// assert!( vector::inner_product( &b, &x ) < 1E-8 );
+///
+/// let x = [1., 0., 0.];
+/// let y = [0., 1., 0.];
+/// let z = vector::cross_product3(&x, &y);
+/// assert_eq!( z, [0., 0., 1.] );
+/// ```
+pub fn cross_product3<V:Num> (x:&[V;3], y:&[V;3]) -> [V;3] {
     let c0 = x[1] * y[2] - x[2] * y[1];
     let c1 = x[2] * y[0] - x[0] * y[2];
     let c2 = x[0] * y[1] - x[1] * y[0];
@@ -172,8 +310,19 @@ pub fn cross_product3<V:VectorCoord> (x:&[V;3], y:&[V;3]) -> [V;3] {
 }
 
 //mp fmt - format a `Vector` for display
-/// Display the `Point' as (x,y)
-pub fn fmt<V:VectorCoord + Display>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
+/// Format the vector for display
+///
+/// # Examples
+///
+/// ```
+/// use geometry::vector;
+/// struct Pt { c : [f32;2] };
+/// impl std::fmt::Display for Pt {
+///   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { vector::fmt(f, &self.c) }
+/// }
+/// assert_eq!( format!("{}", &Pt{c:[0., 1.]} ), "(0,1)" );
+/// ```
+pub fn fmt<V:Num>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
     for i in 0..v.len() {
         if i==0 {
             write!(f, "({}", v[i])?;
@@ -198,27 +347,72 @@ pub fn fmt<V:VectorCoord + Display>(f: &mut std::fmt::Formatter, v : &[V]) -> st
 
 //fp axis_of_rotation3
 /// Find the axis of rotation of a Matrix3
-///    Note that R . axis = axis
-///    RI = (R - I*999/1000)
-///    Then RI . axis = axis/1000
-///    Then det(RI) is going to be 1/1000 * at most 2 * at most 2
-///    And if na is perp to axis, then RI.na = R.na - 999/1000.na, which is perp to axis
-///    Then |R.na| < 2|na|
-///    If RI' . RI = I, then consider v' = RI' . v for some v=(a*axis + b*na0 + c*na1)
-///    (a'*axis + b'*na0 + c'*na1) = RI' . (a*axis + b*na0 + c*na1)
-///    Then RI . (a'*axis + b'*na0 + c'*na1) = (a*axis + b*na0 + c*na1)
-///    Then a'*RI.axis + b'*RI.na0 + c'*RI.na1 = a*axis + b*na0 + c*na1
-///    Then a'/1000*axis + b'*(R.na0-0.999.na0) + c'*(R.na1-0.999.na1) = a*axis + b*na0 + c*na1
-///    Then a = a'/1000, and
-///    -0.999b' + b'cos(angle) + c'sin(angle) = b, etc
-///    If we set |v| to be 1, then |v'| must be det(RI') = 1/det(RI) > 100
-///    If angle is not close to zero, then a' / b' >> 1
-///    This can be repeated:
-///    v' = normalize(RI' . v)
-///    v'' = normalize(RI' . v')
-///    v''' = normalize(RI' . v'') etc
-///    This gets closer and closer to the axis
-pub fn axis_of_rotation3<V:VectorCoord+Float>(rotation:&[V;9]) -> [V;3] {
+///
+/// A rotation matrix R has the property that R.v = k.v for any vector
+/// v along the axis of rotation; this is what defines it to be the
+/// axis of rotation. This is to say that v is an Eigenvector of
+/// R. For pure rotations the value of k is 1; it must be a real
+/// number in any case.
+///
+/// Hence to find the axis of rotation of a Matrix3 R requires finding
+/// the Eigenvector of R that has a real Eigenvalue - there will
+/// always be at least one (more than one implies a pure scaling
+/// matrix).
+///
+/// The algorithm used is iterative; it requires the angle of rotation
+/// to be non-tiny (i.e. > 1/1000 radians, or about 1/16 of a
+/// degree)
+///
+/// Note that R . axis = axis; also we will consider p being any vector perpendicular to the axis.
+///
+/// Consider the matrix RI =  R - 99999/100000 * I (where I is the Identity)
+///
+/// Then RI . axis = R.axis - 99999/100000*I.axis = axis * 1/100000
+///
+/// And RI . p  = R.p - 99999/100000*I.p, and note then that
+/// if the rotation is > 1/1000 radians then |RI.p| > 1/1000
+///
+/// Inverting RI yields RI_inv. Consider (RI * RI_inv) * axis:
+///
+///   axis = RI * RI_inv * axis = RI * (RI_inv * axis)
+///
+/// Since RI * axis = axis / 100000, RI_inv * axis must be 100000*axis
+///
+/// Consider any vector p perpendicular to the axis, and then (RI * RI_inv) * p:
+///
+///   p = RI * (RI_inv * p); this tells us that |RI_inv * p| < 1000
+///
+/// Hence the off-axis component is scaled by less than 1000, where
+/// the axis component is scaled by 100000; normalizing will provide a
+/// new vector that has the off-axis component reduced by at least a
+/// factor of 100.
+///
+/// This provides us with an iterative approach:
+///
+/// ```text
+///  let x = any vector p + k*axis
+///  let y1 = RI_inv * x / 100000
+///  // y1 is now k*axis + (p'/100) for some p' such that |p'|=|p|
+///  let y2 = RI_inv * y1 / 100000
+///  // y2 is now k*axis + (p''/10000) for some p'' such that |p''|=|p|
+///  let y3 = RI_inv * y2 / 100000
+///  // yn will approach the axis of rotation as n increases
+/// ```
+/// etc.
+///
+/// The rate of convergence depends on the angle of rotation; for a
+/// rotation of > 1/10 radians the off-axis amount will reduce by
+/// around 2^12 each iteration, but for 1/1000 radians it will be only
+/// about 2^6 per iteration. For a 52-bit mantissa ten iterations
+/// suffices in all cases.
+///
+/// A starting guess for the axis can be (1,0,0); if the actual axis
+/// of rotation is the Y-axis or the Z-axis then the algorithm does
+/// not converge; and a second guess of (0,1,0) can be used, or even
+/// (0,0,1) if that does not converge.
+///
+/// If the rotation is very close to 0 then any axis will do :-)
+pub fn axis_of_rotation3<V:Float>(rotation:&[V;9]) -> [V;3] {
     let mut rot_min_id = rotation.clone();
     let almost_one  = V::from(99999).unwrap() / V::from(100000).unwrap();
     let almost_zero = V::one() / V::from(100000).unwrap();
@@ -232,15 +426,10 @@ pub fn axis_of_rotation3<V:VectorCoord+Float>(rotation:&[V;9]) -> [V;3] {
         let mut last_v = [V::zero(); 3];
         for _ in 0..10 {
             last_v = v;
-            v = matrixr::transform_vec::<V,3,3>( &rot_min_id_i, &v );
-            normalize(&mut v, V::epsilon());
+            v = normalize(matrix::transform_vec3( &rot_min_id_i, &v ));
         }
-        if distance_to2(&v, &last_v) < almost_zero { return v; }
+        if distance_to_sq(&v, &last_v) < almost_zero { return v; }
     }
     [V::zero(); 3]
 }
-
-//ti VectorCoord for f32/f64
-impl VectorCoord for f32 {}
-impl VectorCoord for f64 {}
 

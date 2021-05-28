@@ -74,101 +74,10 @@ impl <T> ByteBuffer for Vec<T> {
     //zz All done
 }
 
-//a Indices
-//tp Indices
-/// A buffer for use with OpenGL index data
-///
-/// This does not support a 'View' concept; the indices for a
-/// primitive should be contiguous within an `Indices` data buffer,
-/// and all of the same type. Selecting the indices to use for a
-/// particular draw call is part of the draw function itself.
-pub struct Indices<'a> {
-    /// Data buffer itself
-    data        : &'a [u8],
-    /// Offset in to the data buffer for the first byte
-    byte_offset : usize,
-    /// Length of data used in the buffer
-    byte_length : usize,
-    /// if a gl buffer then bound to data[byte_offset] .. + byte_length
-    rc_gl_buffer   : RefCell<gl::types::GLuint>,
-}
-
-//ip Indices
-impl <'a> Indices<'a> {
-
-    //fp new
-    /// Create a new `Data` given a buffer, offset and length; if the
-    /// length is zero then the whole of the data buffer post offset
-    /// is used
-    ///
-    /// If offset and length are both zero, then all the data is used
-    ///
-    /// This function can be invoked prior to the OpenGL context being
-    /// created; this performs no OpenGL calls
-    pub fn new<B:ByteBuffer>(data:&'a B, byte_offset:usize, byte_length:usize) -> Self {
-        let byte_length = {
-            if byte_length == 0 { data.byte_length()-byte_offset } else { byte_length }
-        };
-        let rc_gl_buffer = RefCell::new(0);
-        let data = data.borrow_bytes();
-        Self { data, byte_offset, byte_length, rc_gl_buffer }
-    }
-
-    //ap gl_buffer
-    /// Get the gl_buffer associated with the data, assuming its
-    /// `gl_create` method has been invoked at least once
-    pub fn gl_buffer(&self) -> gl::types::GLuint {
-        *self.rc_gl_buffer.borrow()
-    }
-
-    //mp gl_create
-    /// Create the OpenGL ELEMENT_ARRAY_BUFFER using STATIC_DRAW - this copies the data in to OpenGL
-    ///
-    /// If this method is invoked more than once, only one OpenGL buffer is created
-    pub fn gl_create(&self) {
-        let gl_buffer = *self.rc_gl_buffer.borrow();
-        if gl_buffer == 0 {
-            unsafe {
-                gl::GenBuffers(1, self.rc_gl_buffer.as_ptr() );
-                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, *self.rc_gl_buffer.borrow() );
-                gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
-                               self.byte_length as gl::types::GLsizeiptr,
-                               self.data.as_ptr() as *const gl::types::GLvoid,
-                               gl::STATIC_DRAW );
-            }
-        }
-    }
-
-    //mp gl_bind
-    /// Bind the data to the VAO
-    pub fn gl_bind(&self) {
-        unsafe {
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER,
-                           self.gl_buffer() );
-        }
-    }
-
-    // def hier_debug(self, hier:Hierarchy) -> Hierarchy:
-    //     hier.add(f"Indices {self.byte_offset} {self.byte_length}")
-    //   return hier
-}
-
-//ip Drop for Indices
-impl <'a> Drop for Indices<'a> {
-    //fp drop
-    /// If an OpenGL buffer has been created for this then delete it
-    fn drop(&mut self) {
-        if self.gl_buffer() != 0 {
-            unsafe {
-                gl::DeleteBuffers(1, self.rc_gl_buffer.as_ptr() );
-            }
-        }
-    }
-}
-
 //a Data
 //tp Data
-/// A data buffer for use with OpenGL vertex data
+/// A data buffer for use with OpenGL vertex data. It may be indices
+/// or vertex coordinates etc.
 ///
 /// A data buffer may contain a lot of data per vertex, such as
 /// position, normal, tangent, color etc.  a `View` on the data is
@@ -196,6 +105,8 @@ pub struct Data<'a> {
     /// Length of data used in the buffer
     byte_length : usize,
     /// if a gl buffer then bound to data[byte_offset] .. + byte_length
+    /// This will *either* be an ELEMENT_ARRAY_BUFFER or an ARRAY_BUFFER
+    /// depending on how it is initially bound
     rc_gl_buffer   : RefCell<gl::types::GLuint>,
 }
 
@@ -226,11 +137,11 @@ impl <'a> Data<'a> {
         *self.rc_gl_buffer.borrow()
     }
 
-    //mp gl_create
+    //mp gl_create_data
     /// Create the OpenGL ARRAY_BUFFER buffer using STATIC_DRAW - this copies the data in to OpenGL
     ///
     /// If this method is invoked more than once, only one OpenGL buffer is created
-    pub fn gl_create(&self) {
+    pub fn gl_create_data(&self) {
         let gl_buffer = *self.rc_gl_buffer.borrow();
         if gl_buffer == 0 {
             unsafe {
@@ -241,6 +152,33 @@ impl <'a> Data<'a> {
                                self.data.as_ptr() as *const gl::types::GLvoid,
                                gl::STATIC_DRAW );
             }
+        }
+    }
+
+    //mp gl_create_indices
+    /// Create the OpenGL ELEMENT_ARRAY_BUFFER using STATIC_DRAW - this copies the data in to OpenGL
+    ///
+    /// If this method is invoked more than once, only one OpenGL buffer is created
+    pub fn gl_create_indices(&self) {
+        let gl_buffer = *self.rc_gl_buffer.borrow();
+        if gl_buffer == 0 {
+            unsafe {
+                gl::GenBuffers(1, self.rc_gl_buffer.as_ptr() );
+                gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, *self.rc_gl_buffer.borrow() );
+                gl::BufferData(gl::ELEMENT_ARRAY_BUFFER,
+                               self.byte_length as gl::types::GLsizeiptr,
+                               self.data.as_ptr() as *const gl::types::GLvoid,
+                               gl::STATIC_DRAW );
+            }
+        }
+    }
+
+    //mp gl_bind_indices
+    /// Bind the data to the VAO ELEMENT_ARRAY_BUFFER as the indices buffer
+    pub fn gl_bind_indices(&self) {
+        unsafe {
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER,
+                           self.gl_buffer() );
         }
     }
 
@@ -292,7 +230,7 @@ impl<'a> View<'a> {
     //mp gl_create
     /// Create the OpenGL buffer required by the View
     pub fn gl_create(&self) {
-        self.data.gl_create()
+        self.data.gl_create_data()
     }
 
     //mp gl_bind_attribute

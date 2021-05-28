@@ -20,14 +20,51 @@ limitations under the License.
 #![warn(missing_docs)]
 #![warn(missing_doc_code_examples)]
 /*!
+
 # Geometry library
 
 This library provides for N-dimensional geometrical objects,
-particularly *Vector*s, *Matrix*, *Quaternion*, *Bezier* curves, and *Polygon*s, but also
-*Rectangle*s and some other useful items.
+particularly *Vector*s, *Matrix*, *Quaternion* operations.
 
-The library was originally written for OpenGL projects and the *diagram* utility, and so
-some of its features are focused in that direction.
+The underlying type is \[Num; N\], so the data may be shared simply
+with other libraries, including OpenGL.
+
+The library mirrors the operation of 'glm' in some sense.
+
+The desire for the library is that it does not undergo much
+development; it provides a stable and simple basis for operations that
+are common mathematical operations, with no aim for it to grow into a
+larger linear algebra library.
+
+The library operates on arrays of elements that support the
+[`Num`](Num) trait, which requires basic arithmetic operations, copy,
+clone, debug and display; some functions further require the
+[`Float`](Float) trait, which also requires operations such as sqrt,
+sin/cos, etc.
+
+The library does not expose any types: all of the operations it
+supports are provided through functions.
+
+## Caveat
+
+For many operations the functions depend on const generics, and these
+can require the use of *nightly* at present. The usage of them is not
+complicated, and should not be unstable, but it is still early days
+for const generics, so there you go.
+
+## Basic operation
+
+```
+extern crate geometry;
+use geometry::vector;
+let y = [0., 1.];
+let x = [1., 0.];
+assert_eq!( vector::inner_product(&x, &y), 0., "Dot product of X and Y axis vectors is zero");
+let xy = vector::add(x,&y,2.);
+assert_eq!( xy, [1., 2.], "x + 2*y");
+assert_eq!( vector::len_sq(&xy), (5.), "|x + 2*y|^2 = 5");
+assert_eq!( vector::len(&xy), (5.0f64).sqrt(), "|x + 2*y| = sqrt(5)");
+```
 
 !*/
 
@@ -36,34 +73,47 @@ some of its features are focused in that direction.
 #![feature(const_generics)]
 extern crate num_traits;
 
+//a Public trait
+//tp Num
+/// Trait required for matrix or vector elements
+pub trait Num : std::ops::Neg<Output=Self> + num_traits::Num +
+    Clone + Copy + PartialEq + std::fmt::Display + std::fmt::Debug {}
+
+//tp Float
+/// Trait required for matrix or vector elements such that also need operations such as sqrt, sin/cos, etc
+pub trait Float : Num + num_traits::Float {}
+
+//ti Num for f32/f64/i32/i64/isize
+impl Num for f32 {}
+impl Num for f64 {}
+impl Num for i32 {}
+impl Num for i64 {}
+impl Num for isize {}
+
+//ti Float for f32/f64
+impl Float for f32 {}
+impl Float for f64 {}
+
 //a Imports and exports
 mod vector_op;
 mod quaternion_op;
 mod matrixr_op;
 mod matrix_op;
-mod point;
-pub mod range;
-// mod bezier;
-// mod bezier_line;
-// mod bezier_point;
-// mod path;
-// mod rectangle;
-// mod polygon;
-mod transform;
 
-pub use self::transform::Transform;
-// pub use self::range::{Range};
-pub use self::point::{Point};
-pub use vector_op::{VectorCoord};
-/// Vector library
-pub mod vector   { pub use super::vector_op::* ; }
+/// Vector functions module
+///
+/// This module provides numerous N-dimensional vector operations operating on [Num; N] (or [Float; N]).
+pub mod vector   {
+    pub use super::vector_op::* ;
+}
+
 /// Quaternion library
-pub mod quat     { pub use super::quaternion_op::* ; }
-/// Matrix library
-pub mod matrix   { pub use super::matrixr_op::* ;
-                   pub use super::matrix_op::* ;}
-// pub use self::bezier::Bezier;
-// pub use self::path::{BezierPath};
-// pub use self::rectangle::{Rectangle, Float4};
-// pub use self::polygon::Polygon;
+pub mod quat     {
+    pub use super::quaternion_op::* ;
+}
 
+/// Matrix library
+pub mod matrix   {
+    pub use super::matrixr_op::* ;
+    pub use super::matrix_op::* ;
+}

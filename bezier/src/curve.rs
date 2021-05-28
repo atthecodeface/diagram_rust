@@ -17,9 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use num_traits::Float;
 use geometry::vector;
-use self::vector::VectorCoord;
+use geometry::Float;
 use crate::BezierLineIter;
 use crate::BezierPointIter;
 
@@ -81,7 +80,7 @@ use crate::BezierPointIter;
 ///      p(t1) = u1.u1.p0 + 2(u1.t1).c + t1.t1.p1
 ///
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Bezier<V:VectorCoord, const D:usize> {
+pub struct Bezier<V:Float, const D:usize> {
     /// Number of valid control points (2-4)
     num : usize,
     /// Control points - endpoints are always 0 and 1
@@ -89,7 +88,7 @@ pub struct Bezier<V:VectorCoord, const D:usize> {
 }
 
 //ti Display for Bezier
-impl <V:VectorCoord, const D:usize> std::fmt::Display for Bezier<V,D> {
+impl <V:Float, const D:usize> std::fmt::Display for Bezier<V,D> {
 
     //mp fmt - format a `Bezier` for display
     /// Display the `Bezier' as sets of points
@@ -110,7 +109,7 @@ impl <V:VectorCoord, const D:usize> std::fmt::Display for Bezier<V,D> {
 }
 
 //ip Bezier
-impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
+impl <V:Float, const D:usize> Bezier<V,D> {
     //mp borrow_pt
     /// Get the start or end point of the Bezier - index 0 gives the
     /// start point, index 1 the end point
@@ -133,14 +132,14 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
     //fp line
     /// Create a new Bezier that is a line between two points
     pub fn line(p0:&[V;D], p1:&[V;D]) -> Self {
-        Self { num:2, pts:[p0.clone(), p1.clone(), vector::origin(), vector::origin()] }
+        Self { num:2, pts:[p0.clone(), p1.clone(), vector::zero(), vector::zero()] }
     }
 
     //fp quadratic
     /// Create a new Quadratic Bezier that is a line between two points
     /// with one absolute control points
     pub fn quadratic(p0:&[V;D], c:&[V;D], p1:&[V;D]) -> Self {
-        Self { num:3, pts:[p0.clone(), p1.clone(), c.clone(), vector::origin()] }
+        Self { num:3, pts:[p0.clone(), p1.clone(), c.clone(), vector::zero()] }
     }
 
     //fp cubic
@@ -255,7 +254,6 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
         let one  = V::one();
         let two  = V::from(2).unwrap();
         let three  = V::from(3).unwrap();
-        let four  = V::from(4).unwrap();
         match self.num {
             2 => {
                 let pm = self.vector_of(&[one,one],two);
@@ -282,7 +280,6 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
     /// Returns the Bezier between two parameters 0 <= t0 < t1 <= 1
     pub fn bezier_between(&self, t0:V, t1:V) -> Self {
         let two = V::from(2).unwrap();
-        let three = V::from(3).unwrap();
         let p0 = &self.pts[0];
         let p1 = &self.pts[1];
         match self.num {
@@ -303,8 +300,6 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
                 Self::quadratic(&rp0, &rc0, &rp1)
             },
             _ => {
-                let c0 = &self.pts[2];
-                let c1 = &self.pts[3];
                 // simply: c0 = p0 + tangent(0)
                 // and if we scale the curve to t1-t0 in size, tangents scale the same
                 let rp0 = self.point_at(t0);
@@ -360,8 +355,8 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
     ///
     /// `straightness` is thus independent of the length of the Bezier
     pub fn is_straight(&self, straightness:V) -> bool {
-        fn straightness_of_control<V:VectorCoord+Float, const D:usize>(p:&[V;D], lp2:V, c:&[V;D]) -> (V,V) {
-            let lc2 = vector::len2(c);
+        fn straightness_of_control<V:Float, const D:usize>(p:&[V;D], lp2:V, c:&[V;D]) -> (V,V) {
+            let lc2 = vector::len_sq(c);
             if lc2 < V::epsilon() {
                 (V::zero(),lp2)
             } else if lp2 < V::epsilon() {
@@ -377,14 +372,14 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
             2 => true,
             3 => {
                 let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::len2(&p);
+                let lp2 = vector::len_sq(&p);
                 let c = vector::sub(self.pts[2], &self.pts[0], one);
                 let (c_s, sc) = straightness_of_control(&p, lp2, &c);
                 c_s <= straightness * sc
             },
             _ => {
                 let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::len2(&p);
+                let lp2 = vector::len_sq(&p);
                 let c0 = vector::sub(self.pts[2], &self.pts[0], one);
                 let (c0_s, sc0) = straightness_of_control(&p, lp2, &c0);
                 let c1 = vector::sub(self.pts[3], &self.pts[0], one);
@@ -510,22 +505,28 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
     ///
     /// cos^2(theta) = (1 - cos(alpha)) / 2 = r^2/d^2
     ///
+    /// sin^2(theta) = (1 + cos(alpha)) / 2
+    ///
     /// => d^2 = 2*r^2  / (1 - cos(alpha))
     ///
     /// Hence also k^2, and hence d and k.
     ///
     /// Then we require an arc given the angle of the arc is 2*theta, which requires a lambda of
     /// 4/3 * r * (1/sin(theta)-1) = 4/3 * r * (d/k - 1)
+    ///
+    /// Note though that d^2/k^2 = 1/sin^2(theta) = 2/(1+cos(alpha))
+    ///
+    /// hence d/k = sqrt(2/(1+cos(alpha)))
+    ///
+    /// hence lambda = 4/3 * r * (sqrt(2/(1+cos(alpha))) - 1)
     pub fn of_round_corner(corner:&[V;D], v0:&[V;D], v1:&[V;D], radius:V) -> Self {
         let nearly_one = V::from(99_999).unwrap() / V::from(100_000).unwrap();
         let one   = V::one();
         let two   = V::from(2).unwrap();
         let three = V::from(3).unwrap();
         let four  = V::from(4).unwrap();
-        let mut v0 = v0.clone();
-        let mut v1 = v1.clone();
-        vector::normalize(&mut v0, V::epsilon());
-        vector::normalize(&mut v1, V::epsilon());
+        let v0    = vector::normalize(v0.clone());
+        let v1    = vector::normalize(v1.clone());
         let cos_alpha = vector::inner_product(&v0, &v1);
         if cos_alpha >= nearly_one {
             // v0 and v1 point in the same direction
@@ -543,9 +544,10 @@ impl <V:VectorCoord+Float, const D:usize> Bezier<V,D> {
             let k2 = d2 - r2;
             let d = d2.sqrt();
             let k = k2.sqrt();
-            let mut v0_plus_v1 = vector::add(v0.clone(), &v1, one);
-            vector::normalize(&mut v0_plus_v1, V::epsilon());
-            let center = vector::add(corner.clone(), &v0_plus_v1, d);
+            // let v0_plus_v1_u = vector::normalize(vector::add(v0.clone(), &v1, one));
+            // let center = vector::add(corner.clone(), &v0_plus_v1_u, d);
+            // let lambda = four/three * radius * ((two / (one + cos_alpha)).sqrt() - one);
+
             let lambda = four/three * radius * (d/k - one);
             let p0 = vector::add(corner.clone(), &v0, -k);
             let p1 = vector::add(corner.clone(), &v1, -k);
@@ -623,7 +625,7 @@ mod test_bezier {
     //fi test_line
     #[test]
     fn test_line() {
-        let p0 = vector::origin();
+        let p0 = vector::zero();
         let p1 = [10.,0.];
         let p2 = [10.,1.];
         let b01 = Bezier::line(&p0, &p1);
@@ -672,7 +674,7 @@ mod test_bezier {
     //fi test_quadratic
     #[test]
     fn test_quadratic() {
-        let p0 = vector::origin();
+        let p0 = vector::zero();
         let p1 = [10.,0.];
         let p2 = [10.,1.];
         let b = Bezier::quadratic(&p0, &p1, &p2);
@@ -709,7 +711,7 @@ mod test_bezier {
     //fi test_cubic
     #[test]
     fn test_cubic() {
-        let p0 = vector::origin();
+        let p0 = vector::zero();
         let p1 = [10.,0.];
         let p2 = [6.,1.];
         let p3 = [20.,5.];
@@ -718,9 +720,8 @@ mod test_bezier {
         pt_eq( &b.point_at(0.), p0[0], p0[1] );
         pt_eq( &b.point_at(1.), p3[0], p3[1] );
 
-        pt_eq( &b.tangent_at(0.),  (p1[0]-p0[0]), (p1[1]-p0[1]) );
-        // pt_eq( &b.tangent_at(0.5), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b.tangent_at(1.0), (p3[0]-p2[0]), (p3[1]-p2[1]) );
+        pt_eq( &b.tangent_at(0.),  p1[0]-p0[0], p1[1]-p0[1] );
+        pt_eq( &b.tangent_at(1.0), p3[0]-p2[0], p3[1]-p2[1] );
 
         does_bisect(&b);
 
@@ -729,7 +730,7 @@ mod test_bezier {
         does_split(&b, 0.3, 0.7);
         does_split(&b, 0.7, 1.0);
 
-        let x = Bezier::arc((90.).to_radians(),1.,&vector::origin(),&[1.,0.],&[0.,1.],0.);
+        let x = Bezier::arc((90.0f64).to_radians(),1.,&vector::zero(),&[1.,0.],&[0.,1.],0.);
         println!("{}",x);
         use std::f64::consts::PI;
         approx_eq( 0.5, x.length(0.001) / PI, 0.001, "Length of 90-degree arc of circle radius 1 should be PI/2");
@@ -754,7 +755,7 @@ mod test_bezier {
     //fi test_straight
     #[test]
     fn test_straight() {
-        let p0 = vector::origin();
+        let p0 = vector::zero();
         let p1 = [10.,0.];
         let p2 = [10.,1.];
         let p3 = [20.,0.];
@@ -797,11 +798,11 @@ mod test_bezier {
         let magic = 0.5522847498307935;
         let magic2 = magic * r_sqrt2;
 
-        let x = Bezier::arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], 0.);
+        let x = Bezier::arc((90.0f64).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], 0.);
         println!("arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], 0.) : {}",x);
         bezier_eq(&x, vec![[1.,0.], [1.,magic], [magic,1.], [0.,1.]]);
 
-        let x = Bezier::arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], (-90.).to_radians());
+        let x = Bezier::arc((90.0f64).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], (-90.0f64).to_radians());
         println!("arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], (-90.).to_radians()) : {}",x);
         bezier_eq(&x, vec![[0.,-1.], [magic,-1.], [1.,-magic], [1.,0.]]);
 

@@ -40,7 +40,6 @@ index in to
 //a Imports
 use crate::buffer;
 use super::types::*;
-use super::object;
 use super::drawable;
 
 //a ShaderClass
@@ -84,7 +83,11 @@ impl <'a> Instantiable<'a> {
         let drawables = Vec::from(drawables);
         self.drawables.push( (vao, 0, drawables ) );
     }
-    pub fn gl_draw(&self, instance:&drawable::Instance) {
+    //mp gl_draw
+    /// Draw an instance of an object
+    /// Must still set the uniforms for the instance
+    /// Must still set the uniforms for the meshes
+    pub fn gl_draw(&self, _instance:&drawable::Instance) {
         let mut first = true;
         let mut last_vao = 0;
         let mut last_mesh_mat_index = 0;

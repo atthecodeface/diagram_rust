@@ -21,13 +21,10 @@ limitations under the License.
 //
 
 //a Imports
-use std::cell::RefCell;
-use super::types::*;
-use crate::buffer;
 use super::drawable::Drawable;
 use super::shader;
-use buffer::Indices as BufferIndices;
-use buffer::View    as BufferView;
+use buffer::Data   as BufferData;
+use buffer::View   as BufferView;
 use crate::shader::ShaderClass;
 
 //a Vertices
@@ -42,7 +39,7 @@ use crate::shader::ShaderClass;
 /// A subset of this view is used for drawing a primitive - so this
 /// may be the complete set of vertices, for example, of a robot.
 pub struct Vertices<'a> {
-    indices    : &'a BufferIndices<'a>,
+    indices    : &'a BufferData<'a>,
     position   : &'a BufferView<'a>,
     normal     : Option<&'a BufferView<'a>>,
     tex_coords : Option<&'a BufferView<'a>>,
@@ -54,7 +51,7 @@ pub struct Vertices<'a> {
 
 //ip Vertices
 impl <'a>  Vertices<'a> {
-    pub fn new(indices: &'a BufferIndices<'a>, position:&'a BufferView<'a>) -> Self {
+    pub fn new(indices: &'a BufferData<'a>, position:&'a BufferView<'a>) -> Self {
         Self { indices, position,
                normal: None,
                tex_coords : None,
@@ -71,7 +68,7 @@ impl <'a>  Vertices<'a> {
         unsafe {
             // stops the indices messing up other VAO
             gl::BindVertexArray(0);
-            self.indices.gl_create();
+            self.indices.gl_create_indices();
             self.position.gl_create();
             self.normal.map(|x| x.gl_create());
             self.tex_coords.map(|x| x.gl_create());
@@ -89,7 +86,7 @@ impl <'a>  Vertices<'a> {
         unsafe {
             gl::GenVertexArrays(1, &mut gl_vao);
             gl::BindVertexArray(gl_vao);
-            self.indices.gl_bind();
+            self.indices.gl_bind_indices();
             shader.gl_bind_attr_view("vPosition", Some(self.position));
             shader.gl_bind_attr_view("vNormal",    self.normal);
             shader.gl_bind_attr_view("vTexCoords", self.tex_coords);

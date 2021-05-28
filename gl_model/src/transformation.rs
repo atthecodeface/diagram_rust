@@ -9,7 +9,7 @@ pub struct Transformation {
 }
 impl Transformation {
     pub fn new() -> Self {
-        let translation = vector::origin();
+        let translation = vector::zero();
         let scale       = [1.;3];
         let rotation    = quat::new();
         Self {translation, scale, rotation}
@@ -88,7 +88,7 @@ impl Transformation {
     }
     pub fn mat4_after(&self, pre_mat:&Mat4) -> Mat4 {
         let m = self.mat4();
-        matrix::multiply::<f32,4,4,4>(pre_mat, &m)
+        matrix::multiply4(pre_mat, &m)
     }
     pub fn lerp(&mut self, t:f32, in0:&Self, in1:&Self) {
         let tn = 1.0 - t;

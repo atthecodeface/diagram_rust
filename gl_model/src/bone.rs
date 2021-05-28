@@ -81,7 +81,7 @@ impl Bone {
         if is_root {
             self.mtb = self.ptb;
         } else {
-            self.mtb = matrix::multiply::<f32,4,4,4>(&self.ptb, parent_mtb);
+            self.mtb = matrix::multiply4(&self.ptb, parent_mtb);
         }
         &self.mtb
     }
@@ -160,7 +160,7 @@ impl BoneSet {
                 max_depth = if recipe.depth() > max_depth { recipe.depth() } else { max_depth };
             }
             self.temp_mat4s = Vec::new();
-            for i in 0..max_depth {
+            for _ in 0..max_depth {
                 self.temp_mat4s.push([0.;16]);
             }
             self.find_max_index();

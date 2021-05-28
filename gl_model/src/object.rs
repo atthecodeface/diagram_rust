@@ -77,14 +77,14 @@ impl <'a> Object<'a> {
         self.nodes.relate( parent, child);
     }
 
-    pub fn add_meshes_of_node_iter(&self, meshes:&mut Vec<usize>, drawable:&mut drawable::Instantiable, mut iter:NodeIter<ObjectNode>) {
+    pub fn add_meshes_of_node_iter(&self, meshes:&mut Vec<usize>, drawable:&mut drawable::Instantiable, iter:NodeIter<ObjectNode>) {
         let mut parent = None;
         let mut transformation = None;
         let mut bone_matrices = (0,0);
         let mut mesh_stack = Vec::new();
         for op in iter {
             match op {
-                NodeIterOp::Push((n,obj_node), has_children) => {
+                NodeIterOp::Push((n,obj_node), _has_children) => {
                     mesh_stack.push((parent, transformation, bone_matrices));
                     if let Some(bone_set) = obj_node.bones {
                         bone_matrices = drawable.add_bone_set(bone_set);
@@ -93,10 +93,10 @@ impl <'a> Object<'a> {
                         if transformation.is_none() {
                             transformation = Some(obj_transformation.mat4());
                         } else {
-                            transformation = Some(matrix::multiply::<f32,4,4,4>(&transformation.unwrap(), &obj_transformation.mat4()));
+                            transformation = Some(matrix::multiply4(&transformation.unwrap(), &obj_transformation.mat4()));
                         }
                     }
-                    if let Some(mesh) = obj_node.mesh {
+                    if obj_node.mesh.is_some() {
                         let index = drawable.add_mesh(&parent, &transformation, &bone_matrices);
                         assert_eq!(index, meshes.len());
                         meshes.push(n);

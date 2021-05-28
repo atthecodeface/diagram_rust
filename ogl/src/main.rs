@@ -42,7 +42,7 @@ fn main() {
     let index_data = [0u8,1,2];
 
     // Create indices and vertex data
-    let indices  = gl_model::buffer::Indices::new(&index_data, 0, 0);
+    let indices  = gl_model::buffer::Data::new(&index_data, 0, 0);
 
     let data = gl_model::buffer::Data::new(&vertex_data, 0, 0);
     let view = gl_model::buffer::View::new(&data, 3, gl::FLOAT, 0, 0); // 3 floats per, stride==0 => they are packed
@@ -67,7 +67,8 @@ fn main() {
     // Create the OpenGL buffers and data etc for the mesh for the shader
     // let sds = triangle_mesh.add_shader(&shader_program);
 
-    // Can now drop all data except shader_program and sds
+    // SHOULE BE ABLE TO drop all data except shader_program, instantiable, shader_instantiable and instance.
+    // however, the GL buffers are currently DROPped by the buffer itself - we need a pass off mechanism
 
     // set up shared state for window
 

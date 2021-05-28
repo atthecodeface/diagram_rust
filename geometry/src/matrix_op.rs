@@ -12,18 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    matrixr_op.rs
-@brief   Part of geometry library
+@file    matrix_op.rs
+@brief   Square matrix operations - part of geometry library
  */
 
 //a Imports
-use num_traits::{Float};
+use crate::{Num, Float};
 use super::matrixr_op;
-use crate::{VectorCoord};
 
 //fp identity
 /// Create an identity square matrix of a given dimension
-pub fn identity<V:VectorCoord,const D:usize> () -> [V;D*D] {
+pub fn identity<V:Num,const D:usize> () -> [V;D*D] {
     let mut r = [V::zero(); D*D];
     for i in 0..D {
         r[i*(D+1)] = V::one();
@@ -33,13 +32,13 @@ pub fn identity<V:VectorCoord,const D:usize> () -> [V;D*D] {
 
 //fp determinant2
 /// Find the determinant of a 2-by-2 matrix
-pub fn determinant2<V:VectorCoord> (m:&[V;4]) -> V {
+pub fn determinant2<V:Num> (m:&[V;4]) -> V {
     m[0] * m[3] - m[1] * m[2]
 }
 
 //fp inverse2
 /// Find the inverse of a 2-by-2 matrix
-pub fn inverse2<V:VectorCoord+Float> (m:&[V;4]) -> [V;4] {
+pub fn inverse2<V:Float> (m:&[V;4]) -> [V;4] {
     let d = determinant2(m);
     let r_d = {
         if V::abs(d) > V::epsilon() {
@@ -54,7 +53,7 @@ pub fn inverse2<V:VectorCoord+Float> (m:&[V;4]) -> [V;4] {
 
 //fp determinant3
 /// Find the determinant of a 3-by-3 matrix
-pub fn determinant3<V:VectorCoord> (m:&[V;9]) -> V {
+pub fn determinant3<V:Num> (m:&[V;9]) -> V {
     m[0]*(m[4]*m[8] - m[5]*m[7]) +
         m[1]*(m[5]*m[6] - m[3]*m[8]) +
         m[2]*(m[3]*m[7] - m[4]*m[6])
@@ -62,7 +61,7 @@ pub fn determinant3<V:VectorCoord> (m:&[V;9]) -> V {
 
 //fp inverse3
 /// Find the inverse of a 3-by-3 matrix
-pub fn inverse3<V:VectorCoord+Float> (m:&[V;9]) -> [V;9] {
+pub fn inverse3<V:Float> (m:&[V;9]) -> [V;9] {
     let mut r = [V::zero(); 9];
     let d = determinant3(m);
     let r_d = {
@@ -89,7 +88,7 @@ pub fn inverse3<V:VectorCoord+Float> (m:&[V;9]) -> [V;9] {
 
 //fp from_quat3
 /// Create a rotation 3-by-3 matrix from a quaternion
-pub fn from_quat3<V:VectorCoord+Float>(q:[V;4]) -> [V;9] {
+pub fn from_quat3<V:Float>(q:[V;4]) -> [V;9] {
     let mut r = [V::zero();9];
     let x = q[0];
     let y = q[1];
@@ -112,7 +111,7 @@ pub fn from_quat3<V:VectorCoord+Float>(q:[V;4]) -> [V;9] {
 
 //fp determinant4
 /// Find the determinant of a 4-by-4 matrix
-pub fn determinant4<V:VectorCoord> (m:&[V;16]) -> V {
+pub fn determinant4<V:Num> (m:&[V;16]) -> V {
     m[0] * (  m[4+1] * (m[8+2]*m[12+3]-m[8+3]*m[12+2]) +
               ( m[4+2] * (m[8+3]*m[12+1]-m[8+1]*m[12+3])) +
               (m[4+3] * (m[8+1]*m[12+2]-m[8+2]*m[12+1])) ) +
@@ -130,39 +129,45 @@ pub fn determinant4<V:VectorCoord> (m:&[V;16]) -> V {
 
 //fp multiply2
 /// Multiply two square 2x2 matrices and produce a result
-pub fn multiply2<V:VectorCoord+Float>(a:&[V;4], b:&[V;4]) -> [V;4] {
-    matrixr_op::multiply::<V,2,2,2>( a, b )
+pub fn multiply2<V:Float>(a:&[V;2*2], b:&[V;2*2]) -> [V;2*2] {
+    matrixr_op::multiply::<V,4,4,4,2,2,2>( a, b )
 }
 
 //fp transform_vec2
 /// Multiply a vec2 by a 2x2 matrix
-pub fn transform_vec2<V:VectorCoord+Float>(m:&[V;4], v:&[V;2]) -> [V;2] {
-    matrixr_op::transform_vec::<V,2,2>( m, v )
+pub fn transform_vec2<V:Float>(m:&[V;4], v:&[V;2]) -> [V;2] {
+    matrixr_op::transform_vec::<V,4,2,2>( m, v )
 }
 
 //fp multiply3
 /// Multiply two square 3x3 matrices and produce a result
-pub fn multiply3<V:VectorCoord+Float>(a:&[V;9], b:&[V;9]) -> [V;9] {
-    matrixr_op::multiply::<V,3,3,3>( a, b )
+pub fn multiply3<V:Float>(a:&[V;9], b:&[V;9]) -> [V;9] {
+    matrixr_op::multiply::<V,9,9,9,3,3,3>( a, b )
 }
 
 //fp transform_vec3
 /// Multiply a vec3 by a 3x3 matrix
-pub fn transform_vec3<V:VectorCoord+Float>(m:&[V;9], v:&[V;3]) -> [V;3] {
-    matrixr_op::transform_vec::<V,3,3>( m, v )
+pub fn transform_vec3<V:Float>(m:&[V;9], v:&[V;3]) -> [V;3] {
+    matrixr_op::transform_vec::<V,9,3,3>( m, v )
 }
 
 //fp multiply4
 /// Multiply two square 4x4 matrices and produce a result
-pub fn multiply4<V:VectorCoord+Float>(a:&[V;16], b:&[V;16]) -> [V;16] {
-    matrixr_op::multiply::<V,4,4,4>( a, b )
+pub fn multiply4<V:Float>(a:&[V;16], b:&[V;16]) -> [V;16] {
+    matrixr_op::multiply::<V,16,16,16,4,4,4>( a, b )
+}
+
+//fp transform_vec4
+/// Multiply a vec4 by a 4x4 matrix
+pub fn transform_vec4<V:Float>(m:&[V;16], v:&[V;4]) -> [V;4] {
+    matrixr_op::transform_vec::<V,16,4,4>( m, v )
 }
 
 //fp translate4
 /// Translate a 4-by-4 matrix by a vector - standard graphics approach
 ///
 /// Same as postmultiply by [1 0 0 v0], [0 1 0 v1], [0 0 1 v2], [0 0 0 1]
-pub fn translate4<V:VectorCoord> (m:&[V;16], v:&[V;4]) -> [V;16] {
+pub fn translate4<V:Num> (m:&[V;16], v:&[V;4]) -> [V;16] {
     let mut r = m.clone();
     r[12] = m[ 0]*v[0] + m[4+0]*v[1] + m[8+0]*v[2] + m[12+0];
     r[13] = m[ 1]*v[0] + m[4+1]*v[1] + m[8+1]*v[2] + m[12+1];
@@ -173,7 +178,7 @@ pub fn translate4<V:VectorCoord> (m:&[V;16], v:&[V;4]) -> [V;16] {
 
 //fp perspective4
 /// Create a perspective graphics matrix
-pub fn perspective4<V:VectorCoord+Float> (fov:V, aspect:V, near:V, far:V) -> [V;16] {
+pub fn perspective4<V:Float> (fov:V, aspect:V, near:V, far:V) -> [V;16] {
     let mut r = [V::zero(); 16];
     let two = V::from(2).unwrap();
     let f = V::one() / V::tan(fov / two );
@@ -188,7 +193,7 @@ pub fn perspective4<V:VectorCoord+Float> (fov:V, aspect:V, near:V, far:V) -> [V;
 
 //fp from_quat4
 /// Create a rotation 4-by-4 matrix from a quaternion
-pub fn from_quat4<V:VectorCoord+Float>(q:[V;4]) -> [V;16] {
+pub fn from_quat4<V:Float>(q:[V;4]) -> [V;16] {
     let mut r = [V::zero();16];
     let x = q[0];
     let y = q[1];

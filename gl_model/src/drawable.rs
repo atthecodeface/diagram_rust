@@ -111,6 +111,14 @@ pub struct Instantiable {
 
 //ip Instantiable
 impl Instantiable {
+    //fp new
+    /// Create a new instantiable drawable - something to which meshes
+    /// and bone sets will be added, and for which a set of mesh
+    /// matrices and rest bone positions will be derived.
+    ///
+    /// Such a type can that be 'instance'd with a specific
+    /// transformation and bone poses, and such instances can then be
+    /// drawn using shaders.
     pub fn new() -> Self {
         let bones = Vec::new();
         let mesh_matrices = Vec::new();
@@ -118,6 +126,7 @@ impl Instantiable {
         let num_bone_matrices = 0;
         Self { bones, mesh_matrices, mesh_data, num_bone_matrices }
     }
+
     //mp add_mesh
     /// Add a mesh with an optional parent mesh_data index (and hence parent transformation) and bone_matrices
     pub fn add_mesh(&mut self, parent:&Option<usize>, transformation:&Option<Mat4>, bone_matrices:&(usize,usize)) -> usize {
@@ -127,7 +136,7 @@ impl Instantiable {
                 if let Some(transformation) = transformation {
                     let n = self.mesh_matrices.len();
                     // let t = transformation.mat4();
-                    let m = matrix::multiply::<f32,4,4,4>(&self.mesh_matrices[parent], transformation);
+                    let m = matrix::multiply4(&self.mesh_matrices[parent], transformation);
                     self.mesh_matrices.push(m);
                     n
                 } else {
@@ -149,27 +158,33 @@ impl Instantiable {
         self.mesh_data.push( MeshIndexData {mesh_matrix_index, bone_matrices:*bone_matrices} );
         n
     }
+
     //mp add_bone_set
     /// Add a bone set; clones it, and generates a number of bone matrices and updates appropriately, returning the range of bone matrices that the set corresponds to
-    pub fn add_bone_set(&mut self, bone_set:&BoneSet) -> (usize, usize) {
+    pub fn add_bone_set(&mut self, _bone_set:&BoneSet) -> (usize, usize) {
         (0,0)
     }
+
     //mp borrow_mesh_data
     pub fn borrow_mesh_data<'a> (&'a self, index:usize) -> &'a MeshIndexData {
         &self.mesh_data[index]
     }
+
     //mp instantiate
     /// Create an `Instance` from this instantiable - must be used with accompanying mesh data in the appropriate form for the client
+    /// Must still add bone_poses one per bone set
     pub fn instantiate<'a>(&'a self) -> Instance<'a> {
         let transformation = Transformation::new();
         let trans_mat = [0.;16];
-        let mut bone_poses = Vec::new();
+        let bone_poses = Vec::new();
         let mut bone_matrices = Vec::with_capacity(self.num_bone_matrices);
         for _ in 0..self.num_bone_matrices {
             bone_matrices.push([0.;16]);
         }
         Instance { instantiable:self, transformation, trans_mat, bone_poses, bone_matrices }
     }
+
+    //zz All done
 }
 
 

@@ -53,9 +53,9 @@ impl <'a> Pose <'a> {
         if is_root {
             self.animated_btm = self.btp;
         } else {
-            self.animated_btm = matrix::multiply::<f32,4,4,4>(parent_animated_btm, &self.btp);
+            self.animated_btm = matrix::multiply4(parent_animated_btm, &self.btp);
         }
-        self.animated_mtm = matrix::multiply::<f32,4,4,4>(&self.animated_btm, &self.bone.mtb);
+        self.animated_mtm = matrix::multiply4(&self.animated_btm, &self.bone.mtb);
         &self.animated_btm
     }
 }
