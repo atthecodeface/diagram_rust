@@ -86,7 +86,7 @@ pub fn of_rotation<V:Float>(rotation:&[V;9]) -> [V;4] {
 //cp invert
 /// Get the quaternion inverse
 pub fn invert<V:Float>(a:&[V;4]) -> [V;4] {
-    let l = vector::len_sq(a);
+    let l = vector::length_sq(a);
     let r_l = {
         if l < V::epsilon() { V::zero() } else {V::one()/l}
     };
@@ -154,12 +154,7 @@ pub fn multiply<V:Num>(a:&[V;4], b:&[V;4]) -> [V;4] {
 //fp nlerp
 /// A simple normalized LERP from one quaterion to another (not spherical)
 pub fn nlerp<V:Float>(t:V, in0:&[V;4], in1:&[V;4]) -> [V;4] {
-    let mut r = [V::zero(); 4];
-    let tn = V::one() - t;
-    for i in 0..4 {
-        r[i] = t * in0[i] + tn * in1[i];
-    }
-    normalize(r)
+    normalize(vector::mix(in0, in1, t))
 }
 
 //a Operational functions
@@ -173,7 +168,7 @@ pub fn distance_sq<V:Float>(a:&[V;4], b:&[V;4]) -> V {
     } else {
         qn[3] = qn[3] - V::one();
     }
-    vector::len_sq(&qn)
+    vector::length_sq(&qn)
 }
 
 //fp distance

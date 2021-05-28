@@ -78,7 +78,7 @@ impl Transformation {
         let mut rotation = [0.;9];
         for i in 0..3 {
             let v = [m[4*i+0],m[4*i+1],m[4*i+2]];
-            let l = vector::len(&v);
+            let l = vector::length(&v);
             self.scale[i] = l;
             rotation[3*i+0] = v[0] / l;
             rotation[3*i+1] = v[1] / l;

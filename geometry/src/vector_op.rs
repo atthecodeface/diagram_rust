@@ -68,224 +68,7 @@ pub fn is_zero<V:Num,const D:usize> (v:&[V;D]) -> bool {
 }
 
 
-//a Combinations
-//cp scale
-/// Scale ever element of a vector by a single scaling factor
-//
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// let a = vector::scale([1., 2., 3.], 2.);
-/// assert_eq!( a, [2., 4., 6.]);
-/// ```
-///
-pub fn scale<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
-    for c in &mut v { *c = (*c) * s; }
-    v
-}
-
-//cp scale_coords
-/// Consume the vector and return a new vector that is the original
-/// scaled in each coordinate a different scale factor
-//
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// let a = vector::scale_coords([2., 4., 6.], &[1., 0., 2.]);
-/// assert_eq!( a, [2., 0., 12.]);
-/// ```
-///
-pub fn scale_coords<V:Num,const D:usize> (mut v:[V;D], s:&[V;D]) -> [V;D] {
-    for i in 0..D { v[i] = v[i] * s[i]; }
-    v
-}
-
-//cp reduce
-/// Reduce ever element of a vector by a single scaling factor
-//
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// let a = vector::reduce([2., 4., 6.], 2.);
-/// assert_eq!( a, [1., 2., 3.]);
-/// ```
-///
-pub fn reduce<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
-    for c in &mut v { *c = (*c) / s; }
-    v
-}
-
-//cp add
-/// Add another vector scaled by a value to a vector, returning the sum
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// let a = [3., 1.];
-/// let b = [2., 3.];
-/// assert_eq!( vector::add( a, &b, 3.), [9., 10.]);
-/// ```
-///
-pub fn add<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
-    for i in 0..D {
-        v[i] = v[i] + other[i] * scale;
-    }
-    v
-}
-
-//cp sub
-/// Consume the vector, and return a new vector that is the sum of
-/// this and a borrowed other vector scaled
-pub fn sub<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
-    for i in 0..D {
-        v[i] = v[i] - other[i] * scale;
-    }
-    v
-}
-
-//cp normalize
-/// Normalize (make unit length) a vector if possible
-///
-/// If its length is too close to 0, then return the zero vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::normalize([1.,-1.]), [1./(2.0f64).sqrt(),-1./(2.0f64).sqrt()] );
-/// assert_eq!( vector::normalize([0.,0.]), [0.,0.] );
-/// ```
-///
-pub fn normalize<V:Float,const D:usize> (mut v:[V;D]) -> [V;D] {
-    let l = len(&v);
-    if l < V::epsilon() {
-        set_zero(&mut v);
-    } else {
-        v = reduce(v, l);
-    }
-    v
-}
-
-//cp rotate_around
-/// Rotate a vector within a plane around a
-/// *pivot* point by the specified angle
-///
-/// The plane of rotation is specified by providing two vector indices for the elements to adjust. For a 2D rotation then the values of c0 and c1 should be 0 and 1.
-///
-/// For a 3D rotation about the Z axis, they should be 0 and 1; for
-/// rotation about the Y axis they should be 2 and 0; and for rotation
-/// about the X axis they should be 1 and 2.
-///
-/// # Examples
-///
-/// ```
-/// use geometry::vector;
-/// let a = [3., 4., 5.];
-/// let pivot = [3., 3., 0.];
-/// // Rotate by 90 degress anticlockwise about the Z-axis pivoting on (3,3,0)
-/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 0, 1 ), &[2., 3., 5.] ) < 1E-8 );
-/// // Rotate by 90 degress anticlockwise about the X-axis pivoting on (3,3,0)
-/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 1, 2 ), &[3., -2., 1.] ) < 1E-8 );
-/// ```
-///
-pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
-    let (s,c) = angle.sin_cos();
-    let dx = v[c0] - pivot[c0];
-    let dy = v[c1] - pivot[c1];
-    let x1 = c*dx - s*dy;
-    let y1 = c*dy + s*dx;
-    v[c0] = x1 + pivot[c0];
-    v[c1] = y1 + pivot[c1];
-    v
-}
-
-//a Accessors or mutations
-//mp len_sq
-/// Return the length^2 of the vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::len_sq(&[3., 4.]), 25. );
-/// ```
-///
-pub fn len_sq<V:Num> (v:&[V]) -> V {
-    let mut r = V::zero();
-    for c in v.iter() { r = r + (*c) * (*c) }
-    r
-}
-
-//mp len
-/// Return the length of the vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::len(&[3., 4.]), 5. );
-/// ```
-///
-pub fn len<V:Float> (v:&[V]) -> V {
-    len_sq(v).sqrt()
-}
-
-//mp distance_sq
-/// Return the distance square between two vectors
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::distance_sq(&[1.,-1.], &[4., 3.]), 25. );
-/// ```
-///
-pub fn distance_sq<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    let mut r = V::zero();
-    for i in 0..D {
-        let d = v[i] - other[i];
-        r = r + d * d;
-    }
-    r
-}
-
-//mp distance
-/// Return the distance between two vectors
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::distance(&[1.,-1.], &[4., 3.]), 5. );
-/// ```
-///
-pub fn distance<V:Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    distance_sq(v,other).sqrt()
-}
-
-//mp dot
-/// Return the inner product (aka dot product or scalar product) of this and another vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::dot(&[1.,-1.], &[4., 1.]), 3. );
-/// ```
-///
-pub fn dot<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    let mut r = V::zero();
-    for i in 0..D {
-        r = r + v[i]*other[i];
-    }
-    r
-}
-
-//mp cross_product3
+//fp cross_product3
 /// Return the outer product (cross product) of two 3-dimensional vectors
 ///
 /// The outer product of two 3D vectors A and B is perpendicular to both A and B.
@@ -312,41 +95,28 @@ pub fn cross_product3<V:Num> (x:&[V;3], y:&[V;3]) -> [V;3] {
     [c0, c1, c2]
 }
 
-//mp fmt - format a `Vector` for display
-/// Format the vector for display
+//fp mix
+/// Find the linear interpolation between two vectors by a parameter `t`.
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// use geometry::vector;
-/// struct Pt { c : [f32;2] };
-/// impl std::fmt::Display for Pt {
-///   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { vector::fmt(f, &self.c) }
-/// }
-/// assert_eq!( format!("{}", &Pt{c:[0., 1.]} ), "(0,1)" );
+/// let a = [3., 1.];
+/// let b = [2., 3.];
+/// assert_eq!( vector::mix( &a, &b, 0.),  [3., 1.]);
+/// assert_eq!( vector::mix( &a, &b, 1.),  [2., 3.]);
+/// assert_eq!( vector::mix( &a, &b, 0.5), [2.5, 2.]);
 /// ```
-pub fn fmt<V:Num>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
-    for i in 0..v.len() {
-        if i==0 {
-            write!(f, "({}", v[i])?;
-        } else {
-            write!(f, ",{}", v[i])?;
-        }
+///
+pub fn mix<V:Float,const D:usize> (a:&[V;D], b:&[V;D], t:V) -> [V;D] {
+    let mut v = zero();
+    let omt = V::one() - t;
+    for i in 0..D {
+        v[i] = a[i] * omt + b[i] * t;
     }
-    write!(f, ")")
+    v
 }
-
-/*
-    #f transformMat3
-    @staticmethod
-    def transformMat4(a:Vec4,x:Vec4,M:Mat4) -> Vec4:
-        c0=M[0]*x[0] + M[4]*x[1] + M[8]*x[2]  + M[12]*x[3];
-        c1=M[1]*x[0] + M[5]*x[1] + M[9]*x[2]  + M[13]*x[3];
-        c2=M[2]*x[0] + M[6]*x[1] + M[10]*x[2] + M[14]*x[3];
-        c3=M[3]*x[0] + M[7]*x[1] + M[11]*x[2] + M[15]*x[3];
-        a[0]=c0; a[1]=c1; a[2]=c2; a[3]=c3;
-        return a
- */
 
 //fp axis_of_rotation3
 /// Find the axis of rotation of a Matrix3
@@ -415,6 +185,12 @@ pub fn fmt<V:Num>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
 /// (0,0,1) if that does not converge.
 ///
 /// If the rotation is very close to 0 then any axis will do :-)
+///
+/// Another option for this is to consider any vector x and R.x; the
+/// cross-product of the two should be the axis of rotation. This
+/// clearly has problems if the rotation is by 180 degrees, and is
+/// unstable for small rotations (as is any determination of the
+/// axis).
 pub fn axis_of_rotation3<V:Float>(rotation:&[V;9]) -> [V;3] {
     let mut rot_min_id = rotation.clone();
     let almost_one  = V::from(99999).unwrap() / V::from(100000).unwrap();
@@ -435,4 +211,278 @@ pub fn axis_of_rotation3<V:Float>(rotation:&[V;9]) -> [V;3] {
     }
     [V::zero(); 3]
 }
+
+//a Combinations
+//cp scale
+/// Scale ever element of a vector by a single scaling factor
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::scale([1., 2., 3.], 2.);
+/// assert_eq!( a, [2., 4., 6.]);
+/// ```
+///
+pub fn scale<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
+    for c in &mut v { *c = (*c) * s; }
+    v
+}
+
+//cp comp_mult
+/// Consume the vector and return a new vector that is the original
+/// scaled in each coordinate a different scale factor
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::comp_mult([2., 4., 6.], &[1., 0., 2.]);
+/// assert_eq!( a, [2., 0., 12.]);
+/// ```
+///
+pub fn comp_mult<V:Num,const D:usize> (mut v:[V;D], s:&[V;D]) -> [V;D] {
+    for i in 0..D { v[i] = v[i] * s[i]; }
+    v
+}
+
+//cp reduce
+/// Reduce ever element of a vector by a single scaling factor
+//
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = vector::reduce([2., 4., 6.], 2.);
+/// assert_eq!( a, [1., 2., 3.]);
+/// ```
+///
+pub fn reduce<V:Num,const D:usize> (mut v:[V;D], s:V) -> [V;D] {
+    for c in &mut v { *c = (*c) / s; }
+    v
+}
+
+//cp add
+/// Add another vector scaled by a value to a vector, returning the sum
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = [3., 1.];
+/// let b = [2., 3.];
+/// assert_eq!( vector::add( a, &b, 3.), [9., 10.]);
+/// ```
+///
+pub fn add<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
+    for i in 0..D {
+        v[i] = v[i] + other[i] * scale;
+    }
+    v
+}
+
+//cp sub
+/// Consume the vector, and return a new vector that is the sum of
+/// this and a borrowed other vector scaled
+pub fn sub<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
+    for i in 0..D {
+        v[i] = v[i] - other[i] * scale;
+    }
+    v
+}
+
+//cp clamp
+/// Clamp each element to be between min and max
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// let a = [-1., 3.];
+/// assert_eq!( vector::clamp( a, 0., 1.), [0., 1.]);
+/// assert_eq!( vector::clamp( a, -1., 1.), [-1., 1.]);
+/// assert_eq!( vector::clamp( a, -10., 10.), [-1., 3.]);
+/// ```
+///
+pub fn clamp<V:Float,const D:usize> (mut a:[V;D], min:V, max:V) -> [V;D] {
+    for i in 0..D {
+        a[i] = if a[i] < min {min} else if a[i] > max {max} else {a[i]};
+    }
+    a
+}
+
+//cp normalize
+/// Normalize (make unit length) a vector if possible
+///
+/// If its length is too close to 0, then return the zero vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::normalize([1.,-1.]), [1./(2.0f64).sqrt(),-1./(2.0f64).sqrt()] );
+/// assert_eq!( vector::normalize([0.,0.]), [0.,0.] );
+/// ```
+///
+pub fn normalize<V:Float,const D:usize> (mut v:[V;D]) -> [V;D] {
+    let l = length(&v);
+    if l < V::epsilon() {
+        set_zero(&mut v);
+    } else {
+        v = reduce(v, l);
+    }
+    v
+}
+
+//cp rotate_around
+/// Rotate a vector within a plane around a
+/// *pivot* point by the specified angle
+///
+/// The plane of rotation is specified by providing two vector indices for the elements to adjust. For a 2D rotation then the values of c0 and c1 should be 0 and 1.
+///
+/// For a 3D rotation about the Z axis, they should be 0 and 1; for
+/// rotation about the Y axis they should be 2 and 0; and for rotation
+/// about the X axis they should be 1 and 2.
+///
+/// # Examples
+///
+/// ```
+/// use geometry::vector;
+/// let a = [3., 4., 5.];
+/// let pivot = [3., 3., 0.];
+/// // Rotate by 90 degress anticlockwise about the Z-axis pivoting on (3,3,0)
+/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 0, 1 ), &[2., 3., 5.] ) < 1E-8 );
+/// // Rotate by 90 degress anticlockwise about the X-axis pivoting on (3,3,0)
+/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 1, 2 ), &[3., -2., 1.] ) < 1E-8 );
+/// ```
+///
+pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
+    let (s,c) = angle.sin_cos();
+    let dx = v[c0] - pivot[c0];
+    let dy = v[c1] - pivot[c1];
+    let x1 = c*dx - s*dy;
+    let y1 = c*dy + s*dx;
+    v[c0] = x1 + pivot[c0];
+    v[c1] = y1 + pivot[c1];
+    v
+}
+
+//a Accessors or mutations
+//mp length_sq
+/// Return the length^2 of the vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::length_sq(&[3., 4.]), 25. );
+/// ```
+///
+pub fn length_sq<V:Num> (v:&[V]) -> V {
+    let mut r = V::zero();
+    for c in v.iter() { r = r + (*c) * (*c) }
+    r
+}
+
+//mp length
+/// Return the length of the vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::length(&[3., 4.]), 5. );
+/// ```
+///
+pub fn length<V:Float> (v:&[V]) -> V {
+    length_sq(v).sqrt()
+}
+
+//mp distance_sq
+/// Return the distance square between two vectors
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance_sq(&[1.,-1.], &[4., 3.]), 25. );
+/// ```
+///
+pub fn distance_sq<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    let mut r = V::zero();
+    for i in 0..D {
+        let d = v[i] - other[i];
+        r = r + d * d;
+    }
+    r
+}
+
+//mp distance
+/// Return the distance between two vectors
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance(&[1.,-1.], &[4., 3.]), 5. );
+/// ```
+///
+pub fn distance<V:Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    distance_sq(v,other).sqrt()
+}
+
+//mp dot
+/// Return the inner product (aka dot product or scalar product) of this and another vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::dot(&[1.,-1.], &[4., 1.]), 3. );
+/// ```
+///
+pub fn dot<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    let mut r = V::zero();
+    for i in 0..D {
+        r = r + v[i]*other[i];
+    }
+    r
+}
+
+//a Formatting
+//mp fmt - format a `Vector` for display
+/// Format the vector for display
+///
+/// # Examples
+///
+/// ```
+/// use geometry::vector;
+/// struct Pt { c : [f32;2] };
+/// impl std::fmt::Display for Pt {
+///   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { vector::fmt(f, &self.c) }
+/// }
+/// assert_eq!( format!("{}", &Pt{c:[0., 1.]} ), "(0,1)" );
+/// ```
+pub fn fmt<V:Num>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
+    for i in 0..v.len() {
+        if i==0 {
+            write!(f, "({}", v[i])?;
+        } else {
+            write!(f, ",{}", v[i])?;
+        }
+    }
+    write!(f, ")")
+}
+
+/*
+    #f transformMat3
+    @staticmethod
+    def transformMat4(a:Vec4,x:Vec4,M:Mat4) -> Vec4:
+        c0=M[0]*x[0] + M[4]*x[1] + M[8]*x[2]  + M[12]*x[3];
+        c1=M[1]*x[0] + M[5]*x[1] + M[9]*x[2]  + M[13]*x[3];
+        c2=M[2]*x[0] + M[6]*x[1] + M[10]*x[2] + M[14]*x[3];
+        c3=M[3]*x[0] + M[7]*x[1] + M[11]*x[2] + M[15]*x[3];
+        a[0]=c0; a[1]=c1; a[2]=c2; a[3]=c3;
+        return a
+ */
 

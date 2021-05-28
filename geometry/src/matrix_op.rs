@@ -38,6 +38,22 @@ pub fn determinant2<V:Num> (m:&[V;4]) -> V {
 
 //fp inverse2
 /// Find the inverse of a 2-by-2 matrix
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector::{length, sub};
+/// use geometry::matrix::{identity, inverse2, multiply2, MatrixType};
+/// let i = identity::<f32, 2>();
+/// assert!( length(&sub(inverse2(&i), &i, 1.)) < 1E-8 );
+/// for a in [ [1.,0., 0.,1.],
+///            [1.,0., 1.,1.],
+///            [1.,2., 7.,2.] ] {
+///     let a_inv = inverse2(&a);
+///     assert!( length(&sub(multiply2(&a_inv,&a), &i, 1.)) < 1E-6 );
+/// }
+/// ```
+///
 pub fn inverse2<V:Float> (m:&[V;4]) -> [V;4] {
     let d = determinant2(m);
     let r_d = {
@@ -61,6 +77,22 @@ pub fn determinant3<V:Num> (m:&[V;9]) -> V {
 
 //fp inverse3
 /// Find the inverse of a 3-by-3 matrix
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector::{length, sub};
+/// use geometry::matrix::{identity, inverse3, multiply3, MatrixType};
+/// let i = identity::<f32, 3>();
+/// assert!( length(&sub(inverse3(&i), &i, 1.)) < 1E-8 );
+/// for a in [ [1.,0.,0., 0.,1.,0.,  0.,0.,1.],
+///            [1.,0.,0., 0.,1.,1.,  0.,0.,1.],
+///            [1.,3.,2., 0.,2.,3., -1.,2.,3.] ] {
+///     let a_inv = inverse3(&a);
+///     assert!( length(&sub(multiply3(&a_inv,&a), &i, 1.)) < 1E-6 );
+/// }
+/// ```
+///
 pub fn inverse3<V:Float> (m:&[V;9]) -> [V;9] {
     let mut r = [V::zero(); 9];
     let d = determinant3(m);
@@ -73,15 +105,15 @@ pub fn inverse3<V:Float> (m:&[V;9]) -> [V;9] {
     };
 
     r[0] = (m[3+1]*m[6+2] - m[3+2]*m[6+1])*r_d;
-    r[1] = (m[3+2]*m[6+0] - m[3+0]*m[6+2])*r_d;
-    r[2] = (m[3+0]*m[6+1] - m[3+1]*m[6+0])*r_d;
+    r[3] = (m[3+2]*m[6+0] - m[3+0]*m[6+2])*r_d;
+    r[6] = (m[3+0]*m[6+1] - m[3+1]*m[6+0])*r_d;
 
-    r[3] = (m[6+1]*m[0+2] - m[6+2]*m[0+1])*r_d;
+    r[1] = (m[6+1]*m[0+2] - m[6+2]*m[0+1])*r_d;
     r[4] = (m[6+2]*m[0+0] - m[6+0]*m[0+2])*r_d;
-    r[5] = (m[6+0]*m[0+1] - m[6+1]*m[0+0])*r_d;
+    r[7] = (m[6+0]*m[0+1] - m[6+1]*m[0+0])*r_d;
 
-    r[6] = (m[0+1]*m[3+2] - m[0+2]*m[3+1])*r_d;
-    r[7] = (m[0+2]*m[3+0] - m[0+0]*m[3+2])*r_d;
+    r[2] = (m[0+1]*m[3+2] - m[0+2]*m[3+1])*r_d;
+    r[5] = (m[0+2]*m[3+0] - m[0+0]*m[3+2])*r_d;
     r[8] = (m[0+0]*m[3+1] - m[0+1]*m[3+0])*r_d;
     r
 }
@@ -113,18 +145,61 @@ pub fn from_quat3<V:Float>(q:[V;4]) -> [V;9] {
 /// Find the determinant of a 4-by-4 matrix
 pub fn determinant4<V:Num> (m:&[V;16]) -> V {
     m[0] * (  m[4+1] * (m[8+2]*m[12+3]-m[8+3]*m[12+2]) +
-              ( m[4+2] * (m[8+3]*m[12+1]-m[8+1]*m[12+3])) +
-              (m[4+3] * (m[8+1]*m[12+2]-m[8+2]*m[12+1])) ) +
-        m[1] * (  m[4+2] * (m[8+3]*m[12+0]-m[8+0]*m[12+3]) +
-                  ( m[4+3] * (m[8+0]*m[12+2]-m[8+2]*m[12+0])) +
-                  (m[4+0] * (m[8+2]*m[12+3]-m[8+3]*m[12+2])) ) +
-        m[2] * (  m[4+3] * (m[8+0]*m[12+1]-m[8+1]*m[12+0]) +
-                  ( m[4+0] * (m[8+1]*m[12+3]-m[8+3]*m[12+1])) +
-                  (m[4+1] * (m[8+3]*m[12+0]-m[8+0]*m[12+3])) ) +
-        m[3] * (  m[4+0] * (m[8+1]*m[12+2]-m[8+2]*m[12+1]) +
-                  ( m[4+1] * (m[8+2]*m[12+0]-m[8+0]*m[12+2])) +
-                  (m[4+2] * (m[8+0]*m[12+1]-m[8+1]*m[12+0])) )
+            ( m[4+2] * (m[8+3]*m[12+1]-m[8+1]*m[12+3])) +
+            ( m[4+3] * (m[8+1]*m[12+2]-m[8+2]*m[12+1])) ) -
+    m[1] * (  m[4+2] * (m[8+3]*m[12+0]-m[8+0]*m[12+3]) +
+            ( m[4+3] * (m[8+0]*m[12+2]-m[8+2]*m[12+0])) +
+            ( m[4+0] * (m[8+2]*m[12+3]-m[8+3]*m[12+2])) ) +
+    m[2] * (  m[4+3] * (m[8+0]*m[12+1]-m[8+1]*m[12+0]) +
+            ( m[4+0] * (m[8+1]*m[12+3]-m[8+3]*m[12+1])) +
+            ( m[4+1] * (m[8+3]*m[12+0]-m[8+0]*m[12+3])) ) -
+    m[3] * (  m[4+0] * (m[8+1]*m[12+2]-m[8+2]*m[12+1]) +
+            ( m[4+1] * (m[8+2]*m[12+0]-m[8+0]*m[12+2])) +
+            ( m[4+2] * (m[8+0]*m[12+1]-m[8+1]*m[12+0])) )
 
+}
+
+//fp inverse4
+/// Find the inverse of a 4-by-4 matrix
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector::{length, sub};
+/// use geometry::matrix::{identity, inverse4, multiply4, MatrixType};
+/// let i = identity::<f32, 4>();
+/// assert!( length(&sub(inverse4(&i), &i, 1.)) < 1E-8 );
+/// for a in [ [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,0.,1., 0.,0.,1.,0.],
+///            [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,1., 0.,0.,1.,0.],
+///            [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,0., 0.,0.,1.,1.],
+///            [1.,3.,2.,1., 0.,2.,3.,3., -1.,2.,3.,2., 0.,0.,2.,1.] ] {
+///     let a_inv = inverse4(&a);
+///     assert!( length(&sub(multiply4(&a_inv,&a), &i, 1.)) < 1E-6 );
+/// }
+/// ```
+///
+pub fn inverse4<V:Float> (m:&[V;16]) -> [V;16] {
+    let d = determinant4(m);
+    let mut r = [V::zero(); 16];
+    if V::abs(d) > V::epsilon() {
+        let r_d = V::one() / d;
+
+        for j in 0..4 {
+            let a = ((j+1) & 3) * 4;
+            let b = ((j+2) & 3) * 4;
+            let c = ((j+3) & 3) * 4;
+            for i in 0..4 {
+                let x = (i+1) & 3;
+                let y = (i+2) & 3;
+                let z = (i+3) & 3;
+                let sc = if (i+j)&1 == 0 {V::one()} else {-V::one()};
+                r[i*4+j] = ( ( m[a+x]*m[b+y]-m[b+x]*m[a+y]) * m[c+z] +
+                             ( m[a+y]*m[b+z]-m[b+y]*m[a+z]) * m[c+x] +
+                             ( m[a+z]*m[b+x]-m[b+z]*m[a+x]) * m[c+y] ) *  sc * r_d;
+            }
+        }
+    }
+    r
 }
 
 //fp multiply2

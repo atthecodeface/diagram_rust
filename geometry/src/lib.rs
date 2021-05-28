@@ -62,8 +62,8 @@ let x = [1., 0.];
 assert_eq!( vector::dot(&x, &y), 0., "Dot product of X and Y axis vectors is zero");
 let xy = vector::add(x,&y,2.);
 assert_eq!( xy, [1., 2.], "x + 2*y");
-assert_eq!( vector::len_sq(&xy), (5.), "|x + 2*y|^2 = 5");
-assert_eq!( vector::len(&xy), (5.0f64).sqrt(), "|x + 2*y| = sqrt(5)");
+assert_eq!( vector::length_sq(&xy), (5.), "|x + 2*y|^2 = 5");
+assert_eq!( vector::length(&xy), (5.0f64).sqrt(), "|x + 2*y| = sqrt(5)");
 ```
 
 !*/
@@ -119,19 +119,34 @@ pub mod matrix   {
 }
 
 //a Generic types as per GLSL
+/// GLSL 2-component vector of float
 pub type Vec2 = [f32;2];
+/// GLSL 3-component vector of float
 pub type Vec3 = [f32;3];
+/// GLSL 4-component vector of float
 pub type Vec4 = [f32;4];
+/// GLSL 2-component vector of double
 pub type DVec2 = [f64;2];
+/// GLSL 3-component vector of double
 pub type DVec3 = [f64;3];
+/// GLSL 4-component vector of double
 pub type DVec4 = [f64;4];
+/// GLSL 2-component vector of signed integer
 pub type IVec2 = [i32;2];
+/// GLSL 3-component vector of signed integer
 pub type IVec3 = [i32;3];
+/// GLSL 4-component vector of signed integer
 pub type IVec4 = [i32;4];
+/// GLSL 2x2 floating-point matrix
 pub type Mat2 = [f32;4];
+/// GLSL 3x3 floating-point matrix
 pub type Mat3 = [f32;9];
+/// GLSL 4x4 floating-point matrix
 pub type Mat4 = [f32;16];
+/// GLSL 2x2 double-precision floating-point matrix
 pub type DMat2 = [f64;4];
+/// GLSL 3x3double-precision floating-point matrix
 pub type DMat3 = [f64;9];
+/// GLSL 4x4 double-precision floating-point matrix
 pub type DMat4 = [f64;16];
 

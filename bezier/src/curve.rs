@@ -356,7 +356,7 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// `straightness` is thus independent of the length of the Bezier
     pub fn is_straight(&self, straightness:V) -> bool {
         fn straightness_of_control<V:Float, const D:usize>(p:&[V;D], lp2:V, c:&[V;D]) -> (V,V) {
-            let lc2 = vector::len_sq(c);
+            let lc2 = vector::length_sq(c);
             if lc2 < V::epsilon() {
                 (V::zero(),lp2)
             } else if lp2 < V::epsilon() {
@@ -372,14 +372,14 @@ impl <V:Float, const D:usize> Bezier<V,D> {
             2 => true,
             3 => {
                 let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::len_sq(&p);
+                let lp2 = vector::length_sq(&p);
                 let c = vector::sub(self.pts[2], &self.pts[0], one);
                 let (c_s, sc) = straightness_of_control(&p, lp2, &c);
                 c_s <= straightness * sc
             },
             _ => {
                 let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::len_sq(&p);
+                let lp2 = vector::length_sq(&p);
                 let c0 = vector::sub(self.pts[2], &self.pts[0], one);
                 let (c0_s, sc0) = straightness_of_control(&p, lp2, &c0);
                 let c1 = vector::sub(self.pts[3], &self.pts[0], one);
@@ -760,11 +760,11 @@ mod test_bezier {
         let p2 = [10.,1.];
         let p3 = [20.,0.];
         let p4 = [20.,1.];
-        let sp0 = vector::scale_coords(p0,&[10.,10.]);
-        let sp1 = vector::scale_coords(p1,&[10.,10.]);
-        let sp2 = vector::scale_coords(p2,&[10.,10.]);
-        let sp3 = vector::scale_coords(p3,&[10.,10.]);
-        let sp4 = vector::scale_coords(p4,&[10.,10.]);
+        let sp0 = vector::scale(p0,10.);
+        let sp1 = vector::comp_mult(p1,&[10.,10.]);
+        let sp2 = vector::comp_mult(p2,&[10.,10.]);
+        let sp3 = vector::comp_mult(p3,&[10.,10.]);
+        let sp4 = vector::comp_mult(p4,&[10.,10.]);
 
         bezier_straight_as( &Bezier::line(&p0, &p1), 1E-10 );
         bezier_straight_as( &Bezier::line(&p0, &p2), 1E-10 );
