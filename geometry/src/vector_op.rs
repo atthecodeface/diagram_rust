@@ -46,7 +46,7 @@ pub fn zero<V:Num,const D:usize> () -> [V; D] { [V::zero();D] }
 /// assert_eq!( a, [0., 0., 0.]);
 /// ```
 ///
-pub fn set_zero<V:Num,const D:usize> (v:&mut [V;D]) {
+pub fn set_zero<V:Num> (v:&mut [V]) {
     for c in v.iter_mut() { c.set_zero(); }
 }
 
@@ -62,7 +62,7 @@ pub fn set_zero<V:Num,const D:usize> (v:&mut [V;D]) {
 /// assert!( vector::is_zero(&a) );
 /// ```
 ///
-pub fn is_zero<V:Num,const D:usize> (v:&[V;D]) -> bool {
+pub fn is_zero<V:Num> (v:&[V]) -> bool {
     for c in v { if !c.is_zero() {return false;}}
     true
 }

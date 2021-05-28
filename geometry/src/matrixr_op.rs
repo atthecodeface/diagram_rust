@@ -23,56 +23,63 @@ use crate::vector_op as vector;
 //a Constructors
 //fp zero
 /// Crate a new matrix which is all zeros
-pub fn zero<V:Num,const R:usize,const C:usize> () -> [V; R*C] { [V::zero();R*C] }
+pub fn zero<V:Num,const RC:usize> () -> [V; RC] { [V::zero();RC] }
 
 //mp set_zero
 /// Set the matrix to have all elements of zero
-pub fn set_zero<V:Num,const R:usize,const C:usize> (m:&mut [V;R*C]) {
+pub fn set_zero<V:Num> (m:&mut [V]) {
     vector::set_zero(m)
 }
 
 //fp is_zero
 /// Return true if the matrix is all zeros
-pub fn is_zero<V:Num,const R:usize,const C:usize> (m:&[V;R*C]) -> bool {
+pub fn is_zero<V:Num> (m:&[V]) -> bool {
     vector::is_zero(m)
 }
 
 //cp scale
 /// Consume the vector and return a new vector that is the original
 /// scaled in each coordinate a single scaling factor
-pub fn scale<V:Num,const R:usize,const C:usize> (m:[V;R*C], s:V) -> [V;R*C] {
+pub fn scale<V:Num,const RC:usize> (m:[V;RC], s:V) -> [V;RC] {
     vector::scale(m, s)
 }
 
 //cp reduce
 /// Consume the vector and return a new vector that is the original
 /// reduces in scale in each coordinate by a single scaling factor
-pub fn reduce<V:Num,const R:usize,const C:usize> (m:[V;R*C], s:V) -> [V;R*C] {
+pub fn reduce<V:Num,const RC:usize> (m:[V;RC], s:V) -> [V;RC] {
     vector::reduce(m, s)
 }
 
 //cp add
 /// Consume the vector, and return a new vector that is the sum of
 /// this and a borrowed other vector scaled
-pub fn add<V:Num,const R:usize,const C:usize> (m:[V;R*C], other:&[V;R*C], scale:V) -> [V;R*C] {
+pub fn add<V:Num,const RC:usize> (m:[V;RC], other:&[V;RC], scale:V) -> [V;RC] {
     vector::add(m, other, scale)
+}
+
+//cp sub
+/// Consume the vector, and return a new vector that is the difference of
+/// this and a borrowed other vector scaled
+pub fn sub<V:Num,const RC:usize> (m:[V;RC], other:&[V;RC], scale:V) -> [V;RC] {
+    vector::sub(m, other, scale)
 }
 
 //cp absmax
 /// Consume the vector, and return a new vector that is the sum of
 /// this and a borrowed other vector scaled
-pub fn absmax<V:Float,const R:usize,const C:usize> (m:&[V;R*C]) -> V {
+pub fn absmax<V:Float> (m:&[V]) -> V {
     m.iter().fold(V::zero(), |acc, c| V::max(acc,V::abs(*c)))
 }
 
 //cp normalize
 /// Update the new matrix with every element e scaled so that max(abs(e)) is 1.
-pub fn normalize<V:Float,const R:usize,const C:usize> (mut m:[V;R*C]) -> [V;R*C] {
-    let l = absmax::<V,R,C>(&m);
+pub fn normalize<V:Float,const RC:usize,const C:usize> (mut m:[V;RC]) -> [V;RC] {
+    let l = absmax::<V>(&m);
     if l < V::epsilon() {
-        set_zero::<V,R,C>(&mut m); m
+        set_zero::<V>(&mut m); m
     } else {
-        reduce::<V,R,C>(m, l)
+        reduce::<V,RC>(m, l)
     }
 }
 
@@ -82,8 +89,9 @@ pub fn normalize<V:Float,const R:usize,const C:usize> (mut m:[V;R*C]) -> [V;R*C]
 /// The matrices are row-major, so successive entries of m are adjacent columns
 ///
 /// The output matrix has adjacent entries that are therefore adjacent rows in m
-pub fn transpose<V:Float,const R:usize,const C:usize> (m:[V;R*C]) -> [V;R*C] {
-    let mut v = zero::<V,R,C>();
+pub fn transpose<V:Float,const RC:usize,const R:usize,const C:usize> (m:[V;RC]) -> [V;RC] {
+    assert_eq!(RC, R*C);
+    let mut v = zero::<V,RC>();
     for r in 0..R {
         for c in 0..C {
             v[r+c*R] = m[c+r*C];
@@ -91,24 +99,6 @@ pub fn transpose<V:Float,const R:usize,const C:usize> (m:[V;R*C]) -> [V;R*C] {
     }
     v
 }
-
-//mp multiply_old
-#[allow(dead_code)]
-/// Multiply two matrices
-fn multiply_old<V:Float,const R:usize,const X:usize,const C:usize> (a:&[V;R*X], b:&[V;X*C]) -> [V;R*C] {
-    let mut m = [V::zero();R*C];
-    for r in 0..R {
-        for c in 0..C {
-            let mut v = V::zero();
-            for x in 0..X {
-                v = v + a[r*X+x]*b[x*C+c];
-            }
-            m[r*C+c] = v;
-        }
-    }
-    m
-}
-#[warn(dead_code)]
 
 //mp multiply
 /// Multiply two matrices
@@ -180,24 +170,24 @@ pub fn fmt<V:Num,const C:usize>(f: &mut std::fmt::Formatter, v : &[V]) -> std::f
 ///
 /// ```
 /// use geometry::matrix::{identity, MatrixType};
-/// assert_eq!( format!("{}", MatrixType::<f32,2,2>::new(&identity::<f32,2>())), "[1,0 0,1]" );
+/// assert_eq!( format!("{}", MatrixType::<f32,4,2>::new(&identity::<f32,2>())), "[1,0 0,1]" );
 /// ```
 ///
 #[derive(Debug)]
-pub struct MatrixType<'a, V:Num,const R:usize,const C:usize> where [(); R*C]:Sized {
+pub struct MatrixType<'a, V:Num,const RC:usize,const C:usize>  {
     /// Contents of the matrix
-    m : &'a [V;R*C],
+    m : &'a [V;RC],
 }
 
 //ip MatrixType
-impl <'a, V:Num,const R:usize,const C:usize> MatrixType<'a,V,R,C>  where [(); R*C]:Sized {
+impl <'a, V:Num,const RC:usize,const C:usize> MatrixType<'a,V,RC,C> {
     //fp new
     /// Create a new MatrixType by borrowing an array of Num; this may then be formatted using its Display trait
-    pub fn new(m:&'a [V;R*C]) -> Self { Self {m} }
+    pub fn new(m:&'a [V;RC]) -> Self { Self {m} }
 }
 
 //ip Display for MatrixType
-impl <'a, V:Num,const R:usize,const C:usize> std::fmt::Display for MatrixType<'a,V,R,C>  where [(); R*C]:Sized {
+impl <'a, V:Num,const RC:usize,const C:usize> std::fmt::Display for MatrixType<'a,V,RC,C>{
     //
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result { fmt::<V,C>(f, self.m) }
 }
