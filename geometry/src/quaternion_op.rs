@@ -21,6 +21,7 @@ use crate::{Num, Float};
 use crate::vector_op as vector;
 use crate::matrix_op as matrix;
 
+//a Constructors and desconstructors
 //fp new
 /// Create a new quaternion
 pub fn new<V:Num>() -> [V; 4] {
@@ -45,7 +46,44 @@ pub fn identity<V:Num>() -> [V;4] {
     [V::zero(), V::zero(), V::zero(), V::one()]
 }
 
-//mp invert
+//fp of_axis_angle
+/// Find the quaternion for a rotation of an angle around an axis
+pub fn of_axis_angle<V:Float>(axis:&[V;3], angle:V) -> [V;4] {
+    let (s,c) = V::sin_cos(angle / V::from(2).unwrap());
+        let i = s * axis[0];
+        let j = s * axis[1];
+        let k = s * axis[2];
+        let r = c;
+    [ i, j, k, r ]
+}
+
+//fp of_rotation
+/// Find the quaternion of a Matrix3 assuming it is purely a rotation
+pub fn of_rotation<V:Float>(rotation:&[V;9]) -> [V;4] {
+    let axis = vector::axis_of_rotation3(rotation);
+
+    // Find a decent vector not parallel to the axis
+    let mut w = [V::one(), V::zero(), V::zero()];
+    if V::abs(axis[0]) > (V::from(9).unwrap() / V::from(10).unwrap()) { w[0] = V::zero(); w[1] = V::one(); }
+
+    // Find three vectors (axis, na0, na1) that are all mutually perpendicular
+    let na0 = vector::normalize(vector::cross_product3(&w, &axis));
+    let na1 = vector::normalize(vector::cross_product3(&axis, &na0));
+
+    // Rotate na0, na1 around the axis of rotation by angle A - i.e. apply 'rotation'
+    let na0_r = matrix::transform_vec3( &rotation, &na0 );
+    let na1_r = matrix::transform_vec3( &rotation, &na1 );
+
+    //  Get angle of rotation
+    let cos_angle =  vector::dot(&na0, &na0_r);
+    let sin_angle = -vector::dot(&na0, &na1_r);
+    let angle     = V::atan2(sin_angle, cos_angle);
+
+    of_axis_angle(&axis, angle)
+}
+
+//a Mapping functions
+//cp invert
 /// Get the quaternion inverse
 pub fn invert<V:Float>(a:&[V;4]) -> [V;4] {
     let l = vector::len_sq(a);
@@ -58,19 +96,19 @@ pub fn invert<V:Float>(a:&[V;4]) -> [V;4] {
        a[3]*r_l ]
 }
 
-//fp conjugate
+//cp conjugate
 /// Find the conjugate of a quaternion
 pub fn conjugate<V:Num>(a:&[V;4]) -> [V;4] {
     [ -a[0], -a[1], -a[2], a[3] ]
 }
 
-//mp normalize
+//cp normalize
 /// Find the conjugate of a quaternion
 pub fn normalize<V:Float>(a:[V;4]) -> [V;4] {
     vector::normalize(a)
 }
 
-//fp rotate_x
+//cp rotate_x
 /// Find a rotation about the X-axis
 pub fn rotate_x<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     let (s,c) = V::sin_cos(angle / V::from(2).unwrap());
@@ -81,7 +119,7 @@ pub fn rotate_x<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     [ i, j, k, r ]
 }
 
-//fp rotate_y
+//cp rotate_y
 /// Find a rotation about the Y-axis
 pub fn rotate_y<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     let (s,c) = V::sin_cos(angle / V::from(2).unwrap());
@@ -92,7 +130,7 @@ pub fn rotate_y<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     [ i, j, k, r ]
 }
 
-//fp rotate_z
+//cp rotate_z
 /// Find a rotation about the Z-axis
 pub fn rotate_z<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     let (s,c) = V::sin_cos(angle / V::from(2).unwrap());
@@ -103,9 +141,31 @@ pub fn rotate_z<V:Float>(a:&[V;4], angle:V) -> [V;4] {
     [ i, j, k, r ]
 }
 
-//fp distance_to_sq
+//cp multiply
+/// Multiply two quaternions together
+pub fn multiply<V:Num>(a:&[V;4], b:&[V;4]) -> [V;4] {
+    let i = a[0]*b[3] + a[3]*b[0] + a[1]*b[2] - a[2]*b[1];
+    let j = a[1]*b[3] + a[3]*b[1] + a[2]*b[0] - a[0]*b[2];
+    let k = a[2]*b[3] + a[3]*b[2] + a[0]*b[1] - a[1]*b[0];
+    let r = a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2];
+    [ i, j, k, r ]
+}
+
+//fp nlerp
+/// A simple normalized LERP from one quaterion to another (not spherical)
+pub fn nlerp<V:Float>(t:V, in0:&[V;4], in1:&[V;4]) -> [V;4] {
+    let mut r = [V::zero(); 4];
+    let tn = V::one() - t;
+    for i in 0..4 {
+        r[i] = t * in0[i] + tn * in1[i];
+    }
+    normalize(r)
+}
+
+//a Operational functions
+//fp distance_sq
 /// Get a measure of the 'distance' between two quaternions
-pub fn distance_to_sq<V:Float>(a:&[V;4], b:&[V;4]) -> V {
+pub fn distance_sq<V:Float>(a:&[V;4], b:&[V;4]) -> V {
     let qi = invert(a);
     let mut qn = multiply(&qi, b);
     if qn[3] < V::zero() {
@@ -116,31 +176,10 @@ pub fn distance_to_sq<V:Float>(a:&[V;4], b:&[V;4]) -> V {
     vector::len_sq(&qn)
 }
 
-//fp distance_to
+//fp distance
 /// Get a measure of the 'distance' between two quaternions
-pub fn distance_to<V:Float>(a:&[V;4], b:&[V;4]) -> V {
-    distance_to_sq(a,b).sqrt()
-}
-
-//fp multiply
-/// Multiply two quaternions together
-pub fn multiply<V:Num>(a:&[V;4], b:&[V;4]) -> [V;4] {
-    let i = a[0]*b[3] + a[3]*b[0] + a[1]*b[2] - a[2]*b[1];
-    let j = a[1]*b[3] + a[3]*b[1] + a[2]*b[0] - a[0]*b[2];
-    let k = a[2]*b[3] + a[3]*b[2] + a[0]*b[1] - a[1]*b[0];
-    let r = a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2];
-    [ i, j, k, r ]
-}
-
-//fp of_axis_angle
-/// Find the quaternion for a rotation of an angle around an axis
-pub fn of_axis_angle<V:Float>(axis:&[V;3], angle:V) -> [V;4] {
-    let (s,c) = V::sin_cos(angle / V::from(2).unwrap());
-        let i = s * axis[0];
-        let j = s * axis[1];
-        let k = s * axis[2];
-        let r = c;
-    [ i, j, k, r ]
+pub fn distance<V:Float>(a:&[V;4], b:&[V;4]) -> V {
+    distance_sq(a,b).sqrt()
 }
 
 //fp get_axis_angle
@@ -178,41 +217,5 @@ pub fn to_euler<V:Float>(q:&[V;4]) -> (V,V,V) {
         }
     };
     (bank, heading, attitude)
-}
-
-//fp nlerp
-/// A simple normalized LERP from one quaterion to another (not spherical)
-pub fn nlerp<V:Float>(t:V, in0:&[V;4], in1:&[V;4]) -> [V;4] {
-    let mut r = [V::zero(); 4];
-    let tn = V::one() - t;
-    for i in 0..4 {
-        r[i] = t * in0[i] + tn * in1[i];
-    }
-    normalize(r)
-}
-
-//fp of_rotation
-/// Find the quaternion of a Matrix3 assuming it is purely a rotation
-pub fn of_rotation<V:Float>(rotation:&[V;9]) -> [V;4] {
-    let axis = vector::axis_of_rotation3(rotation);
-
-    // Find a decent vector not parallel to the axis
-    let mut w = [V::one(), V::zero(), V::zero()];
-    if V::abs(axis[0]) > (V::from(9).unwrap() / V::from(10).unwrap()) { w[0] = V::zero(); w[1] = V::one(); }
-
-    // Find three vectors (axis, na0, na1) that are all mutually perpendicular
-    let na0 = vector::normalize(vector::cross_product3(&w, &axis));
-    let na1 = vector::normalize(vector::cross_product3(&axis, &na0));
-
-    // Rotate na0, na1 around the axis of rotation by angle A - i.e. apply 'rotation'
-    let na0_r = matrix::transform_vec3( &rotation, &na0 );
-    let na1_r = matrix::transform_vec3( &rotation, &na1 );
-
-    //  Get angle of rotation
-    let cos_angle =  vector::inner_product(&na0, &na0_r);
-    let sin_angle = -vector::inner_product(&na0, &na1_r);
-    let angle     = V::atan2(sin_angle, cos_angle);
-
-    of_axis_angle(&axis, angle)
 }
 

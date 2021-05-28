@@ -126,7 +126,7 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     //mp get_distance
     /// Get the distance between the start and end points
     pub fn get_distance(&self) -> V {
-        vector::distance_to(&self.pts[0], &self.pts[1])
+        vector::distance(&self.pts[0], &self.pts[1])
     }
 
     //fp line
@@ -362,7 +362,7 @@ impl <V:Float, const D:usize> Bezier<V,D> {
             } else if lp2 < V::epsilon() {
                 (lc2,V::one())
             } else {
-                let cdp = vector::inner_product(c, p);
+                let cdp = vector::dot(c, p);
                 let c_s = V::sqrt(lp2*lc2 - cdp*cdp);
                 (c_s,lp2)
             }
@@ -527,7 +527,7 @@ impl <V:Float, const D:usize> Bezier<V,D> {
         let four  = V::from(4).unwrap();
         let v0    = vector::normalize(v0.clone());
         let v1    = vector::normalize(v1.clone());
-        let cos_alpha = vector::inner_product(&v0, &v1);
+        let cos_alpha = vector::dot(&v0, &v1);
         if cos_alpha >= nearly_one {
             // v0 and v1 point in the same direction
             let p0 = vector::add(corner.clone(), &v0, -radius);
@@ -567,7 +567,7 @@ mod test_bezier {
     type Point = [f64;2];
     //fi vec_eq
     pub fn vec_eq(v0:&[f64;2], v1:&[f64;2]) {
-        let d = vector::distance_to(v0, v1);
+        let d = vector::distance(v0, v1);
         assert!(d<1E-8, "mismatch in {:?} {:?}",v0, v1);
     }
     //fi pt_eq

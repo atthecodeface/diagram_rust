@@ -99,9 +99,9 @@ impl Transformation {
         self.rotation = quat::nlerp(t, &in0.rotation, &in1.rotation);
     }
     pub fn distance(&self, other:&Self) -> f32 {
-        let td = vector::distance_to(&self.translation, &other.translation);
-        let sd = vector::distance_to(&self.scale,       &other.scale);
-        let qd = quat::distance_to(  &self.rotation,    &other.rotation);
+        let td = vector::distance(&self.translation, &other.translation);
+        let sd = vector::distance(&self.scale,       &other.scale);
+        let qd = quat::distance(  &self.rotation,    &other.rotation);
         return td+sd+qd;
     }
     //zz All done

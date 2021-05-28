@@ -59,7 +59,7 @@ extern crate geometry;
 use geometry::vector;
 let y = [0., 1.];
 let x = [1., 0.];
-assert_eq!( vector::inner_product(&x, &y), 0., "Dot product of X and Y axis vectors is zero");
+assert_eq!( vector::dot(&x, &y), 0., "Dot product of X and Y axis vectors is zero");
 let xy = vector::add(x,&y,2.);
 assert_eq!( xy, [1., 2.], "x + 2*y");
 assert_eq!( vector::len_sq(&xy), (5.), "|x + 2*y|^2 = 5");
@@ -107,7 +107,7 @@ pub mod vector   {
     pub use super::vector_op::* ;
 }
 
-/// Quaternion library
+/// Quaternion module
 pub mod quat     {
     pub use super::quaternion_op::* ;
 }
@@ -117,3 +117,21 @@ pub mod matrix   {
     pub use super::matrixr_op::* ;
     pub use super::matrix_op::* ;
 }
+
+//a Generic types as per GLSL
+pub type Vec2 = [f32;2];
+pub type Vec3 = [f32;3];
+pub type Vec4 = [f32;4];
+pub type DVec2 = [f64;2];
+pub type DVec3 = [f64;3];
+pub type DVec4 = [f64;4];
+pub type IVec2 = [i32;2];
+pub type IVec3 = [i32;3];
+pub type IVec4 = [i32;4];
+pub type Mat2 = [f32;4];
+pub type Mat3 = [f32;9];
+pub type Mat4 = [f32;16];
+pub type DMat2 = [f64;4];
+pub type DMat3 = [f64;9];
+pub type DMat4 = [f64;16];
+

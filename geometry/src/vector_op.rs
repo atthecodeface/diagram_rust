@@ -20,7 +20,7 @@ limitations under the License.
 use crate::{Num, Float};
 use super::matrix_op as matrix;
 
-//a Num
+//a Vector constructors
 //fp zero
 /// Create a zero vector of the correct size
 ///
@@ -67,6 +67,8 @@ pub fn is_zero<V:Num,const D:usize> (v:&[V;D]) -> bool {
     true
 }
 
+
+//a Combinations
 //cp scale
 /// Scale ever element of a vector by a single scaling factor
 //
@@ -145,87 +147,6 @@ pub fn sub<V:Num,const D:usize> (mut v:[V;D], other:&[V;D], scale:V) -> [V;D] {
     v
 }
 
-//mp len_sq
-/// Return the length^2 of the vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::len_sq(&[3., 4.]), 25. );
-/// ```
-///
-pub fn len_sq<V:Num> (v:&[V]) -> V {
-    let mut r = V::zero();
-    for c in v.iter() { r = r + (*c) * (*c) }
-    r
-}
-
-//mp len
-/// Return the length of the vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::len(&[3., 4.]), 5. );
-/// ```
-///
-pub fn len<V:Float> (v:&[V]) -> V {
-    len_sq(v).sqrt()
-}
-
-//mp distance_to_sq
-/// Return the distance square between two vectors
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::distance_to_sq(&[1.,-1.], &[4., 3.]), 25. );
-/// ```
-///
-pub fn distance_to_sq<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    let mut r = V::zero();
-    for i in 0..D {
-        let d = v[i] - other[i];
-        r = r + d * d;
-    }
-    r
-}
-
-//mp distance_to
-/// Return the distance between two vectors
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::distance_to(&[1.,-1.], &[4., 3.]), 5. );
-/// ```
-///
-pub fn distance_to<V:Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    distance_to_sq(v,other).sqrt()
-}
-
-//mp inner_product
-/// Return the inner product (aka dot product or scalar product) of this and another vector
-///
-/// # Example
-///
-/// ```
-/// use geometry::vector;
-/// assert_eq!( vector::inner_product(&[1.,-1.], &[4., 1.]), 3. );
-/// ```
-///
-pub fn inner_product<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
-    let mut r = V::zero();
-    for i in 0..D {
-        r = r + v[i]*other[i];
-    }
-    r
-}
-
 //cp normalize
 /// Normalize (make unit length) a vector if possible
 ///
@@ -266,9 +187,9 @@ pub fn normalize<V:Float,const D:usize> (mut v:[V;D]) -> [V;D] {
 /// let a = [3., 4., 5.];
 /// let pivot = [3., 3., 0.];
 /// // Rotate by 90 degress anticlockwise about the Z-axis pivoting on (3,3,0)
-/// assert!( vector::distance_to_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 0, 1 ), &[2., 3., 5.] ) < 1E-8 );
+/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 0, 1 ), &[2., 3., 5.] ) < 1E-8 );
 /// // Rotate by 90 degress anticlockwise about the X-axis pivoting on (3,3,0)
-/// assert!( vector::distance_to_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 1, 2 ), &[3., -2., 1.] ) < 1E-8 );
+/// assert!( vector::distance_sq( &vector::rotate_around(a, &pivot, (90.0_f32).to_radians(), 1, 2 ), &[3., -2., 1.] ) < 1E-8 );
 /// ```
 ///
 pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V, c0:usize, c1:usize) -> [V;D] {
@@ -280,6 +201,88 @@ pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V,
     v[c0] = x1 + pivot[c0];
     v[c1] = y1 + pivot[c1];
     v
+}
+
+//a Accessors or mutations
+//mp len_sq
+/// Return the length^2 of the vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::len_sq(&[3., 4.]), 25. );
+/// ```
+///
+pub fn len_sq<V:Num> (v:&[V]) -> V {
+    let mut r = V::zero();
+    for c in v.iter() { r = r + (*c) * (*c) }
+    r
+}
+
+//mp len
+/// Return the length of the vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::len(&[3., 4.]), 5. );
+/// ```
+///
+pub fn len<V:Float> (v:&[V]) -> V {
+    len_sq(v).sqrt()
+}
+
+//mp distance_sq
+/// Return the distance square between two vectors
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance_sq(&[1.,-1.], &[4., 3.]), 25. );
+/// ```
+///
+pub fn distance_sq<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    let mut r = V::zero();
+    for i in 0..D {
+        let d = v[i] - other[i];
+        r = r + d * d;
+    }
+    r
+}
+
+//mp distance
+/// Return the distance between two vectors
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::distance(&[1.,-1.], &[4., 3.]), 5. );
+/// ```
+///
+pub fn distance<V:Float,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    distance_sq(v,other).sqrt()
+}
+
+//mp dot
+/// Return the inner product (aka dot product or scalar product) of this and another vector
+///
+/// # Example
+///
+/// ```
+/// use geometry::vector;
+/// assert_eq!( vector::dot(&[1.,-1.], &[4., 1.]), 3. );
+/// ```
+///
+pub fn dot<V:Num,const D:usize> (v:&[V;D], other:&[V;D]) -> V {
+    let mut r = V::zero();
+    for i in 0..D {
+        r = r + v[i]*other[i];
+    }
+    r
 }
 
 //mp cross_product3
@@ -294,8 +297,8 @@ pub fn rotate_around<V:Float,const D:usize> (mut v:[V;D], pivot:&[V;D], angle:V,
 /// let a = [3., 4., 5.];
 /// let b = [2., 17., 1.];
 /// let x = vector::cross_product3(&a, &b);
-/// assert!( vector::inner_product( &a, &x ) < 1E-8 );
-/// assert!( vector::inner_product( &b, &x ) < 1E-8 );
+/// assert!( vector::dot( &a, &x ) < 1E-8 );
+/// assert!( vector::dot( &b, &x ) < 1E-8 );
 ///
 /// let x = [1., 0., 0.];
 /// let y = [0., 1., 0.];
@@ -428,7 +431,7 @@ pub fn axis_of_rotation3<V:Float>(rotation:&[V;9]) -> [V;3] {
             last_v = v;
             v = normalize(matrix::transform_vec3( &rot_min_id_i, &v ));
         }
-        if distance_to_sq(&v, &last_v) < almost_zero { return v; }
+        if distance_sq(&v, &last_v) < almost_zero { return v; }
     }
     [V::zero(); 3]
 }
