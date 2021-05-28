@@ -191,6 +191,8 @@ pub struct MatrixType<'a, V:Num,const R:usize,const C:usize> where [(); R*C]:Siz
 
 //ip MatrixType
 impl <'a, V:Num,const R:usize,const C:usize> MatrixType<'a,V,R,C>  where [(); R*C]:Sized {
+    //fp new
+    /// Create a new MatrixType by borrowing an array of Num; this may then be formatted using its Display trait
     pub fn new(m:&'a [V;R*C]) -> Self { Self {m} }
 }
 
