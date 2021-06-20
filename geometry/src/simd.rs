@@ -9,6 +9,12 @@ impl std::ops::Add<F32x4Vec4> for F32x4Vec4 { type Output = Self; fn add(self, o
 impl std::ops::Sub<F32x4Vec4> for F32x4Vec4 { type Output = Self; fn sub(self, other: Self) -> Self { Self(self.0 - other.0) } }
 impl std::ops::Mul<F32x4Vec4> for F32x4Vec4 { type Output = Self; fn mul(self, other: Self) -> Self { Self(self.0 * other.0) } }
 impl std::ops::Mul<f32>       for F32x4Vec4 { type Output = Self; fn mul(self, other: f32)  -> Self { Self(self.0 * other) } }
+impl std::ops::Div<f32>       for F32x4Vec4 { type Output = Self; fn div(self, other: f32)  -> Self { Self(self.0 / other) } }
+impl std::ops::AddAssign<F32x4Vec4> for F32x4Vec4 { fn add_assign(&mut self, other: Self) { self.0 += other.0; } }
+impl std::ops::SubAssign<F32x4Vec4> for F32x4Vec4 { fn sub_assign(&mut self, other: Self) { self.0 -= other.0; } }
+impl std::ops::MulAssign<F32x4Vec4> for F32x4Vec4 { fn mul_assign(&mut self, other: Self) { self.0 *= other.0; } }
+impl std::ops::MulAssign<f32>       for F32x4Vec4 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
+impl std::ops::DivAssign<f32>       for F32x4Vec4 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;4]> for F32x4Vec4 { fn as_ref(&self) -> &[f32;4] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;4]>(&self.0) } } }
 
 impl Vector<f32, 4> for F32x4Vec4 {
@@ -31,6 +37,12 @@ impl std::ops::Add<F32x4Vec3> for F32x4Vec3 { type Output = Self; fn add(self, o
 impl std::ops::Sub<F32x4Vec3> for F32x4Vec3 { type Output = Self; fn sub(self, other: Self) -> Self { Self(self.0 - other.0) } }
 impl std::ops::Mul<F32x4Vec3> for F32x4Vec3 { type Output = Self; fn mul(self, other: Self) -> Self { Self(self.0 * other.0) } }
 impl std::ops::Mul<f32>       for F32x4Vec3 { type Output = Self; fn mul(self, other: f32)  -> Self { Self(self.0 * other) } }
+impl std::ops::Div<f32>       for F32x4Vec3 { type Output = Self; fn div(self, other: f32)  -> Self { Self(self.0 / other) } }
+impl std::ops::AddAssign<F32x4Vec3> for F32x4Vec3 { fn add_assign(&mut self, other: Self) { self.0 += other.0; } }
+impl std::ops::SubAssign<F32x4Vec3> for F32x4Vec3 { fn sub_assign(&mut self, other: Self) { self.0 -= other.0; } }
+impl std::ops::MulAssign<F32x4Vec3> for F32x4Vec3 { fn mul_assign(&mut self, other: Self) { self.0 *= other.0; } }
+impl std::ops::MulAssign<f32>       for F32x4Vec3 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
+impl std::ops::DivAssign<f32>       for F32x4Vec3 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;3]> for F32x4Vec3 { fn as_ref(&self) -> &[f32;3] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;3]>(&self.0) } } }
 
 impl Vector<f32, 3> for F32x4Vec3 {
@@ -52,6 +64,12 @@ impl std::ops::Add<F32x4Vec2> for F32x4Vec2 { type Output = Self; fn add(self, o
 impl std::ops::Sub<F32x4Vec2> for F32x4Vec2 { type Output = Self; fn sub(self, other: Self) -> Self { Self(self.0 - other.0) } }
 impl std::ops::Mul<F32x4Vec2> for F32x4Vec2 { type Output = Self; fn mul(self, other: Self) -> Self { Self(self.0 * other.0) } }
 impl std::ops::Mul<f32>       for F32x4Vec2 { type Output = Self; fn mul(self, other: f32)  -> Self { Self(self.0 * other) } }
+impl std::ops::Div<f32>       for F32x4Vec2 { type Output = Self; fn div(self, other: f32)  -> Self { Self(self.0 / other) } }
+impl std::ops::AddAssign<F32x4Vec2> for F32x4Vec2 { fn add_assign(&mut self, other: Self) { self.0 += other.0; } }
+impl std::ops::SubAssign<F32x4Vec2> for F32x4Vec2 { fn sub_assign(&mut self, other: Self) { self.0 -= other.0; } }
+impl std::ops::MulAssign<F32x4Vec2> for F32x4Vec2 { fn mul_assign(&mut self, other: Self) { self.0 *= other.0; } }
+impl std::ops::MulAssign<f32>       for F32x4Vec2 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
+impl std::ops::DivAssign<f32>       for F32x4Vec2 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;2]> for F32x4Vec2 { fn as_ref(&self) -> &[f32;2] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;2]>(&self.0) } } }
 
 impl Vector<f32, 2> for F32x4Vec2 {
@@ -73,6 +91,12 @@ impl std::ops::Add<F32x2Vec2> for F32x2Vec2 { type Output = Self; fn add(self, o
 impl std::ops::Sub<F32x2Vec2> for F32x2Vec2 { type Output = Self; fn sub(self, other: Self) -> Self { Self(self.0 - other.0) } }
 impl std::ops::Mul<F32x2Vec2> for F32x2Vec2 { type Output = Self; fn mul(self, other: Self) -> Self { Self(self.0 * other.0) } }
 impl std::ops::Mul<f32>       for F32x2Vec2 { type Output = Self; fn mul(self, other: f32)  -> Self { Self(self.0 * other) } }
+impl std::ops::Div<f32>       for F32x2Vec2 { type Output = Self; fn div(self, other: f32)  -> Self { Self(self.0 / other) } }
+impl std::ops::AddAssign<F32x2Vec2> for F32x2Vec2 { fn add_assign(&mut self, other: Self) { self.0 += other.0; } }
+impl std::ops::SubAssign<F32x2Vec2> for F32x2Vec2 { fn sub_assign(&mut self, other: Self) { self.0 -= other.0; } }
+impl std::ops::MulAssign<F32x2Vec2> for F32x2Vec2 { fn mul_assign(&mut self, other: Self) { self.0 *= other.0; } }
+impl std::ops::MulAssign<f32>       for F32x2Vec2 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
+impl std::ops::DivAssign<f32>       for F32x2Vec2 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;2]> for F32x2Vec2 { fn as_ref(&self) -> &[f32;2] {unsafe {std::mem::transmute::<&core_simd::f32x2, &[f32;2]>(&self.0) } } }
 
 impl Vector<f32, 2> for F32x2Vec2 {

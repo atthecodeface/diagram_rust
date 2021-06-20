@@ -27,7 +27,8 @@ pub trait VectorOp {
 //a Num and Float traits
 //tp Num
 /// Trait required for matrix or vector elements
-pub trait Num : std::ops::Neg<Output=Self> + num_traits::Num +
+pub trait Num : std::ops::Neg<Output=Self> +
+    num_traits::Num + num_traits::NumAssignOps +
     Clone + Copy + PartialEq + std::fmt::Display + std::fmt::Debug {}
 
 //tp Float
@@ -51,10 +52,15 @@ pub trait Vector<F:Float, const D:usize> : Copy
     + std::convert::AsRef<[F;D]>
     + std::fmt::Debug
     + std::ops::Add<Output = Self>
+    + std::ops::AddAssign
     + std::ops::Sub<Output = Self>
+    + std::ops::SubAssign
     + std::ops::Mul<Output = Self>
-    + std::ops::Mul<F> +
-    + std::ops::Div<F> {
+    + std::ops::MulAssign
+    + std::ops::Mul<F, Output = Self>
+    + std::ops::MulAssign<F>
+    + std::ops::Div<F, Output = Self>
+    + std::ops::DivAssign<F> {
         fn from_array(data:[F;D]) -> Self;
         fn zero() -> Self;
         fn is_zero(&self) -> bool;
@@ -72,13 +78,13 @@ pub trait Vector<F:Float, const D:usize> : Copy
     }
 
 //tt SqMatrix
-pub trait SqMatrix<F:Float, const D:usize, const D2:usize> : Copy
+pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Copy
     + std::convert::AsRef<[F;D2]>
     + std::ops::Add<Output = Self>
     + std::ops::Sub<Output = Self>
     + std::ops::Mul<Self, Output = Self>
-    + std::ops::Mul<F> +
-    + std::ops::Div<F> {
+    + std::ops::Mul<F, Output = Self>
+    + std::ops::Div<F, Output = Self> {
         fn from_array(data:[F;D2]) -> Self;
         fn identity() -> Self;
         fn zero() -> Self;
@@ -102,8 +108,8 @@ pub trait Vector3D<Scalar:Float> {
 pub trait Geometry3D<Scalar:Float> {
     type Vec3 : Vector<Scalar, 3>;
     type Vec4 : Vector<Scalar, 4>;
-    type Mat3 : SqMatrix<Scalar, 3, 9>;
-    type Mat4 : SqMatrix<Scalar, 4, 16>;
+    type Mat3 : SqMatrix<Self::Vec3, Scalar, 3, 9>;
+    type Mat4 : SqMatrix<Self::Vec4, Scalar, 4, 16>;
     // Might need to move transform3 to be inside Mat3 in which case Vec3 has to be part of Mat3 too
     fn transform3(m:&Self::Mat3, v:Self::Vec3) -> Self::Vec3;
     // fn perspective4

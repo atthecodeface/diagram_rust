@@ -19,6 +19,11 @@ impl <F:Float, const D:usize> std::ops::Add for FSlice<F, D> {
     }
 }
 
+//ip AddAssign for FSlice
+impl <F:Float, const D:usize> std::ops::AddAssign for FSlice<F, D> {
+    fn add_assign(&mut self, other: Self) { for i in 0..D {self.data[i] += other.data[i];} }
+}
+
 //ip Sub for FSlice
 impl <F:Float, const D:usize> std::ops::Sub for FSlice<F, D> {
     type Output = Self;
@@ -29,6 +34,27 @@ impl <F:Float, const D:usize> std::ops::Sub for FSlice<F, D> {
         }
         Self { data }
     }
+}
+
+//ip SubAssign for FSlice
+impl <F:Float, const D:usize> std::ops::SubAssign for FSlice<F, D> {
+    fn sub_assign(&mut self, other: Self) { for i in 0..D {self.data[i] -= other.data[i];} }
+}
+
+//ip Mul<FSlice> for FSlice
+impl <F:Float, const D:usize> std::ops::Mul<Self> for FSlice<F, D> {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let data = self.data;
+        let data = vector::comp_mult(data, &rhs.data);
+        Self { data }
+    }
+}
+
+//ip MulAssign for FSlice
+impl <F:Float, const D:usize> std::ops::MulAssign for FSlice<F, D> {
+    fn mul_assign(&mut self, other: Self) { for i in 0..D {self.data[i] *= other.data[i];} }
 }
 
 //ip Mul<F> for FSlice
@@ -42,15 +68,25 @@ impl <F:Float, const D:usize> std::ops::Mul<F> for FSlice<F, D> {
     }
 }
 
-//ip Mul<FSlice> for FSlice
-impl <F:Float, const D:usize> std::ops::Mul<Self> for FSlice<F, D> {
+//ip MulAssign<F> for FSlice
+impl <F:Float, const D:usize> std::ops::MulAssign<F> for FSlice<F, D> {
+    fn mul_assign(&mut self, other: F) { for i in 0..D {self.data[i] *= other;} }
+}
+
+//ip Div<F> for FSlice
+impl <F:Float, const D:usize> std::ops::Div<F> for FSlice<F, D> {
     type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn div(self, rhs: F) -> Self::Output {
         let data = self.data;
-        let data = vector::comp_mult(data, &rhs.data);
+        let data = vector::reduce(data, rhs);
         Self { data }
     }
+}
+
+//ip DivAssign<F> for FSlice
+impl <F:Float, const D:usize> std::ops::DivAssign<F> for FSlice<F, D> {
+    fn div_assign(&mut self, other: F) { for i in 0..D {self.data[i] /= other;} }
 }
 
 //ip Vector<F,D> for FSlice
@@ -110,17 +146,6 @@ impl <F:Float, const D:usize, const D2:usize> std::ops::Sub for FSlice2<F, D, D2
     }
 }
 
-//ip Mul<F> for FSlice2
-impl <F:Float, const D:usize, const D2:usize> std::ops::Mul<F> for FSlice2<F, D, D2> {
-    type Output = Self;
-
-    fn mul(self, rhs: F) -> Self::Output {
-        let data = self.data;
-        let data = vector::scale(data, rhs);
-        Self { data }
-    }
-}
-
 //ip Mul<FSlice2> for FSlice2
 impl <F:Float, const D:usize, const D2:usize> std::ops::Mul<Self> for FSlice2<F, D, D2> {
     type Output = Self;
@@ -132,11 +157,33 @@ impl <F:Float, const D:usize, const D2:usize> std::ops::Mul<Self> for FSlice2<F,
     }
 }
 
+//ip Mul<F> for FSlice2
+impl <F:Float, const D:usize, const D2:usize> std::ops::Mul<F> for FSlice2<F, D, D2> {
+    type Output = Self;
+
+    fn mul(self, rhs: F) -> Self::Output {
+        let data = self.data;
+        let data = vector::scale(data, rhs);
+        Self { data }
+    }
+}
+
+//ip Div<F> for FSlice2
+impl <F:Float, const D:usize, const D2:usize> std::ops::Div<F> for FSlice2<F, D, D2> {
+    type Output = Self;
+
+    fn div(self, rhs: F) -> Self::Output {
+        let data = self.data;
+        let data = vector::reduce(data, rhs);
+        Self { data }
+    }
+}
+
 //ip SqMatrix<F,D,D2> for FSlice2
 impl <F:Float, const D:usize, const D2:usize> std::convert::AsRef<[F;D2]> for FSlice2<F, D, D2> {
     fn as_ref(&self) -> &[F;D2] {&self.data}
 }
-impl <F:Float, const D:usize, const D2:usize> SqMatrix<F, D, D2> for FSlice2<F, D, D2> {
+impl <F:Float, const D:usize, const D2:usize> SqMatrix<FSlice<F,D>, F, D, D2> for FSlice2<F, D, D2> {
     fn from_array(data:[F;D2]) -> Self { Self { data  } }
     fn zero() -> Self {
         Self { data:vector::zero() }
