@@ -7,6 +7,41 @@ use super::{vector, matrix};
 #[derive(Clone, Copy, Debug)]
 pub struct FSlice<F:Float, const D:usize> { data: [F;D] }
 
+//ip
+impl  <F:Float, const D:usize>std::ops::Index<usize> for FSlice<F, D> {
+    type Output = F;
+    fn index(&self, index: usize) -> &F {
+        let slice: &[_] = self.as_ref();
+        &slice[index]
+    }
+}
+impl <F:Float, const D:usize> std::ops::IndexMut<usize> for FSlice<F, D> {
+    fn index_mut(&mut self, index: usize) -> &mut F {
+        let slice: &mut [_] = self.as_mut();
+        &mut slice[index]
+    }
+}
+
+impl <F:Float, const D:usize> std::convert::AsRef<[F;D]> for FSlice<F, D> {
+    fn as_ref(&self) -> &[F;D] {&self.data}
+}
+
+impl <F:Float, const D:usize> std::convert::AsRef<[F]> for FSlice<F, D> {
+    fn as_ref(&self) -> &[F] {&self.data}
+}
+
+impl <F:Float, const D:usize> std::convert::AsMut<[F;D]> for FSlice<F, D> {
+    fn as_mut(&mut self) -> &mut [F;D] {&mut self.data}
+}
+
+impl <F:Float, const D:usize> std::convert::AsMut<[F]> for FSlice<F, D> {
+    fn as_mut(&mut self) -> &mut [F] {&mut self.data}
+}
+
+impl <F:Float, const D:usize> std::default::Default for FSlice<F, D> {
+    fn default() -> Self { Self { data:vector::zero() } }
+}
+
 //ip Add for FSlice
 impl <F:Float, const D:usize> std::ops::Add for FSlice<F, D> {
     type Output = Self;
@@ -90,9 +125,6 @@ impl <F:Float, const D:usize> std::ops::DivAssign<F> for FSlice<F, D> {
 }
 
 //ip Vector<F,D> for FSlice
-impl <F:Float, const D:usize> std::convert::AsRef<[F;D]> for FSlice<F, D> {
-    fn as_ref(&self) -> &[F;D] {&self.data}
-}
 impl <F:Float, const D:usize> Vector<F, D> for FSlice<F, D> {
     fn from_array(data:[F;D]) -> Self { Self { data  } }
     fn zero() -> Self {
@@ -197,6 +229,9 @@ impl <F:Float, const D:usize, const D2:usize> SqMatrix<FSlice<F,D>, F, D, D2> fo
     fn set_zero(&mut self) {
         vector::set_zero(&mut self.data)
     }
+    fn transform(&self, v:FSlice<F,D>) -> FSlice<F,D> {
+        FSlice::from_array(matrix::multiply::<F,D2,D,D,D,D,1> (&self.data, v.as_ref()))
+    }
 }
 
 //a Vector3D and Geometry3D for FSlice/FSlice2
@@ -213,8 +248,5 @@ impl Geometry3D<f32> for f32 {
     type Vec4 = FSlice<f32,4>;
     type Mat3 = FSlice2<f32,3,9>;
     type Mat4 = FSlice2<f32,4,16>;
-    fn transform3(m:&Self::Mat3, v:Self::Vec3) -> Self::Vec3 {
-        Self::Vec3::from_array(matrix::multiply::<f32,9,3,3,3,3,1> (m.as_ref(), v.as_ref()))
-    }
 }
 

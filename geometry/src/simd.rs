@@ -16,6 +16,12 @@ impl std::ops::MulAssign<F32x4Vec4> for F32x4Vec4 { fn mul_assign(&mut self, oth
 impl std::ops::MulAssign<f32>       for F32x4Vec4 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
 impl std::ops::DivAssign<f32>       for F32x4Vec4 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;4]> for F32x4Vec4 { fn as_ref(&self) -> &[f32;4] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;4]>(&self.0) } } }
+impl std::convert::AsRef<[f32]> for F32x4Vec4 { fn as_ref(&self) -> &[f32] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;4]>(&self.0) } } }
+impl std::convert::AsMut<[f32;4]> for F32x4Vec4 { fn as_mut(&mut self) -> &mut [f32;4] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;4]>(&mut self.0) } } }
+impl std::convert::AsMut<[f32]> for F32x4Vec4 { fn as_mut(&mut self) -> &mut [f32] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;4]>(&mut self.0) } } }
+impl std::default::Default for F32x4Vec4 { fn default() -> Self { Self ( core_simd::f32x4::default() ) } }
+impl std::ops::Index<usize> for F32x4Vec4 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
+impl std::ops::IndexMut<usize> for F32x4Vec4 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
 impl Vector<f32, 4> for F32x4Vec4 {
     fn from_array(data:[f32;4]) -> Self { Self(core_simd::f32x4::from_array(data)) }
@@ -44,6 +50,12 @@ impl std::ops::MulAssign<F32x4Vec3> for F32x4Vec3 { fn mul_assign(&mut self, oth
 impl std::ops::MulAssign<f32>       for F32x4Vec3 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
 impl std::ops::DivAssign<f32>       for F32x4Vec3 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;3]> for F32x4Vec3 { fn as_ref(&self) -> &[f32;3] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;3]>(&self.0) } } }
+impl std::convert::AsRef<[f32]> for F32x4Vec3 { fn as_ref(&self) -> &[f32] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;3]>(&self.0) } } }
+impl std::convert::AsMut<[f32;3]> for F32x4Vec3 { fn as_mut(&mut self) -> &mut [f32;3] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;3]>(&mut self.0) } } }
+impl std::convert::AsMut<[f32]> for F32x4Vec3 { fn as_mut(&mut self) -> &mut [f32] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;3]>(&mut self.0) } } }
+impl std::default::Default for F32x4Vec3 { fn default() -> Self { Self ( core_simd::f32x4::default() ) } }
+impl std::ops::Index<usize> for F32x4Vec3 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
+impl std::ops::IndexMut<usize> for F32x4Vec3 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
 impl Vector<f32, 3> for F32x4Vec3 {
     fn from_array(data:[f32;3]) -> Self { Self(core_simd::f32x4::from_array([data[0],data[1],data[2],0.])) }
@@ -71,6 +83,12 @@ impl std::ops::MulAssign<F32x4Vec2> for F32x4Vec2 { fn mul_assign(&mut self, oth
 impl std::ops::MulAssign<f32>       for F32x4Vec2 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
 impl std::ops::DivAssign<f32>       for F32x4Vec2 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;2]> for F32x4Vec2 { fn as_ref(&self) -> &[f32;2] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;2]>(&self.0) } } }
+impl std::convert::AsRef<[f32]> for F32x4Vec2 { fn as_ref(&self) -> &[f32] {unsafe {std::mem::transmute::<&core_simd::f32x4, &[f32;2]>(&self.0) } } }
+impl std::convert::AsMut<[f32;2]> for F32x4Vec2 { fn as_mut(&mut self) -> &mut [f32;2] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;2]>(&mut self.0) } } }
+impl std::convert::AsMut<[f32]> for F32x4Vec2 { fn as_mut(&mut self) -> &mut [f32] {unsafe {std::mem::transmute::<&mut core_simd::f32x4, &mut [f32;2]>(&mut self.0) } } }
+impl std::default::Default for F32x4Vec2 { fn default() -> Self { Self ( core_simd::f32x4::default() ) } }
+impl std::ops::Index<usize> for F32x4Vec2 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
+impl std::ops::IndexMut<usize> for F32x4Vec2 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
 impl Vector<f32, 2> for F32x4Vec2 {
     fn from_array(data:[f32;2]) -> Self { Self(core_simd::f32x4::from_array([data[0],data[1],0.,0.])) }
@@ -98,6 +116,12 @@ impl std::ops::MulAssign<F32x2Vec2> for F32x2Vec2 { fn mul_assign(&mut self, oth
 impl std::ops::MulAssign<f32>       for F32x2Vec2 { fn mul_assign(&mut self, other: f32)  { self.0 *= other; } }
 impl std::ops::DivAssign<f32>       for F32x2Vec2 { fn div_assign(&mut self, other: f32)  { self.0 /= other; } }
 impl std::convert::AsRef<[f32;2]> for F32x2Vec2 { fn as_ref(&self) -> &[f32;2] {unsafe {std::mem::transmute::<&core_simd::f32x2, &[f32;2]>(&self.0) } } }
+impl std::convert::AsRef<[f32]> for F32x2Vec2 { fn as_ref(&self) -> &[f32] {unsafe {std::mem::transmute::<&core_simd::f32x2, &[f32;2]>(&self.0) } } }
+impl std::convert::AsMut<[f32;2]> for F32x2Vec2 { fn as_mut(&mut self) -> &mut [f32;2] {unsafe {std::mem::transmute::<&mut core_simd::f32x2, &mut [f32;2]>(&mut self.0) } } }
+impl std::convert::AsMut<[f32]> for F32x2Vec2 { fn as_mut(&mut self) -> &mut [f32] {unsafe {std::mem::transmute::<&mut core_simd::f32x2, &mut [f32;2]>(&mut self.0) } } }
+impl std::default::Default for F32x2Vec2 { fn default() -> Self { Self ( core_simd::f32x2::default() ) } }
+impl std::ops::Index<usize> for F32x2Vec2 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
+impl std::ops::IndexMut<usize> for F32x2Vec2 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
 impl Vector<f32, 2> for F32x2Vec2 {
     fn from_array(data:[f32;2]) -> Self { Self(core_simd::f32x2::from_array(data)) }

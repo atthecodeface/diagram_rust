@@ -48,9 +48,15 @@ impl Float for f64 {}
 
 //a Vector and SqMatrix
 //tt Vector
-pub trait Vector<F:Float, const D:usize> : Copy
-    + std::convert::AsRef<[F;D]>
+pub trait Vector<F:Float, const D:usize> : Clone
+    + Copy
     + std::fmt::Debug
+    + std::default::Default
+    + std::convert::AsRef<[F;D]>
+    + std::convert::AsMut<[F;D]>
+    + std::convert::AsRef<[F]>
+    + std::convert::AsMut<[F]>
+    + std::ops::Index<usize>
     + std::ops::Add<Output = Self>
     + std::ops::AddAssign
     + std::ops::Sub<Output = Self>
@@ -94,6 +100,7 @@ pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Copy
         // transpose
         // fn determinant(&self) -> F;
         // fn inverse(&self) -> Self;
+        fn transform(&self, v:V) -> V;
     }
 
 //a Vector3D, Geometry3D
@@ -110,8 +117,6 @@ pub trait Geometry3D<Scalar:Float> {
     type Vec4 : Vector<Scalar, 4>;
     type Mat3 : SqMatrix<Self::Vec3, Scalar, 3, 9>;
     type Mat4 : SqMatrix<Self::Vec4, Scalar, 4, 16>;
-    // Might need to move transform3 to be inside Mat3 in which case Vec3 has to be part of Mat3 too
-    fn transform3(m:&Self::Mat3, v:Self::Vec3) -> Self::Vec3;
     // fn perspective4
     // fn translate4
     // fn from_quat3
