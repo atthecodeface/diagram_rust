@@ -150,7 +150,7 @@ impl Instantiable {
                 n
             } else { // both are none - requires an identity matrix
                 let n = self.mesh_matrices.len();
-                self.mesh_matrices.push(matrix::identity::<f32,4>());
+                self.mesh_matrices.push(matrix::identity4());
                 n
             }
         };

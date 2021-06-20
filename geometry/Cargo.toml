@@ -5,3 +5,9 @@ version = "0.1.0"
 [dependencies.num-traits]
 version = "0.2.1"
 # default-features = false
+
+[dependencies]
+core_simd = { git = "https://github.com/rust-lang/stdsimd", optional = true }
+
+[features]
+simd = ["core_simd"]

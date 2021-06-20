@@ -18,7 +18,6 @@ limitations under the License.
 
 //a Imports
 use geometry::Float;
-use geometry::vector;
 use crate::line::BezierLineIter;
 
 //a BezierPointIter

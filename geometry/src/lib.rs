@@ -45,12 +45,22 @@ sin/cos, etc.
 The library does not expose any types: all of the operations it
 supports are provided through functions.
 
-## Caveat
+## Caveats
 
-For many operations the functions depend on const generics, and these
-can require the use of *nightly* at present. The usage of them is not
-complicated, and should not be unstable, but it is still early days
-for const generics, so there you go.
+The functions in the library use const generics, but as const generic
+evaulations are currently unstable it requires more consts than should
+be required. For example, to create an identity square matrix the
+`matrix::identity` function has the generic signature `<V:Num, const
+D2:usize, const D:usize>`. The value of `D2` *must* equal `D*D`. The
+function returns `[V; D2]`.
+
+Ideally the function should just take D as a const generic argument
+and the type would be `[V;D*D]`, but that is unstable (and there are
+some other issues).
+
+Additionally, the inference of a type for `V` is sometimes required to
+be forced, so there may be a small amount of turbofish notation such
+as `identity2::<f32>()`.
 
 ## Basic operation
 
@@ -69,36 +79,25 @@ assert_eq!( vector::length(&xy), (5.0f64).sqrt(), "|x + 2*y| = sqrt(5)");
 !*/
 
 //a Crates
-#![feature(const_evaluatable_checked)]
-#![feature(const_generics)]
 extern crate num_traits;
+#[cfg(feature="simd")]
+extern crate core_simd;
 
-//a Public trait
-//tp Num
-/// Trait required for matrix or vector elements
-pub trait Num : std::ops::Neg<Output=Self> + num_traits::Num +
-    Clone + Copy + PartialEq + std::fmt::Display + std::fmt::Debug {}
-
-//tp Float
-/// Trait required for matrix or vector elements such that also need operations such as sqrt, sin/cos, etc
-pub trait Float : Num + num_traits::Float {}
-
-//ti Num for f32/f64/i32/i64/isize
-impl Num for f32 {}
-impl Num for f64 {}
-impl Num for i32 {}
-impl Num for i64 {}
-impl Num for isize {}
-
-//ti Float for f32/f64
-impl Float for f32 {}
-impl Float for f64 {}
-
-//a Imports and exports
+//a Imports
+mod traits;
 mod vector_op;
 mod quaternion_op;
 mod matrixr_op;
 mod matrix_op;
+
+mod fslice;
+#[cfg(feature="simd")]
+mod simd;
+
+//a Exports
+pub use traits::*;
+#[cfg(feature="simd")]
+pub use simd::SimdVecF32A16;
 
 /// Vector functions module
 ///
@@ -118,7 +117,8 @@ pub mod matrix   {
     pub use super::matrix_op::* ;
 }
 
-//a Generic types as per GLSL
+/*a Stuff
+// a Generic types as per GLSL
 /// GLSL 2-component vector of float
 pub type Vec2 = [f32;2];
 /// GLSL 3-component vector of float
@@ -149,4 +149,4 @@ pub type DMat2 = [f64;4];
 pub type DMat3 = [f64;9];
 /// GLSL 4x4 double-precision floating-point matrix
 pub type DMat4 = [f64;16];
-
+ */

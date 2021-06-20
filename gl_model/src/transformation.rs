@@ -28,8 +28,8 @@ impl Transformation {
     }
     pub fn copy(&mut self, other:&Self) {
         self.translation = other.translation.clone();
-        self.scale = other.scale.clone();
-        self.rotation = other.rotation.clone();
+        self.scale       = other.scale.clone();
+        self.rotation    = other.rotation.clone();
     }
     pub fn combine(&mut self, base:&Self, other:&Self) {
         self.rotation    = quat::multiply( &base.rotation, &other.rotation );
@@ -64,9 +64,10 @@ impl Transformation {
         let r = quat::conjugate(&self.rotation);
         let mut m = matrix::from_quat4(r);
         for i in 0..3 {
-            m[i+0] /= self.scale[i];
-            m[i+4] /= self.scale[i];
-            m[i+8] /= self.scale[i];
+            let sc = 1. / self.scale[i];
+            m[i+0] *= sc;
+            m[i+4] *= sc;
+            m[i+8] *= sc;
         }
         m[12] -= self.translation[0];
         m[13] -= self.translation[1];

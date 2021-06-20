@@ -1,5 +1,9 @@
 BIN = ./target/debug/diagram --svg_indent=""
 
+.PHONY: help_me
+help_me:
+	@echo "cargo asm gl_model::bone::Bone::derive_matrices"
+
 .PHONY: test
 test:
 	cargo test

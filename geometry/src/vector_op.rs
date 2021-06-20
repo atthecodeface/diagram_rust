@@ -67,7 +67,6 @@ pub fn is_zero<V:Num> (v:&[V]) -> bool {
     true
 }
 
-
 //fp cross_product3
 /// Return the outer product (cross product) of two 3-dimensional vectors
 ///
@@ -191,6 +190,21 @@ pub fn mix<V:Float,const D:usize> (a:&[V;D], b:&[V;D], t:V) -> [V;D] {
 /// clearly has problems if the rotation is by 180 degrees, and is
 /// unstable for small rotations (as is any determination of the
 /// axis).
+///
+/// Another approach is to just consider it as a rotation matrix
+///
+/// Unit axis vector = (x,y,z); c=cos(angle), t=1-c, s=sin(angle)
+///
+/// Matrix:
+///
+///  t.x^2 + c       t.xy - s.z      t.xz + s.y
+///  t.yx + s.z      t.y^2 + c       t.yz - s.x
+///  t.zx - s.y      t.zy + s.x      t.z^2 + c
+///
+/// Adding the digaonal yields 3c + t = 2+2c
+/// Then subtracting across the diagonal yields 2sx, 2sy, 2sz
+///
+/// However, if 2+2c is close to 0 then this fails
 pub fn axis_of_rotation3<V:Float>(rotation:&[V;9]) -> [V;3] {
     let mut rot_min_id = rotation.clone();
     let almost_one  = V::from(99999).unwrap() / V::from(100000).unwrap();
@@ -485,4 +499,5 @@ pub fn fmt<V:Num>(f: &mut std::fmt::Formatter, v : &[V]) -> std::fmt::Result {
         a[0]=c0; a[1]=c1; a[2]=c2; a[3]=c3;
         return a
  */
+
 

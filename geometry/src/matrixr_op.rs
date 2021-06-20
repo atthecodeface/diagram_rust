@@ -169,8 +169,8 @@ pub fn fmt<V:Num,const C:usize>(f: &mut std::fmt::Formatter, v : &[V]) -> std::f
 /// # Example
 ///
 /// ```
-/// use geometry::matrix::{identity, MatrixType};
-/// assert_eq!( format!("{}", MatrixType::<f32,4,2>::new(&identity::<f32,2>())), "[1,0 0,1]" );
+/// use geometry::matrix::{identity2, MatrixType};
+/// assert_eq!( format!("{}", MatrixType::<f32,4,2>::new(&identity2())), "[1,0 0,1]" );
 /// ```
 ///
 #[derive(Debug)]

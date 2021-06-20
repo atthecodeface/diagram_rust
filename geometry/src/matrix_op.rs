@@ -22,12 +22,30 @@ use super::matrixr_op;
 
 //fp identity
 /// Create an identity square matrix of a given dimension
-pub fn identity<V:Num,const D:usize> () -> [V;D*D] {
-    let mut r = [V::zero(); D*D];
+pub fn identity<V:Num,const D2:usize,const D:usize> () -> [V;D2] {
+    let mut r = [V::zero(); D2];
     for i in 0..D {
         r[i*(D+1)] = V::one();
     }
     r
+}
+
+//fp identity2
+/// Create a 2-by-2 identity matrix
+pub fn identity2<V:Num>() -> [V;4] {
+    identity::<V,4,2>()
+}
+
+//fp identity3
+/// Create a 3-by-3 identity matrix
+pub fn identity3<V:Num>() -> [V;9] {
+    identity::<V,9,3>()
+}
+
+//fp identity4
+/// Create a 4-by-4 identity matrix
+pub fn identity4<V:Num>() -> [V;16] {
+    identity::<V,16,4>()
 }
 
 //fp determinant2
@@ -43,12 +61,12 @@ pub fn determinant2<V:Num> (m:&[V;4]) -> V {
 ///
 /// ```
 /// use geometry::vector::{length, sub};
-/// use geometry::matrix::{identity, inverse2, multiply2, MatrixType};
-/// let i = identity::<f32, 2>();
+/// use geometry::matrix::{identity2, inverse2, multiply2, MatrixType};
+/// let i = identity2();
 /// assert!( length(&sub(inverse2(&i), &i, 1.)) < 1E-8 );
-/// for a in [ [1.,0., 0.,1.],
-///            [1.,0., 1.,1.],
-///            [1.,2., 7.,2.] ] {
+/// for a in &[ [1.,0., 0.,1.],
+///             [1.,0., 1.,1.],
+///             [1.,2., 7.,2.] ] {
 ///     let a_inv = inverse2(&a);
 ///     assert!( length(&sub(multiply2(&a_inv,&a), &i, 1.)) < 1E-6 );
 /// }
@@ -82,12 +100,12 @@ pub fn determinant3<V:Num> (m:&[V;9]) -> V {
 ///
 /// ```
 /// use geometry::vector::{length, sub};
-/// use geometry::matrix::{identity, inverse3, multiply3, MatrixType};
-/// let i = identity::<f32, 3>();
+/// use geometry::matrix::{identity3, inverse3, multiply3, MatrixType};
+/// let i = identity3();
 /// assert!( length(&sub(inverse3(&i), &i, 1.)) < 1E-8 );
-/// for a in [ [1.,0.,0., 0.,1.,0.,  0.,0.,1.],
-///            [1.,0.,0., 0.,1.,1.,  0.,0.,1.],
-///            [1.,3.,2., 0.,2.,3., -1.,2.,3.] ] {
+/// for a in &[ [1.0,0.,0., 0.,1.,0.,  0.,0.,1.],
+///             [1.,0.,0., 0.,1.,1.,  0.,0.,1.],
+///             [1.,3.,2., 0.,2.,3., -1.,2.,3.] ] {
 ///     let a_inv = inverse3(&a);
 ///     assert!( length(&sub(multiply3(&a_inv,&a), &i, 1.)) < 1E-6 );
 /// }
@@ -166,13 +184,13 @@ pub fn determinant4<V:Num> (m:&[V;16]) -> V {
 ///
 /// ```
 /// use geometry::vector::{length, sub};
-/// use geometry::matrix::{identity, inverse4, multiply4, MatrixType};
-/// let i = identity::<f32, 4>();
+/// use geometry::matrix::{identity4, inverse4, multiply4, MatrixType};
+/// let i = identity4();
 /// assert!( length(&sub(inverse4(&i), &i, 1.)) < 1E-8 );
-/// for a in [ [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,0.,1., 0.,0.,1.,0.],
-///            [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,1., 0.,0.,1.,0.],
-///            [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,0., 0.,0.,1.,1.],
-///            [1.,3.,2.,1., 0.,2.,3.,3., -1.,2.,3.,2., 0.,0.,2.,1.] ] {
+/// for a in &[ [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,0.,1., 0.,0.,1.,0.],
+///             [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,1., 0.,0.,1.,0.],
+///             [1.,0.,0.,0., 0.,1.,0.,0., 0.,0.,1.,0., 0.,0.,1.,1.],
+///             [1.,3.,2.,1., 0.,2.,3.,3., -1.,2.,3.,2., 0.,0.,2.,1.] ] {
 ///     let a_inv = inverse4(&a);
 ///     assert!( length(&sub(multiply4(&a_inv,&a), &i, 1.)) < 1E-6 );
 /// }
