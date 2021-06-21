@@ -31,9 +31,10 @@ fn test_fslice() {
 #[cfg(feature="simd")]
 extern crate core_simd;
 #[cfg(feature="simd")]
-use geometry::{SimdVecF32A16};
-#[cfg(feature="simd")]
-#[test]
-fn test_simd() {
-    Banana::<SimdVecF32A16>::test_vec3();
+mod test_simd {
+    use geometry::simd::{VecF32A16};
+    #[test]
+    fn test_simd() {
+        super::Banana::<VecF32A16>::test_vec3();
+    }
 }

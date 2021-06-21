@@ -1,4 +1,4 @@
-use super::{Vector, Vector3D};
+use crate::{Vector, Vector3D};
 
 //a F32x4Vec4
 #[derive(Clone, Copy, Debug)]
@@ -23,6 +23,7 @@ impl std::default::Default for F32x4Vec4 { fn default() -> Self { Self ( core_si
 impl std::ops::Index<usize> for F32x4Vec4 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
 impl std::ops::IndexMut<usize> for F32x4Vec4 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
+//ip Vector<f32, 4> for F32x4Vec4
 impl Vector<f32, 4> for F32x4Vec4 {
     fn from_array(data:[f32;4]) -> Self { Self(core_simd::f32x4::from_array(data)) }
     fn zero() -> Self { Self(core_simd::f32x4::splat(0.)) }
@@ -57,6 +58,7 @@ impl std::default::Default for F32x4Vec3 { fn default() -> Self { Self ( core_si
 impl std::ops::Index<usize> for F32x4Vec3 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
 impl std::ops::IndexMut<usize> for F32x4Vec3 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
+//ip Vector<f32, 4> for F32x4Vec3
 impl Vector<f32, 3> for F32x4Vec3 {
     fn from_array(data:[f32;3]) -> Self { Self(core_simd::f32x4::from_array([data[0],data[1],data[2],0.])) }
     fn zero() -> Self { Self(core_simd::f32x4::splat(0.)) }
@@ -90,6 +92,7 @@ impl std::default::Default for F32x4Vec2 { fn default() -> Self { Self ( core_si
 impl std::ops::Index<usize> for F32x4Vec2 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
 impl std::ops::IndexMut<usize> for F32x4Vec2 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
+//ip Vector<f32, 4> for F32x4Vec2
 impl Vector<f32, 2> for F32x4Vec2 {
     fn from_array(data:[f32;2]) -> Self { Self(core_simd::f32x4::from_array([data[0],data[1],0.,0.])) }
     fn zero() -> Self { Self(core_simd::f32x4::splat(0.)) }
@@ -123,6 +126,7 @@ impl std::default::Default for F32x2Vec2 { fn default() -> Self { Self ( core_si
 impl std::ops::Index<usize> for F32x2Vec2 { type Output = f32; fn index(&self, index: usize) -> &f32 { let x:&[f32]=self.as_ref(); &x[index] } }
 impl std::ops::IndexMut<usize> for F32x2Vec2 { fn index_mut(&mut self, index: usize) -> &mut f32 { let x:&mut [f32]=self.as_mut(); &mut x[index] } }
 
+//ip Vector<f32, 2> for F32x2Vec2
 impl Vector<f32, 2> for F32x2Vec2 {
     fn from_array(data:[f32;2]) -> Self { Self(core_simd::f32x2::from_array(data)) }
     fn zero() -> Self { Self(core_simd::f32x2::splat(0.)) }
@@ -133,28 +137,3 @@ impl Vector<f32, 2> for F32x2Vec2 {
     fn dot(&self, other:&Self) -> f32 {(self.0 * other.0).horizontal_sum()}
 }
 
-//a SimdVecF32A16, SimdVecF32A8
-//tp SimdVecF32A16 - empty struct that provides a wrapper for the associated types
-pub struct SimdVecF32A16 {}
-
-impl Vector3D<f32> for SimdVecF32A16 {
-    type Vec2   = F32x4Vec2;
-    type Vec3   = F32x4Vec3;
-    type Vec4   = F32x4Vec4;
-}
-
-//tp SimdVecF32A8 - empty struct that provides a wrapper for the associated types
-pub struct SimdVecF32A8 {}
-impl Vector3D<f32> for SimdVecF32A8 {
-    type Vec2   = F32x2Vec2;
-    type Vec3   = F32x4Vec3;
-    type Vec4   = F32x4Vec4;
-}
-
-/*
-#[cfg(test)]
-fn test() {
-    let x = SimdVecF32A16{};
-    let y = <SimdVecF32A16 as Vector3D>::Vec3::zero();
-}
- */

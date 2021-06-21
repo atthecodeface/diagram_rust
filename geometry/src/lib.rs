@@ -118,9 +118,26 @@ pub mod matrix   {
 #[cfg(feature="simd")]
 extern crate core_simd;
 #[cfg(feature="simd")]
-mod simd;
-#[cfg(feature="simd")]
-pub use simd::{SimdVecF32A16, SimdVecF32A8};
+pub mod simd {
+    mod simd_vec;
+    pub use self::simd_vec::{F32x4Vec2, F32x4Vec3,F32x4Vec4, F32x2Vec2};
+
+    //tp SimdVecF32A16 - empty struct that provides a wrapper for the associated types
+    pub struct VecF32A16 {}
+    impl crate::Vector3D<f32> for VecF32A16 {
+        type Vec2   = F32x4Vec2;
+        type Vec3   = F32x4Vec3;
+        type Vec4   = F32x4Vec4;
+    }
+
+    //tp SimdVecF32A8 - empty struct that provides a wrapper for the associated types
+    pub struct VecF32A8 {}
+    impl crate::Vector3D<f32> for VecF32A8 {
+        type Vec2   = F32x2Vec2;
+        type Vec3   = F32x4Vec3;
+        type Vec4   = F32x4Vec4;
+    }
+}
 
 //a Implementations
 //a Vector3D and Geometry3D for f32/f64 using FSlice/FSlice2
