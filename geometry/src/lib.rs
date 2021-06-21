@@ -80,8 +80,6 @@ assert_eq!( vector::length(&xy), (5.0f64).sqrt(), "|x + 2*y| = sqrt(5)");
 
 //a Crates
 extern crate num_traits;
-#[cfg(feature="simd")]
-extern crate core_simd;
 
 //a Imports
 mod traits;
@@ -91,13 +89,12 @@ mod matrixr_op;
 mod matrix_op;
 
 mod fslice;
-#[cfg(feature="simd")]
-mod simd;
+mod fslice2;
 
 //a Exports
 pub use traits::*;
-#[cfg(feature="simd")]
-pub use simd::SimdVecF32A16;
+pub use fslice::FSlice;
+pub use fslice2::FSlice2;
 
 /// Vector functions module
 ///
@@ -115,6 +112,46 @@ pub mod quat     {
 pub mod matrix   {
     pub use super::matrixr_op::* ;
     pub use super::matrix_op::* ;
+}
+
+//a SIMD configuration
+#[cfg(feature="simd")]
+extern crate core_simd;
+#[cfg(feature="simd")]
+mod simd;
+#[cfg(feature="simd")]
+pub use simd::{SimdVecF32A16, SimdVecF32A8};
+
+//a Implementations
+//a Vector3D and Geometry3D for f32/f64 using FSlice/FSlice2
+//ip Vector3D for f32
+impl Vector3D<f32> for f32 {
+    type Vec2 = FSlice<f32,2>;
+    type Vec3 = FSlice<f32,3>;
+    type Vec4 = FSlice<f32,4>;
+}
+
+//ip Geometry3D for f32
+impl Geometry3D<f32> for f32 {
+    type Vec3 = FSlice<f32,3>;
+    type Vec4 = FSlice<f32,4>;
+    type Mat3 = FSlice2<f32,3,9>;
+    type Mat4 = FSlice2<f32,4,16>;
+}
+
+//ip Vector3D for f64
+impl Vector3D<f64> for f64 {
+    type Vec2 = FSlice<f64,2>;
+    type Vec3 = FSlice<f64,3>;
+    type Vec4 = FSlice<f64,4>;
+}
+
+//ip Geometry3D for f64
+impl Geometry3D<f64> for f64 {
+    type Vec3 = FSlice<f64,3>;
+    type Vec4 = FSlice<f64,4>;
+    type Mat3 = FSlice2<f64,3,9>;
+    type Mat4 = FSlice2<f64,4,16>;
 }
 
 /*a Stuff
