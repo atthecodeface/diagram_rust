@@ -89,22 +89,45 @@ impl <F:Float, const D:usize, const D2:usize>   std::default::Default for FSlice
 }
 
 //ip SqMatrix<F,D,D2> for FSlice2
-impl <F:Float, const D:usize, const D2:usize> SqMatrix<FSlice<F,D>, F, D, D2> for FSlice2<F, D, D2> {
-    fn from_array(data:[F;D2]) -> Self { Self { data  } }
-    fn zero() -> Self {
-        Self { data:vector::zero() }
+impl <F:Float> SqMatrix<FSlice<F,2>, F, 2, 4> for FSlice2<F, 2, 4> {
+    fn from_array(data:[F;4]) -> Self { Self { data  } }
+    fn zero() -> Self { Self { data:vector::zero() }    }
+    fn identity() -> Self { Self { data:vector::zero() }   }
+    fn is_zero(&self) -> bool { vector::is_zero(&self.data)    }
+    fn set_zero(&mut self) { vector::set_zero(&mut self.data)    }
+    fn transform(&self, v:FSlice<F,2>) -> FSlice<F,2> {
+        FSlice::from_array(matrix::multiply::<F,4,2,2,2,2,1> (&self.data, v.as_ref()))
     }
-    fn identity() -> Self {
-        Self { data:vector::zero() }
+    fn transpose(&self) -> Self {
+        Self::from_array(matrix::transpose::<F,4,2,2> (self.data) )
     }
-    fn is_zero(&self) -> bool {
-        vector::is_zero(&self.data)
+}
+
+impl <F:Float> SqMatrix<FSlice<F,3>, F, 3, 9> for FSlice2<F, 3, 9> {
+    fn from_array(data:[F;9]) -> Self { Self { data  } }
+    fn zero() -> Self { Self { data:vector::zero() }    }
+    fn identity() -> Self { Self { data:vector::zero() }   }
+    fn is_zero(&self) -> bool { vector::is_zero(&self.data)    }
+    fn set_zero(&mut self) { vector::set_zero(&mut self.data)    }
+    fn transform(&self, v:FSlice<F,3>) -> FSlice<F,3> {
+        FSlice::from_array(matrix::multiply::<F,9,3,3,3,3,1> (&self.data, v.as_ref()))
     }
-    fn set_zero(&mut self) {
-        vector::set_zero(&mut self.data)
+    fn transpose(&self) -> Self {
+        Self::from_array(matrix::transpose::<F,9,3,3> (self.data) )
     }
-    fn transform(&self, v:FSlice<F,D>) -> FSlice<F,D> {
-        FSlice::from_array(matrix::multiply::<F,D2,D,D,D,D,1> (&self.data, v.as_ref()))
+}
+
+impl <F:Float> SqMatrix<FSlice<F,4>, F, 4, 16> for FSlice2<F, 4, 16> {
+    fn from_array(data:[F;16]) -> Self { Self { data  } }
+    fn zero() -> Self { Self { data:vector::zero() }    }
+    fn identity() -> Self { Self { data:vector::zero() }   }
+    fn is_zero(&self) -> bool { vector::is_zero(&self.data)    }
+    fn set_zero(&mut self) { vector::set_zero(&mut self.data)    }
+    fn transform(&self, v:FSlice<F,4>) -> FSlice<F,4> {
+        FSlice::from_array(matrix::multiply::<F,16,4,4,4,4,1> (&self.data, v.as_ref()))
+    }
+    fn transpose(&self) -> Self {
+        Self::from_array(matrix::transpose::<F,16,4,4> (self.data) )
     }
 }
 

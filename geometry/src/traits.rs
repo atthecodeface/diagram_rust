@@ -97,7 +97,7 @@ pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Copy
         fn is_zero(&self) -> bool;
         fn set_zero(&mut self);
         // absmax
-        // transpose
+        fn transpose(&self) -> Self;
         // fn determinant(&self) -> F;
         // fn inverse(&self) -> Self;
         fn transform(&self, v:V) -> V;
