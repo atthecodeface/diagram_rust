@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::Float;
+use geometry::{Float, Vector};
 use crate::Bezier;
 
 //a BezierLineIter
@@ -27,24 +27,25 @@ use crate::Bezier;
 /// An iteration will provide (Pa, Pb) pairs of points, with
 /// the next iteration providing (Pb, Pc), then (Pc, Pd), etc;
 /// sharing the end/start points.
-pub struct BezierLineIter<V:Float, const D:usize> {
+pub struct BezierLineIter<F:Float, V:Vector<F,D>, const D:usize> {
     /// Maximum curviness of the line segments returned
-    straightness: V,
+    straightness: F,
     /// A stack of future beziers to examine
     /// The top of the stack is p0->p1; below that is p1->p2, etc
     /// These beziers will need to be split to achieve the maximum
     /// curviness
-    stack : Vec<Bezier<V,D>>
+    stack : Vec<Bezier<F,V,D>>
 }
 
 //pi BezierLineIter
-impl <V:Float, const D:usize> BezierLineIter<V,D> {
+impl <F, V, const D:usize> BezierLineIter<F, V, D>
+where F:Float, V:Vector<F,D> {
     //fp new
     /// Create a new Bezier line iterator for a given Bezier and
     /// straightness
     ///
     /// This clones the Bezier.
-    pub fn new(bezier:&Bezier<V,D>, straightness:V) -> Self {
+    pub fn new(bezier:&Bezier<F, V, D>, straightness:F) -> Self {
         let mut stack = Vec::new();
         stack.push(bezier.clone());
         Self { straightness, stack }
@@ -54,9 +55,10 @@ impl <V:Float, const D:usize> BezierLineIter<V,D> {
 }
 
 //ip Iterator for BezierLineIter
-impl <V:Float, const D:usize> Iterator for BezierLineIter<V,D> {
+impl <F, V, const D:usize> Iterator for BezierLineIter<F, V, D>
+where F:Float, V:Vector<F,D> {
     /// Item is a pair of points that make a straight line
-    type Item = ([V;D], [V;D]);
+    type Item = (V, V);
     /// next - return None or Some(pa,pb)
     ///
     /// It pops the first Bezier from the stack: this is (pa,px); if

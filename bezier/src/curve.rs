@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use geometry::vector;
-use geometry::Float;
+use geometry::{Float, Vector};
 use crate::BezierLineIter;
 use crate::BezierPointIter;
 
@@ -79,74 +79,79 @@ use crate::BezierPointIter;
 ///      p(t0) = u0.u0.p0 + 2(u0.t0).c + t0.t0.p1
 ///      p(t1) = u1.u1.p0 + 2(u1.t1).c + t1.t1.p1
 ///
+use std::marker::PhantomData;
 #[derive(Clone, Copy, PartialEq, Debug)]
-pub struct Bezier<V:Float, const D:usize> {
+pub struct Bezier<F, V, const D:usize>
+where F:Float, V:Vector<F,D> {
     /// Number of valid control points (2-4)
     num : usize,
     /// Control points - endpoints are always 0 and 1
-    pts : [[V;D];4],
+    pts : [V;4],
+    f:PhantomData<F>,
 }
 
 //ti Display for Bezier
-impl <V:Float, const D:usize> std::fmt::Display for Bezier<V,D> {
+impl <F, V, const D:usize> std::fmt::Display for Bezier<F, V, D>
+where F:Float, V:Vector<F,D> {
 
     //mp fmt - format a `Bezier` for display
     /// Display the `Bezier' as sets of points
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "[" )?;
-        vector::fmt(f,&self.pts[0])?;
+        vector::fmt(f,self.pts[0].as_ref())?;
         write!(f, "<-" )?;
-        if self.num > 2 {vector::fmt(f,&self.pts[2])?;}
+        if self.num > 2 {vector::fmt(f,self.pts[2].as_ref())?;}
         if self.num > 3 {
             write!(f, ":" )?;
-            vector::fmt(f,&self.pts[3])?;
+            vector::fmt(f,self.pts[3].as_ref())?;
         }
         write!(f, "->" )?;
-        vector::fmt(f,&self.pts[1])
+        vector::fmt(f,self.pts[1].as_ref())
     }
 
     //zz All done
 }
 
 //ip Bezier
-impl <V:Float, const D:usize> Bezier<V,D> {
+impl <F, V, const D:usize> Bezier<F, V, D>
+where F:Float, V:Vector<F,D> {
     //mp borrow_pt
     /// Get the start or end point of the Bezier - index 0 gives the
     /// start point, index 1 the end point
-    pub fn borrow_pt(&self, index:usize) -> &[V;D] {
+    pub fn borrow_pt(&self, index:usize) -> &V {
         &self.pts[index]
     }
 
     //mp endpoints
     /// Deconstruct and get the endpoints
-    pub fn endpoints(self) -> ([V;D], [V;D]) {
+    pub fn endpoints(self) -> (V, V) {
         (self.pts[0], self.pts[1])
     }
 
     //mp get_distance
     /// Get the distance between the start and end points
-    pub fn get_distance(&self) -> V {
-        vector::distance(&self.pts[0], &self.pts[1])
+    pub fn get_distance(&self) -> F {
+        self.pts[0].distance(&self.pts[1])
     }
 
     //fp line
     /// Create a new Bezier that is a line between two points
-    pub fn line(p0:&[V;D], p1:&[V;D]) -> Self {
-        Self { num:2, pts:[p0.clone(), p1.clone(), vector::zero(), vector::zero()] }
+    pub fn line(p0:&V, p1:&V) -> Self {
+        Self { num:2, pts:[*p0, *p1, V::zero(), V::zero()], f:PhantomData }
     }
 
     //fp quadratic
     /// Create a new Quadratic Bezier that is a line between two points
     /// with one absolute control points
-    pub fn quadratic(p0:&[V;D], c:&[V;D], p1:&[V;D]) -> Self {
-        Self { num:3, pts:[p0.clone(), p1.clone(), c.clone(), vector::zero()] }
+    pub fn quadratic(p0:&V, c:&V, p1:&V) -> Self {
+        Self { num:3, pts:[*p0, *p1, *c, V::zero()], f:PhantomData }
     }
 
     //fp cubic
     /// Create a new Cubic Bezier that is a line between two points
     /// with two absolute control points
-    pub fn cubic(p0:&[V;D], c0:&[V;D], c1:&[V;D], p1:&[V;D]) -> Self {
-        Self { num:4, pts:[p0.clone(), p1.clone(), c0.clone(), c1.clone()] }
+    pub fn cubic(p0:&V, c0:&V, c1:&V, p1:&V) -> Self {
+        Self { num:4, pts:[*p0, *p1, *c0, *c1], f:PhantomData }
     }
 
     //mp is_line
@@ -163,38 +168,40 @@ impl <V:Float, const D:usize> Bezier<V,D> {
 
     //mp scale
     /// Consume the Bezier and return a new Bezier scaled separately in X and Y by two scaling parameters
-    pub fn scale(&mut self, s:V)  {
+    pub fn scale(&mut self, s:F)  {
         for i in 0..self.pts.len() {
-            self.pts[i] = vector::scale(self.pts[i], s);
+            self.pts[i] *= s;
         }
     }
 
     //mp rotate_around
     /// Rotate the Bezier and return a new Bezier rotated around a
     /// *pivot* point anticlockwise by the specified angle
-    pub fn rotate_around(&mut self, pivot:&[V;D], angle:V, c0:usize, c1:usize) {
+    /*
+    pub fn rotate_around(&mut self, pivot:&V, angle:F, c0:usize, c1:usize) {
         for p in self.pts.iter_mut() {
             *p = vector::rotate_around(*p, pivot, angle, c0, c1);
         }
     }
+     */
 
     //mp vector_of
     /// Returns a vector of a combination of the vectors of the bezier
     #[inline]
-    pub fn vector_of(&self, sc:&[V], reduce:V) -> [V;D] {
-        let mut r = vector::scale(self.pts[0],sc[0]);
+    pub fn vector_of(&self, sc:&[F], reduce:F) -> V {
+        let mut r = self.pts[0] * sc[0];
         for i in 1..sc.len() {
-            r = vector::add(r, &self.pts[i], sc[i]);
+            r += self.pts[i] * sc[i];
         }
-        vector::reduce(r, reduce)
+        r / reduce
     }
 
     //mp point_at
     /// Returns the point at parameter 't' along the Bezier
-    pub fn point_at(&self, t:V) -> [V;D] {
-        let one = V::one();
-        let two = V::from(2).unwrap();
-        let three = V::from(3).unwrap();
+    pub fn point_at(&self, t:F) -> V {
+        let one = F::one();
+        let two = F::from(2).unwrap();
+        let three = F::from(3).unwrap();
         let omt = one - t;
         match self.num {
             2 => {
@@ -220,11 +227,11 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// Returns the tangent vector at parameter 't' along the Bezier
     ///
     /// This is not necessarily a unit vector
-    pub fn tangent_at(&self, t:V) -> [V;D] {
-        let one = V::one();
-        let two = V::from(2).unwrap();
-        let three = V::from(3).unwrap();
-        let four = V::from(4).unwrap();
+    pub fn tangent_at(&self, t:F) -> V {
+        let one = F::one();
+        let two = F::from(2).unwrap();
+        let three = F::from(3).unwrap();
+        let four = F::from(4).unwrap();
         match self.num {
             2 => {
                 self.vector_of(&[-one, one], one)
@@ -250,10 +257,10 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     ///
     /// For quadratics the midpoint is 1/4(p0 + 2*c + p1)
     pub fn bisect(&self) -> (Self, Self) {
-        let zero = V::zero();
-        let one  = V::one();
-        let two  = V::from(2).unwrap();
-        let three  = V::from(3).unwrap();
+        let zero = F::zero();
+        let one  = F::one();
+        let two  = F::from(2).unwrap();
+        let three  = F::from(3).unwrap();
         match self.num {
             2 => {
                 let pm = self.vector_of(&[one,one],two);
@@ -262,14 +269,14 @@ impl <V:Float, const D:usize> Bezier<V,D> {
             3 => {
                 let c0 = self.vector_of(&[one,zero,one],two);
                 let c1 = self.vector_of(&[zero,one,one],two);
-                let pm = vector::reduce(vector::add(c0,&c1,one),two);
+                let pm = (c0 + c1) / two;
                 (Self::quadratic(&self.pts[0], &c0, &pm), Self::quadratic(&pm, &c1, &self.pts[1]))
             },
             _ => {
-                let pm  = self.vector_of(&[one,one,three,three],V::from(8).unwrap());
+                let pm  = self.vector_of(&[one,one,three,three],F::from(8).unwrap());
                 let c00 = self.vector_of(&[one,zero,one],two);
-                let c01 = self.vector_of(&[one,zero,two,one],V::from(4).unwrap());
-                let c10 = self.vector_of(&[zero,one,one,two],V::from(4).unwrap());
+                let c01 = self.vector_of(&[one,zero,two,one],F::from(4).unwrap());
+                let c10 = self.vector_of(&[zero,one,one,two],F::from(4).unwrap());
                 let c11 = self.vector_of(&[zero,one,zero,one],two);
                 (Self::cubic(&self.pts[0],&c00,&c01,&pm), Self::cubic(&pm,&c10,&c11,&self.pts[1]))
             },
@@ -278,25 +285,25 @@ impl <V:Float, const D:usize> Bezier<V,D> {
 
     //mp bezier_between
     /// Returns the Bezier between two parameters 0 <= t0 < t1 <= 1
-    pub fn bezier_between(&self, t0:V, t1:V) -> Self {
-        let two = V::from(2).unwrap();
+    pub fn bezier_between(&self, t0:F, t1:F) -> Self {
+        let two = F::from(2).unwrap();
         let p0 = &self.pts[0];
         let p1 = &self.pts[1];
         match self.num {
             2 => {
-                let u0 = V::one() - t0;
-                let u1 = V::one() - t1;
-                let r0 = vector::add(vector::scale(self.pts[0],u0),&p1,t0);
-                let r1 = vector::add(vector::scale(self.pts[0],u1),&p1,t1);
+                let u0 = F::one() - t0;
+                let u1 = F::one() - t1;
+                let r0 = self.pts[0]*u0 + self.pts[1] * t0;
+                let r1 = self.pts[0]*u1 + self.pts[1] * t1;
                 Self::line(&r0, &r1)
             },
             3 => {
                 let c = &self.pts[2];
-                let u0 = V::one() - t0;
-                let u1 = V::one() - t1;
-                let rp0 = vector::add(vector::add(vector::scale(p0.clone(),u0*u0),&c, two*u0*t0),&p1,t0*t0);
-                let rp1 = vector::add(vector::add(vector::scale(p0.clone(),u1*u1),&c, two*u1*t1),&p1,t1*t1);
-                let rc0 = vector::add(vector::add(vector::scale(p0.clone(),u0*u1),&c, u0*t1 + u1*t0),&p1,t1*t0);
+                let u0 = F::one() - t0;
+                let u1 = F::one() - t1;
+                let rp0 = *p0 * (u0*u0) + *c * (two*u0*t0)     + *p1 * (t0*t0);
+                let rp1 = *p0 * (u1*u1) + *c * (two*u1*t1)     + *p1 * (t1*t1);
+                let rc0 = *p0 * (u0*u1) + *c * (u0*t1 + u1*t0) + *p1 * (t1*t0);
                 Self::quadratic(&rp0, &rc0, &rp1)
             },
             _ => {
@@ -307,8 +314,8 @@ impl <V:Float, const D:usize> Bezier<V,D> {
                 let rt1 = self.tangent_at(t1);
                 let rp1 = self.point_at(t1);
                 let t1_m_t0 = t1 - t0;
-                let rc0 = vector::add(rp0.clone(),&rt0,t1_m_t0);
-                let rc1 = vector::add(rp1.clone(),&rt1,-t1_m_t0);
+                let rc0 = rp0 + rt0 * t1_m_t0;
+                let rc1 = rp1 - rt1 * t1_m_t0;
                 Self::cubic(&rp0, &rc0, &rc1, &rp1)
             },
         }
@@ -316,13 +323,13 @@ impl <V:Float, const D:usize> Bezier<V,D> {
 
     //mp as_lines
     /// Iterate over line segments that are 'straight' enough
-    pub fn as_lines(&self, straightness:V) -> BezierLineIter<V,D> {
+    pub fn as_lines(&self, straightness:F) -> BezierLineIter<F, V, D> {
         BezierLineIter::new(self, straightness)
     }
 
     //mp as_points
     /// Iterate over points that make 'straight' enough lines
-    pub fn as_points(&self, straightness:V) -> BezierPointIter<V,D> {
+    pub fn as_points(&self, straightness:F) -> BezierPointIter<F, V, D> {
         BezierPointIter::new(BezierLineIter::new(self, straightness))
     }
 
@@ -354,37 +361,38 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// between the two endpoints))
     ///
     /// `straightness` is thus independent of the length of the Bezier
-    pub fn is_straight(&self, straightness:V) -> bool {
-        fn straightness_of_control<V:Float, const D:usize>(p:&[V;D], lp2:V, c:&[V;D]) -> (V,V) {
-            let lc2 = vector::length_sq(c);
-            if lc2 < V::epsilon() {
-                (V::zero(),lp2)
-            } else if lp2 < V::epsilon() {
-                (lc2,V::one())
+    pub fn is_straight(&self, straightness:F) -> bool {
+        fn straightness_of_control<F, V, const D:usize>(p:&V, lp2:F, c:&V) -> (F,F)
+        where F:Float, V:Vector<F,D> {
+            let lc2 = c.length_sq();
+            if lc2 < F::epsilon() {
+                (F::zero(), lp2)
+            } else if lp2 < F::epsilon() {
+                (lc2, F::one())
             } else {
-                let cdp = vector::dot(c, p);
-                let c_s = V::sqrt(lp2*lc2 - cdp*cdp);
-                (c_s,lp2)
+                let cdp = c.dot(p);
+                let c_s = F::sqrt(lp2*lc2 - cdp*cdp);
+                (c_s, lp2)
             }
         }
-        let one  = V::one();
+        let one  = F::one();
         match self.num {
             2 => true,
             3 => {
-                let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::length_sq(&p);
-                let c = vector::sub(self.pts[2], &self.pts[0], one);
+                let p = self.pts[1] - self.pts[0];
+                let lp2 = p.length_sq();
+                let c = self.pts[2] - self.pts[0];
                 let (c_s, sc) = straightness_of_control(&p, lp2, &c);
                 c_s <= straightness * sc
             },
             _ => {
-                let p = vector::sub(self.pts[1], &self.pts[0], one);
-                let lp2 = vector::length_sq(&p);
-                let c0 = vector::sub(self.pts[2], &self.pts[0], one);
+                let p = self.pts[1] - self.pts[0];
+                let lp2 = p.length_sq();
+                let c0 = self.pts[2] - self.pts[0];
                 let (c0_s, sc0) = straightness_of_control(&p, lp2, &c0);
-                let c1 = vector::sub(self.pts[3], &self.pts[0], one);
+                let c1 = self.pts[3] - self.pts[0];
                 let (c1_s, sc1) = straightness_of_control(&p, lp2, &c1);
-                (c0_s + c1_s) <= straightness * V::max(sc0, sc1)
+                (c0_s + c1_s) <= straightness * F::max(sc0, sc1)
             },
         }
     }
@@ -393,7 +401,7 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// Calculates the length given a straightness
     ///
     /// `straightness` is independent of the length of the Bezier
-    pub fn length(&self, straightness:V) -> V {
+    pub fn length(&self, straightness:F) -> F {
         if self.is_straight(straightness) {
             self.get_distance()
         } else {
@@ -410,22 +418,22 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// Returns t,true if the distance is along the Bezier
     /// Returns 0.,false if the distance is before the start of the Bezier
     /// Returns 1.,false if the distance is beyond the end of the Bezier
-    fn t_of_distance_rec(&self, straightness:V, distance:V, t_start:V, t_scale:V, acc_length:V) -> (Option<V>, V) {
-        let zero = V::zero();
+    fn t_of_distance_rec(&self, straightness:F, distance:F, t_start:F, t_scale:F, acc_length:F) -> (Option<F>, F) {
+        let zero = F::zero();
         if distance <= acc_length {
             (Some(t_start), zero)
         } else if self.is_straight(straightness) {
             let d     = self.get_distance();
             if distance > acc_length+d {
                 (None, acc_length+d)
-            } else if d < V::epsilon() {
+            } else if d < F::epsilon() {
                 (Some(t_start + t_scale), acc_length+d)
             } else {
                 let rel_d = distance - acc_length;
                 (Some(t_start + t_scale * rel_d / d), acc_length+d)
             }
         } else {
-            let t_subscale = t_scale / V::from(2).unwrap();
+            let t_subscale = t_scale / F::from(2).unwrap();
             let (b0, b1) = self.bisect();
             match b0.t_of_distance_rec(straightness, distance, t_start, t_subscale, acc_length) {
                 (None, length) => {
@@ -435,9 +443,9 @@ impl <V:Float, const D:usize> Bezier<V,D> {
             }
         }
     }
-    pub fn t_of_distance(&self, straightness:V, distance:V) -> (V, bool) {
-        let zero = V::zero();
-        let one  = V::one();
+    pub fn t_of_distance(&self, straightness:F, distance:F) -> (F, bool) {
+        let zero = F::zero();
+        let one  = F::one();
         if distance < zero {
             (zero,false)
         } else {
@@ -459,11 +467,11 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     ///
     /// The arc will be between an angle A1 and A2, where A2-A1 == angle, and A1==rotate
     ///
-    pub fn arc(angle:V, radius:V, center:&[V;D], unit:&[V;D], normal:&[V;D], rotate:V) -> Self {
-        let one   = V::one();
-        let two   = V::from(2).unwrap();
-        let three = V::from(3).unwrap();
-        let four  = V::from(4).unwrap();
+    pub fn arc(angle:F, radius:F, center:&V, unit:&V, normal:&V, rotate:F) -> Self {
+        let one   = F::one();
+        let two   = F::from(2).unwrap();
+        let three = F::from(3).unwrap();
+        let four  = F::from(4).unwrap();
         let half_angle = angle / two;
         let s = half_angle.sin();
         let lambda = radius * four / three * (one/s - one);
@@ -473,11 +481,11 @@ impl <V:Float, const D:usize> Bezier<V,D> {
         let d1a = rotate+angle;
         let (d1s,d1c) = d1a.sin_cos();
 
-        let p0 = vector::add( vector::add(center.clone(), unit, d0c*radius), normal, d0s*radius );
-        let p1 = vector::add( vector::add(center.clone(), unit, d1c*radius), normal, d1s*radius );
+        let p0 = *center + (*unit) * (d0c*radius) + *normal * (d0s*radius);
+        let p1 = *center + (*unit) * (d1c*radius) + *normal * (d1s*radius);
 
-        let c0 = vector::add( vector::add(p0.clone(), unit, -d0s*lambda), normal,  d0c*lambda );
-        let c1 = vector::add( vector::add(p1.clone(), unit,  d1s*lambda), normal, -d1c*lambda );
+        let c0 = p0 - (*unit) * (d0s*lambda) + *normal * (d0c*lambda);
+        let c1 = p1 + (*unit) * (d1s*lambda) - *normal * (d1c*lambda);
 
         Self::cubic(&p0, &c0, &c1, &p1)
     }
@@ -519,24 +527,26 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     /// hence d/k = sqrt(2/(1+cos(alpha)))
     ///
     /// hence lambda = 4/3 * r * (sqrt(2/(1+cos(alpha))) - 1)
-    pub fn of_round_corner(corner:&[V;D], v0:&[V;D], v1:&[V;D], radius:V) -> Self {
-        let nearly_one = V::from(99_999).unwrap() / V::from(100_000).unwrap();
-        let one   = V::one();
-        let two   = V::from(2).unwrap();
-        let three = V::from(3).unwrap();
-        let four  = V::from(4).unwrap();
-        let v0    = vector::normalize(v0.clone());
-        let v1    = vector::normalize(v1.clone());
-        let cos_alpha = vector::dot(&v0, &v1);
+    pub fn of_round_corner(corner:&V, v0:&V, v1:&V, radius:F) -> Self {
+        let nearly_one = F::from(99_999).unwrap() / F::from(100_000).unwrap();
+        let one   = F::one();
+        let two   = F::from(2).unwrap();
+        let three = F::from(3).unwrap();
+        let four  = F::from(4).unwrap();
+        let mut v0    = v0.clone();
+        let mut v1    = v1.clone();
+        v0.normalize();
+        v1.normalize();
+        let cos_alpha = v0.dot(&v1);
         if cos_alpha >= nearly_one {
             // v0 and v1 point in the same direction
-            let p0 = vector::add(corner.clone(), &v0, -radius);
-            let p1 = vector::add(corner.clone(), &v1, -radius);
+            let p0 = *corner - (v0 * radius);
+            let p1 = *corner - (v1 * radius);
             Self::quadratic(&p0, corner, &p1)
         } else if cos_alpha <= -nearly_one {
             // basically 180 degress apart
-            let p0 = vector::add(corner.clone(), &v0, -radius);
-            let p1 = vector::add(corner.clone(), &v1, -radius);
+            let p0 = *corner - (v0 * radius);
+            let p1 = *corner - (v1 * radius);
             Self::quadratic(&p0, corner, &p1)
         } else {
             let r2 = radius * radius;
@@ -549,10 +559,10 @@ impl <V:Float, const D:usize> Bezier<V,D> {
             // let lambda = four/three * radius * ((two / (one + cos_alpha)).sqrt() - one);
 
             let lambda = four/three * radius * (d/k - one);
-            let p0 = vector::add(corner.clone(), &v0, -k);
-            let p1 = vector::add(corner.clone(), &v1, -k);
-            let c0 = vector::add(p0.clone(), &v0, lambda);
-            let c1 = vector::add(p1.clone(), &v1, lambda);
+            let p0 = *corner - (v0 * k);
+            let p1 = *corner - (v1 * k);
+            let c0 = p0 + (v0 * lambda);
+            let c1 = p1 + (v1 * lambda);
             Self::cubic(&p0, &c0, &c1, &p1)
         }
     }
@@ -560,268 +570,3 @@ impl <V:Float, const D:usize> Bezier<V,D> {
     //zz All done
 }
 
-//a Test
-#[cfg(test)]
-mod test_bezier {
-    use super::*;
-    type Point = [f64;2];
-    //fi vec_eq
-    pub fn vec_eq(v0:&[f64;2], v1:&[f64;2]) {
-        let d = vector::distance(v0, v1);
-        assert!(d<1E-8, "mismatch in {:?} {:?}",v0, v1);
-    }
-    //fi pt_eq
-    pub fn pt_eq(v:&Point, x:f64, y:f64) {
-        assert!((v[0]-x).abs()<1E-8, "mismatch in x {:?} {:?} {:?}",v,x,y);
-        assert!((v[1]-y).abs()<1E-8, "mismatch in y {:?} {:?} {:?}",v,x,y);
-    }
-    //fi approx_eq
-    pub fn approx_eq(a:f64, b:f64, tolerance:f64, msg:&str) {
-        assert!((a-b).abs()<tolerance, "{} {:?} {:?}",msg,a,b);
-    }
-    //fi bezier_eq
-    pub fn bezier_eq(bez:&Bezier<f64,2>, v:Vec<[f64;2]>) {
-        assert_eq!(bez.num, 4, "bezier_eq works only for cubics");
-        vec_eq(&bez.pts[0], &v[0]);
-        vec_eq(&bez.pts[2], &v[1]);
-        vec_eq(&bez.pts[3], &v[2]);
-        vec_eq(&bez.pts[1], &v[3]);
-    }
-
-    //fi bezier_straight_as
-    fn bezier_straight_as( bezier:&Bezier<f64,2>, straightness:f64 ) {
-        for i in 0..30 {
-            let s = (1.4_f64).powf(i as f64 - 15.);
-            println!("{} {} {}",s,straightness, bezier.is_straight(s));
-            assert_eq!( straightness < s, bezier.is_straight(s), "Bezier {} .is_straight({}) failed for {}",bezier, s, straightness);
-        }
-    }
-    //fi does_bisect
-    fn does_bisect(bezier:&Bezier<f64,2>) {
-        let (b0,b1) = bezier.bisect();
-        println!("Test bisection of {} into {}, {}",bezier, b0, b1);
-        for i in 0..21 {
-            let t = (i as f64) / 20.0;
-            let p0 = bezier.point_at(t * 0.5);
-            let p1 = bezier.point_at(t * 0.5 + 0.5);
-            println!("t {} : {:?} : {:?}",t,p0,p1);
-            pt_eq(&b0.point_at(t), p0[0], p0[1]);
-            pt_eq(&b1.point_at(t), p1[0], p1[1]);
-        }
-    }
-    //fi does_split
-    fn does_split(bezier:&Bezier<f64,2>, t0:f64, t1:f64) {
-        let b = bezier.bezier_between(t0, t1);
-        for i in 0..21 {
-            let bt = (i as f64) / 20.0;
-            let t  = t0 + (t1 - t0) * bt;
-            let p  = bezier.point_at(t);
-            let pb = b.point_at(bt);
-            println!("t {} : {:?} : {:?}",t,p,pb);
-            approx_eq(p[0], pb[0], 1E-6, &format!("Bezier split x {} {} {} : {} : {}", t, t0, t1, bezier, b));
-            approx_eq(p[1], pb[1], 1E-6, &format!("Bezier split y {} {} {} : {} : {}", t, t0, t1, bezier, b));
-        }
-    }
-    //fi test_line
-    #[test]
-    fn test_line() {
-        let p0 = vector::zero();
-        let p1 = [10.,0.];
-        let p2 = [10.,1.];
-        let b01 = Bezier::line(&p0, &p1);
-        let b02 = Bezier::line(&p0, &p2);
-
-        pt_eq( &b01.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b01.point_at(0.5), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.point_at(1.), p1[0], p1[1] );
-        pt_eq( &b02.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b02.point_at(0.5), (p0[0]+p2[0])/2., (p0[1]+p2[1])/2. );
-        pt_eq( &b02.point_at(1.), p2[0], p2[1] );
-
-        pt_eq( &b01.bisect().0.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b01.bisect().0.point_at(1.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.bisect().1.point_at(0.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.bisect().1.point_at(1.), p1[0], p1[1] );
-
-
-        does_split(&b01, 0., 1.);
-        does_split(&b01, 0.1, 0.3);
-        does_split(&b01, 0.3, 0.7);
-        does_split(&b01, 0.7, 1.0);
-
-        does_split(&b02, 0., 1.);
-        does_split(&b02, 0.1, 0.3);
-        does_split(&b02, 0.3, 0.7);
-        does_split(&b02, 0.7, 1.0);
-
-        does_bisect(&b01);
-        does_bisect(&b02);
-
-        pt_eq( &b01.tangent_at(0.),  p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b01.tangent_at(0.5), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b01.tangent_at(1.0), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b02.tangent_at(0.),  p2[0]-p0[0], p2[1]-p0[1] );
-        pt_eq( &b02.tangent_at(0.5), p2[0]-p0[0], p2[1]-p0[1] );
-        pt_eq( &b02.tangent_at(1.0), p2[0]-p0[0], p2[1]-p0[1] );
-
-        let mut v = Vec::new();
-        v.clear();
-        for (a,_b) in b01.as_lines(0.1) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 1, "We know that at any straightness there must be 1 line segments" );
-    }
-    //fi test_quadratic
-    #[test]
-    fn test_quadratic() {
-        let p0 = vector::zero();
-        let p1 = [10.,0.];
-        let p2 = [10.,1.];
-        let b = Bezier::quadratic(&p0, &p1, &p2);
-
-        pt_eq( &b.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b.point_at(0.5), (p0[0]+p2[0])/4.+p1[0]/2., (p0[1]+p2[1])/4.+p1[1]/2. );
-        pt_eq( &b.point_at(1.), p2[0], p2[1] );
-
-        does_bisect(&b);
-
-        does_split(&b, 0., 1.);
-        does_split(&b, 0.1, 0.3);
-        does_split(&b, 0.3, 0.7);
-        does_split(&b, 0.7, 1.0);
-
-        pt_eq( &b.tangent_at(0.),  1.*(p1[0]-p0[0]), 1.*(p1[1]-p0[1]) );
-        // pt_eq( &b.tangent_at(0.5), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b.tangent_at(1.0), 1.*(p2[0]-p1[0]), 1.*(p2[1]-p1[1]) );
-
-        let mut v = Vec::new();
-        v.clear();
-        for (a,_b) in b.as_lines(0.1) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 1, "We know that at straightness 0.1 there must be 1 line segments" );
-
-        let mut v = Vec::new();
-        v.clear();
-        for (a,_b) in b.as_lines(0.01) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 52, "We know that at straightness 0.01  there must be 52 line segments" );
-    }
-    //fi test_cubic
-    #[test]
-    fn test_cubic() {
-        let p0 = vector::zero();
-        let p1 = [10.,0.];
-        let p2 = [6.,1.];
-        let p3 = [20.,5.];
-        let b = Bezier::cubic(&p0, &p1, &p2, &p3);
-
-        pt_eq( &b.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b.point_at(1.), p3[0], p3[1] );
-
-        pt_eq( &b.tangent_at(0.),  p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b.tangent_at(1.0), p3[0]-p2[0], p3[1]-p2[1] );
-
-        does_bisect(&b);
-
-        does_split(&b, 0., 1.);
-        does_split(&b, 0.1, 0.3);
-        does_split(&b, 0.3, 0.7);
-        does_split(&b, 0.7, 1.0);
-
-        let x = Bezier::arc((90.0f64).to_radians(),1.,&vector::zero(),&[1.,0.],&[0.,1.],0.);
-        println!("{}",x);
-        use std::f64::consts::PI;
-        approx_eq( 0.5, x.length(0.001) / PI, 0.001, "Length of 90-degree arc of circle radius 1 should be PI/2");
-
-        approx_eq( 0.5,   x.t_of_distance(0.001, PI/4.).0, 0.001, "t of half-way round 90-degree arc of circle radius 1");
-        approx_eq( 0.245, x.t_of_distance(0.001, PI/8.).0, 0.001, "t of quarter-way round 90-degree arc of circle radius 1");
-        approx_eq( 0.755, x.t_of_distance(0.001, PI*3./8.).0, 0.001, "t of three-quarters-way round 90-degree arc of circle radius 1");
-
-        let mut v = Vec::new();
-        v.clear();
-        for (a,_b) in b.as_lines(0.1) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 3, "We know that at straightness 0.1 there should be 3 line segments" );
-
-        v.clear();
-        for (a,_b) in b.as_lines(0.01) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 24, "We know that at straightness 0.01 there should be 24 line segments" );
-    }
-    //fi test_straight
-    #[test]
-    fn test_straight() {
-        let p0 = vector::zero();
-        let p1 = [10.,0.];
-        let p2 = [10.,1.];
-        let p3 = [20.,0.];
-        let p4 = [20.,1.];
-        let sp0 = vector::scale(p0,10.);
-        let sp1 = vector::comp_mult(p1,&[10.,10.]);
-        let sp2 = vector::comp_mult(p2,&[10.,10.]);
-        let sp3 = vector::comp_mult(p3,&[10.,10.]);
-        let sp4 = vector::comp_mult(p4,&[10.,10.]);
-
-        bezier_straight_as( &Bezier::line(&p0, &p1), 1E-10 );
-        bezier_straight_as( &Bezier::line(&p0, &p2), 1E-10 );
-        bezier_straight_as( &Bezier::line(&p0, &p3), 1E-10 );
-        bezier_straight_as( &Bezier::line(&p0, &p4), 1E-10 );
-        bezier_straight_as( &Bezier::line(&sp0, &sp1), 1E-10 );
-        bezier_straight_as( &Bezier::line(&sp0, &sp2), 1E-10 );
-        bezier_straight_as( &Bezier::line(&sp0, &sp3), 1E-10 );
-        bezier_straight_as( &Bezier::line(&sp0, &sp4), 1E-10 );
-
-        bezier_straight_as( &Bezier::quadratic(&p0, &p1, &p3),  1E-10 );
-        bezier_straight_as( &Bezier::quadratic(&sp0, &sp1, &sp3), 1E-10 );
-
-        bezier_straight_as( &Bezier::quadratic(&p0, &p2, &p3), 0.05 );
-        bezier_straight_as( &Bezier::quadratic(&sp0, &sp2, &sp3), 0.05 );
-
-        bezier_straight_as( &Bezier::quadratic(&p0, &p1, &p4),  0.03 );
-        bezier_straight_as( &Bezier::quadratic(&sp0, &sp1, &sp4), 0.03 );
-
-        bezier_straight_as( &Bezier::cubic(&p0, &p1, &p2, &p3), 0.05 );
-        bezier_straight_as( &Bezier::cubic(&sp0, &sp1, &sp2, &sp3), 0.05 );
-
-        bezier_straight_as( &Bezier::cubic(&p0, &p1, &p2, &p4), 0.065 );
-        bezier_straight_as( &Bezier::cubic(&sp0, &sp1, &sp2, &sp4), 0.065 );
-    }
-    //fi test_arc
-    #[test]
-    fn test_arc() {
-        let sqrt2 = 2.0_f64.sqrt();
-        let r_sqrt2 = 1.0 / sqrt2;
-        let magic = 0.5522847498307935;
-        let magic2 = magic * r_sqrt2;
-
-        let x = Bezier::arc((90.0f64).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], 0.);
-        println!("arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], 0.) : {}",x);
-        bezier_eq(&x, vec![[1.,0.], [1.,magic], [magic,1.], [0.,1.]]);
-
-        let x = Bezier::arc((90.0f64).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], (-90.0f64).to_radians());
-        println!("arc((90.).to_radians(), 1., &[0.,0.], &[1.,0.], &[0.,1.], (-90.).to_radians()) : {}",x);
-        bezier_eq(&x, vec![[0.,-1.], [magic,-1.], [1.,-magic], [1.,0.]]);
-
-        let x = Bezier::of_round_corner(&[1.,1.], &[0.,3.], &[0.5,0.], 1.);
-        println!("of_round_corner(&[1.,1.], &[0.,3.], &[0.5,0.], 1.) : {}",x);
-        bezier_eq(&x, vec![[1.,0.], [1.,magic], [magic,1.], [0.,1.]]);
-
-        let x = Bezier::of_round_corner(&[sqrt2,0.], &[1.,1.], &[1.,-1.], 1.);
-        println!("of_round_corner(&[sqrt2,0.], &[1.,1.], &[1.,-1.], 1.) : {}",x);
-        bezier_eq(&x, vec![[r_sqrt2, -r_sqrt2],
-                           [r_sqrt2+magic2 , -r_sqrt2+magic2],
-                           [r_sqrt2+magic2, r_sqrt2-magic2],
-                           [r_sqrt2, r_sqrt2]]);
-
-        pt_eq(x.borrow_pt(0), r_sqrt2, -r_sqrt2);
-        pt_eq(x.borrow_pt(1), r_sqrt2, r_sqrt2);
-        let x = Bezier::of_round_corner(&[1.,1.], &[0.,3.], &[0.5,0.], 0.5);
-        println!("{:?}",x);
-        // assert_eq!(true,false);
-    }
-    //fi All done
-}

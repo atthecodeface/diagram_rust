@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::Float;
+use geometry::{Float, Vector};
 use crate::line::BezierLineIter;
 
 //a BezierPointIter
@@ -27,25 +27,26 @@ use crate::line::BezierLineIter;
 ///
 /// This iterator returns the points that BezierLineIter uses, in the
 /// same order (pa, pb, ...)
-pub struct BezierPointIter<V:Float, const D:usize> {
+pub struct BezierPointIter<F:Float, V:Vector<F, D>, const D:usize> {
     /// A line iterator that returns the next line segment required;
     /// usually the first point of this segment that this iterator
     /// provides is returned as the next point.
     ///
     /// When this returns none, the end-point of the previous
     /// iteration needs to be returned as the last point.
-    lines : BezierLineIter<V,D>,
+    lines : BezierLineIter<F, V, D>,
     /// The last point to be returned - if this is valid then the line
     /// iterator has finished, and just the last point on the Bezier
     /// needs to be returned.
-    last_point : Option<[V;D]>,
+    last_point : Option<V>,
 }
 
 //ip BezierPointIter
-impl <V:Float, const D:usize> BezierPointIter<V,D> {
+impl <F, V, const D:usize> BezierPointIter<F, V, D>
+where F:Float, V:Vector<F,D> {
     //fp new
     /// Create a new point iterator from a line iterator
-    pub fn new(lines:BezierLineIter<V,D>) -> Self {
+    pub fn new(lines:BezierLineIter<F, V, D>) -> Self {
         Self { lines, last_point:None }
     }
 
@@ -53,9 +54,10 @@ impl <V:Float, const D:usize> BezierPointIter<V,D> {
 }
 
 //ii BezierPointIter
-impl <V:Float, const D:usize> Iterator for BezierPointIter<V, D> {
+impl <F, V, const D:usize> Iterator for BezierPointIter<F, V, D>
+where F:Float, V:Vector<F,D> {
     /// Iterator returns Point's
-    type Item = [V;D];
+    type Item = V;
 
     /// Return the first point of any line segment provided by the
     /// line iterator, but record the endpoint of that segment first;
