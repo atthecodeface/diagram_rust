@@ -84,6 +84,14 @@ binary_op! { FSlice, Sub, sub, -, SubAssign, sub_assign, -= }
 binary_op! { FSlice, Mul, mul, *, MulAssign, mul_assign, *= }
 binary_op! { FSlice, Div, div, /, DivAssign, div_assign, /= }
 
+impl <F:Float, const D:usize> std::ops::Neg for FSlice<F, D> {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        let mut data = [F::zero();D];
+        for i in 0..D { data[i] = -self.data[i]; }
+        Self { data }
+    }
+}
 impl <F:Float, const D:usize> std::default::Default for FSlice<F, D> {
     fn default() -> Self { Self { data:vector::zero() } }
 }

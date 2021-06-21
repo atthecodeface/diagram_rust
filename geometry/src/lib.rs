@@ -156,6 +156,12 @@ impl Geometry3D<f32> for f32 {
     type Mat4 = FSlice2<f32,4,16>;
 }
 
+//ip Geometry2D for f32
+impl Geometry2D<f32> for f32 {
+    type Vec2 = FSlice<f32,2>;
+    type Mat2 = FSlice2<f32,2,4>;
+}
+
 //ip Vector3D for f64
 impl Vector3D<f64> for f64 {
     type Vec2 = FSlice<f64,2>;
@@ -169,6 +175,12 @@ impl Geometry3D<f64> for f64 {
     type Vec4 = FSlice<f64,4>;
     type Mat3 = FSlice2<f64,3,9>;
     type Mat4 = FSlice2<f64,4,16>;
+}
+
+//ip Geometry2D for f64
+impl Geometry2D<f64> for f64 {
+    type Vec2 = FSlice<f64,2>;
+    type Mat2 = FSlice2<f64,2,4>;
 }
 
 /*a Stuff

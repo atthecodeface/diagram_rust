@@ -56,16 +56,23 @@ pub trait Vector<F:Float, const D:usize> : Clone
     + std::convert::AsMut<[F;D]>
     + std::convert::AsRef<[F]>
     + std::convert::AsMut<[F]>
-    + std::ops::Index<usize>
-    + std::ops::Add<Output = Self>
-    + std::ops::AddAssign
-    + std::ops::Sub<Output = Self>
-    + std::ops::SubAssign
-    + std::ops::Mul<Output = Self>
-    + std::ops::MulAssign
+    + std::ops::Index<usize, Output = F>
+    + std::ops::Neg<Output = Self>
+    + std::ops::Add<Self, Output = Self>
+    + std::ops::Add<F, Output = Self>
+    + std::ops::AddAssign<Self>
+    + std::ops::AddAssign<F>
+    + std::ops::Sub<Self, Output = Self>
+    + std::ops::Sub<F, Output = Self>
+    + std::ops::SubAssign<Self>
+    + std::ops::SubAssign<F>
+    + std::ops::Mul<Self, Output = Self>
     + std::ops::Mul<F, Output = Self>
+    + std::ops::MulAssign<Self>
     + std::ops::MulAssign<F>
+    + std::ops::Div<Self, Output = Self>
     + std::ops::Div<F, Output = Self>
+    + std::ops::DivAssign<Self>
     + std::ops::DivAssign<F> {
         fn from_array(data:[F;D]) -> Self;
         fn zero() -> Self;
@@ -79,18 +86,29 @@ pub trait Vector<F:Float, const D:usize> : Clone
         fn distance_sq(&self, other:&Self) -> F { (*self - *other).length_sq() }
         fn distance(&self, other:&Self) -> F { self.distance_sq(other).sqrt() }
         // clamp
-        // normalize
+        fn normalize(&mut self) { let l = self.length(); if l < F::epsilon() {self.set_zero()} else {*self /= l} }
         // rotate_around
     }
 
 //tt SqMatrix
-pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Copy
+pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Clone
+    + Copy
+    + std::fmt::Debug
+    + std::default::Default
     + std::convert::AsRef<[F;D2]>
+    + std::convert::AsMut<[F;D2]>
+    + std::convert::AsRef<[F]>
+    + std::convert::AsMut<[F]>
     + std::ops::Add<Output = Self>
+    + std::ops::AddAssign
     + std::ops::Sub<Output = Self>
-    + std::ops::Mul<Self, Output = Self>
+    + std::ops::SubAssign
+    + std::ops::Mul<Output = Self>
+    + std::ops::MulAssign
     + std::ops::Mul<F, Output = Self>
-    + std::ops::Div<F, Output = Self> {
+    + std::ops::MulAssign<F>
+    + std::ops::Div<F, Output = Self>
+    + std::ops::DivAssign<F> {
         fn from_array(data:[F;D2]) -> Self;
         fn identity() -> Self;
         fn zero() -> Self;
@@ -98,8 +116,8 @@ pub trait SqMatrix<V:Vector<F,D>, F:Float, const D:usize, const D2:usize> : Copy
         fn set_zero(&mut self);
         // absmax
         fn transpose(&self) -> Self;
-        // fn determinant(&self) -> F;
-        // fn inverse(&self) -> Self;
+        fn determinant(&self) -> F;
+        fn inverse(&self) -> Self;
         fn transform(&self, v:V) -> V;
     }
 
@@ -125,5 +143,11 @@ pub trait Geometry3D<Scalar:Float> {
     // cross_product3
     // axis_of_rotation3/4
     // clamp
+}
+
+//tt Geometry2D
+pub trait Geometry2D<Scalar:Float> {
+    type Vec2 : Vector<Scalar, 2>;
+    type Mat2 : SqMatrix<Self::Vec2, Scalar, 2, 4>;
 }
 
