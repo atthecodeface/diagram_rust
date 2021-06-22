@@ -2,5 +2,10 @@
 name = "geometry"
 version = "0.1.0"
 
-[dependencies]
+[dependencies.geo-nd]
+version = "0.1.0"
+
+[dependencies.bezier-nd]
+version = "0.1.0"
+
 

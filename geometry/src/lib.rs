@@ -35,6 +35,7 @@ some of its features are focused in that direction.
 
 //a Imports and exports
 mod point;
+mod range;
 mod bezier;
 mod path;
 mod rectangle;
@@ -42,7 +43,8 @@ mod polygon;
 mod transform;
 
 pub use self::transform::Transform;
-pub use self::point::{Point, Range};
+pub use self::point::{Point};
+pub use self::range::{Range};
 pub use self::bezier::Bezier;
 pub use self::path::{BezierPath};
 pub use self::rectangle::{Rectangle, Float4};
