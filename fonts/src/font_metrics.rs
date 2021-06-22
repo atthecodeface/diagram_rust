@@ -1,71 +1,8 @@
-/*a Copyright
+use super::Value;
+use super::{Parameter, GlyphMetrics};
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-@file    font.rs
-@brief   Font and text handling
- */
-
-//a Imports
-
-//a FontMetrics trait
-//tp TextMetrics
-/// A simple metrics definition: it is not meant to cover complex
-/// typography, as the diagram is not performing the full font
-/// rendering. Rather it is a good approximation to the bounding box
-/// for the text given it is placed at a baseline Y of 0.
-///
-/// This is used to describe the bounding box for a particular text span.
-#[derive(Debug)]
-pub struct TextMetrics {
-    /// Width in mm of the text
-    pub width : f64,
-    /// Descent below the baseline for the font
-    pub descender : f64,
-    /// Ascent above the baseline for the font
-    pub ascender : f64,
-}
-
-//tt FontMetrics
-/// A trait for a Font type class that provides the font metrics for a given text given a font style
-pub trait FontMetrics {
-    fn get_metrics(&self, text:&str, style:&FontStyle) -> TextMetrics;
-}
-
-//a Font
-//tp FontStyle
-/// A font style as a size in points and flags for font styling options
-#[derive(Clone, Copy, Debug)]
-pub struct FontStyle {
-    size : f64, // in points
-    flags : usize, // italic, bold
-}
-
-//ip FontStyle
-impl FontStyle {
-    //fp new
-    /// Create a new simple font style
-    pub fn new(size:f64, _weight:Option<&String>, _style:Option<&String>) -> Self {
-        let flags = 0;
-        Self { size, flags }
-    }
-}
-
-//tp Metrics
-pub trait Value : Clone + Copy + std::fmt::Debug + std::fmt::Display + PartialEq + PartialOrd + std::ops::Add<Output = Self> {
-    fn zero() -> Self;
-}
-
+//a CharIndices
+//ti CharIndices
 /// This structure provides simple metrics for a font or a region of
 /// characters in a font. It is based on the TeX Font Metrics.
 #[derive(Debug, Clone, Copy)]
@@ -104,21 +41,15 @@ impl CharIndices {
     }
 }
 
-//tp Parameter
-/// Font metric parameters
-#[derive(Debug, Copy, Clone)]
-pub enum Parameter<V:Value> {
-    /// Size of a space in the font (standard gap between words)
-    Space(V),
-    /// Size of an 'em' in the font (length of an em-dash, not necessarily the width of 'M')
-    Em(V),
-    /// Space after a period at the end of a sentence
-    PunctSpace(V),
-    // x height
-    // cap height
-    // ascent
-    // descent
-}
+//a Metrics
+//tp Metrics
+/// This structure provides simple metrics for a font or a region of
+/// characters in a font. It is based on the TeX Font Metrics.
+///
+/// It is designed to be built into a hierarchy, such that an
+/// arbitrary font can be described, but that the details for a single
+/// font may be kept small, and accessing a character's details are
+/// lightweight
 #[derive(Debug)]
 pub struct Metrics<V:Value> {
     /// First Unicode Scalar Value represented by these metrics (inclusive)
@@ -141,30 +72,6 @@ pub struct Metrics<V:Value> {
     exceptions : Vec<Metrics<V>>,
 }
 
-pub struct GlyphMetrics<V:Value> {
-    width : V,
-    height : V,
-    depth : V,
-    italic : V,
-    options : usize
-}
-impl <V:Value> GlyphMetrics<V> {
-    pub fn zero() -> Self {
-        Self { width  : V::zero(),
-               height : V::zero(),
-               depth  : V::zero(),
-               italic : V::zero(),
-               options : 0,
-        }
-    }
-    pub fn add(&self, other:&Self) -> Self {
-        Self { width  : self.width + other.width,
-               height : if self.height > other.height {self.height} else {other.height},
-               depth  : if self.depth > other.depth {self.depth} else {other.depth},
-               italic : other.italic,
-               options : other.options }
-    }
-}
 impl <V:Value> Metrics<V> {
     pub fn new_monospace(width : V, height : V, depth : V, italic : V) -> Self {
         let first_char = '\0';
@@ -229,38 +136,3 @@ impl <V:Value> Metrics<V> {
     }
 }
 
-//tp Font
-impl Value for f32 {
-    fn zero() -> Self { 0.0 }
-}
-impl Value for f64 {
-    fn zero() -> Self { 0.0 }
-}
-/// This structure provides simple metric storage for
-#[derive(Debug)]
-pub struct Font {
-    metrics : Metrics<f64>,
-}
-
-impl Font {
-    pub fn default() -> Self{
-        Self {
-            metrics : Metrics::new_monospace(0.5, 1.1, 0.3, 0.),
-        }
-    }
-}
-
-impl FontMetrics for Font {
-    fn get_metrics(&self, text:&str, style:&FontStyle) -> TextMetrics {
-        let mut gm = GlyphMetrics::zero();
-        for c in text.chars() {
-            // if a space, add metrics.space?
-            gm = gm.add(&self.metrics.glyph_metrics(c));
-        }
-        let size     = style.size * 25.4 / 72.0;
-        let width    = gm.width * size;
-        let ascender = gm.height * size;
-        let descender = gm.depth * size;
-        TextMetrics { width, descender, ascender }
-    }
-}

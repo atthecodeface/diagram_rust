@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"hmlm",
+	"fonts",
 	"geometry",
 	"stylesheet",
 	"diagram",
