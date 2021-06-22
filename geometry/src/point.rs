@@ -26,6 +26,8 @@ pub struct Point {
     /// Y coordinate of the point
     pub y:f64
 }
+// type Point<const D:usize> = geometry::simd::F32x2Vec2;
+// type B<const D: usize> = Bezier<f32, Point<D>, D>;
 
 //ti Display for Point
 impl std::fmt::Display for Point {

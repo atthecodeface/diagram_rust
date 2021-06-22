@@ -1,11 +1,12 @@
 [package]
 name = "geometry"
 version = "0.1.0"
+edition = "2018"
 
 [dependencies.geo-nd]
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies.bezier-nd]
-version = "0.1.0"
+version = "0.1.1"
 
 

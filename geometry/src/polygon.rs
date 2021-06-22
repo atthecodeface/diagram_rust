@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
 use super::Point;
 use super::Rectangle;
 use super::Bezier;
@@ -29,7 +30,7 @@ use super::BezierPath;
 ///
 /// Nominally it is a regular n-gon, but it may have an eccentricity
 ///
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Polygon {
     center   : Point,
     vertices : usize,
@@ -47,12 +48,12 @@ impl std::fmt::Display for Polygon {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if self.vertices == 0 {
             if self.eccentricity == 1. {
-                write!(f, "Circle<{}, r={}>", self.center, self.size)
+                write!(f, "Circle<{:?}, r={}>", self.center, self.size)
             } else {
-                write!(f, "Ellipse<{}, a={}, b={}, rot={}>", self.center, self.size*self.eccentricity, self.size, self.rotation)
+                write!(f, "Ellipse<{:?}, a={}, b={}, rot={}>", self.center, self.size*self.eccentricity, self.size, self.rotation)
             }
         } else {
-            write!(f, "Poly<{}, n={}, s={}, e={}, rot={}, stel={}, rnd={}>", self.center, self.vertices, self.size, self.eccentricity, self.rotation, self.stellate_size, self.rounding)
+            write!(f, "Poly<{:?}, n={}, s={}, e={}, rot={}, stel={}, rnd={}>", self.center, self.vertices, self.size, self.eccentricity, self.rotation, self.stellate_size, self.rounding)
         }
     }
 }
@@ -64,44 +65,44 @@ impl Polygon {
     /// stellation size The polygon has a default of rotation of 0,
     /// size of 0, and rounding of 0, with no eccentricity
     pub fn new(vertices:usize, stellate_size:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices:vertices, rotation:0., rounding:0., size:0., eccentricity:1., stellate_size }
+        Self{ center:Point::zero(), vertices:vertices, rotation:0., rounding:0., size:0., eccentricity:1., stellate_size }
     }
 
     //fp new_rect
     /// Create a new rectangle of a certain width and height, with no
     /// rotation nor rounding
     pub fn new_rect(w:f64, h:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices:4, rotation:0., rounding:0., size:h/(2.0_f64.sqrt()), eccentricity:w/h, stellate_size:0. }
+        Self{ center:Point::zero(), vertices:4, rotation:0., rounding:0., size:h/(2.0_f64.sqrt()), eccentricity:w/h, stellate_size:0. }
     }
 
     //fp new_polygon
     /// Create a new polygon with a certain number of vertices and size, with a given rotation and rounding
     pub fn new_polygon(vertices:usize, size:f64, rotation:f64, rounding:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices, rotation, rounding, size, eccentricity:1., stellate_size:0. }
+        Self{ center:Point::zero(), vertices, rotation, rounding, size, eccentricity:1., stellate_size:0. }
     }
 
     //fp new_star
     /// Create a new star with a certain number of points
     pub fn new_star(vertices:usize, size:f64, in_out:f64, rotation:f64, rounding:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices, rotation, rounding, size, eccentricity:1., stellate_size:size*in_out }
+        Self{ center:Point::zero(), vertices, rotation, rounding, size, eccentricity:1., stellate_size:size*in_out }
     }
 
     //fp new_circle
     /// Create a new circle of a certain radius
     pub fn new_circle(r:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices:0, rotation:0., rounding:0., size:r, eccentricity:1., stellate_size:0. }
+        Self{ center:Point::zero(), vertices:0, rotation:0., rounding:0., size:r, eccentricity:1., stellate_size:0. }
     }
 
     //fp new_ellipse
     /// Create a new ellipse with two radii at a particular rotation
     pub fn new_ellipse(rx:f64, ry:f64, rotation:f64) -> Self {
-        Self{ center:Point::new(0.,0.), vertices:0, rotation, rounding:0., size:ry, eccentricity:rx/ry, stellate_size:0. }
+        Self{ center:Point::zero(), vertices:0, rotation, rounding:0., size:ry, eccentricity:rx/ry, stellate_size:0. }
     }
 
     //cp translate
     /// Consume the polygon and translate it, and return a new Polygo
     pub fn translate(mut self, pt:&Point) -> Self {
-        self.center = self.center.add(pt, 1.);
+        self.center += *pt;
         self
     }
 
@@ -142,13 +143,13 @@ impl Polygon {
                rounding : self.rounding,
         }
     }
-    
+
     //mp as_paths
     /// Append the polygon as a set of Beziers
     pub fn as_paths(&self) -> BezierPath {
         match self.vertices {
             0 => {
-                BezierPath::of_ellipse( &Point::origin(),
+                BezierPath::of_ellipse( &Point::zero(),
                                          self.size,
                                          self.eccentricity,
                                          self.rotation )
@@ -168,20 +169,9 @@ impl Polygon {
     pub fn get_bbox(&self) -> Rectangle {
         match self.vertices {
             0 => Rectangle::new(-self.size*self.eccentricity, -self.size, self.size*self.eccentricity, self.size),
-            1 => Rectangle::new(self.center.x, self.center.y, self.center.x, self.center.y),
+            1 => Rectangle::new(self.center[0], self.center[1], self.center[0], self.center[1]),
             _ => Rectangle::bbox_of_points(&self.get_points()),
         }
-    }
-
-    //mp elliptical_paths
-    /// Create a set of paths that make an ellipse
-    fn elliptical_paths(&self, mut v:Vec<Bezier>) -> Vec<Bezier> {
-        let origin = Point::new(0.,0.);
-        v.push( Bezier::arc(90.,self.size,&origin,  0.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
-        v.push( Bezier::arc(90.,self.size,&origin, 90.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
-        v.push( Bezier::arc(90.,self.size,&origin,180.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
-        v.push( Bezier::arc(90.,self.size,&origin,270.).scale_xy(self.eccentricity,1.).rotate(self.rotation));
-        v
     }
 
     //mp get_points
@@ -189,21 +179,23 @@ impl Polygon {
     /// anticlockwise order
     fn get_points(&self) -> Vec<Point> {
         assert!(self.vertices>1);
+        let origin = Point::zero();
         let mut corners = Vec::new();
-        let delta_angle = 360./(self.vertices as f64);
+        let delta_angle = (360.0f64).to_radians()/(self.vertices as f64);
         for i in 0..self.vertices {
-            let p = Point::new(self.size,0.)
-                .rotate(delta_angle*(0.5-(i as f64)))
-                .scale_xy(self.eccentricity,1.)
-                .rotate(self.rotation)
-                .add(&self.center, 1.);
+            let mut p = Point::from_array([self.size,0.]);
+            p.rotate_around(&origin, delta_angle*(0.5-(i as f64)),0,1);
+            p[0] *=self.eccentricity;
+            p.rotate_around(&origin, self.rotation.to_radians(),0,1);
+            p += self.center;
             corners.push(p);
+
             if self.stellate_size != 0. {
-                let p = Point::new(self.stellate_size,0.)
-                    .rotate(delta_angle*(0.0-(i as f64)))
-                    .scale_xy(self.eccentricity,1.)
-                    .rotate(self.rotation)
-                    .add(&self.center, 1.);
+                let mut p = Point::from_array([self.stellate_size,0.]);
+                p.rotate_around(&origin, delta_angle*(0.0-(i as f64)),0,1);
+                p[0] *= self.eccentricity;
+                p.rotate_around(&origin, self.rotation.to_radians(),0,1);
+                p += self.center;
                 corners.push(p);
             }
         }
@@ -219,18 +211,22 @@ impl Polygon {
 mod tests_polygon {
     use super::*;
     pub fn pt_eq(pt:&Point, x:f64, y:f64) {
-        assert!((pt.x-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
-        assert!((pt.y-y).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
+        assert!((pt[0]-x).abs()<1E-7, "mismatch in x {:?} {} {}",pt,x,y);
+        assert!((pt[1]-y).abs()<1E-7, "mismatch in y {:?} {} {}",pt,x,y);
     }
     pub fn bezier_eq(bez:&Bezier, v:Vec<(f64,f64)>) {
-        match bez {
-            Bezier::Cubic(p0,c0,c1,p1) => {
-                pt_eq(p0, v[0].0, v[0].1);
-                pt_eq(c0, v[1].0, v[1].1);
-                pt_eq(c1, v[2].0, v[2].1);
-                pt_eq(p1, v[3].0, v[3].1);
-            }
-            _ => {},
+        if bez.is_cubic() {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
+            pt_eq(bez.borrow_pt(3), v[2].0, v[2].1);
+            pt_eq(bez.borrow_pt(1), v[3].0, v[3].1);
+        } else if bez.is_quadratic() {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
+            pt_eq(bez.borrow_pt(1), v[2].0, v[2].1);
+        } else {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(1), v[1].0, v[1].1);
         }
     }
     #[test]

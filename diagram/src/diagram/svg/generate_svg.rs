@@ -78,21 +78,21 @@ impl <'a> GenerateSvg for Element<'a> {
             ele.add_polygon_path(self.header.layout_box.get_border_shape().unwrap(), true);
             svg.add_subelement(ele);
         }
-        
+
         if svg.show_content_rectangles {
             let rect = self.header.layout_box.get_content_rectangle();
             let (c,w,h) = rect.get_cwh();
             let mut ele = SvgElement::new("rect");
             // ele.add_attribute("id", &format!("{}.content_rect",self.header.borrow_id()));
             ele.add_attribute("fill", "#40ff8080");
-            ele.add_size("x", c.x-w/2.);
-            ele.add_size("y", c.y-h/2.);
+            ele.add_size("x", c[0]-w/2.);
+            ele.add_size("y", c[1]-h/2.);
             ele.add_size("width", w);
             ele.add_size("height", h);
             self.header.svg_add_transform(&mut ele);
             svg.add_subelement(ele);
         }
-        
+
         self.content.generate_svg(svg, &self.header)?;
 
         if let Some((spacing, color)) = self.header.layout.debug_get_grid() {
@@ -102,7 +102,7 @@ impl <'a> GenerateSvg for Element<'a> {
                 svg.add_subelement(ele);
             }
         }
-        
+
         if self.header.layout.border_color.is_some() {
             let mut ele = SvgElement::new("path");
             ele.add_color("stroke",&self.header.layout.border_color.unwrap());

@@ -212,9 +212,9 @@ A simple first example diagram consists of four shapes laid out in a 2-by-2 grid
 
 ```text
 #diagram
-##polygon vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1 
+##polygon vertices=3 grid=1,1 fill=blue width=10 stroke=yellow strokewidth=1
 ##polygon vertices=4 grid=1,2 fill=pink width=10
-##polygon vertices=3 grid=2,1 fill=blue width=10 stellate=8 stroke=yellow strokewidth=1 
+##polygon vertices=3 grid=2,1 fill=blue width=10 stellate=8 stroke=yellow strokewidth=1
 ##polygon vertices=4 grid=2,2 fill=pink width=10 stellate=8
 ```
 
@@ -330,12 +330,6 @@ borderwidth should be the color
 
 !*/
 
-//a Crates
-extern crate xml;
-extern crate hmlm;
-extern crate geometry;
-extern crate stylesheet;
-
 //a Imports and exports
 mod layout;
 mod constants;
@@ -343,8 +337,8 @@ mod diagram;
 mod diagram_ml;
 
 pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
-pub (crate) use diagram::{StyleSheet, StyleRule, DiagramContents};
+pub (crate) use self::diagram::{StyleSheet, StyleRule, DiagramContents};
 
-pub use diagram::{Diagram, DiagramDescriptor};
-pub use diagram::{Svg, GenerateSvg};
+pub use self::diagram::{Diagram, DiagramDescriptor};
+pub use self::diagram::{Svg, GenerateSvg};
 pub use diagram_ml::{DiagramML, MLErrorList};

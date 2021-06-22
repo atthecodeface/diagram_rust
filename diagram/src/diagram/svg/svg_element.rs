@@ -17,11 +17,12 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
 use geometry::{Polygon, Rectangle, Bezier, BezierPath, Point, Transform};
 
 //a Useful stuff
 fn pt_as_str(pt:&Point) -> String {
-    format!("{:.4},{:.4}", pt.x, pt.y)
+    format!("{:.4},{:.4}", pt[0], pt[1])
 }
 const INDENT_STRING : &str="                                                            ";
 
@@ -49,7 +50,7 @@ impl SvgElement {
     pub fn add_attribute(&mut self, name:&str, value:&str) {
         self.attributes.push( (name.to_string(), value.to_string() ) );
     }
-        
+
     //fp add_string
     pub fn add_string(&mut self, s:&str) {
         self.characters = Some(s.to_string());
@@ -58,7 +59,7 @@ impl SvgElement {
     //fp add_transform
     pub fn add_transform(&mut self, transform:&Transform) {
         let mut r = String::new();
-        if !transform.translation.is_origin() { r.push_str(&format!("translate({:.4} {:.4}) ",transform.translation.x, transform.translation.y)); }
+        if !transform.translation.is_zero() { r.push_str(&format!("translate({:.4} {:.4}) ",transform.translation[0], transform.translation[1])); }
         if transform.rotation != 0.           { r.push_str(&format!("rotate({:.4}) ",transform.rotation)); }
         if transform.scale != 1.              { r.push_str(&format!("scale({:.4}) ",transform.scale)); }
         if r.len() > 0 {
@@ -84,13 +85,13 @@ impl SvgElement {
     pub fn add_markers(&mut self, markers:&(Option<String>, Option<String>, Option<String>)) {
         if let Some(ref s) = markers.0 {
             self.add_attribute("marker-start", &format!("url(#{})",s));
-        }            
+        }
         if let Some(ref s) = markers.1 {
             self.add_attribute("marker-mid", &format!("url(#{})",s));
-        }            
+        }
         if let Some(ref s) = markers.2 {
             self.add_attribute("marker-end", &format!("url(#{})",s));
-        }            
+        }
     }
 
     //fp add_bezier_path
@@ -98,10 +99,18 @@ impl SvgElement {
         let mut r = String::new();
         r.push_str(&format!("M {}",pt_as_str(&bp.get_pt(0))));
         for b in bp.iter_beziers() {
-            match b {
-                Bezier::Linear(_,p1) => r.push_str(&format!(" L {}",pt_as_str(p1))),
-                Bezier::Quadratic(_,c,p1) => r.push_str(&format!(" Q {} {}",pt_as_str(c),pt_as_str(p1))),
-                Bezier::Cubic(_,c0,c1,p1) => r.push_str(&format!(" C {} {} {}",pt_as_str(c0),pt_as_str(c1),pt_as_str(p1))),
+            if b.is_line() {
+                r.push_str( &format!(" L {}",
+                                     pt_as_str(b.borrow_pt(1)) ));
+            } else if b.is_quadratic() {
+                r.push_str(&format!(" Q {} {}",
+                                    pt_as_str(b.borrow_pt(2)),
+                                    pt_as_str(b.borrow_pt(1)) ));
+            } else {
+                r.push_str(&format!(" C {} {} {}",
+                                    pt_as_str(b.borrow_pt(2)),
+                                    pt_as_str(b.borrow_pt(3)),
+                                    pt_as_str(b.borrow_pt(1)) ));
             }
         }
         if closed { r.push_str(" z"); }
@@ -145,8 +154,8 @@ impl SvgElement {
         grid.add_attribute("d",&r);
         Some(grid)
     }
-    
-    
+
+
     //fp display
     pub fn display(&self, indent:usize) {
         let indent_str = &INDENT_STRING[0..indent];

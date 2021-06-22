@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
 use geometry::{Transform, Point, Range, Rectangle, Float4, Polygon};
 use super::grid::{GridData, GridPlacement};
 use super::placement::{Placements};
@@ -67,8 +68,8 @@ pub struct LayoutBox {
 impl LayoutBox {
     //fp new
     pub fn new() -> Self {
-        Self { expansion : Point::origin(),
-               anchor    : Point::origin(),
+        Self { expansion : Point::zero(),
+               anchor    : Point::zero(),
                margin    : None,
                border_width    : 0.,
                border_round    : 0.,
@@ -130,7 +131,7 @@ impl LayoutBox {
         self.anchor = anchor;
         self.expansion = expansion;
     }
-    
+
     //fp borrow_content_transform
     pub fn borrow_content_transform(&self) -> Option<&Transform> {
         self.content_to_layout.as_ref()
@@ -158,12 +159,12 @@ impl LayoutBox {
     ///
     /// If angle<0 then the solution is mirrored along the horizontal; the same
     /// rectangle size works therefore.
-    /// 
+    ///
     /// If angle>=90 then we can consider a-90 and swap width and height
     /// Then, if width>height we can consider 90-angle and swap width and height.
-    /// 
+    ///
     /// Hence only consider angle<90 (hence tan(a)>=0) and width<=height
-    /// 
+    ///
     /// Note that the area of a RH triangle with `angle` and
     /// adjacent length l is 1/2.l.l.tan(a) = l^2.t/2
     /// Assume the largest rectangle leaves rectangular spaces
@@ -175,25 +176,25 @@ impl LayoutBox {
     /// And tan(a)=(y'-y)h/w(1-x); i.e.
     /// wt(1-x) = y'h-yh
     /// y'h     = wt(1-x) + xw/t = wt(1+x/(t^2)-x)
-    /// 
+    ///
     /// Then the 'wasted space' is then two triangles of size xw : yh and
     /// two triangles of size w(1-x) : (y'-y)h, and the rectangle of size w : (1-y')h.
-    /// 
+    ///
     /// The total is the sum of:
     /// xw.yh = x^2.w^2/t
     /// w(1-x).(y'-y)h = w^2.(1-x)^2.t = w^2.t.(1+x^2-2x) = w^2.t + x^2.w^2.t -2x.w^2.t
     /// wh-wy'h = wh - w^2.t(1+x/(t^2)-x) = wh -w^2.t -x.w^2/t + x.w^2.t
-    /// 
+    ///
     /// Sum = x^2.w^2/t + w^2.t + x^2.w^2.t -2x.w^2.t + wh -w^2.t -x.w^2/t + x.w^2.t
     /// = x^2.w^2/t + x^2.w^2.t -x.w^2.t -x.w^2/t + wh
-    /// 
+    ///
     /// This has a minimum (wasted) area when its derivative is 0 (since it has +ve x^2)
-    /// 
+    ///
     /// dA/dx = 2x.w^2/t + 2x.w^2.t -w^2.t -w^2/t
     /// = (2x-1).w^2.(1/t+t)
-    /// 
+    ///
     /// i.e. x=0.5; i.e. the correct x is independent of w, h, a.
-    /// 
+    ///
     /// But, y' must be <=1. So, we want an x closest to 0.5 where y'<=1
     /// Now y' when x=0.5 is:
     /// y' = wt(1+0.5/(t^2)-0.5)/h
@@ -205,7 +206,7 @@ impl LayoutBox {
     /// 2/sin(2a) <= 2h/w
     /// sin(2a)   >= w/h
     /// So we only have to worry if sin(2a) < w/h
-    /// 
+    ///
     /// Now y'=1 occurs when w/h.t(1+x/(t^2)-x) = 1
     /// i.e. 1+x/(t^2)-x  = h/(wt)
     /// i.e. x(1/(t^2)-1) = h/(wt) - 1
@@ -275,7 +276,7 @@ impl LayoutBox {
     }
 
     //mp content_within_inner
-    /// 
+    ///
     fn content_within_inner(&mut self) -> () {
         if DEBUG_LAYOUT { println!("{:?} {:?}",self.inner, self.content_desired); }
         let (ic, iw, ih)  = self.inner.unwrap().get_cwh();
@@ -288,12 +289,12 @@ impl LayoutBox {
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
         let di_x_range = Range::new(cd.x0*self.content_scale, cd.x1*self.content_scale);
-        let a_x_range  = Range::new(ic.x-aw/2., ic.x+aw/2.);
-        let (x_translation,ci_x_range) = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor.x, self.expansion.x);
+        let a_x_range  = Range::new(ic[0]-aw/2., ic[0]+aw/2.);
+        let (x_translation,ci_x_range) = di_x_range.clone().fit_within_dimension(&a_x_range, self.anchor[0], self.expansion[0]);
 
         let di_y_range = Range::new(cd.y0*self.content_scale, cd.y1*self.content_scale);
-        let a_y_range  = Range::new(ic.y-ah/2., ic.y+ah/2.);
-        let (y_translation,ci_y_range) = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor.y, self.expansion.y);
+        let a_y_range  = Range::new(ic[1]-ah/2., ic[1]+ah/2.);
+        let (y_translation,ci_y_range) = di_y_range.clone().fit_within_dimension(&a_y_range, self.anchor[1], self.expansion[1]);
 
         // ci_*_range is in inner coordinates centred on 'zero => inner center'
         // assuming content will be 'centred' on its desired centre (should perhaps use reference points?)
@@ -302,17 +303,17 @@ impl LayoutBox {
         // then when the content is drawn centred on this desired centre it will appear centres on inner centre
         if DEBUG_LAYOUT { println!("Getting content within inner {} {} : {} {} : {} {}",di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range); }
         self.content = Some(Rectangle::none().to_ranges(ci_x_range, ci_y_range)
-                            .translate(&Point::new(x_translation,y_translation),-1.)
+                            .translate(&Point::from_array([x_translation,y_translation]),-1.)
                             .scale(1.0/self.content_scale));
 
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
-        let transform = Transform::of_trs(Point::new(x_translation,y_translation), // This helped .rotate(self.content_rotation),
+        let transform = Transform::of_trs(Point::from_array([x_translation,y_translation]), // This helped .rotate(self.content_rotation),
                                           self.content_rotation,
                                           self.content_scale );
         let dc = cd.get_center();
-        let t2 = Transform::of_translation(Point::new(-dc.x, -dc.y));
+        let t2 = Transform::of_translation(-dc);
         let transform = transform.apply(&t2);
-        let t2 = Transform::of_translation(Point::new(dc.x, dc.y));
+        let t2 = Transform::of_translation(dc);
         let transform = t2.apply(&transform);
         // if cd.get_center().len() > 0.001 {
         //     println!("Transform of {} for {:?}", transform, cd);
@@ -335,7 +336,7 @@ impl LayoutBox {
     pub fn get_content_rectangle(&self) -> Rectangle  {
         self.content.unwrap()
     }
-    
+
     //mp display
     // Display with an indent of indent_str plus two spaces
     pub fn display(&self, indent_str:&str) {
@@ -377,7 +378,7 @@ impl Layout {
         let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
         let direct_placements = ( Placements::new(), Placements::new() );
         Self { grid_placements, direct_placements,
-               grid_expand : (0., 0.), 
+               grid_expand : (0., 0.),
                desired_placement : Rectangle::none(),
                desired_grid      : Rectangle::none(),
                desired_geometry  : Rectangle::none(),
@@ -393,8 +394,8 @@ impl Layout {
 
     //mp add_placed_element
     pub fn add_placed_element(&mut self, pt:&Point, ref_pt:&Option<Point>, bbox:&Rectangle) {
-        self.direct_placements.0.add_element(pt.x, ref_pt.map(|pt| pt.x), bbox.x0, bbox.x1);
-        self.direct_placements.1.add_element(pt.y, ref_pt.map(|pt| pt.y), bbox.y0, bbox.y1);
+        self.direct_placements.0.add_element(pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
+        self.direct_placements.1.add_element(pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
     }
 
     //mp add_min_cell_data
@@ -460,7 +461,7 @@ impl Layout {
         if DEBUG_LAYOUT { println!("Why not centre on ac {}?",ac); }
         self.grid_placements.0.calculate_positions(aw, 0., self.grid_expand.0);
         self.grid_placements.1.calculate_positions(ah, 0., self.grid_expand.1);
-        self.content_to_actual = Transform::of_translation(ac.add(&dc,-1.));
+        self.content_to_actual = Transform::of_translation(ac - dc);
     }
 
     //mp get_layout_transform
@@ -512,7 +513,7 @@ impl Layout {
     let i1 = min i1 (tl.last_index-tl.start_index) in (* i1 <= n *)
     if (i1<=i0) then (0.,0.) else (tl.positions.(i0), tl.positions.(i1))
 
-    
+
   (*f resize_and_place : t -> center float -> size float -> t_layout *)
   let resize_and_place (t:t_placement) c (size:float) =
     let n = t.last_index - t.start_index in
@@ -550,7 +551,7 @@ let sort_by_start_index cell_data =
 
 (*f find_min_size - find the shortest height in cell_data starting
     at the specified row;
-    
+
     If there are any cells that start at a row
     after first_row but all cells starting at first_row span beyond
     those, then first_row can be zero height.
@@ -599,7 +600,7 @@ let remove_rows sd first_row next_row row_size =
 
 (*f find_next_row_position - find the minimum height and next given
     the current row, then set the row positions and remove the span
-    height from the cell data, and move on 
+    height from the cell data, and move on
 
  *)
 let rec find_next_row_position acc sd first_row current_posn =
@@ -628,7 +629,7 @@ let find_first_last_index (f,l) (s,n,_) =
   let f = min s f in
   let l = max l (s+n) in
   (f,l)
-  
+
 
 (*a Top level *)
 let make_placement = Placement.make
@@ -636,8 +637,8 @@ let get_placement_size = Placement.get_size
 
 let make_layout = Layout.resize_and_place
 let get_layout_bbox = Layout.get_bbox
-                        
-                  
+
+
 */
 
 
@@ -664,6 +665,6 @@ impl LayoutRecord {
     pub fn capture_grid(&mut self, layout:&Layout) {
         self.grid_positions = Some(layout.get_grid_positions());
     }
-    
+
     //zz All done
 }

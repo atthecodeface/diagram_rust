@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
 use geometry::{Rectangle, Bezier, BezierPath, Point};
 use crate::constants::attributes as at;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
@@ -49,7 +50,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp new
     fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
         Ok( Self {
-            center:Point::origin(),
+            center:Point::zero(),
             width : 0.,
             height : 0.,
             round : 0.,
@@ -100,7 +101,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
             for i in 0..v.len()/2 {
                 let x = v[i*2];
                 let y = v[i*2+1];
-                self.coords.push(Point::new(x,y));
+                self.coords.push(Point::from_array([x,y]));
             }
         }
         if let Some(v) = header.get_style_strings_of_name(at::MARKERS).as_strings(None) {
@@ -147,7 +148,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
         self.width  = w;
         self.height = h;
     }
-    
+
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4
@@ -179,9 +180,10 @@ impl GenerateSvgElement for Path {
         }
         ele.add_markers(&self.markers);
         ele.add_size("stroke-width",self.stroke_width);
+        let scale_xy = Point::from_array([self.width*0.5, self.height*0.5]);
         let mut coords = Vec::new();
         for c in &self.coords {
-            coords.push( c.scale_xy(self.width*0.5, self.height*0.5).add(&self.center, 1.) );
+            coords.push( (*c)*scale_xy + self.center );
         }
         let mut path = BezierPath::new();
         for i in 0..coords.len()-1 {

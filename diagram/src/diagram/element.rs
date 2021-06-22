@@ -20,6 +20,7 @@ limitations under the License.
 const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use geo_nd::Vector;
 use geometry::{Rectangle, Point};
 use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, Tree};
@@ -29,7 +30,7 @@ use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 pub use super::elements::{Group, Shape, Path, Text, Use};
 use super::types::*;
-    
+
 //a DiagramElement trait
 /// 'a is the lifetime of the diagram
 /// 'b is the lifetime of a scope while uniqifying/cloning contents of the diagram
@@ -43,7 +44,7 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     ///
     /// This method is only invoke prior to styling, so often is the same as `new`
     fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a, 'b> ) -> Result<Self,ElementError>;
-    
+
     //mp uniquify
     /// Sets internal self.content to a clone of a resolved definition
     ///
@@ -64,7 +65,7 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     fn style(&mut self, _descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
         Ok(())
     }
-    
+
     //mp get_desired_geometry
     /// Get the desired bounding box for the element; the layout is
     /// required if it is to be passed in to the contents (element
@@ -180,9 +181,9 @@ impl <'a, 'b> ElementScope<'a, 'b> {
         }
     }
 }
-    
+
 //a ElementContent - enumerated union of the above
-//tp ElementContent 
+//tp ElementContent
 #[derive(Debug)]
 pub enum ElementContent<'a> {
     /// Group is used for Marker, Layout and Group
@@ -279,7 +280,7 @@ impl <'a> ElementContent<'a> {
             _ => tree
         }
     }
-    
+
     //mp style
     pub fn style(&mut self, descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
         match self {
@@ -317,7 +318,7 @@ impl <'a> ElementContent<'a> {
             _ => (),
         }
     }
-    
+
     //mp display
     pub fn display(&self, indent:usize, indent_str:&str) {
         match self {
@@ -328,7 +329,7 @@ impl <'a> ElementContent<'a> {
             Self::Use(ref t)   => { println!("{}  Use",indent_str);   t.display(indent, indent_str);},
         }
     }
-    
+
     //zz All done
 }
 
@@ -384,11 +385,11 @@ impl ElementLayout {
                debug  : "".to_string(),
                ref_pt : None,
                bbox   : Rectangle::none(),
-               anchor : Point::origin(),
-               expand : Point::origin(),
+               anchor : Point::zero(),
+               expand : Point::zero(),
                scale:1.,
                rotation:0.,
-               translate : Point::origin(),
+               translate : Point::zero(),
                border_width : 0.,
                border_round : 0.,
                border_color : None,
@@ -408,19 +409,19 @@ impl ElementLayout {
             Some(g) => {
                 match g.len() {
                     0 => (),
-                    1 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[0]); },
-                    2 =>  { layout.bbox = Rectangle::of_cwh(Point::origin(), g[0], g[1]); },
-                    3 =>  { layout.bbox = Rectangle::of_cwh(Point::new(g[0], g[1]), g[2], g[2]); },
+                    1 =>  { layout.bbox = Rectangle::of_cwh(Point::zero(), g[0], g[0]); },
+                    2 =>  { layout.bbox = Rectangle::of_cwh(Point::zero(), g[0], g[1]); },
+                    3 =>  { layout.bbox = Rectangle::of_cwh(Point::from_array([g[0], g[1]]), g[2], g[2]); },
                     _ =>  { layout.bbox = Rectangle::new(g[0], g[1], g[2], g[3]); },
                 }
             }
             _ => (),
         };
         if let Some(v) = header.get_style_floats_of_name(at::ANCHOR).as_floats(None) {
-            layout.anchor = Point::new(v[0],v[1]);
+            layout.anchor = Point::from_array([v[0],v[1]]);
         }
         if let Some(v) = header.get_style_floats_of_name(at::EXPAND).as_floats(None) {
-            layout.expand = Point::new(v[0],v[1]);
+            layout.expand = Point::from_array([v[0],v[1]]);
         }
         if let Some(v) = header.get_style_of_name_float(at::BORDERWIDTH,None) {
             layout.border_width = v;
@@ -447,7 +448,7 @@ impl ElementLayout {
             layout.pad = Some( (v[0], v[1], v[2], v[3]) );
         }
         if let Some(v) = header.get_style_floats_of_name(at::TRANSLATE).as_floats(None) {
-            layout.translate = Point::new(v[0],v[1]);
+            layout.translate = Point::from_array([v[0],v[1]]);
         }
         if let Some( (sx,sy,ex,ey) ) = {
             let opt_gx = {
@@ -524,7 +525,7 @@ impl ElementLayout {
         }
         Ok(layout)
     }
-    
+
     //mp debug_get_grid
     pub fn debug_get_grid(&self) -> Option<(f64, &str)> {
         if self.debug != "" {
@@ -533,15 +534,15 @@ impl ElementLayout {
             None
         }
     }
-    
+
     //mp set_grid
     pub fn set_grid(&mut self, sx:isize, sy:isize, ex:isize, ey:isize) {
         self.placement = LayoutPlacement::Grid(sx,sy,ex,ey);
     }
-    
+
     //mp set_place
     pub fn set_place(&mut self, x:f64, y:f64) {
-        self.placement = LayoutPlacement::Place(Point::new(x,y));
+        self.placement = LayoutPlacement::Place(Point::from_array([x,y]));
     }
 
     //mp set_layout_box
@@ -553,7 +554,7 @@ impl ElementLayout {
                 self.bbox
             }
         };
-        layout_box.set_content_geometry(bbox, Point::origin(), self.scale, self.rotation);
+        layout_box.set_content_geometry(bbox, Point::zero(), self.scale, self.rotation);
         layout_box.set_border_width(self.border_width);
         layout_box.set_border_round(self.border_round);
         layout_box.set_margin(&self.margin);
@@ -565,7 +566,7 @@ impl ElementLayout {
     fn set_layout_properties(&self, layout:&mut Layout, bbox:Rectangle) -> Rectangle {
         match self.placement {
             LayoutPlacement::None => {
-                layout.add_placed_element( &Point::origin(), &None, &bbox );
+                layout.add_placed_element( &Point::zero(), &None, &bbox );
                 Rectangle::none()
             }
             LayoutPlacement::Grid(sx,sy,ex,ey) => {
@@ -578,7 +579,7 @@ impl ElementLayout {
             },
         }
     }
-    
+
     //zz All done
 }
 
@@ -660,7 +661,7 @@ impl <'a> ElementHeader <'a> {
         self.stylable.override_values( &other.stylable );
         Ok(())
     }
-    
+
     //mp borrow_id
     pub fn borrow_id(&self) -> &str {
         match &self.id_name {
@@ -737,7 +738,7 @@ impl <'a> ElementHeader <'a> {
         self.layout = ElementLayout::of_style(self)?;
         Ok(())
     }
-    
+
     //mp set_layout_properties
     /// By this point layout_box has had its desired_geometry set
     pub fn set_layout_properties(&mut self, layout:&mut Layout, content_desired:Rectangle) -> Rectangle {
@@ -745,7 +746,7 @@ impl <'a> ElementHeader <'a> {
         let bbox = self.layout_box.get_desired_bbox();
         self.layout.set_layout_properties(layout, bbox)
     }
-                           
+
     //mp apply_placement
     /// The layout contains the data required to map a grid or placement layout of the element
     ///
@@ -765,7 +766,7 @@ impl <'a> ElementHeader <'a> {
         self.layout_box.layout_within_rectangle(rect);
         self.layout_box.get_content_rectangle()
     }
-   
+
     //mp display
     pub fn display(&self, indent_str:&str) {
         println!("{}{:?} {}",indent_str, self.id_name, self.layout.placement);
@@ -878,7 +879,7 @@ impl <'a> Element <'a> {
         self.content.style(descriptor, &self.header)?;
         Ok(())
     }
-        
+
     //mp set_layout_properties
     /// This method is invoked to set the `Layout` of this element, by
     /// finding its desired geometry and any placement or grid

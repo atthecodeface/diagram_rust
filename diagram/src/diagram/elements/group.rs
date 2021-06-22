@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
 use stylesheet::{StylableNode, Tree};
 use geometry::{Rectangle, Point};
 
@@ -97,7 +98,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             growx : Vec::new(),
             growy : Vec::new(),
             bbox  : Rectangle::none(),
-            ref_pt : Point::origin(), // for markers
+            ref_pt : Point::zero(), // for markers
             relief : (0.,0.),
             flags : 0,
             width : 0.,
@@ -120,7 +121,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             growx : Vec::new(),
             growy : Vec::new(),
             bbox  : Rectangle::none(),
-            ref_pt  : Point::origin(), // for markers
+            ref_pt  : Point::zero(), // for markers
             relief : (0.,0.),
             flags : 0,
             width : 0.,
@@ -182,16 +183,16 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             self.growy = self.read_cell_data(header, v)?;
         }
         if let Some(layout) = &mut self.layout {
-            layout.grid_expand.0 = header.layout.expand.x;
-            layout.grid_expand.1 = header.layout.expand.y;
+            layout.grid_expand.0 = header.layout.expand[0];
+            layout.grid_expand.1 = header.layout.expand[1];
         }
         // width, height, flags, ref point are only used in markers
         match header.get_style_floats_of_name(at::POINT).as_floats(None) {
             Some(g) => {
                 match g.len() {
                     0 => {},
-                    1 => { self.ref_pt = Point::new(g[0], g[0]); },
-                    _ => { self.ref_pt = Point::new(g[0], g[1]); },
+                    1 => { self.ref_pt = Point::from_array([g[0], g[0]]); },
+                    _ => { self.ref_pt = Point::from_array([g[0], g[1]]); },
                 }
             },
             _ => {},
@@ -260,7 +261,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
             }
         }
     }
-    
+
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4
@@ -323,7 +324,7 @@ impl <'a> Group<'a> {
             Ok(result)
         }
     }
-                                                                                 
+
     //mp add_element
     /// Add an element to the group; moves the element in to the content
     pub fn add_element(&mut self, element:Element<'a>) -> () {
@@ -340,7 +341,7 @@ impl <'a> Group<'a> {
     pub fn get_relief(&self, index:usize) -> f64 {
         if index == 0 { self.relief.0 } else { self.relief.1 }
     }
-    
+
     //zz All done
 }
 
@@ -363,8 +364,8 @@ impl <'a> GenerateSvgElement for Group <'a> {
                                        self.bbox.y0,
                                        self.bbox.x1-self.bbox.x0,
                                        self.bbox.y1-self.bbox.y0,));
-            ele.add_size("refX", self.ref_pt.x);
-            ele.add_size("refY", self.ref_pt.y);
+            ele.add_size("refX", self.ref_pt[0]);
+            ele.add_size("refY", self.ref_pt[1]);
             ele.add_size("markerWidth",  self.width  );
             ele.add_size("markerHeight", self.height );
             ele.add_attribute("markerUnits","strokeWidth");

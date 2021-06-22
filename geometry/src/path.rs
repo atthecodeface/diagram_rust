@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use super::Point;
 use super::Bezier;
+use geo_nd::Vector;
 
 //a Types
 //tp BezierPath
@@ -39,11 +40,15 @@ impl BezierPath {
     //fp of_ellipse
     /// Create a set of paths that make an ellipse
     pub fn of_ellipse(origin:&Point, radius:f64, eccentricity:f64, degrees:f64) -> Self {
+        let ra = (90.0f64).to_radians();
+        let rd = degrees.to_radians();
+        let x = Point::from_array([eccentricity,0.]);
+        let y = Point::from_array([0.,1.]);
         let mut v = Vec::new();
-        v.push( Bezier::arc(90.,radius,origin,  0.).scale_xy(eccentricity,1.).rotate(degrees));
-        v.push( Bezier::arc(90.,radius,origin, 90.).scale_xy(eccentricity,1.).rotate(degrees));
-        v.push( Bezier::arc(90.,radius,origin,180.).scale_xy(eccentricity,1.).rotate(degrees));
-        v.push( Bezier::arc(90.,radius,origin,270.).scale_xy(eccentricity,1.).rotate(degrees));
+        v.push( Bezier::arc(ra,radius,origin,&x,&y,rd) );
+        v.push( Bezier::arc(ra,radius,origin,&y,&(-x),rd) );
+        v.push( Bezier::arc(ra,radius,origin,&(-x),&(-y),rd) );
+        v.push( Bezier::arc(ra,radius,origin,&(-y),&x,rd) );
         Self { elements:v }
     }
 
@@ -78,7 +83,7 @@ impl BezierPath {
             if self.elements[i].is_line() && self.elements[i_1].is_line() {
                 let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
                 let v0 = self.elements[i  ].tangent_at(1.);
-                let v1 = self.elements[i_1].tangent_at(0.).scale_xy(-1.,-1.);
+                let v1 = -self.elements[i_1].tangent_at(0.);
                 let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding);
                 let np00 = self.elements[i].borrow_pt(0).clone();
                 let np01 = bezier.borrow_pt(0).clone();
@@ -99,7 +104,7 @@ impl BezierPath {
     pub fn get_pt(&self, index:usize) -> Point {
         let n = self.elements.len();
         if n == 0 {
-            Point::origin()
+            Point::zero()
         } else if index == 0 {
             self.elements[0].borrow_pt(0).clone()
         } else {
@@ -159,7 +164,7 @@ impl BezierPath {
             }
         }
     }
-    
+
     //mp iter_beziers
     /// Iterate through all the Beziers
     pub fn iter_beziers(&self) -> impl Iterator<Item = &Bezier> {
@@ -174,30 +179,30 @@ impl BezierPath {
 mod test_path {
     use super::*;
     pub fn pt_eq(pt:&Point, x:f64, y:f64) {
-        assert!((pt.x-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
-        assert!((pt.y-y).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
+        assert!((pt[0]-x).abs() < 1E-8, "mismatch in x {:?} {} {}",pt,x,y);
+        assert!((pt[1]-y).abs() < 1E-8, "mismatch in x {:?} {} {}",pt,x,y);
     }
     pub fn bezier_eq(bez:&Bezier, v:Vec<(f64,f64)>) {
-        match bez {
-            Bezier::Linear(p0,p1) => {
-                pt_eq(p0, v[0].0, v[0].1);
-                pt_eq(p1, v[1].0, v[1].1);
-            }
-            Bezier::Cubic(p0,c0,c1,p1) => {
-                pt_eq(p0, v[0].0, v[0].1);
-                pt_eq(c0, v[1].0, v[1].1);
-                pt_eq(c1, v[2].0, v[2].1);
-                pt_eq(p1, v[3].0, v[3].1);
-            }
-            _ => {},
+        if bez.is_cubic() {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
+            pt_eq(bez.borrow_pt(3), v[2].0, v[2].1);
+            pt_eq(bez.borrow_pt(1), v[3].0, v[3].1);
+        } else if bez.is_quadratic() {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
+            pt_eq(bez.borrow_pt(1), v[2].0, v[2].1);
+        } else {
+            pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
+            pt_eq(bez.borrow_pt(1), v[1].0, v[1].1);
         }
     }
     #[test]
     fn test_round_open() {
-        let p0 = Point::origin();
-        let p1 = Point::new(1.,0.);
-        let p2 = Point::new(1.,1.);
-        let p3 = Point::new(0.,1.);
+        let p0 = Point::zero();
+        let p1 = Point::from_array([1.,0.]);
+        let p2 = Point::from_array([1.,1.]);
+        let p3 = Point::from_array([0.,1.]);
         let mut bp = BezierPath::new();
         bp.add_bezier( Bezier::line( &p0, &p1 ) );
         bp.add_bezier( Bezier::line( &p1, &p2 ) );
@@ -218,10 +223,10 @@ mod test_path {
     }
     #[test]
     fn test_round_closed() {
-        let p0 = Point::origin();
-        let p1 = Point::new(1.,0.);
-        let p2 = Point::new(1.,1.);
-        let p3 = Point::new(0.,1.);
+        let p0 = Point::zero();
+        let p1 = Point::from_array([1.,0.]);
+        let p2 = Point::from_array([1.,1.]);
+        let p3 = Point::from_array([0.,1.]);
         let mut bp = BezierPath::new();
         bp.add_bezier( Bezier::line( &p0, &p1 ) );
         bp.add_bezier( Bezier::line( &p1, &p2 ) );

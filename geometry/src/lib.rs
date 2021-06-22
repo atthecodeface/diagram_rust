@@ -34,18 +34,21 @@ some of its features are focused in that direction.
 //a Crates
 
 //a Imports and exports
-mod point;
+// mod point;
 mod range;
-mod bezier;
+// mod bezier;
 mod path;
 mod rectangle;
 mod polygon;
 mod transform;
 
+pub type Point = geo_nd::FArray<f64,2>;
+pub type Bezier = bezier_nd::Bezier<f64,Point,2>;
+
 pub use self::transform::Transform;
-pub use self::point::{Point};
+// pub use self::point::{Point};
 pub use self::range::{Range};
-pub use self::bezier::Bezier;
+// pub use self::bezier::Bezier;
 pub use self::path::{BezierPath};
 pub use self::rectangle::{Rectangle, Float4};
 pub use self::polygon::Polygon;

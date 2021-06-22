@@ -18,6 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::Point;
+use geo_nd::Vector;
 
 //a Constants
 // const DEBUG_TRANSFORM     : bool = true;
@@ -43,7 +44,7 @@ impl Transform {
     //fp new
     /// Create a new identity transform
     pub fn new() -> Self {
-        Self { translation : Point::origin(),
+        Self { translation : Point::zero(),
                rotation    : 0.,
                scale       : 1.,
         }
@@ -74,13 +75,13 @@ impl Transform {
         let sc = {if sc2 < 0. {0.} else {sc2.sqrt()}} ;
         let angle = matrix[3].atan2(matrix[4]).to_degrees();
 
-        Self::of_trs(Point::new(dx,dy), angle, sc)
+        Self::of_trs(Point::from_array([dx,dy]), angle, sc)
     }
 
     //mp is_identity
     /// Return true if this is an identity transform
     pub fn is_identity(&self) -> bool {
-        self.rotation == 0. && self.scale == 1. && self.translation.is_origin()
+        self.rotation == 0. && self.scale == 1. && self.translation.is_zero()
     }
 
     //mp to_matrix
@@ -91,8 +92,8 @@ impl Transform {
         let sc = self.scale;
         let s = self.rotation.to_radians().sin();
         let c = self.rotation.to_radians().cos();
-        let dx = self.translation.x;
-        let dy = self.translation.y;
+        let dx = self.translation[0];
+        let dy = self.translation[1];
         // the result of three matrices
         // scale      sc  0  0;  0 sc  0;  0  0  1
         // rotate      c -s  0;  s  c  0;  0  0  1
@@ -122,10 +123,9 @@ impl Transform {
     // i.e. the resultant translation is:
     // self.rotate_scale(other.translate)+self.translate
     pub fn apply(&self, other:&Self) -> Self {
-        let dxy = other.translation.clone()
-            .rotate(self.rotation)
-            .scale_xy(self.scale, self.scale)
-            .add(&self.translation, 1.);
+        let mut dxy = other.translation.clone();
+        dxy.rotate_around(&Point::zero(),self.rotation,0,1);
+        dxy = dxy*self.scale + self.translation;
         Self::of_trs( dxy, self.rotation + other.rotation, self.scale * other.scale)
     }
 
@@ -137,12 +137,12 @@ impl std::fmt::Display for Transform {
     //mp fmt - format a `Transform` for display
     /// Display the `TokenError` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.translation.is_origin() && self.rotation == 0. && self.scale == 1. {
+        if self.translation.is_zero() && self.rotation == 0. && self.scale == 1. {
             write!(f, "<identity>")
         } else if self.rotation == 0. && self.scale == 1. {
-            write!(f, "<+{}>", self.translation)
+            write!(f, "<+{:?}>", self.translation)
         } else {
-            if !self.translation.is_origin() { write!(f, "<+{}>", self.translation)?};
+            if !self.translation.is_zero() { write!(f, "<+{:?}>", self.translation)?};
             if self.rotation != 0.         { write!(f, "<rot({})>", self.rotation)?};
             if self.scale != 1.            { write!(f, "<*{}>", self.scale)?};
             Ok(())
@@ -156,11 +156,11 @@ mod tests {
     use super::*;
     fn approx_eq(a:f64, b:f64) -> bool {
         let diff = a-b;
-        diff > -1.0E-6  &&  diff < 1.0E-6 
+        diff > -1.0E-6  &&  diff < 1.0E-6
     }
     fn check_transform(t:&Transform, dx:f64, dy:f64, r:f64, sc:f64) {
-        assert!(approx_eq(t.translation.x, dx),"Transform {} dx of {} {} {} {}",t,dx,dy,r,sc);
-        assert!(approx_eq(t.translation.y, dy),"Transform {} dy of {} {} {} {}",t,dx,dy,r,sc);
+        assert!(approx_eq(t.translation[0], dx),"Transform {} dx of {} {} {} {}",t,dx,dy,r,sc);
+        assert!(approx_eq(t.translation[1], dy),"Transform {} dy of {} {} {} {}",t,dx,dy,r,sc);
         assert!(approx_eq(t.rotation, r),"Transform {} r of {} {} {} {}",t,dx,dy,r,sc);
         assert!(approx_eq(t.scale, sc),"Transform {} sc of {} {} {} {}",t,dx,dy,r,sc);
     }
@@ -171,38 +171,38 @@ mod tests {
     #[test]
     fn test_0() {
         check_transform(&Transform::new(), 0., 0., 0., 1. );
-        check_transform(&Transform::of_translation(Point::origin()), 0., 0., 0., 1. );
-        check_transform(&Transform::of_translation(Point::new(1.,2.)), 1., 2., 0., 1. );
-        check_transform(&Transform::of_trs(Point::new(3.,-2.),7.,6.), 3., -2., 7., 6. );
-    } 
+        check_transform(&Transform::of_translation(Point::zero()), 0., 0., 0., 1. );
+        check_transform(&Transform::of_translation(Point::from_array([1.,2.])), 1., 2., 0., 1. );
+        check_transform(&Transform::of_trs(Point::from_array([3.,-2.]),7.,6.), 3., -2., 7., 6. );
+    }
     #[test]
     fn test_1() {
-        let m = Transform::of_trs(Point::origin(),0.,1.).to_matrix();
+        let m = Transform::of_trs(Point::zero(),0.,1.).to_matrix();
         assert_eq!(m, vec![1.,0.,0.,  0.,1.,0.,  0.,0.,1.]);
-        let m = Transform::of_trs(Point::origin(),0.,7.).to_matrix();
+        let m = Transform::of_trs(Point::zero(),0.,7.).to_matrix();
         assert_eq!(m, vec![7.,0.,0.,  0.,7.,0.,  0.,0.,1.]);
-        let m = Transform::of_trs(Point::new(4.,5.),0.,7.).to_matrix();
+        let m = Transform::of_trs(Point::from_array([4.,5.]),0.,7.).to_matrix();
         check_matrix(&m, &vec![7.,0.,4.,  0.,7.,5.,  0.,0.,1.]);
-        let m = Transform::of_trs(Point::new(4.,5.), 90.,7.).to_matrix();
+        let m = Transform::of_trs(Point::from_array([4.,5.]), 90.,7.).to_matrix();
         check_matrix(&m, &vec![0.,-7.,4.,  7.,0.,5.,  0.,0.,1.]);
-        let m = Transform::of_trs(Point::new(4.,5.),180.,7.).to_matrix();
+        let m = Transform::of_trs(Point::from_array([4.,5.]),180.,7.).to_matrix();
         check_matrix(&m, &vec![-7.,0.,4.,  0.,-7.,5.,  0.,0.,1.]);
-        let m = Transform::of_trs(Point::new(4.,5.),270.,7.).to_matrix();
+        let m = Transform::of_trs(Point::from_array([4.,5.]),270.,7.).to_matrix();
         check_matrix(&m, &vec![0.,7.,4.,  -7.,0.,5.,  0.,0.,1.]);
-    } 
+    }
     #[test]
     fn test_2() {
         // Note matrix of 0. always produces a transform of 0.0., 0., 0.
         for (x,y) in vec![(0.,0.), (0.,1.), (1.,0.), (1.,1.), (-1.,0.), (-1.,-1.)] {
             for r in vec![0., 45., 90., 135.] {
                 for s in vec![1., 5., 0.1] { // cannot use 0.
-                    let t =Transform::of_trs(Point::new(x,y),r,s);
+                    let t =Transform::of_trs(Point::from_array([x,y]),r,s);
                     let m = t.to_matrix();
                     let t1 = Transform::of_matrix(&m);
                     check_transform(&t1, x, y, r, s);
                 }
             }
         }
-    } 
+    }
 }
 
