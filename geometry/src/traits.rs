@@ -33,6 +33,7 @@ pub trait Num : std::ops::Neg<Output=Self> +
 
 //tp Float
 /// Trait required for matrix or vector elements such that also need operations such as sqrt, sin/cos, etc
+/// Annoyingly this includes NumCast
 pub trait Float : Num + num_traits::Float {}
 
 //ti Num for f32/f64/i32/i64/isize

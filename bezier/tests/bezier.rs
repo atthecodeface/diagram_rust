@@ -3,124 +3,145 @@ extern crate geometry;
 extern crate bezier;
 
 use bezier::{Bezier};
-use geometry::{FSlice, Vector, Vector3D};
+use geometry::{FSlice, Float, Vector, Vector3D};
+
+// type Point<F:Float> = FSlice<F,2>;
+// type B<F:Float> = Bezier<F, Point<F>, 2>;
+
+// type Point<const D:usize> = geometry::simd::F32x2Vec2;
+// type B<const D: usize> = Bezier<f32, Point<D>, D>;
+
+///a 'equality' tests
+//fi vec_eq
+pub fn vec_eq<F:Float, V:Vector<F,D>, const D:usize>(v0:&V, v1:&V) {
+    let d = v0.distance(v1);
+    assert!(d < F::epsilon(), "mismatch in {:?} {:?}",v0, v1);
+}
+
+//fi pt_eq
+pub fn pt_eq<F:Float, V:Vector<F,D>, const D:usize>(v:&V, x:F, y:F) {
+    assert!((v[0]-x).abs() < F::epsilon(), "mismatch in x {:?} {:?} {:?}",v,x,y);
+    assert!((v[1]-y).abs() < F::epsilon(), "mismatch in y {:?} {:?} {:?}",v,x,y);
+}
+
+//fi approx_eq
+pub fn approx_eq<F:Float>(a:F, b:F, tolerance:F, msg:&str) {
+    assert!((a-b).abs()<tolerance, "{} {:?} {:?}",msg,a,b);
+}
+
+//fi bezier_eq
+pub fn bezier_eq<F:Float, V:Vector<F,D>, const D:usize>(bez:&Bezier<F,V,D>, v:Vec<[F;D]>) {
+    assert!(bez.is_cubic(), "bezier_eq works only for cubics");
+    vec_eq(bez.borrow_pt(0), &V::from_array(v[0]));
+    vec_eq(bez.borrow_pt(2), &V::from_array(v[1]));
+    vec_eq(bez.borrow_pt(3), &V::from_array(v[2]));
+    vec_eq(bez.borrow_pt(1), &V::from_array(v[3]));
+}
+
+//a Bezier test subfns
+//fi bezier_straight_as
+fn bezier_straight_as<F:Float, V:Vector<F,2>>( bezier:&Bezier<F,V,2>, straightness:F ) {
+    for i in 0..30 {
+        let s = (1.4_f64).powf(i as f64 - 15.);
+        let s = F::from(s).unwrap();
+        println!("{} {} {}", s, straightness, bezier.is_straight(s));
+        assert_eq!( straightness < s, bezier.is_straight(s), "Bezier {} .is_straight({}) failed for {}",bezier, s, straightness);
+    }
+}
+
+//fi does_bisect
+fn does_bisect<F:Float, V:Vector<F,D>, const D:usize>(bezier:&Bezier<F,V,D>) {
+    let (b0,b1) = bezier.bisect();
+    println!("Test bisection of {} into {}, {}",bezier, b0, b1);
+    for i in 0..21 {
+        let t = (i as f64) / 20.0;
+        let t = F::from(t).unwrap();
+        let half = F::from(0.5).unwrap();
+        let p0 = bezier.point_at(t * half);
+        let p1 = bezier.point_at(t * half + half);
+        println!("t {} : {:?} : {:?}",t,p0,p1);
+        pt_eq(&b0.point_at(t), p0[0], p0[1]);
+        pt_eq(&b1.point_at(t), p1[0], p1[1]);
+    }
+}
+
+//fi does_split
+fn does_split<F:Float, V:Vector<F,D>, const D:usize>(bezier:&Bezier<F,V,D>, t0:F, t1:F) {
+    let b = bezier.bezier_between(t0, t1);
+    for i in 0..21 {
+        let bt = (i as f64) / 20.0;
+        let bt = F::from(bt).unwrap();
+        let t  = t0 + (t1 - t0) * bt;
+        let p  = bezier.point_at(t);
+        let pb = b.point_at(bt);
+        println!("t {} : {:?} : {:?}",t,p,pb);
+        let close_enough = F::from(1E-6).unwrap();
+        approx_eq(p[0], pb[0], close_enough, &format!("Bezier split x {} {} {} : {} : {}", t, t0, t1, bezier, b));
+        approx_eq(p[1], pb[1], close_enough, &format!("Bezier split y {} {} {} : {} : {}", t, t0, t1, bezier, b));
+    }
+}
 
 //a Test
-#[cfg(test)]
-mod test_bezier {
+//fi test_line
+fn test_line <Point> ()
+    where Point:Vector<f32,2> {
 
-    use super::*;
-    type Point<const D:usize> = FSlice<f64,D>;
-    type B<const D: usize> = Bezier<f64, Point<D>, D>;
-    //fi vec_eq
-    pub fn vec_eq<const D: usize>(v0:&Point<D>, v1:&Point<D>) {
-        let d = v0.distance(v1);
-        assert!(d<1E-8, "mismatch in {:?} {:?}",v0, v1);
+    let p0 = Point::from_array([0., 0.]);
+    let p1 = Point::from_array([10., 0.]);
+    let p2 = Point::from_array([10., 1.]);
+    let b01 = Bezier::line(&p0, &p1);
+    let b02 = Bezier::line(&p0, &p2);
+
+    pt_eq( &b01.point_at(0.), p0[0], p0[1] );
+    pt_eq( &b01.point_at(0.5), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
+    pt_eq( &b01.point_at(1.), p1[0], p1[1] );
+    pt_eq( &b02.point_at(0.), p0[0], p0[1] );
+    pt_eq( &b02.point_at(0.5), (p0[0]+p2[0])/2., (p0[1]+p2[1])/2. );
+    pt_eq( &b02.point_at(1.), p2[0], p2[1] );
+
+    pt_eq( &b01.bisect().0.point_at(0.), p0[0], p0[1] );
+    pt_eq( &b01.bisect().0.point_at(1.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
+    pt_eq( &b01.bisect().1.point_at(0.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
+    pt_eq( &b01.bisect().1.point_at(1.), p1[0], p1[1] );
+
+
+    does_split(&b01, 0., 1.);
+    does_split(&b01, 0.1, 0.3);
+    does_split(&b01, 0.3, 0.7);
+    does_split(&b01, 0.7, 1.0);
+
+    does_split(&b02, 0., 1.);
+    does_split(&b02, 0.1, 0.3);
+    does_split(&b02, 0.3, 0.7);
+    does_split(&b02, 0.7, 1.0);
+
+    does_bisect(&b01);
+    does_bisect(&b02);
+
+    pt_eq( &b01.tangent_at(0.),  p1[0]-p0[0], p1[1]-p0[1] );
+    pt_eq( &b01.tangent_at(0.5), p1[0]-p0[0], p1[1]-p0[1] );
+    pt_eq( &b01.tangent_at(1.0), p1[0]-p0[0], p1[1]-p0[1] );
+    pt_eq( &b02.tangent_at(0.),  p2[0]-p0[0], p2[1]-p0[1] );
+    pt_eq( &b02.tangent_at(0.5), p2[0]-p0[0], p2[1]-p0[1] );
+    pt_eq( &b02.tangent_at(1.0), p2[0]-p0[0], p2[1]-p0[1] );
+
+    let mut v = Vec::new();
+    v.clear();
+    for (a,_b) in b01.as_lines(0.1) {
+        v.push(a);
     }
-    //fi pt_eq
-    pub fn pt_eq(v:&Point<2>, x:f64, y:f64) {
-        assert!((v[0]-x).abs()<1E-8, "mismatch in x {:?} {:?} {:?}",v,x,y);
-        assert!((v[1]-y).abs()<1E-8, "mismatch in y {:?} {:?} {:?}",v,x,y);
-    }
-    //fi approx_eq
-    pub fn approx_eq(a:f64, b:f64, tolerance:f64, msg:&str) {
-        assert!((a-b).abs()<tolerance, "{} {:?} {:?}",msg,a,b);
-    }
-    //fi bezier_eq
-    pub fn bezier_eq(bez:&B<2>, v:Vec<[f64;2]>) {
-        assert!(bez.is_cubic(), "bezier_eq works only for cubics");
-        vec_eq(&bez.borrow_pt(0), &Point::from_array(v[0]));
-        vec_eq(&bez.borrow_pt(2), &Point::from_array(v[1]));
-        vec_eq(&bez.borrow_pt(3), &Point::from_array(v[2]));
-        vec_eq(&bez.borrow_pt(1), &Point::from_array(v[3]));
-    }
+    assert_eq!(v.len(), 1, "We know that at any straightness there must be 1 line segments" );
+}
 
-    //fi bezier_straight_as
-    fn bezier_straight_as( bezier:&B<2>, straightness:f64 ) {
-        for i in 0..30 {
-            let s = (1.4_f64).powf(i as f64 - 15.);
-            println!("{} {} {}",s,straightness, bezier.is_straight(s));
-            assert_eq!( straightness < s, bezier.is_straight(s), "Bezier {} .is_straight({}) failed for {}",bezier, s, straightness);
-        }
-    }
-    //fi does_bisect
-    fn does_bisect(bezier:&B<2>) {
-        let (b0,b1) = bezier.bisect();
-        println!("Test bisection of {} into {}, {}",bezier, b0, b1);
-        for i in 0..21 {
-            let t = (i as f64) / 20.0;
-            let p0 = bezier.point_at(t * 0.5);
-            let p1 = bezier.point_at(t * 0.5 + 0.5);
-            println!("t {} : {:?} : {:?}",t,p0,p1);
-            pt_eq(&b0.point_at(t), p0[0], p0[1]);
-            pt_eq(&b1.point_at(t), p1[0], p1[1]);
-        }
-    }
-    //fi does_split
-    fn does_split(bezier:&B<2>, t0:f64, t1:f64) {
-        let b = bezier.bezier_between(t0, t1);
-        for i in 0..21 {
-            let bt = (i as f64) / 20.0;
-            let t  = t0 + (t1 - t0) * bt;
-            let p  = bezier.point_at(t);
-            let pb = b.point_at(bt);
-            println!("t {} : {:?} : {:?}",t,p,pb);
-            approx_eq(p[0], pb[0], 1E-6, &format!("Bezier split x {} {} {} : {} : {}", t, t0, t1, bezier, b));
-            approx_eq(p[1], pb[1], 1E-6, &format!("Bezier split y {} {} {} : {} : {}", t, t0, t1, bezier, b));
-        }
-    }
-    //fi test_line
-    #[test]
-    fn test_line() {
-        let p0 = Point::from_array([0.,0.]);
-        let p1 = Point::from_array([10.,0.]);
-        let p2 = Point::from_array([10.,1.]);
-        let b01 = Bezier::line(&p0, &p1);
-        let b02 = Bezier::line(&p0, &p2);
+#[test]
+fn test_line_a() {
+    test_line::<FSlice<f32,2>>();
+}
 
-        pt_eq( &b01.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b01.point_at(0.5), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.point_at(1.), p1[0], p1[1] );
-        pt_eq( &b02.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b02.point_at(0.5), (p0[0]+p2[0])/2., (p0[1]+p2[1])/2. );
-        pt_eq( &b02.point_at(1.), p2[0], p2[1] );
-
-        pt_eq( &b01.bisect().0.point_at(0.), p0[0], p0[1] );
-        pt_eq( &b01.bisect().0.point_at(1.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.bisect().1.point_at(0.), (p0[0]+p1[0])/2., (p0[1]+p1[1])/2. );
-        pt_eq( &b01.bisect().1.point_at(1.), p1[0], p1[1] );
-
-
-        does_split(&b01, 0., 1.);
-        does_split(&b01, 0.1, 0.3);
-        does_split(&b01, 0.3, 0.7);
-        does_split(&b01, 0.7, 1.0);
-
-        does_split(&b02, 0., 1.);
-        does_split(&b02, 0.1, 0.3);
-        does_split(&b02, 0.3, 0.7);
-        does_split(&b02, 0.7, 1.0);
-
-        does_bisect(&b01);
-        does_bisect(&b02);
-
-        pt_eq( &b01.tangent_at(0.),  p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b01.tangent_at(0.5), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b01.tangent_at(1.0), p1[0]-p0[0], p1[1]-p0[1] );
-        pt_eq( &b02.tangent_at(0.),  p2[0]-p0[0], p2[1]-p0[1] );
-        pt_eq( &b02.tangent_at(0.5), p2[0]-p0[0], p2[1]-p0[1] );
-        pt_eq( &b02.tangent_at(1.0), p2[0]-p0[0], p2[1]-p0[1] );
-
-        let mut v = Vec::new();
-        v.clear();
-        for (a,_b) in b01.as_lines(0.1) {
-            v.push(a);
-        }
-        assert_eq!(v.len(), 1, "We know that at any straightness there must be 1 line segments" );
-    }
-    //fi test_quadratic
-    #[test]
-    fn test_quadratic() {
+//fi test_quadratic
+/*
+#[test]
+fn test_quadratic() {
         let p0 = Point::from_array([0.,0.]);
         let p1 = Point::from_array([10.,0.]);
         let p2 = Point::from_array([10.,1.]);
@@ -277,3 +298,4 @@ mod test_bezier {
     }
     //fi All done
 }
+ */
