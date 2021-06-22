@@ -42,8 +42,7 @@ pub fn bezier_eq<F:Float, V:Vector<F,D>, const D:usize>(bez:&Bezier<F,V,D>, v:Ve
 //fi bezier_straight_as
 fn bezier_straight_as<F:Float, V:Vector<F,2>>( bezier:&Bezier<F,V,2>, straightness:F ) {
     for i in 0..30 {
-        let s = (1.4_f64).powf(i as f64 - 15.);
-        let s = F::from(s).unwrap();
+        let s = F::frac(14,10).powf(F::int(i-15));
         println!("{} {} {}", s, straightness, bezier.is_straight(s));
         assert_eq!( straightness < s, bezier.is_straight(s), "Bezier {} .is_straight({}) failed for {}",bezier, s, straightness);
     }
@@ -54,9 +53,8 @@ fn does_bisect<F:Float, V:Vector<F,D>, const D:usize>(bezier:&Bezier<F,V,D>) {
     let (b0,b1) = bezier.bisect();
     println!("Test bisection of {} into {}, {}",bezier, b0, b1);
     for i in 0..21 {
-        let t = (i as f64) / 20.0;
-        let t = F::from(t).unwrap();
-        let half = F::from(0.5).unwrap();
+        let t = F::frac(i, 20);
+        let half = F::frac(1,2);
         let p0 = bezier.point_at(t * half);
         let p1 = bezier.point_at(t * half + half);
         println!("t {} : {:?} : {:?}",t,p0,p1);
@@ -69,13 +67,12 @@ fn does_bisect<F:Float, V:Vector<F,D>, const D:usize>(bezier:&Bezier<F,V,D>) {
 fn does_split<F:Float, V:Vector<F,D>, const D:usize>(bezier:&Bezier<F,V,D>, t0:F, t1:F) {
     let b = bezier.bezier_between(t0, t1);
     for i in 0..21 {
-        let bt = (i as f64) / 20.0;
-        let bt = F::from(bt).unwrap();
+        let bt = F::frac(i, 20);
         let t  = t0 + (t1 - t0) * bt;
         let p  = bezier.point_at(t);
         let pb = b.point_at(bt);
         println!("t {} : {:?} : {:?}",t,p,pb);
-        let close_enough = F::from(1E-6).unwrap();
+        let close_enough = F::frac(1,1000_000);
         approx_eq(p[0], pb[0], close_enough, &format!("Bezier split x {} {} {} : {} : {}", t, t0, t1, bezier, b));
         approx_eq(p[1], pb[1], close_enough, &format!("Bezier split y {} {} {} : {} : {}", t, t0, t1, bezier, b));
     }

@@ -199,26 +199,23 @@ where F:Float, V:Vector<F,D> {
     //mp point_at
     /// Returns the point at parameter 't' along the Bezier
     pub fn point_at(&self, t:F) -> V {
-        let one = F::one();
-        let two = F::from(2).unwrap();
-        let three = F::from(3).unwrap();
-        let omt = one - t;
+        let omt = F::int(1) - t;
         match self.num {
             2 => {
-                self.vector_of(&[omt, t], one)
+                self.vector_of(&[omt, t], F::int(1))
             },
             3 => {
-                let p0_sc =       omt*omt;
-                let c_sc  = two * omt*t;
-                let p1_sc =       t*t;
-                self.vector_of(&[p0_sc, p1_sc, c_sc], one)
+                let p0_sc =             omt*omt;
+                let c_sc  = F::int(2) * omt*t;
+                let p1_sc =             t*t;
+                self.vector_of(&[p0_sc, p1_sc, c_sc], F::int(1))
             },
             _  => {
-                let p0_sc =         omt*omt*omt;
-                let c0_sc = three * omt*omt*t;
-                let c1_sc = three * omt*t*t;
-                let p1_sc =         t*t*t;
-                self.vector_of(&[p0_sc, p1_sc, c0_sc, c1_sc], one)
+                let p0_sc =             omt*omt*omt;
+                let c0_sc = F::int(3) * omt*omt*t;
+                let c1_sc = F::int(3) * omt*t*t;
+                let p1_sc =             t*t*t;
+                self.vector_of(&[p0_sc, p1_sc, c0_sc, c1_sc], F::int(1))
             },
         }
     }
@@ -228,10 +225,10 @@ where F:Float, V:Vector<F,D> {
     ///
     /// This is not necessarily a unit vector
     pub fn tangent_at(&self, t:F) -> V {
-        let one = F::one();
-        let two = F::from(2).unwrap();
-        let three = F::from(3).unwrap();
-        let four = F::from(4).unwrap();
+        let one   = F::int(1);
+        let two   = F::int(2);
+        let three = F::int(3);
+        let four  = F::int(4);
         match self.num {
             2 => {
                 self.vector_of(&[-one, one], one)
@@ -257,10 +254,12 @@ where F:Float, V:Vector<F,D> {
     ///
     /// For quadratics the midpoint is 1/4(p0 + 2*c + p1)
     pub fn bisect(&self) -> (Self, Self) {
-        let zero = F::zero();
-        let one  = F::one();
-        let two  = F::from(2).unwrap();
-        let three  = F::from(3).unwrap();
+        let zero   = F::zero();
+        let one    = F::int(1);
+        let two    = F::int(2);
+        let three  = F::int(3);
+        let four   = F::int(4);
+        let eight  = F::int(8);
         match self.num {
             2 => {
                 let pm = self.vector_of(&[one,one],two);
@@ -273,10 +272,10 @@ where F:Float, V:Vector<F,D> {
                 (Self::quadratic(&self.pts[0], &c0, &pm), Self::quadratic(&pm, &c1, &self.pts[1]))
             },
             _ => {
-                let pm  = self.vector_of(&[one,one,three,three],F::from(8).unwrap());
+                let pm  = self.vector_of(&[one,one,three,three],eight);
                 let c00 = self.vector_of(&[one,zero,one],two);
-                let c01 = self.vector_of(&[one,zero,two,one],F::from(4).unwrap());
-                let c10 = self.vector_of(&[zero,one,one,two],F::from(4).unwrap());
+                let c01 = self.vector_of(&[one,zero,two,one],four);
+                let c10 = self.vector_of(&[zero,one,one,two],four);
                 let c11 = self.vector_of(&[zero,one,zero,one],two);
                 (Self::cubic(&self.pts[0],&c00,&c01,&pm), Self::cubic(&pm,&c10,&c11,&self.pts[1]))
             },
@@ -286,7 +285,7 @@ where F:Float, V:Vector<F,D> {
     //mp bezier_between
     /// Returns the Bezier between two parameters 0 <= t0 < t1 <= 1
     pub fn bezier_between(&self, t0:F, t1:F) -> Self {
-        let two = F::from(2).unwrap();
+        let two = F::int(2);
         let p0 = &self.pts[0];
         let p1 = &self.pts[1];
         match self.num {
@@ -419,7 +418,8 @@ where F:Float, V:Vector<F,D> {
     /// Returns 0.,false if the distance is before the start of the Bezier
     /// Returns 1.,false if the distance is beyond the end of the Bezier
     fn t_of_distance_rec(&self, straightness:F, distance:F, t_start:F, t_scale:F, acc_length:F) -> (Option<F>, F) {
-        let zero = F::zero();
+        let zero   = F::zero();
+        let two    = F::int(2);
         if distance <= acc_length {
             (Some(t_start), zero)
         } else if self.is_straight(straightness) {
@@ -433,7 +433,7 @@ where F:Float, V:Vector<F,D> {
                 (Some(t_start + t_scale * rel_d / d), acc_length+d)
             }
         } else {
-            let t_subscale = t_scale / F::from(2).unwrap();
+            let t_subscale = t_scale / two;
             let (b0, b1) = self.bisect();
             match b0.t_of_distance_rec(straightness, distance, t_start, t_subscale, acc_length) {
                 (None, length) => {
@@ -444,10 +444,10 @@ where F:Float, V:Vector<F,D> {
         }
     }
     pub fn t_of_distance(&self, straightness:F, distance:F) -> (F, bool) {
-        let zero = F::zero();
-        let one  = F::one();
+        let zero   = F::zero();
+        let one    = F::int(1);
         if distance < zero {
-            (zero,false)
+            (zero, false)
         } else {
             match self.t_of_distance_rec(straightness, distance, zero, one, zero) {
                 (None, _)    => (one, false),
@@ -468,13 +468,12 @@ where F:Float, V:Vector<F,D> {
     /// The arc will be between an angle A1 and A2, where A2-A1 == angle, and A1==rotate
     ///
     pub fn arc(angle:F, radius:F, center:&V, unit:&V, normal:&V, rotate:F) -> Self {
-        let one   = F::one();
-        let two   = F::from(2).unwrap();
-        let three = F::from(3).unwrap();
-        let four  = F::from(4).unwrap();
+        let one    = F::int(1);
+        let two    = F::int(2);
+        let four_thirds  = F::frac(4,3);
         let half_angle = angle / two;
         let s = half_angle.sin();
-        let lambda = radius * four / three * (one/s - one);
+        let lambda = radius * four_thirds * (one/s - one);
 
         let d0a = rotate;
         let (d0s,d0c) = d0a.sin_cos();
@@ -528,11 +527,10 @@ where F:Float, V:Vector<F,D> {
     ///
     /// hence lambda = 4/3 * r * (sqrt(2/(1+cos(alpha))) - 1)
     pub fn of_round_corner(corner:&V, v0:&V, v1:&V, radius:F) -> Self {
-        let nearly_one = F::from(99_999).unwrap() / F::from(100_000).unwrap();
-        let one   = F::one();
-        let two   = F::from(2).unwrap();
-        let three = F::from(3).unwrap();
-        let four  = F::from(4).unwrap();
+        let nearly_one = F::frac(99_999, 100_000);
+        let one    = F::int(1);
+        let two    = F::int(2);
+        let four_thirds  = F::frac(4,3);
         let mut v0    = v0.clone();
         let mut v1    = v1.clone();
         v0.normalize();
@@ -558,7 +556,7 @@ where F:Float, V:Vector<F,D> {
             // let center = vector::add(corner.clone(), &v0_plus_v1_u, d);
             // let lambda = four/three * radius * ((two / (one + cos_alpha)).sqrt() - one);
 
-            let lambda = four/three * radius * (d/k - one);
+            let lambda = four_thirds * radius * (d/k - one);
             let p0 = *corner - (v0 * k);
             let p1 = *corner - (v1 * k);
             let c0 = p0 + (v0 * lambda);
