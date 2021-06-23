@@ -84,9 +84,7 @@ impl BezierPath {
                 let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
                 let v0 = self.elements[i  ].tangent_at(1.);
                 let v1 = -self.elements[i_1].tangent_at(0.);
-                println!("corner {} v0 {} v1 {} rounding {}", corner, v0, v1, rounding);
-                let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding / 3.);
-                println!("corner {} v0 {} v1 {} bezier {}", corner, v0, v1, bezier);
+                let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding );
                 let np00 = self.elements[i].borrow_pt(0).clone();
                 let np01 = bezier.borrow_pt(0).clone();
                 let np10 = bezier.borrow_pt(1).clone();
