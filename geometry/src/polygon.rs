@@ -183,19 +183,17 @@ impl Polygon {
         let mut corners = Vec::new();
         let delta_angle = (360.0f64).to_radians()/(self.vertices as f64);
         for i in 0..self.vertices {
-            let mut p = Point::from_array([self.size,0.]);
-            p.rotate_around(&origin, delta_angle*(0.5-(i as f64)),0,1);
+            let mut p = Point::from_array([self.size,0.])
+                .rotate_around(&origin, delta_angle*(0.5-(i as f64)),0,1);
             p[0] *=self.eccentricity;
-            p.rotate_around(&origin, self.rotation.to_radians(),0,1);
-            p += self.center;
+            p = p.rotate_around(&origin, self.rotation.to_radians(),0,1) + self.center;
             corners.push(p);
 
             if self.stellate_size != 0. {
-                let mut p = Point::from_array([self.stellate_size,0.]);
-                p.rotate_around(&origin, delta_angle*(0.0-(i as f64)),0,1);
+                let mut p = Point::from_array([self.stellate_size,0.])
+                    .rotate_around(&origin, delta_angle*(0.0-(i as f64)),0,1);
                 p[0] *= self.eccentricity;
-                p.rotate_around(&origin, self.rotation.to_radians(),0,1);
-                p += self.center;
+                p = p.rotate_around(&origin, self.rotation.to_radians(),0,1) + self.center;
                 corners.push(p);
             }
         }
