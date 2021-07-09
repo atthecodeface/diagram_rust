@@ -24,6 +24,11 @@ mod traits;
 mod element;
 mod diagram;
 mod svg;
+mod element_error;
+mod element_scope;
+mod element_layout;
+mod element_content;
+mod element_header;
 mod elements;
 
 pub mod types;
@@ -31,7 +36,12 @@ pub use traits::DiagramElementContent;
 
 pub use self::types::{ValueError, StyleSheet, StyleRule}; // , StyleAction};
 pub use self::descriptor::DiagramDescriptor;
-pub use self::element::{Element, ElementScope, ElementError, ElementContent, ElementHeader, ElementLayout};
-pub use self::elements::{Shape, Group, Text, Use, Path};
+pub use element_error::{ElementError};
+pub use element_scope::{ElementScope};
+pub use element_layout::{ElementLayout, LayoutPlacement};
+pub use element_content::{ElementContent};
+pub use element_header::{ElementHeader};
+pub use element::{Element};
+pub use elements::{Shape, Group, Text, Use, Path};
 pub use self::diagram::{Diagram, DiagramContents};
-pub use self::svg::{Svg, SvgElement, GenerateSvg, GenerateSvgElement, SvgError};
+pub use svg::{Svg, SvgElement, GenerateSvg, GenerateSvgElement, SvgError};

@@ -21,7 +21,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::collections::HashMap;
 use super::types::*;
-use super::element::{Element, ElementHeader};
+use super::{Element, ElementHeader};
 use super::font::*;
 use crate::constants::attributes as at;
 
