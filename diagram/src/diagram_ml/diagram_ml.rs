@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use crate::{Diagram};
-use super::{MLError, MLErrorList, MLReader};
+use super::{MLErrorList, MLReader};
 
 //a DiagramML
 //tp DiagramML

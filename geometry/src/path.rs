@@ -131,7 +131,7 @@ impl BezierPath {
                 self.elements.remove(0);
                 self.apply_relief(index, straightness, distance-l)
             } else {
-                let (t,in_bezier) = b.t_of_distance(straightness, distance);
+                let (t,_in_bezier) = b.t_of_distance(straightness, distance);
                 if t == 0. {
                     ()
                 } else if t == 1. {
@@ -151,7 +151,7 @@ impl BezierPath {
                 self.elements.pop();
                 self.apply_relief(index, straightness, distance-l)
             } else {
-                let (t,in_bezier) = b.t_of_distance(straightness, l-distance);
+                let (t,_in_bezier) = b.t_of_distance(straightness, l-distance);
                 if t == 0. {
                     self.elements.pop();
                     ()

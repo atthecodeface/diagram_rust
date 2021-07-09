@@ -4,6 +4,7 @@ use super::Value;
 /// Font parameters - generally metrics
 ///
 /// These are font-wide parameters
+#[allow(dead_code)]
 #[derive(Debug, Copy, Clone)]
 pub enum Parameter<V:Value> {
     /// Size of a space in the font (standard gap between words)

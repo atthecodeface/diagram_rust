@@ -17,18 +17,13 @@ limitations under the License.
  */
 
 //a Constants
-const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
+// const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
-use geometry::{Rectangle, Point};
-use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
-use crate::constants::attributes as at;
-use crate::constants::elements   as el;
+use geometry::{Rectangle};
 use crate::DiagramDescriptor;
-use crate::{Layout, LayoutBox};
+use crate::{Layout};
 pub use super::elements::{Group, Shape, Path, Text, Use};
-use super::types::*;
 use super::{ElementHeader, ElementScope, ElementError};
 
 //a DiagramElementContent trait

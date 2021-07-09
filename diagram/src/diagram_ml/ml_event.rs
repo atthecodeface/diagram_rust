@@ -18,10 +18,10 @@ limitations under the License.
 
 //a Imports
 use crate::diagram::{Element, Use, Group, Text, Shape, Path};
-use crate::{Diagram, DiagramDescriptor, DiagramML};
+use crate::{DiagramDescriptor};
 use super::{MLResult, MLError, MLReader};
-use super::{NameIds, KnownName};
-use hml::reader::{Position, Reader, Span};
+use super::{KnownName};
+use hml::reader::{Span};
 
 //a MLReadElement
 //tt MLReadElement - internal trait to enable extension of type implementations
@@ -42,8 +42,9 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
-        let v : Vec<(String,&str)> = vec![];
-        let mut use_ref = MLError::value_result(span, Element::new(descriptor, "use", &mut v.into_iter() ))?; // attributes.to_name_values() ))?;
+        let attrs = tag.attributes.take();
+        let mut attr_values = attrs.iter().map(|a| reader.map_attr(a));
+        let mut use_ref = MLError::value_result(span, Element::new(descriptor, "use", &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
             use hml::EventType::*;

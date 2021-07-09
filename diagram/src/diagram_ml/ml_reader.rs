@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use crate::diagram::{Element};
-use crate::{Diagram, DiagramDescriptor, DiagramContents, DiagramML};
+use crate::{DiagramDescriptor, DiagramContents};
 use crate::{StyleSheet, StyleRule};
 use super::{MLError, MLResult, MLErrorList, MLReadElement};
 use super::{NameIds, KnownName};
@@ -77,9 +77,14 @@ where P:hml::reader::Position,
         self.name_ids.known_id(name)
     }
 
+    //mp map_attr
+    pub fn map_attr<'a>(&self, attr:&'a hml::Attribute) -> (String, &'a str) {
+        ( attr.name.to_string(&self.namespace_stack), attr.value.as_str() )
+    }
+
     //mp next_event
     pub fn next_event(&mut self) -> MLResult<hml::Event<hml::reader::Span<P>>, P, E> {
-        let (mut parser, mut namespace_stack, mut lexer, mut reader) = (&mut self.parser, &mut self.namespace_stack, &mut self.lexer, &mut self.reader);
+        let (parser, mut namespace_stack, lexer, mut reader) = (&mut self.parser, &mut self.namespace_stack, &mut self.lexer, &mut self.reader);
         let e = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader))?;
         Ok(e)
     }
@@ -103,7 +108,7 @@ where P:hml::reader::Position,
     //mp return_bad_element
     /// Returns an error
     pub fn return_bad_element(&mut self, span:&hml::reader::Span<P>, tag:&hml::Tag) -> MLError<P, E> {
-        self.consume_element();
+        drop(self.consume_element());
         MLError::bad_element_name(&self.namespace_stack, span, tag)
     }
 
@@ -150,7 +155,7 @@ where P:hml::reader::Position,
     }
 
     //mp read_rule
-    fn read_rule (&mut self, descriptor:&'diag DiagramDescriptor, parent:Option<usize>, span:&hml::reader::Span<P>, mut tag:hml::Tag) -> MLResult<(), P, E> {
+    fn read_rule (&mut self, descriptor:&'diag DiagramDescriptor, parent:Option<usize>, span:&hml::reader::Span<P>, tag:hml::Tag) -> MLResult<(), P, E> {
         let mut rule = StyleRule::new();
         let mut action = None;
         let mut attrs = Vec::new();
@@ -210,9 +215,9 @@ where P:hml::reader::Position,
     }
 
     //mp read_style
-    fn read_style (&mut self, descriptor:&'diag DiagramDescriptor, span:&hml::reader::Span<P>, tag:hml::Tag) -> MLResult<(), P, E> {
+    fn read_style (&mut self, _descriptor:&'diag DiagramDescriptor, span:&hml::reader::Span<P>, tag:hml::Tag) -> MLResult<(), P, E> {
         let attrs = tag.attributes.take();
-        let (namespace_stack, mut stylesheet) = (&self.namespace_stack, &mut self.stylesheet);
+        let (namespace_stack, stylesheet) = (&self.namespace_stack, &mut self.stylesheet);
         let mut attr_values = attrs.iter().map(|a| (a.name.to_string(&namespace_stack), a.value.as_str()));
         MLError::value_result(span, stylesheet.add_action_from_name_values(&mut attr_values))?;
         loop {

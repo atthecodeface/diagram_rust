@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+#![allow(dead_code)]
 mod traits;
 mod parameter;
 mod glyph_metrics;
@@ -26,6 +27,7 @@ pub use traits::*;
 use parameter::Parameter;
 use glyph_metrics::GlyphMetrics;
 use font_metrics::Metrics as FontMetrics;
+
 //a Font
 //tp FontStyle
 /// A font style as a size in points and flags for font styling options

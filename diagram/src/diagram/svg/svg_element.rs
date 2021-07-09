@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use geo_nd::Vector;
-use geometry::{Polygon, Rectangle, Bezier, BezierPath, Point, Transform};
+use geometry::{Polygon, Rectangle, BezierPath, Point, Transform};
 
 //a Useful stuff
 fn pt_as_str(pt:&Point) -> String {

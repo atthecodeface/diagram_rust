@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use hml::{Tag, Attribute};
-use hml::reader::{Reader, Position, Span};
+use hml::reader::{Position, Span};
 use hml::reader::Error as ReaderError;
 
 pub type MLResult<T, P, R> = std::result::Result<T,MLError<P, R>>;
@@ -45,6 +45,7 @@ where P:Position, R:std::error::Error + 'static
 {
 
     //fi unexpected_end_of_stream
+    #[allow(dead_code)]
     pub(crate) fn unexpected_end_of_stream() -> Self {
         Self::EndOfStream
     }

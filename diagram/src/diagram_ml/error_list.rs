@@ -18,8 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::{MLError, MLResult};
-use hml::reader::{Reader, Position, Span};
-use hml::reader::Error as ReaderError;
+use hml::reader::Position;
 
 //a MLErrorList
 //tp MLErrorList
@@ -35,7 +34,7 @@ use hml::reader::Error as ReaderError;
 pub struct MLErrorList <P, R>
 where P:Position, R:std::error::Error + 'static
 {
-    pub errors : Vec<MLError<P, R>>,
+    errors : Vec<MLError<P, R>>,
 }
 
 //ip MLErrorList
@@ -66,7 +65,7 @@ where P:Position, R:std::error::Error + 'static
     }
 
     //mp take
-    pub fn take(&mut self) -> Vec<MLError<P, R>> {
+    fn take(&mut self) -> Vec<MLError<P, R>> {
         std::mem::replace(&mut self.errors, Vec::new())
     }
 

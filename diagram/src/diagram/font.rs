@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+#![allow(dead_code)]
 
 //a FontMetrics trait
 //tp TextMetrics

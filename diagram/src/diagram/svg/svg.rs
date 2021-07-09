@@ -69,7 +69,7 @@ impl <'a> Svg <'a> {
         self.version = version;
         self
     }
-    
+
     //cp set_grid
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a grid in to the SVG output
@@ -77,7 +77,7 @@ impl <'a> Svg <'a> {
         self.show_grid = grid;
         self
     }
-    
+
     //cp set_layout
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of lines indicating the `Layout`
@@ -86,7 +86,7 @@ impl <'a> Svg <'a> {
         self.show_layout = layout;
         self
     }
-    
+
     //cp set_display
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the display to stdout of the Svg element hierarchy,
@@ -95,7 +95,7 @@ impl <'a> Svg <'a> {
         self.display = display;
         self
     }
-    
+
     //cp set_content_rectangles
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a grid in to the SVG output
@@ -103,7 +103,7 @@ impl <'a> Svg <'a> {
         self.show_content_rectangles = show;
         self
     }
-    
+
     //mp push_element
     pub(crate) fn push_element(&mut self, e:SvgElement) {
         self.stack.push(e);
@@ -129,6 +129,7 @@ impl <'a> Svg <'a> {
     }
 
     //mp generate_diagram
+    /// Generate the SVG contents for the diagram
     pub fn generate_diagram(&mut self) -> Result<(), SvgError> {
         let contents = &self.diagram.contents;
         let mut ele = SvgElement::new("svg");
@@ -173,7 +174,7 @@ impl <'a> Svg <'a> {
         }
         Ok(())
     }
-    
+
     //mp iter_events
     /// Iterate over all the XML events the Svg would generate if it
     /// were an SVG file being read in by xml-rs
@@ -183,7 +184,7 @@ impl <'a> Svg <'a> {
     pub fn iter_events<'z>(&'z self) -> ElementIter<'z> {
         ElementIter::new(&self.stack[0])
     }
-    
+
     //zz All done
 }
 
