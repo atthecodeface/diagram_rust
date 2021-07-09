@@ -49,8 +49,8 @@ impl <'a> DiagramDescriptor<'a> {
     /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
         let style_set = StyleSet::new()
-            .add_type(at::DEBUG,       StyleValue::string(None),  false)            
-            .add_type(at::BBOX,        StyleValue::float_array(), false)            
+            .add_type(at::DEBUG,       StyleValue::string(None),  false)
+            .add_type(at::BBOX,        StyleValue::float_array(), false)
             .add_type(at::GRID,        StyleValue::int_array(),   false)
             .add_type(at::GRIDX,       StyleValue::int_array(),   false)
             .add_type(at::GRIDY,       StyleValue::int_array(),   false)
@@ -109,7 +109,7 @@ impl <'a> DiagramDescriptor<'a> {
     /// let mut diagram        = diagram::Diagram::new(&diagram_descriptor);
     /// let mut dml            = diagram::DiagramML::new(&mut diagram);
     /// dml.read_file("#diagram ##circle id=circle vertices=0".as_bytes(), false)?;
-    /// # Ok::<(), diagram::MLErrorList>(())
+    /// # Ok::<(), diagram::MLErrorList<hml::string::Position, std::io::Error>>(())
     /// ```
     pub fn new(style_set:&'a StyleSet) -> Self {
         let descriptors = HashMap::new();

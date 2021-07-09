@@ -57,16 +57,16 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
 
     //mp add_action_from_name_values
     /// Add an action to the set from a vec of string pairs
-    pub fn add_action_from_name_values(&mut self, name_values:&Vec<(String, String)>) -> Result<usize, ValueError> {
+    pub fn add_action_from_name_values(&mut self, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<usize, ValueError> {
         let mut id = None;
         let mut styling = Vec::new();
         for (name, value) in name_values {
             if name == "id" {
-                id = Some(value.as_str());
-            } else if let Some((value_type, _)) = self.style_set.borrow_type(name) {
+                id = Some(value);
+            } else if let Some((value_type, _)) = self.style_set.borrow_type(&name) {
                 let mut v = value_type.new_value();
                 v.from_string(value)?;
-                styling.push( (name.to_string(), v) );
+                styling.push( ((*name).into(), v) );
             } else {
                 return Err(ValueError::bad_value( &format!("unknown style name {} with value {}", name, value) ));
             }
@@ -78,7 +78,7 @@ impl <'a, V:TypeValue> Stylesheet<'a, V> {
     pub fn get_action_index(&self, s:&str) -> Option<&usize> {
         self.style_of_id.get(s)
     }
-    
+
     //mp add_rule
     /// Add a rule to the set, and return its handle; it may be a
     /// child of a parent rule given by a handle, or a toplevel rule.
@@ -163,17 +163,19 @@ mod test_stylesheet {
         d_pt.add_style("x");
         d_pt.add_style("y");
         let d_g  = Descriptor::new(&style_set);
-        
+
         let mut stylesheet = Stylesheet::new(&style_set);
         let act0_nv = vec![("x".to_string(),BaseValue::int(Some(7))),];
         let act_0  = stylesheet.add_action(None, StylableNodeAction::new(act0_nv));
-        let act_1  = stylesheet.add_action_from_name_values(&(vec![("x","3"),
-                                                                 ("id","action_1"),
-                                                                 ("y","-99"),
-                                                                 ].iter().map(|(a,b)| (a.to_string(), b.to_string())).collect())).unwrap();
+        let v = vec![("x","3"),
+                          ("id","action_1"),
+                          ("y","-99"),
+        ];
+        let mut blah = v.iter().map(|(a,b)| (a.to_string(), *b));
+        let act_1  = stylesheet.add_action_from_name_values(&mut blah).unwrap();
         let _rule_0 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt1"), Some(act_0));
         let _rule_1 = stylesheet.add_rule(None, StylableNodeRule::new().has_id("pt0"), Some(act_1));
-        
+
         let mut node0_0 = StylableNode::new("pt", &d_pt);
         node0_0.add_name_value("id", "pt0").unwrap();
         node0_0.add_name_value("x", "1").unwrap();

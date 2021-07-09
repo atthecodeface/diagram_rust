@@ -2,11 +2,11 @@
 // extern crate lazy_static;
 
 use std::fs::File;
-extern crate xml;
-extern crate hmlm;
-extern crate clap;
-extern crate geometry;
-extern crate diagram;
+// extern crate xml;
+// extern crate hmlm;
+// extern crate clap;
+// extern crate geometry;
+// extern crate diagram;
 
 const DEBUG_MAIN : bool = 1 == 0;
 
@@ -146,7 +146,7 @@ fn main() {
         }
     }
     if DEBUG_MAIN{ println!("Complete"); }
-    
+
 }
 
 /*
@@ -184,6 +184,6 @@ pattern
  */
 /*
 
-   
+
 */
-    
+

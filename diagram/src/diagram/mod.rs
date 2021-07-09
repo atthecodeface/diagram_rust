@@ -20,15 +20,18 @@ limitations under the License.
 mod font;
 mod text;
 mod descriptor;
+mod traits;
 mod element;
 mod diagram;
 mod svg;
 mod elements;
 
 pub mod types;
+pub use traits::DiagramElementContent;
+
 pub use self::types::{ValueError, StyleSheet, StyleRule}; // , StyleAction};
 pub use self::descriptor::DiagramDescriptor;
-pub use self::element::{Element, ElementScope, ElementError, ElementContent, ElementHeader, DiagramElementContent, ElementLayout};
+pub use self::element::{Element, ElementScope, ElementError, ElementContent, ElementHeader, ElementLayout};
 pub use self::elements::{Shape, Group, Text, Use, Path};
 pub use self::diagram::{Diagram, DiagramContents};
 pub use self::svg::{Svg, SvgElement, GenerateSvg, GenerateSvgElement, SvgError};
