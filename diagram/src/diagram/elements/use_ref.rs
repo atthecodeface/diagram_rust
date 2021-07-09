@@ -20,6 +20,7 @@ limitations under the License.
 use geometry::{Rectangle};
 use stylesheet::{StylableNode, Tree};
 use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -44,7 +45,7 @@ pub struct Use<'a> {
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
     //fp new
     /// Create a new element of the given name
-    fn new(header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
+    fn new(header:&ElementHeader, _name:el::Typ) -> Result<Self,ElementError> {
         if let Some(id_ref) = header.get_style_of_name_string(at::REF) {
             Ok(Self { id_ref, strings:Vec::new(), content:Vec::new(), depth:0 })
         } else {
@@ -114,7 +115,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Use<'a> {
             e.apply_placement(layout);
         }
     }
-    
+
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4

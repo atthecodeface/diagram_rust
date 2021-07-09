@@ -43,13 +43,13 @@ pub struct Shape {
 //ip DiagramElementContent for Shape
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp new
-    fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, name:el::Typ) -> Result<Self,ElementError> {
 
         let shape_type = {
             match name {
-                el::CIRCLE => ShapeType::Circle,
-                el::RECT  =>  ShapeType::Rect,
-                _ =>        ShapeType::Polygon,
+                el::Typ::Circle => ShapeType::Circle,
+                el::Typ::Rect   => ShapeType::Rect,
+                _ =>               ShapeType::Polygon,
             }
         };
         let polygon = Polygon::new(0, 0.);
@@ -66,7 +66,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
-        let mut clone = Self::new(header, "")?;
+        let mut clone = Self::new(header, el::Typ::Clone)?;
         clone.shape_type = self.shape_type;
         Ok( clone )
     }

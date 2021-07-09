@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use geometry::{Rectangle};
 use stylesheet::{StylableNode, Tree};
+use crate::constants::elements   as el;
 use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementScope, ElementError};
 use crate::{Layout};
@@ -44,7 +45,7 @@ impl std::fmt::Display for DiagramError {
 }
 
 //ip From std::fmt::Display for DiagramError
-/// Provides an implicit conversion from 
+/// Provides an implicit conversion from
 impl From<ElementError> for DiagramError {
     fn from(e: ElementError) -> DiagramError {
         DiagramError::Error(e.to_string())
@@ -80,7 +81,7 @@ impl <'a> DiagramContents<'a> {
     pub fn set_root_element(&mut self, element:Element<'a>) {
         self.root_layout = Some(element);
     }
-    
+
     //zz All done
 }
 
@@ -121,7 +122,7 @@ impl <'a> Diagram <'a> {
     pub fn borrow_contents_descriptor<'z>(&'z mut self) -> (&'a DiagramDescriptor<'a>, &'z mut DiagramContents<'a>, &'z mut StyleSheet<'a>) {
         (&self.descriptor, &mut self.contents, &mut self.stylesheet)
     }
-    
+
     //mp find_definition
     /// Find the definition of an id, if it exists in the contents
     /// 'definitions' section
@@ -181,7 +182,7 @@ impl <'a> Diagram <'a> {
     /// stylesheet and its rules; the actually styling is then
     /// appllied in `style`.
     pub fn apply_stylesheet(&mut self) {
-        let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get("group").unwrap());
+        let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get(el::Typ::Group).unwrap());
         let mut tree = Tree::new(&mut x);
         if let Some(element) = &mut self.contents.root_layout{
             tree = element.tree_add_element(tree);
@@ -242,7 +243,7 @@ impl <'a> Diagram <'a> {
             element.set_layout_properties(&mut layout);
             element.apply_placement(&layout);
         }
-        
+
         Ok(())
     }
 

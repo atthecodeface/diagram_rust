@@ -79,12 +79,12 @@ pub struct Group<'a> {
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Group<'a> {
     //fp new
     /// Create a new group
-    fn new(_header:&ElementHeader, name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, name:el::Typ) -> Result<Self,ElementError> {
         let (group_type, layout) = {
             match name {
-                el::GROUP  => (GroupType::Group,  None),
-                el::MARKER => (GroupType::Marker, Some(Layout::new())),
-                _ =>          (GroupType::Layout, Some(Layout::new())),
+                el::Typ::Group  => (GroupType::Group,  None),
+                el::Typ::Marker => (GroupType::Marker, Some(Layout::new())),
+                _ =>               (GroupType::Layout, Some(Layout::new())),
             }
         };
         // println!("Group created using name '{}' layout {:?}",  name, layout);

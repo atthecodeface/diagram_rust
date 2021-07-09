@@ -23,6 +23,7 @@ limitations under the License.
 use geometry::{Rectangle};
 use crate::DiagramDescriptor;
 use crate::{Layout};
+use crate::constants::elements as el;
 pub use super::elements::{Group, Shape, Path, Text, Use};
 use super::{ElementHeader, ElementScope, ElementError};
 
@@ -33,7 +34,7 @@ use super::{ElementHeader, ElementScope, ElementError};
 pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
-    fn new(header:&ElementHeader<'a>, name:&str ) -> Result<Self,ElementError>;
+    fn new(header:&ElementHeader<'a>, name:el::Typ ) -> Result<Self,ElementError>;
 
     //fp clone
     /// Clone element given clone of header within scope

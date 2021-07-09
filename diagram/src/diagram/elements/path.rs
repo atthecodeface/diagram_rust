@@ -20,6 +20,7 @@ limitations under the License.
 use geo_nd::Vector;
 use geometry::{Rectangle, Bezier, BezierPath, Point};
 use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use crate::{Layout};
@@ -48,7 +49,7 @@ pub struct Path {
 //ip DiagramElementContent for Path
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp new
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, _name:el::Typ) -> Result<Self,ElementError> {
         Ok( Self {
             center:Point::zero(),
             width : 0.,
@@ -66,7 +67,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Path {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
-        let clone = Self::new(header, "")?;
+        let clone = Self::new(header, el::Typ::Clone)?;
         Ok( clone )
     }
 

@@ -24,6 +24,7 @@ use super::types::*;
 use super::{Element, ElementHeader};
 use super::font::*;
 use crate::constants::attributes as at;
+use crate::constants::elements   as el;
 
 //a Diagram Descriptor - covers
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
@@ -37,7 +38,7 @@ use crate::constants::attributes as at;
 /// outlive the Diagram.
 pub struct DiagramDescriptor<'a> {
     pub(super) style_set   : &'a StyleSet,
-    descriptors : HashMap<&'a str, StyleDescriptor<'a>>,
+    descriptors : HashMap<el::Typ, StyleDescriptor<'a>>,
     fonts       : HashMap<&'a str, RrcFont>,
 }
 
@@ -130,7 +131,7 @@ impl <'a> DiagramDescriptor<'a> {
     ///
     /// This is only invoked by the `Element` type to add the required
     /// descriptors for the element types for styling.
-    pub(super) fn add_content_descriptor(&mut self, name:&'static str, include_hdr:bool, styles:Vec<&str>) {
+    pub(super) fn add_content_descriptor(&mut self, name:el::Typ, include_hdr:bool, styles:Vec<&str>) {
         let mut descriptor = StyleDescriptor::new(&self.style_set);
         if include_hdr {
             descriptor.add_styles(ElementHeader::get_style_names());
@@ -141,8 +142,8 @@ impl <'a> DiagramDescriptor<'a> {
 
     //mp get
     /// Get the descriptor belonging to a tag name
-    pub(crate) fn get(&self, tag:&str) -> Option<&StyleDescriptor> {
-        match self.descriptors.get(tag)
+    pub(crate) fn get(&self, tag:el::Typ) -> Option<&StyleDescriptor> {
+        match self.descriptors.get(&tag)
         { Some(rrc) => Some(rrc), None => None}
     }
 

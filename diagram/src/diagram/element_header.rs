@@ -23,6 +23,7 @@ const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 use geometry::{Rectangle};
 use stylesheet::{StylableNode};
 use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use super::types::*;
@@ -43,9 +44,9 @@ pub struct ElementHeader<'a> {
 //ti ElementHeader
 impl <'a> ElementHeader <'a> {
     //fp new
-    pub fn new(descriptor:&'a DiagramDescriptor, name:&str, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<Self, ElementError> {
+    pub fn new(descriptor:&'a DiagramDescriptor, name:el::Typ, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<Self, ElementError> {
         if let Some(styles) = descriptor.get(name) { // &RrcStyleDescriptor
-            let stylable = StylableNode::new(name, styles);
+            let stylable = StylableNode::new(name.as_str(), styles);
             let id_name = None;
             let layout_box = LayoutBox::new();
             let layout     = ElementLayout::new();

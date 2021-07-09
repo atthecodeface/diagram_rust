@@ -46,16 +46,16 @@ pub struct Element<'a> {
 impl <'a> Element <'a> {
     //fp add_content_descriptors {
     pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add_content_descriptor(el::USE,      false, Use::get_style_names(el::USE));
-        descriptor.add_content_descriptor(el::DIAGRAM,  true,  Group::get_style_names(el::DIAGRAM));
-        descriptor.add_content_descriptor(el::GROUP,    true,  Group::get_style_names(el::GROUP));
-        descriptor.add_content_descriptor(el::LAYOUT,   true,  Group::get_style_names(el::LAYOUT));
-        descriptor.add_content_descriptor(el::MARKER,   true,  Group::get_style_names(el::MARKER));
-        descriptor.add_content_descriptor(el::TEXT,     true,  Text::get_style_names(el::TEXT));
-        descriptor.add_content_descriptor(el::POLYGON,  true,  Shape::get_style_names(el::POLYGON));
-        descriptor.add_content_descriptor(el::RECT,     true,  Shape::get_style_names(el::RECT));
-        descriptor.add_content_descriptor(el::CIRCLE,   true,  Shape::get_style_names(el::CIRCLE));
-        descriptor.add_content_descriptor(el::PATH,     true,  Path::get_style_names(el::PATH));
+        descriptor.add_content_descriptor(el::Typ::Use,      false, Use::get_style_names(el::USE));
+        descriptor.add_content_descriptor(el::Typ::Diagram,  true,  Group::get_style_names(el::DIAGRAM));
+        descriptor.add_content_descriptor(el::Typ::Group,    true,  Group::get_style_names(el::GROUP));
+        descriptor.add_content_descriptor(el::Typ::Layout,   true,  Group::get_style_names(el::LAYOUT));
+        descriptor.add_content_descriptor(el::Typ::Marker,   true,  Group::get_style_names(el::MARKER));
+        descriptor.add_content_descriptor(el::Typ::Text,     true,  Text::get_style_names(el::TEXT));
+        descriptor.add_content_descriptor(el::Typ::Polygon,  true,  Shape::get_style_names(el::POLYGON));
+        descriptor.add_content_descriptor(el::Typ::Rect,     true,  Shape::get_style_names(el::RECT));
+        descriptor.add_content_descriptor(el::Typ::Circle,   true,  Shape::get_style_names(el::CIRCLE));
+        descriptor.add_content_descriptor(el::Typ::Path,     true,  Path::get_style_names(el::PATH));
     }
 
     //mp borrow_id
@@ -69,7 +69,7 @@ impl <'a> Element <'a> {
     }
 
     //fp new
-    pub fn new(descriptor:&'a DiagramDescriptor, name:&str, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<Self, ElementError> {
+    pub fn new(descriptor:&'a DiagramDescriptor, name:el::Typ, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<Self, ElementError> {
         // println!("New element name '{}'", name);
         let header  = ElementHeader::new(descriptor, name, name_values)?;
         let content = ElementContent::new(&header, name)?;

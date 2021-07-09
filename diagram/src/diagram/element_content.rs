@@ -52,19 +52,19 @@ pub enum ElementContent<'a> {
 //ti ElementContent
 impl <'a> ElementContent<'a> {
     //fp new
-    pub fn new(header:&ElementHeader<'a>, name:&str) -> Result<Self, ElementError> {
+    pub fn new(header:&ElementHeader<'a>, name:el::Typ) -> Result<Self, ElementError> {
         match name {
-            el::DIAGRAM => Ok(Self::Group(Group::new(&header, name)?)),
-            el::GROUP   => Ok(Self::Group(Group::new(&header, name)?)),
-            el::LAYOUT  => Ok(Self::Group(Group::new(&header, name)?)),
-            el::MARKER  => Ok(Self::Group(Group::new(&header, name)?)),
-            el::PATH    => Ok(Self::Path(Path::new(&header, name)?)),
-            el::RECT    => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::CIRCLE  => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::POLYGON => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::TEXT    => Ok(Self::Text(Text::new(&header, name)?)),
-            el::USE     => Ok(Self::Use(Use::new(&header, name)?)),
-            _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name))),
+            el::Typ::Diagram => Ok(Self::Group(Group::new(&header, name)?)),
+            el::Typ::Group   => Ok(Self::Group(Group::new(&header, name)?)),
+            el::Typ::Layout  => Ok(Self::Group(Group::new(&header, name)?)),
+            el::Typ::Marker  => Ok(Self::Group(Group::new(&header, name)?)),
+            el::Typ::Path    => Ok(Self::Path(Path::new(&header, name)?)),
+            el::Typ::Rect    => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::Typ::Circle  => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::Typ::Polygon => Ok(Self::Shape(Shape::new(&header, name)?)),
+            el::Typ::Text    => Ok(Self::Text(Text::new(&header, name)?)),
+            el::Typ::Use     => Ok(Self::Use(Use::new(&header, name)?)),
+            _ => ElementError::of_result(&header,Err(format!("Bug - bad element name {}",name.as_str()))),
         }
     }
 

@@ -20,6 +20,7 @@ limitations under the License.
 use crate::{Layout};
 use geometry::{Rectangle};
 use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
 use super::super::font::*;
@@ -58,7 +59,7 @@ pub struct Text {
 //ip DiagramElementContent for Text
 impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
     //fp new
-    fn new(_header:&ElementHeader, _name:&str) -> Result<Self,ElementError> {
+    fn new(_header:&ElementHeader, _name:el::Typ) -> Result<Self,ElementError> {
         Ok( Self {
             fill : None,
             text:Vec::new(),
@@ -73,7 +74,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Text {
     //fp clone
     /// Clone element given clone of header within scope
     fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
-        let mut clone = Self::new(header, "")?;
+        let mut clone = Self::new(header, el::Typ::Clone)?;
         for s in &self.text {
             clone.text.push(s.clone());
         }

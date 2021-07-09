@@ -18,6 +18,8 @@ limitations under the License.
 
 //a Imports
 use crate::diagram::{Element};
+// use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use crate::{DiagramDescriptor, DiagramContents};
 use crate::{StyleSheet, StyleRule};
 use super::{MLError, MLResult, MLErrorList, MLReadElement};
@@ -38,7 +40,7 @@ where P:hml::reader::Position,
     namespace_stack  : hml::NamespaceStack<'reader>,
     lexer            : hml::reader::Lexer<R>,
     parser           : hml::reader::Parser<R>,
-    errors           : MLErrorList<P, R::Error>,
+    pub errors           : MLErrorList<P, R::Error>,
 }
 
 //ti MLReader
@@ -368,7 +370,7 @@ where P:hml::reader::Position,
                             let attrs = tag.attributes.take();
                             let mut attr_values = attrs.iter().map(|a| (a.name.to_string(&self.namespace_stack), a.value.as_str()));
                             let layout = MLError::value_result( &span,
-                                                                Element::new(descriptor, "diagram", &mut attr_values))?;
+                                                                Element::new(descriptor, el::Typ::Diagram, &mut attr_values))?;
                             self.read_diagram(descriptor, layout)?;
                             diagram_read = true;
                         },

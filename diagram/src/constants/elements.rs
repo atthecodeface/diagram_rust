@@ -33,7 +33,9 @@ macro_rules! tag {
     tag!(TEXT,     "text");
     tag!(PATH,     "path");
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Typ {
+    Clone,
     Marker,
     Use,
     Diagram,
@@ -46,3 +48,28 @@ pub enum Typ {
     Path,
 }
 
+impl Typ {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Clone => "<clone>",
+            Self::Marker => MARKER,
+            Self::Use => USE,
+            Self::Diagram => DIAGRAM,
+            Self::Group => GROUP,
+            Self::Layout => LAYOUT,
+            Self::Rect => RECT,
+            Self::Circle => CIRCLE,
+            Self::Polygon => POLYGON,
+            Self::Text => TEXT,
+            Self::Path => PATH,
+        }
+    }
+}
+
+impl std::fmt::Display for Typ {
+    //mp fmt
+    /// Format for humans
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
