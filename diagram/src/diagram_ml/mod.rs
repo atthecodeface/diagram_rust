@@ -36,12 +36,5 @@ pub use error_list::MLErrorList;
 pub use ml_reader::MLReader;
 pub use ml_event::MLReadElement;
 
-// pub type Span<R:hml::reader::Reader> = hml::reader::Span<R::Position>;
-// pub type Span<R> = hml::reader::Span<R::Position>;
-// #[derive(Debug, Clone, Copy)]
-// pub struct Span<R:hml::reader::Reader> (hml::reader::Span<R::Position>);
-// impl <R:hml::reader::Reader> hml::StreamSpan for Span<R> {};
-
 pub use diagram_ml::DiagramML;
 
-// hml::Event<Span<R::Position>>

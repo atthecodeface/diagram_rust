@@ -18,16 +18,15 @@ limitations under the License.
 
 //a Imports
 use hml::{Tag, Attribute};
-use hml::reader::{Position, Span};
-use hml::reader::Error as ReaderError;
+use hml::reader::{Position, Span, ReaderError, Error};
 
-pub type MLResult<T, P, R> = std::result::Result<T,MLError<P, R>>;
+pub type MLResult<T, P, E> = std::result::Result<T,MLError<P, E>>;
 
 //a MLError type
 //tp MLError
 #[derive(Debug)]
-pub enum MLError<P, R>
-where P:Position, R:std::error::Error + 'static
+pub enum MLError<P, E>
+where P:Position, E:Error<Position = P>
 {
     EndOfStream,
     BadElementName(Span<P>, String),
@@ -35,13 +34,13 @@ where P:Position, R:std::error::Error + 'static
     BadElement(Span<P>, String),
     BadMLEvent(Span<P>, String),
     BadValue(Span<P>, String),
-    ParseError(ReaderError<P,R>),
+    ParseError(ReaderError<P,E>),
     IOError(std::io::Error),
 }
 
 //ii MLError
-impl <P, R> MLError<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> MLError<P, E>
+where P:Position, E:Error<Position = P>
 {
 
     //fi unexpected_end_of_stream
@@ -76,7 +75,7 @@ where P:Position, R:std::error::Error + 'static
     }
 
     //fi value_result
-    pub(crate) fn value_result<V, E:std::fmt::Display>(span:&Span<P>, result:Result<V,E>) -> Result<V,Self> {
+    pub(crate) fn value_result<V, Err:std::fmt::Display>(span:&Span<P>, result:Result<V,Err>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
             Err(e) => Err(Self::BadValue(span.clone(), e.to_string())),
@@ -84,7 +83,7 @@ where P:Position, R:std::error::Error + 'static
     }
 
     //fi element_result
-    pub(crate) fn element_result<V, E:std::fmt::Display>(span:&Span<P>, result:Result<V,E>) -> Result<V,Self> {
+    pub(crate) fn element_result<V, Err:std::fmt::Display>(span:&Span<P>, result:Result<V,Err>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
             Err(e) => Err(Self::BadElement(span.clone(), e.to_string())),
@@ -96,6 +95,13 @@ where P:Position, R:std::error::Error + 'static
         Self::IOError(e)
     }
 
+    //zz All done
+}
+
+//ip hml::reader::Error for MLError
+impl <P, E> MLError<P, E>
+where P:Position, E:Error<Position = P>
+{
     //mp write_without_span
     /// Write the error without the span
     pub fn write_without_span(&self, f: &mut dyn std::fmt::Write) -> std::fmt::Result {
@@ -125,12 +131,11 @@ where P:Position, R:std::error::Error + 'static
         }
     }
 
-    //zz All done
 }
 
 //ip std::fmt::Display for MLError
-impl <P, R> std::fmt::Display for MLError<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> std::fmt::Display for MLError<P, E>
+where P:Position, E:Error<Position = P>
 {
     //mp fmt - format a `MLError` for display
     /// Display the `MLError` in a human-readable form
@@ -147,18 +152,18 @@ where P:Position, R:std::error::Error + 'static
 }
 
 //ip From<ReaderError> for MLError
-impl <P, R> From<ReaderError<P, R>> for MLError<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> From<ReaderError<P, E>> for MLError<P, E>
+where P:Position, E:Error<Position = P>
 {
-    fn from(e: ReaderError<P, R>) -> Self {
+    fn from(e: ReaderError<P, E>) -> Self {
         MLError::ParseError(e)
         // Self::EndOfStream
     }
 }
 
 //ip From<IOError> for MLError
-impl <P, R> From<std::io::Error> for MLError<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> From<std::io::Error> for MLError<P, E>
+where P:Position, E:Error<Position = P>
 {
     fn from(e: std::io::Error) -> Self {
         Self::io_error(e)

@@ -30,7 +30,7 @@ use super::{NameIds, KnownName};
 /// A reader that creates diagram contents
 pub struct MLReader<'diag, 'reader, P, E, R>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     pub contents     : &'reader mut DiagramContents<'diag>,
@@ -46,7 +46,7 @@ where P:hml::reader::Position,
 //ti MLReader
 impl <'diag, 'reader, P, E, R> MLReader<'diag, 'reader, P, E, R>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
 

@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::{MLError, MLResult};
-use hml::reader::Position;
+use hml::reader::{Position, Error};
 
 //a MLErrorList
 //tp MLErrorList
@@ -31,15 +31,15 @@ use hml::reader::Position;
 /// useful to get a list of errors for when only minor attribute value
 /// errors are returned.
 #[derive(Debug)]
-pub struct MLErrorList <P, R>
-where P:Position, R:std::error::Error + 'static
+pub struct MLErrorList <P, E>
+where P:Position, E:Error<Position = P>
 {
-    errors : Vec<MLError<P, R>>,
+    errors : Vec<MLError<P, E>>,
 }
 
 //ip MLErrorList
-impl <P, R> MLErrorList<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> MLErrorList<P, E>
+where P:Position, E:Error<Position = P>
 {
     //fp new
     /// Create a new MLErrorList
@@ -49,7 +49,7 @@ where P:Position, R:std::error::Error + 'static
 
     //mp add
     /// Add an error to the list
-    pub fn add(&mut self, e:MLError<P, R>) -> () {
+    pub fn add(&mut self, e:MLError<P, E>) -> () {
         self.errors.push(e);
     }
 
@@ -57,7 +57,7 @@ where P:Position, R:std::error::Error + 'static
     /// Update the MLErrorList from a result; this returns () so the
     /// error is effectively caught and recorded. Subsequent errors
     /// are therefore less reliable.
-    pub fn update<T>(&mut self, e:MLResult<T, P, R>) {
+    pub fn update<T>(&mut self, e:MLResult<T, P, E>) {
         match e {
             Err(e) => { self.errors.push(e); }
             _ => (),
@@ -65,7 +65,7 @@ where P:Position, R:std::error::Error + 'static
     }
 
     //mp take
-    pub fn take(&mut self) -> Vec<MLError<P, R>> {
+    pub fn take(&mut self) -> Vec<MLError<P, E>> {
         std::mem::replace(&mut self.errors, Vec::new())
     }
 
@@ -73,7 +73,7 @@ where P:Position, R:std::error::Error + 'static
     /// Return a result of 'Ok(x)' if this error list is empty, or
     /// 'Err(MLErrorList)' if the error list has contents. It cleans
     /// the current error list.
-    pub fn as_err<T>(&mut self, v:T) -> Result<T, MLErrorList<P, R>> {
+    pub fn as_err<T>(&mut self, v:T) -> Result<T, Self> {
         let x = self.take();
         match x.len() {
             0 => { Ok(v) },
@@ -85,8 +85,8 @@ where P:Position, R:std::error::Error + 'static
 }
 
 //ip std::fmt::Display for MLErrorList
-impl <P, R> std::fmt::Display for MLErrorList<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> std::fmt::Display for MLErrorList<P, E>
+where P:Position, E:Error<Position = P>
 {
     //mp fmt
     /// Display the [MLErrorList] for humans
@@ -99,8 +99,8 @@ where P:Position, R:std::error::Error + 'static
 }
 
 //ip From<ReaderError> for MLError
-impl <P, R> From<std::io::Error> for MLErrorList<P, R>
-where P:Position, R:std::error::Error + 'static
+impl <P, E> From<std::io::Error> for MLErrorList<P, E>
+where P:Position, E:Error<Position = P>
 {
     fn from(e: std::io::Error) -> Self {
         let mut el = Self::new();

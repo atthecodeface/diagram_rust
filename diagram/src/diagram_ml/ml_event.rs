@@ -29,7 +29,7 @@ use hml::reader::{Span};
 //tt MLReadElement - internal trait to enable extension of type implementations
 pub trait MLReadElement <'a, P, E, R>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
 
@@ -40,7 +40,7 @@ where P:hml::reader::Position,
 //ti MLEvent for Use
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Use<'a>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
@@ -71,7 +71,7 @@ where P:hml::reader::Position,
 //ii MLEvent for Group
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Group<'a>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
@@ -112,7 +112,7 @@ where P:hml::reader::Position,
 //ii MLEvent for Path
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Path
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
@@ -140,7 +140,7 @@ where P:hml::reader::Position,
 //ii MLEvent for Shape
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Shape
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
@@ -176,7 +176,7 @@ where P:hml::reader::Position,
 //ii MLEvent for Text
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Text
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
@@ -207,7 +207,7 @@ where P:hml::reader::Position,
 //ii MLReadElement for Element
 impl <'a, P, E, R> MLReadElement <'a, P, E, R> for Element<'a>
 where P:hml::reader::Position,
-      E:std::error::Error + 'static,
+      E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
