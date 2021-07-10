@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use hml::{Tag, Attribute};
 use hml::reader::{Position, Span, ReaderError, Error};
+use super::{NameIds, KnownName};
 
 pub type MLResult<T, P, E> = std::result::Result<T,MLError<P, E>>;
 
@@ -29,7 +30,7 @@ pub enum MLError<P, E>
 where P:Position, E:Error<Position = P>
 {
     EndOfStream,
-    BadElementName(Span<P>, String),
+    BadElementName(Span<P>, String, String),
     BadAttributeName(Span<P>, String),
     BadElement(Span<P>, String),
     BadMLEvent(Span<P>, String),
@@ -51,7 +52,22 @@ where P:Position, E:Error<Position = P>
 
     //fi bad_element_name
     pub(crate) fn bad_element_name(namespace_stack:&hml::NamespaceStack<'_>, span:&Span<P>, tag:&Tag) -> Self {
-        Self::BadElementName(span.clone(), tag.name.to_string(namespace_stack))
+        Self::BadElementName(span.clone(), tag.name.to_string(namespace_stack), String::new())
+    }
+
+    //fi bad_element_name_expected
+    pub(crate) fn bad_element_name_expected(namespace_stack:&hml::NamespaceStack<'_>, span:&Span<P>, tag:&Tag, name_ids:&NameIds, expected:&'static [KnownName]) -> Self {
+        let mut expectation = String::new();
+        use std::fmt::Write;
+        if expected.len() == 1 {
+            let _ = write!(&mut expectation, ", expected '{}'",name_ids.str_of_name(&expected[0]));
+        } else {
+            let _ = write!(&mut expectation, ", expected one of ");
+            for e in expected {
+                let _ = write!(&mut expectation, " '{}'", name_ids.str_of_name(e));
+            }
+        }
+        Self::BadElementName(span.clone(), tag.name.to_string(namespace_stack), expectation)
     }
 
     //fi bad_attribute_name
@@ -107,12 +123,12 @@ where P:Position, E:Error<Position = P>
     pub fn write_without_span(&self, f: &mut dyn std::fmt::Write) -> std::fmt::Result {
         match self {
             Self::EndOfStream              => write!(f, "Unexpected end of XML event stream - bug in event source"),
-            Self::BadElementName(span,n)   => write!(f, "Bad element '{}'", n),
+            Self::BadElementName(span,n,e) => write!(f, "Bad element '{}'{}", n, e),
             Self::BadAttributeName(span,n) => write!(f, "Bad attribute '{}'", n),
             Self::BadElement(span,s)       => write!(f, "Element error '{}'", s),
             Self::BadMLEvent(span,s)       => write!(f, "Bad XML event {}", s),
             Self::BadValue(span,s )        => write!(f, "Bad value '{}'", s),
-            Self::ParseError(s)            => write!(f, "Parse error '{}'", s),
+            Self::ParseError(e)            => e.write_without_span(f),
             Self::IOError(e)               => write!(f, "IO error '{}'", e),
         }
     }
@@ -121,12 +137,12 @@ where P:Position, E:Error<Position = P>
     /// Borrow a span if it has one
     pub fn borrow_span(&self) -> Option<&Span<P>> {
         match self {
-            Self::BadElementName(span,_)   => Some(span),
-            Self::BadAttributeName(span,_) => Some(span),
-            Self::BadElement(span,_)       => Some(span),
-            Self::BadMLEvent(span,_)       => Some(span),
-            Self::BadValue(span,_)         => Some(span),
-            // Self::ParseError(s)            => write!(f, "Parse error '{}'", s),
+            Self::BadElementName(span,_,_)  => Some(span),
+            Self::BadAttributeName(span,_)  => Some(span),
+            Self::BadElement(span,_)        => Some(span),
+            Self::BadMLEvent(span,_)        => Some(span),
+            Self::BadValue(span,_)          => Some(span),
+            Self::ParseError(e)             => e.borrow_span(),
             _ => None,
         }
     }

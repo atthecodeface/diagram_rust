@@ -1,2 +1,4 @@
 #diagram
+##circle unknown_attr=3
+####bad_indent
 ##Bad ###Internal_bad ##OtherBad ##shape vertices="3" ##NewBad ###InternalNewBad

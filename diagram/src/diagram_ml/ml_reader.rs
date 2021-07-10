@@ -109,9 +109,10 @@ where P:hml::reader::Position,
 
     //mp return_bad_element
     /// Returns an error
-    pub fn return_bad_element(&mut self, span:&hml::reader::Span<P>, tag:&hml::Tag) -> MLError<P, E> {
+    pub fn return_bad_element(&mut self, span:&hml::reader::Span<P>, tag:&hml::Tag, expected:&'static [KnownName]) -> MLError<P, E> {
         drop(self.consume_element());
-        MLError::bad_element_name(&self.namespace_stack, span, tag)
+        MLError::bad_element_name_expected(&self.namespace_stack, &span, &tag,
+                                                      &self.name_ids, expected)
     }
 
     //mp consume_bad_element
@@ -263,7 +264,8 @@ where P:hml::reader::Position,
                             self.errors.update(e);
                         }
                         _ => {
-                            return Err(MLError::bad_element_name(&self.namespace_stack, &span, &tag));
+                            return Err(MLError::bad_element_name_expected(&self.namespace_stack, &span, &tag,
+                                                                          &self.name_ids, &[KnownName::Style, KnownName::Rule, KnownName::Defs]));
                         }
                     }
                 },
@@ -338,7 +340,8 @@ where P:hml::reader::Position,
                             library_read = true;
                         },
                         _ => {
-                            return Err(MLError::bad_element_name(&self.namespace_stack, &span, &tag));
+                            return Err(MLError::bad_element_name_expected(&self.namespace_stack, &span, &tag,
+                                                                          &self.name_ids, &[KnownName::Library]));
                         },
                     }
                 },
@@ -375,7 +378,8 @@ where P:hml::reader::Position,
                             diagram_read = true;
                         },
                         _ => {
-                            return Err(MLError::bad_element_name(&self.namespace_stack, &span, &tag));
+                            return Err(MLError::bad_element_name_expected(&self.namespace_stack, &span, &tag,
+                                                                          &self.name_ids, &[KnownName::Diagram]));
                         },
                     }
                 },

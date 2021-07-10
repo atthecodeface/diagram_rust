@@ -221,7 +221,18 @@ where P:hml::reader::Position,
             Some(KnownName::Rect)     => Shape::ml_read(reader, descriptor, span, tag),
             Some(KnownName::Circle)   => Shape::ml_read(reader, descriptor, span, tag),
             Some(KnownName::Polygon)  => Shape::ml_read(reader, descriptor, span, tag),
-            _ => Err(reader.return_bad_element(span, &tag))
+            _ => Err(reader.return_bad_element(span, &tag,
+                                               &[KnownName::Use,
+                                                 KnownName::Group,
+                                                 KnownName::Marker,
+                                                 KnownName::Layout,
+                                                 KnownName::Path,
+                                                 KnownName::Text,
+                                                 KnownName::Rect,
+                                                 KnownName::Circle,
+                                                 KnownName::Polygon,
+                                               ]
+            ))
         }
     }
 }

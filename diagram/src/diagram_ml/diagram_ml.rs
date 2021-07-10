@@ -77,13 +77,15 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
                 let mut r = Vec::new();
                 for e in err_list.take() {
                     let mut s = String::new();
+                    use std::fmt::Write;
                     if let Some(span) = e.borrow_span() {
                         use hml::reader::Reader;
                         reader.fmt_context(&mut s, span.start(), span.end()).unwrap();
                         e.write_without_span(&mut s).unwrap();
+                        write!(&mut s, " at {}", span.start() ).unwrap();
                     } else {
                         use std::fmt::Write;
-                        write!(&mut s, "{}", e);
+                        write!(&mut s, "{}", e).unwrap();
                     }
                     r.push(s);
                 }
