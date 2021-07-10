@@ -65,7 +65,7 @@ where P:Position, R:std::error::Error + 'static
     }
 
     //mp take
-    fn take(&mut self) -> Vec<MLError<P, R>> {
+    pub fn take(&mut self) -> Vec<MLError<P, R>> {
         std::mem::replace(&mut self.errors, Vec::new())
     }
 

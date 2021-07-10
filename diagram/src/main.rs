@@ -26,6 +26,18 @@ fn exit_on_err<T,U:std::fmt::Display>(result:Result<T,U>) -> T {
     }
 }
 
+fn exit_on_err_vec<T>(result:Result<T,Vec<String>>) -> T {
+    match result {
+        Err(vs) => {
+            for v in vs {
+                eprintln!("{}\n", v);
+            }
+            std::process::exit(1);
+        },
+        Ok(v) => v
+    }
+}
+
 static mut SVG_INDENT_STR :String = String::new();
 fn main() {
     let matches = App::new("diagram")
@@ -87,7 +99,7 @@ fn main() {
             let mut is_library = false;
             for filename in vf {
                 let file = File::open(filename).unwrap();
-                exit_on_err( diagram_ml.read_file(file, is_library) );
+                exit_on_err_vec(diagram_ml.read_file(file, is_library));
                 is_library = true;
             }
         },

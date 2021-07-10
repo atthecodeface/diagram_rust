@@ -61,13 +61,36 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
     //mp read_file
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
-    pub fn read_file<F:std::io::Read>(&mut self, mut f:F, is_library:bool) -> Result<(), MLErrorList<hml::string::Position, std::io::Error>> {
+    pub fn read_file<F:std::io::Read>(&mut self, mut f:F, is_library:bool) -> Result<(), Vec<String>> {
         let mut namespace = hml::Namespace::new(true);
         let mut contents = String::new();
-        let mut reader = hml::string::Reader::of_file(&mut f, &mut contents)?;
+        let mut reader = {
+            match hml::string::Reader::of_file(&mut f, &mut contents) {
+                Err(e) => { let mut r=Vec::new(); r.push(format!("{}",e)); return Err(r);},
+                Ok(x) => x,
+            }
+        };
         let (descriptor, contents, stylesheet) = self.diagram.borrow_contents_descriptor();
         let mut ml_reader = MLReader::new(contents, stylesheet, &mut namespace, &mut reader);
-        ml_reader.read_file(descriptor, is_library)
+        match ml_reader.read_file(descriptor, is_library) {
+            Err(mut err_list) => {
+                let mut r = Vec::new();
+                for e in err_list.take() {
+                    let mut s = String::new();
+                    if let Some(span) = e.borrow_span() {
+                        use hml::reader::Reader;
+                        reader.fmt_context(&mut s, span.start(), span.end()).unwrap();
+                        e.write_without_span(&mut s).unwrap();
+                    } else {
+                        use std::fmt::Write;
+                        write!(&mut s, "{}", e);
+                    }
+                    r.push(s);
+                }
+                Err(r)
+            },
+            _ => Ok(())
+        }
     }
 
     //zz All done

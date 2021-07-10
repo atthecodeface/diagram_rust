@@ -96,6 +96,35 @@ where P:Position, R:std::error::Error + 'static
         Self::IOError(e)
     }
 
+    //mp write_without_span
+    /// Write the error without the span
+    pub fn write_without_span(&self, f: &mut dyn std::fmt::Write) -> std::fmt::Result {
+        match self {
+            Self::EndOfStream              => write!(f, "Unexpected end of XML event stream - bug in event source"),
+            Self::BadElementName(span,n)   => write!(f, "Bad element '{}'", n),
+            Self::BadAttributeName(span,n) => write!(f, "Bad attribute '{}'", n),
+            Self::BadElement(span,s)       => write!(f, "Element error '{}'", s),
+            Self::BadMLEvent(span,s)       => write!(f, "Bad XML event {}", s),
+            Self::BadValue(span,s )        => write!(f, "Bad value '{}'", s),
+            Self::ParseError(s)            => write!(f, "Parse error '{}'", s),
+            Self::IOError(e)               => write!(f, "IO error '{}'", e),
+        }
+    }
+
+    //mp borrow_span
+    /// Borrow a span if it has one
+    pub fn borrow_span(&self) -> Option<&Span<P>> {
+        match self {
+            Self::BadElementName(span,_)   => Some(span),
+            Self::BadAttributeName(span,_) => Some(span),
+            Self::BadElement(span,_)       => Some(span),
+            Self::BadMLEvent(span,_)       => Some(span),
+            Self::BadValue(span,_)         => Some(span),
+            // Self::ParseError(s)            => write!(f, "Parse error '{}'", s),
+            _ => None,
+        }
+    }
+
     //zz All done
 }
 
@@ -106,15 +135,11 @@ where P:Position, R:std::error::Error + 'static
     //mp fmt - format a `MLError` for display
     /// Display the `MLError` in a human-readable form
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::EndOfStream              => write!(f, "Unexpected end of XML event stream - bug in event source"),
-            Self::BadElementName(span,n)   => write!(f, "Bad element '{}' at {}", n, span),
-            Self::BadAttributeName(span,n) => write!(f, "Bad attribute '{}' at {}", n, span),
-            Self::BadElement(span,s)       => write!(f, "Element error '{}' at {}", s, span),
-            Self::BadMLEvent(span,s)       => write!(f, "Bad XML event {} at {}", s, span),
-            Self::BadValue(span,s )        => write!(f, "Bad value '{}' at {}", s, span),
-            Self::ParseError(s)            => write!(f, "Parse error '{}'", s),
-            Self::IOError(e)               => write!(f, "IO error '{}'", e),
+        self.write_without_span(f)?;
+        if let Some(span) = self.borrow_span() {
+            write!(f, " at {}", span)
+        } else {
+            Ok(())
         }
     }
 
