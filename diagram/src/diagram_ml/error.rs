@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use hml::{Tag, Attribute};
+use hml::names::{Tag, Attribute};
 use hml::reader::{Position, Span, ReaderError, Error};
 use super::{NameIds, KnownName};
 
@@ -51,12 +51,12 @@ where P:Position, E:Error<Position = P>
     }
 
     //fi bad_element_name
-    pub(crate) fn bad_element_name(namespace_stack:&hml::NamespaceStack<'_>, span:&Span<P>, tag:&Tag) -> Self {
+    pub(crate) fn bad_element_name(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, tag:&Tag) -> Self {
         Self::BadElementName(span.clone(), tag.name.to_string(namespace_stack), String::new())
     }
 
     //fi bad_element_name_expected
-    pub(crate) fn bad_element_name_expected(namespace_stack:&hml::NamespaceStack<'_>, span:&Span<P>, tag:&Tag, name_ids:&NameIds, expected:&'static [KnownName]) -> Self {
+    pub(crate) fn bad_element_name_expected(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, tag:&Tag, name_ids:&NameIds, expected:&'static [KnownName]) -> Self {
         let mut expectation = String::new();
         use std::fmt::Write;
         if expected.len() == 1 {
@@ -71,7 +71,7 @@ where P:Position, E:Error<Position = P>
     }
 
     //fi bad_attribute_name
-    pub(crate) fn bad_attribute_name(namespace_stack:&hml::NamespaceStack<'_>, span:&Span<P>, attr:&Attribute) -> Self {
+    pub(crate) fn bad_attribute_name(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, attr:&Attribute) -> Self {
         Self::BadAttributeName(span.clone(), attr.name.to_string(namespace_stack))
     }
 
@@ -86,7 +86,7 @@ where P:Position, E:Error<Position = P>
     // }
 
     //mp bad_ml_event
-    pub(crate) fn bad_ml_event(ewp:&hml::Event<Span<P>>) -> Self {
+    pub(crate) fn bad_ml_event(ewp:&hml::markup::Event<Span<P>>) -> Self {
         Self::BadMLEvent(ewp.borrow_span().clone(), format!("{:?}", ewp))
     }
 

@@ -34,7 +34,7 @@ where P:hml::reader::Position,
 {
 
     /// ml_read is invoked from MarkupEvent::StartElement(<element type>, <atttributes>, _<namespace>)
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E>;
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E>;
 }
 
 //ti MLEvent for Use
@@ -44,13 +44,13 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         let attrs = tag.attributes.take();
         let mut attr_values = attrs.iter().map(|a| reader.map_attr(a));
         let mut use_ref = MLError::value_result(span, Element::new(descriptor, el::Typ::Use, &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
-            use hml::EventType::*;
+            use hml::markup::EventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(use_ref); },
@@ -75,7 +75,7 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         let el_type = {
             match reader.known_id(&tag.name) {
                 Some(KnownName::Marker)  =>  el::Typ::Marker,
@@ -89,7 +89,7 @@ where P:hml::reader::Position,
         let mut group = MLError::value_result(span, Element::new(descriptor, el_type, &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
-            use hml::EventType::*;
+            use hml::markup::EventType::*;
             match e.get_type() {
                 Comment      => (), // continue
                 EndElement   => { return Ok(group); },
@@ -116,13 +116,13 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         let attrs = tag.attributes.take();
         let mut attr_values = attrs.iter().map(|a| reader.map_attr(a));
         let path  = MLError::value_result(span, Element::new(descriptor, el::Typ::Path, &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
-            use hml::EventType::*;
+            use hml::markup::EventType::*;
             match e.get_type() {
                 Comment      => (), // continue
                 EndElement   => { return Ok(path); },
@@ -144,7 +144,7 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         let el_type = {
             match reader.known_id(&tag.name) {
                 Some(KnownName::Rect)   =>  el::Typ::Rect,
@@ -158,7 +158,7 @@ where P:hml::reader::Position,
         let shape = MLError::value_result(span, Element::new(descriptor, el_type, &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
-            use hml::EventType::*;
+            use hml::markup::EventType::*;
             match e.get_type() {
                 Comment      => (), // continue
                 EndElement   => { return Ok(shape); },
@@ -180,13 +180,13 @@ where P:hml::reader::Position,
       R:hml::reader::Reader<Position = P, Error = E>
 {
     //fp ml_read
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         let attrs = tag.attributes.take();
         let mut attr_values = attrs.iter().map(|a| reader.map_attr(a));
         let mut text  = MLError::value_result(span, Element::new(descriptor, el::Typ::Text, &mut attr_values ))?;
         loop {
             let e = reader.next_event()?;
-            use hml::EventType::*;
+            use hml::markup::EventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(text); },
@@ -210,7 +210,7 @@ where P:hml::reader::Position,
       E:hml::reader::Error<Position = P>,
       R:hml::reader::Reader<Position = P, Error = E>
 {
-    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::Tag) -> MLResult<Element<'a>, P, E> {
+    fn ml_read(reader:&mut MLReader<P, E, R>, descriptor:&'a DiagramDescriptor, span:&Span<P>, tag:hml::names::Tag) -> MLResult<Element<'a>, P, E> {
         match reader.known_id(&tag.name) {
             Some(KnownName::Use)      => Use::ml_read(reader, descriptor, span, tag),
             Some(KnownName::Group)    => Group::ml_read(reader, descriptor, span, tag),

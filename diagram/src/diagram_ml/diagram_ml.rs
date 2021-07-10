@@ -62,7 +62,7 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
     pub fn read_file<F:std::io::Read>(&mut self, mut f:F, is_library:bool) -> Result<(), Vec<String>> {
-        let mut namespace = hml::Namespace::new(true);
+        let mut namespace = hml::names::Namespace::new(true);
         let mut contents = String::new();
         let mut reader = {
             match hml::string::Reader::of_file(&mut f, &mut contents) {
