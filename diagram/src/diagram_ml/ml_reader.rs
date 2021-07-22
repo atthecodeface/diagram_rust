@@ -38,8 +38,8 @@ where P:hml::reader::Position,
     reader           : &'reader mut R,
     name_ids         : NameIds,
     namespace_stack  : hml::names::NamespaceStack<'reader>,
-    lexer            : hml::reader::Lexer<R>,
-    parser           : hml::reader::Parser<R>,
+    lexer            : hml::hml_reader::Lexer<R>,
+    parser           : hml::hml_reader::Parser<R>,
     pub errors           : MLErrorList<P, R::Error>,
 }
 
@@ -59,8 +59,8 @@ where P:hml::reader::Position,
     ) -> Self {
         let mut namespace_stack = hml::names::NamespaceStack::new(namespace);
         let name_ids = NameIds::create(&mut namespace_stack);
-        let lexer   = hml::reader::Lexer::new();
-        let parser  = hml::reader::Parser::new();
+        let lexer   = hml::hml_reader::Lexer::new();
+        let parser  = hml::hml_reader::Parser::new();
         Self {
             // descriptor,
             contents,
