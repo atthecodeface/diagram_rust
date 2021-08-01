@@ -16,20 +16,13 @@ limitations under the License.
 @brief   Part of geometry library
  */
 
-//a VectorOp trait
-pub trait VectorOp {
-    type Value;
-    fn zero<const D:usize> () -> [Self::Value; D];
-    fn zero2() -> [Self::Value; 2];
-    fn fmt(f: &mut std::fmt::Formatter, v : &[Self::Value]) -> std::fmt::Result;
-}
-
 //a Num and Float traits
 //tp Num
 /// Trait required for matrix or vector elements
 pub trait Num : std::ops::Neg<Output=Self> +
     num_traits::Num + num_traits::NumAssignOps +
-    Clone + Copy + PartialEq + std::fmt::Display + std::fmt::Debug {}
+    Clone + Copy + PartialEq + std::fmt::Display + std::fmt::Debug {
+    }
 
 //tp Float
 /// Trait required for matrix or vector elements such that also need operations such as sqrt, sin/cos, etc
@@ -91,8 +84,8 @@ pub trait Vector<F:Float, const D:usize> : Clone
         fn length(&self)    -> F { self.length_sq().sqrt() }
         fn distance_sq(&self, other:&Self) -> F { (*self - *other).length_sq() }
         fn distance(&self, other:&Self) -> F { self.distance_sq(other).sqrt() }
-        // clamp
         fn normalize(&mut self) { let l = self.length(); if l < F::epsilon() {self.set_zero()} else {*self /= l} }
+        // clamp
         // rotate_around
     }
 
