@@ -19,8 +19,6 @@ limitations under the License.
 //a Imports
 use geo_nd::Vector;
 use geometry::{Transform, Point, Range, Rectangle, Float4, Polygon};
-use super::grid::{GridData, GridPlacement};
-use super::placement::{Placements};
 use super::layout::Layout;
 
 //a LayoutRecord
