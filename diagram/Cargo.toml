@@ -10,5 +10,5 @@ lazy_static = "1.2.0"
 geo-nd = "0.1.1"
 geometry    = { path="../geometry", version="0.1.0" }
 stylesheet  = { path="../stylesheet", version="0.1.0" }
-hml         = { path="../../hml-rs", version="0.0.1" }
+hml-rs = "0.0.2"
 

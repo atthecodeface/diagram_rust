@@ -18,49 +18,58 @@ limitations under the License.
 
 //a Imports
 use crate::diagram::{Element};
-// use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::{DiagramDescriptor, DiagramContents};
 use crate::{StyleSheet, StyleRule};
 use super::{MLError, MLResult, MLErrorList, MLReadElement};
 use super::{NameIds, KnownName};
+use hml_rs::reader::Position   as HmlPosition;
+use hml_rs::reader::Error      as HmlError;
+use hml_rs::reader::Reader     as HmlReader;
+use hml_rs::reader::Span       as HmlSpan;
+use hml_rs::names::Tag         as HmlTag;
+use hml_rs::names::Name        as HmlName;
+use hml_rs::names::Attribute   as HmlAttribute;
+use hml_rs::markup::EventType as HmlEventType;
+use hml_rs::names::{Name, Namespace,NamespaceStack};
+use hml_rs::markup::Event     as HmlEvent;
 
 //a MLReader
 //tp MLReader
 /// A reader that creates diagram contents
 pub struct MLReader<'diag, 'reader, P, E, R>
-where P:hml::reader::Position,
-      E:hml::reader::Error<Position = P>,
-      R:hml::reader::Reader<Position = P, Error = E>
+where P:HmlPosition,
+      E:HmlError<Position = P>,
+      R:HmlReader<Position = P, Error = E>
 {
     pub contents     : &'reader mut DiagramContents<'diag>,
     pub stylesheet   : &'reader mut StyleSheet<'diag>,
     reader           : &'reader mut R,
     name_ids         : NameIds,
-    namespace_stack  : hml::names::NamespaceStack<'reader>,
-    lexer            : hml::hml_reader::Lexer<R>,
-    parser           : hml::hml_reader::Parser<R>,
+    namespace_stack  : NamespaceStack<'reader>,
+    lexer            : hml_rs::hml_reader::Lexer<R>,
+    parser           : hml_rs::hml_reader::Parser<R>,
     pub errors           : MLErrorList<P, R::Error>,
 }
 
 //ti MLReader
 impl <'diag, 'reader, P, E, R> MLReader<'diag, 'reader, P, E, R>
-where P:hml::reader::Position,
-      E:hml::reader::Error<Position = P>,
-      R:hml::reader::Reader<Position = P, Error = E>
+where P:HmlPosition,
+      E:HmlError<Position = P>,
+      R:HmlReader<Position = P, Error = E>
 {
 
     //fp new
     pub fn new (
         contents:    &'reader mut DiagramContents<'diag>,
         stylesheet:  &'reader mut StyleSheet<'diag>,
-        namespace:   &'reader mut hml::names::Namespace,
+        namespace:   &'reader mut Namespace,
         reader:      &'reader mut R,
     ) -> Self {
-        let mut namespace_stack = hml::names::NamespaceStack::new(namespace);
+        let mut namespace_stack = NamespaceStack::new(namespace);
         let name_ids = NameIds::create(&mut namespace_stack);
-        let lexer   = hml::hml_reader::Lexer::new();
-        let parser  = hml::hml_reader::Parser::new();
+        let lexer   = hml_rs::hml_reader::Lexer::new();
+        let parser  = hml_rs::hml_reader::Parser::new();
         Self {
             // descriptor,
             contents,
@@ -75,17 +84,17 @@ where P:hml::reader::Position,
     }
 
     //mp known_id
-    pub fn known_id(&self, name:&hml::names::Name) -> Option<KnownName> {
+    pub fn known_id(&self, name:&HmlName) -> Option<KnownName> {
         self.name_ids.known_id(name)
     }
 
     //mp map_attr
-    pub fn map_attr<'a>(&self, attr:&'a hml::names::Attribute) -> (String, &'a str) {
+    pub fn map_attr<'a>(&self, attr:&'a HmlAttribute) -> (String, &'a str) {
         ( attr.name.to_string(&self.namespace_stack), attr.value.as_str() )
     }
 
     //mp next_event
-    pub fn next_event(&mut self) -> MLResult<hml::markup::Event<hml::reader::Span<P>>, P, E> {
+    pub fn next_event(&mut self) -> MLResult<HmlEvent<HmlSpan<P>>, P, E> {
         let (parser, mut namespace_stack, lexer, mut reader) = (&mut self.parser, &mut self.namespace_stack, &mut self.lexer, &mut self.reader);
         let e = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader))?;
         Ok(e)
@@ -96,7 +105,7 @@ where P:hml::reader::Position,
     fn consume_element(&mut self) -> MLResult<(), P, E> {
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 EndElement  => { return Ok(()); },
                 StartElement => {
@@ -109,7 +118,7 @@ where P:hml::reader::Position,
 
     //mp return_bad_element
     /// Returns an error
-    pub fn return_bad_element(&mut self, span:&hml::reader::Span<P>, tag:&hml::names::Tag, expected:&'static [KnownName]) -> MLError<P, E> {
+    pub fn return_bad_element(&mut self, span:&HmlSpan<P>, tag:&HmlTag, expected:&'static [KnownName]) -> MLError<P, E> {
         drop(self.consume_element());
         MLError::bad_element_name_expected(&self.namespace_stack, &span, &tag,
                                                       &self.name_ids, expected)
@@ -117,7 +126,7 @@ where P:hml::reader::Position,
 
     //mp consume_bad_element
     /// Returns an error only if fatal
-    pub fn consume_bad_element(&mut self, span:&hml::reader::Span<P>, tag:&hml::names::Tag) -> MLResult<(), P, E> {
+    pub fn consume_bad_element(&mut self, span:&HmlSpan<P>, tag:&HmlTag) -> MLResult<(), P, E> {
         self.errors.add(MLError::bad_element_name(&self.namespace_stack, span, tag));
         self.consume_element()
     }
@@ -126,7 +135,7 @@ where P:hml::reader::Position,
     fn read_definitions (&mut self, descriptor:&'diag DiagramDescriptor) -> MLResult<(), P, E> {
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(()); },
@@ -158,7 +167,7 @@ where P:hml::reader::Position,
     }
 
     //mp read_rule
-    fn read_rule (&mut self, descriptor:&'diag DiagramDescriptor, parent:Option<usize>, span:&hml::reader::Span<P>, tag:hml::names::Tag) -> MLResult<(), P, E> {
+    fn read_rule (&mut self, descriptor:&'diag DiagramDescriptor, parent:Option<usize>, span:&HmlSpan<P>, tag:HmlTag) -> MLResult<(), P, E> {
         let mut rule = StyleRule::new();
         let mut action = None;
         let mut attrs = Vec::new();
@@ -197,7 +206,7 @@ where P:hml::reader::Position,
         loop {
             // should support an 'apply' subrule
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(()); },
@@ -218,14 +227,14 @@ where P:hml::reader::Position,
     }
 
     //mp read_style
-    fn read_style (&mut self, _descriptor:&'diag DiagramDescriptor, span:&hml::reader::Span<P>, tag:hml::names::Tag) -> MLResult<(), P, E> {
+    fn read_style (&mut self, _descriptor:&'diag DiagramDescriptor, span:&HmlSpan<P>, tag:HmlTag) -> MLResult<(), P, E> {
         let attrs = tag.attributes.take();
         let (namespace_stack, stylesheet) = (&self.namespace_stack, &mut self.stylesheet);
         let mut attr_values = attrs.iter().map(|a| (a.name.to_string(&namespace_stack), a.value.as_str()));
         MLError::value_result(span, stylesheet.add_action_from_name_values(&mut attr_values))?;
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(()); },
@@ -243,7 +252,7 @@ where P:hml::reader::Position,
     fn read_library(&mut self, descriptor:&'diag DiagramDescriptor) -> MLResult<(), P, E> {
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => { return Ok(()); },
@@ -278,7 +287,7 @@ where P:hml::reader::Position,
     fn read_diagram(&mut self, descriptor:&'diag DiagramDescriptor, mut layout:Element<'diag>) -> MLResult<(), P, E> {
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment     => (), // continue
                 EndElement  => {
@@ -321,7 +330,7 @@ where P:hml::reader::Position,
         let mut library_read = false;
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment      => (), // continue
                 EndDocument  => {
@@ -355,7 +364,7 @@ where P:hml::reader::Position,
         let mut diagram_read = false;
         loop {
             let e = self.next_event()?;
-            use hml::markup::EventType::*;
+            use HmlEventType::*;
             match e.get_type() {
                 Comment      => (), // continue
                 EndDocument  => {

@@ -3,8 +3,8 @@ struct BadXMLElement {
 }
 
 //ii MLEvent for BadXMLElement
-impl <'a, R:hml::Reader> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
-    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, span:&Span<R>, tag:hml::Tag) -> Result<Self, MLError<R>> {
+impl <'a, R:hml_rs::Reader> MLEvent <'a, R, BadXMLElement> for BadXMLElement {
+    fn ml_new(reader:&mut MLReader<R>, descriptor:&'a DiagramDescriptor, span:&Span<R>, tag:hml_rs::Tag) -> Result<Self, MLError<R>> {
         let s = Self {};
         Self::ml_event(s, reader, descriptor)
     }

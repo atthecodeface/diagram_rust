@@ -17,8 +17,15 @@ limitations under the License.
  */
 
 //a Imports
-use hml::names::{Tag, Attribute};
-use hml::reader::{Position, Span, ReaderError, Error};
+use hml_rs::reader::Position  as HmlPosition;
+use hml_rs::reader::Error     as HmlError;
+use hml_rs::reader::Reader    as HmlReader;
+use hml_rs::reader::ReaderError  as HmlReaderError;
+use hml_rs::reader::Span      as HmlSpan;
+use hml_rs::names::Tag        as HmlTag;
+use hml_rs::names::Attribute  as HmlAttribute;
+use hml_rs::names::{NSNameId, Name, NamespaceStack};
+use hml_rs::markup::Event     as HmlEvent;
 use super::{NameIds, KnownName};
 
 pub type MLResult<T, P, E> = std::result::Result<T,MLError<P, E>>;
@@ -27,21 +34,21 @@ pub type MLResult<T, P, E> = std::result::Result<T,MLError<P, E>>;
 //tp MLError
 #[derive(Debug)]
 pub enum MLError<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     EndOfStream,
-    BadElementName(Span<P>, String, String),
-    BadAttributeName(Span<P>, String),
-    BadElement(Span<P>, String),
-    BadMLEvent(Span<P>, String),
-    BadValue(Span<P>, String),
-    ParseError(ReaderError<P,E>),
+    BadElementName(HmlSpan<P>, String, String),
+    BadAttributeName(HmlSpan<P>, String),
+    BadElement(HmlSpan<P>, String),
+    BadMLEvent(HmlSpan<P>, String),
+    BadValue(HmlSpan<P>, String),
+    ParseError(HmlReaderError<P,E>),
     IOError(std::io::Error),
 }
 
 //ii MLError
 impl <P, E> MLError<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
 
     //fi unexpected_end_of_stream
@@ -51,12 +58,12 @@ where P:Position, E:Error<Position = P>
     }
 
     //fi bad_element_name
-    pub(crate) fn bad_element_name(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, tag:&Tag) -> Self {
+    pub(crate) fn bad_element_name(namespace_stack:&NamespaceStack<'_>, span:&HmlSpan<P>, tag:&HmlTag) -> Self {
         Self::BadElementName(span.clone(), tag.name.to_string(namespace_stack), String::new())
     }
 
     //fi bad_element_name_expected
-    pub(crate) fn bad_element_name_expected(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, tag:&Tag, name_ids:&NameIds, expected:&'static [KnownName]) -> Self {
+    pub(crate) fn bad_element_name_expected(namespace_stack:&NamespaceStack<'_>, span:&HmlSpan<P>, tag:&HmlTag, name_ids:&NameIds, expected:&'static [KnownName]) -> Self {
         let mut expectation = String::new();
         use std::fmt::Write;
         if expected.len() == 1 {
@@ -71,12 +78,12 @@ where P:Position, E:Error<Position = P>
     }
 
     //fi bad_attribute_name
-    pub(crate) fn bad_attribute_name(namespace_stack:&hml::names::NamespaceStack<'_>, span:&Span<P>, attr:&Attribute) -> Self {
+    pub(crate) fn bad_attribute_name(namespace_stack:&NamespaceStack<'_>, span:&HmlSpan<P>, attr:&HmlAttribute) -> Self {
         Self::BadAttributeName(span.clone(), attr.name.to_string(namespace_stack))
     }
 
     //fi bad_value
-    pub(crate) fn bad_value(span:&Span<P>, reason:&str, value:&str) -> Self {
+    pub(crate) fn bad_value(span:&HmlSpan<P>, reason:&str, value:&str) -> Self {
         Self::BadValue( span.clone(), format!("{}: '{}'", reason, value) )
     }
 
@@ -86,12 +93,12 @@ where P:Position, E:Error<Position = P>
     // }
 
     //mp bad_ml_event
-    pub(crate) fn bad_ml_event(ewp:&hml::markup::Event<Span<P>>) -> Self {
+    pub(crate) fn bad_ml_event(ewp:&HmlEvent<HmlSpan<P>>) -> Self {
         Self::BadMLEvent(ewp.borrow_span().clone(), format!("{:?}", ewp))
     }
 
     //fi value_result
-    pub(crate) fn value_result<V, Err:std::fmt::Display>(span:&Span<P>, result:Result<V,Err>) -> Result<V,Self> {
+    pub(crate) fn value_result<V, Err:std::fmt::Display>(span:&HmlSpan<P>, result:Result<V,Err>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
             Err(e) => Err(Self::BadValue(span.clone(), e.to_string())),
@@ -99,7 +106,7 @@ where P:Position, E:Error<Position = P>
     }
 
     //fi element_result
-    pub(crate) fn element_result<V, Err:std::fmt::Display>(span:&Span<P>, result:Result<V,Err>) -> Result<V,Self> {
+    pub(crate) fn element_result<V, Err:std::fmt::Display>(span:&HmlSpan<P>, result:Result<V,Err>) -> Result<V,Self> {
         match result {
             Ok(v) => Ok(v),
             Err(e) => Err(Self::BadElement(span.clone(), e.to_string())),
@@ -116,7 +123,7 @@ where P:Position, E:Error<Position = P>
 
 //ip hml::reader::Error for MLError
 impl <P, E> MLError<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     //mp write_without_span
     /// Write the error without the span
@@ -135,7 +142,7 @@ where P:Position, E:Error<Position = P>
 
     //mp borrow_span
     /// Borrow a span if it has one
-    pub fn borrow_span(&self) -> Option<&Span<P>> {
+    pub fn borrow_span(&self) -> Option<&HmlSpan<P>> {
         match self {
             Self::BadElementName(span,_,_)  => Some(span),
             Self::BadAttributeName(span,_)  => Some(span),
@@ -151,7 +158,7 @@ where P:Position, E:Error<Position = P>
 
 //ip std::fmt::Display for MLError
 impl <P, E> std::fmt::Display for MLError<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     //mp fmt - format a `MLError` for display
     /// Display the `MLError` in a human-readable form
@@ -167,11 +174,11 @@ where P:Position, E:Error<Position = P>
     //zz All done
 }
 
-//ip From<ReaderError> for MLError
-impl <P, E> From<ReaderError<P, E>> for MLError<P, E>
-where P:Position, E:Error<Position = P>
+//ip From<HmlReaderError> for MLError
+impl <P, E> From<HmlReaderError<P, E>> for MLError<P, E>
+where P:HmlPosition, E:HmlError<Position = P>
 {
-    fn from(e: ReaderError<P, E>) -> Self {
+    fn from(e: HmlReaderError<P, E>) -> Self {
         MLError::ParseError(e)
         // Self::EndOfStream
     }
@@ -179,7 +186,7 @@ where P:Position, E:Error<Position = P>
 
 //ip From<IOError> for MLError
 impl <P, E> From<std::io::Error> for MLError<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     fn from(e: std::io::Error) -> Self {
         Self::io_error(e)

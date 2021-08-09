@@ -17,7 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use hml;
+use hml_rs::names::{NSNameId, Name, NamespaceStack};
+// use hml_rs::names::{Name, NamespaceStack};
 use std::collections::HashMap;
 use crate::constants::{attributes, elements};
 
@@ -89,12 +90,12 @@ pub enum KnownName {
 }
 
 pub struct NameIds {
-    map     : HashMap<hml::names::NSNameId, KnownName>,
+    map     : HashMap<NSNameId, KnownName>,
     str_map : HashMap<KnownName, &'static str>,
 }
 
 impl NameIds {
-    pub fn create(namespace_stack:&mut hml::names::NamespaceStack) -> Self {
+    pub fn create(namespace_stack:&mut NamespaceStack) -> Self {
         let map     = HashMap::new();
         let str_map = HashMap::new();
         let mut name_ids = Self { map, str_map };
@@ -165,11 +166,11 @@ impl NameIds {
 
         name_ids
     }
-    fn add_name(&mut self, namespace_stack:&mut hml::names::NamespaceStack, s:&'static str, kn:KnownName) {
+    fn add_name(&mut self, namespace_stack:&mut NamespaceStack, s:&'static str, kn:KnownName) {
         self.map.insert( namespace_stack.add_name(s), kn);
         self.str_map.insert( kn, s );
     }
-    pub fn known_id(&self, name:&hml::names::Name) -> Option<KnownName> {
+    pub fn known_id(&self, name:&Name) -> Option<KnownName> {
         self.map.get(&name.name).map(|x| *x)
     }
     pub fn str_of_name(&self, name:&KnownName) -> &'static str {

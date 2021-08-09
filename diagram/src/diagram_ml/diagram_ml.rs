@@ -19,6 +19,9 @@ limitations under the License.
 //a Imports
 use crate::{Diagram};
 use super::{MLErrorList, MLReader};
+use hml_rs::names::{Namespace};
+use hml_rs::reader::Reader    as HmlReader;
+use hml_rs::string::Reader    as StringReader;
 
 //a DiagramML
 //tp DiagramML
@@ -62,10 +65,10 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
     pub fn read_file<F:std::io::Read>(&mut self, mut f:F, is_library:bool) -> Result<(), Vec<String>> {
-        let mut namespace = hml::names::Namespace::new(true);
+        let mut namespace = Namespace::new(true);
         let mut contents = String::new();
         let mut reader = {
-            match hml::string::Reader::of_file(&mut f, &mut contents) {
+            match StringReader::of_file(&mut f, &mut contents) {
                 Err(e) => { let mut r=Vec::new(); r.push(format!("{}",e)); return Err(r);},
                 Ok(x) => x,
             }
@@ -79,7 +82,6 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
                     let mut s = String::new();
                     use std::fmt::Write;
                     if let Some(span) = e.borrow_span() {
-                        use hml::reader::Reader;
                         reader.fmt_context(&mut s, span.start(), span.end()).unwrap();
                         e.write_without_span(&mut s).unwrap();
                         write!(&mut s, " at {}", span.start() ).unwrap();

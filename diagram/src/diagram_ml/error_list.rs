@@ -18,7 +18,8 @@ limitations under the License.
 
 //a Imports
 use super::{MLError, MLResult};
-use hml::reader::{Position, Error};
+use hml_rs::reader::Position  as HmlPosition;
+use hml_rs::reader::Error     as HmlError;
 
 //a MLErrorList
 //tp MLErrorList
@@ -32,14 +33,14 @@ use hml::reader::{Position, Error};
 /// errors are returned.
 #[derive(Debug)]
 pub struct MLErrorList <P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     errors : Vec<MLError<P, E>>,
 }
 
 //ip MLErrorList
 impl <P, E> MLErrorList<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     //fp new
     /// Create a new MLErrorList
@@ -86,7 +87,7 @@ where P:Position, E:Error<Position = P>
 
 //ip std::fmt::Display for MLErrorList
 impl <P, E> std::fmt::Display for MLErrorList<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     //mp fmt
     /// Display the [MLErrorList] for humans
@@ -100,7 +101,7 @@ where P:Position, E:Error<Position = P>
 
 //ip From<ReaderError> for MLError
 impl <P, E> From<std::io::Error> for MLErrorList<P, E>
-where P:Position, E:Error<Position = P>
+where P:HmlPosition, E:HmlError<Position = P>
 {
     fn from(e: std::io::Error) -> Self {
         let mut el = Self::new();
