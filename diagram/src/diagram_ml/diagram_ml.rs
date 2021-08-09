@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use crate::{Diagram};
-use super::{MLErrorList, MLReader};
+use super::{MLReader};
 use hml_rs::names::{Namespace};
 use hml_rs::reader::Reader    as HmlReader;
 use hml_rs::string::Reader    as StringReader;
@@ -86,7 +86,6 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
                         e.write_without_span(&mut s).unwrap();
                         write!(&mut s, " at {}", span.start() ).unwrap();
                     } else {
-                        use std::fmt::Write;
                         write!(&mut s, "{}", e).unwrap();
                     }
                     r.push(s);

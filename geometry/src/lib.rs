@@ -42,7 +42,10 @@ mod rectangle;
 mod polygon;
 mod transform;
 
+/// The [Point] type is a 2D point of f64's
 pub type Point = geo_nd::FArray<f64,2>;
+
+/// The [Bezier] type is a Bezier curve of [Point]s
 pub type Bezier = bezier_nd::Bezier<f64,Point,2>;
 
 pub use self::transform::Transform;

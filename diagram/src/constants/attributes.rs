@@ -66,6 +66,7 @@ macro_rules! att {
     att!(POINT,       "point");
     att!(RELIEF,      "relief");
 
+/*
 pub enum Typ {
     Debug,
     Bbox,
@@ -112,3 +113,4 @@ pub enum Typ {
     Relief,
 
 }
+*/

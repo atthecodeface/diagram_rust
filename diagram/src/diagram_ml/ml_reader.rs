@@ -31,7 +31,7 @@ use hml_rs::names::Tag         as HmlTag;
 use hml_rs::names::Name        as HmlName;
 use hml_rs::names::Attribute   as HmlAttribute;
 use hml_rs::markup::EventType as HmlEventType;
-use hml_rs::names::{Name, Namespace,NamespaceStack};
+use hml_rs::names::{Namespace,NamespaceStack};
 use hml_rs::markup::Event     as HmlEvent;
 
 //a MLReader

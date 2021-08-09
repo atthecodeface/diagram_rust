@@ -17,8 +17,6 @@ limitations under the License.
  */
 
 //a Imports
-use geo_nd::Vector;
-use geometry::{Transform, Point, Range, Rectangle, Float4, Polygon};
 use super::layout::Layout;
 
 //a LayoutRecord

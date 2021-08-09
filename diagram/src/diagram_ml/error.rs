@@ -19,12 +19,11 @@ limitations under the License.
 //a Imports
 use hml_rs::reader::Position  as HmlPosition;
 use hml_rs::reader::Error     as HmlError;
-use hml_rs::reader::Reader    as HmlReader;
 use hml_rs::reader::ReaderError  as HmlReaderError;
 use hml_rs::reader::Span      as HmlSpan;
 use hml_rs::names::Tag        as HmlTag;
 use hml_rs::names::Attribute  as HmlAttribute;
-use hml_rs::names::{NSNameId, Name, NamespaceStack};
+use hml_rs::names::{NamespaceStack};
 use hml_rs::markup::Event     as HmlEvent;
 use super::{NameIds, KnownName};
 
@@ -130,11 +129,11 @@ where P:HmlPosition, E:HmlError<Position = P>
     pub fn write_without_span(&self, f: &mut dyn std::fmt::Write) -> std::fmt::Result {
         match self {
             Self::EndOfStream              => write!(f, "Unexpected end of XML event stream - bug in event source"),
-            Self::BadElementName(span,n,e) => write!(f, "Bad element '{}'{}", n, e),
-            Self::BadAttributeName(span,n) => write!(f, "Bad attribute '{}'", n),
-            Self::BadElement(span,s)       => write!(f, "Element error '{}'", s),
-            Self::BadMLEvent(span,s)       => write!(f, "Bad XML event {}", s),
-            Self::BadValue(span,s )        => write!(f, "Bad value '{}'", s),
+            Self::BadElementName(_span,n,e) => write!(f, "Bad element '{}'{}", n, e),
+            Self::BadAttributeName(_span,n) => write!(f, "Bad attribute '{}'", n),
+            Self::BadElement(_span,s)       => write!(f, "Element error '{}'", s),
+            Self::BadMLEvent(_span,s)       => write!(f, "Bad XML event {}", s),
+            Self::BadValue(_span,s )        => write!(f, "Bad value '{}'", s),
             Self::ParseError(e)            => e.write_without_span(f),
             Self::IOError(e)               => write!(f, "IO error '{}'", e),
         }

@@ -66,6 +66,7 @@ where P:HmlPosition, E:HmlError<Position = P>
     }
 
     //mp take
+    /// Take the errors for consumption by caller
     pub fn take(&mut self) -> Vec<MLError<P, E>> {
         std::mem::replace(&mut self.errors, Vec::new())
     }

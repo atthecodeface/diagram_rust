@@ -19,7 +19,6 @@ limitations under the License.
 //a Imports
 use geo_nd::Vector;
 use geometry::{Transform, Point, Range, Rectangle, Float4, Polygon};
-use super::{GridData, GridPlacement};
 
 //a Constants
 const DEBUG_LAYOUT_BOX : bool = 1 == 0;
