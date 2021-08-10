@@ -27,7 +27,7 @@ use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use super::super::{DiagramDescriptor, DiagramElementContent, Element, ElementScope, ElementHeader, ElementError};
 use crate::{Layout, LayoutRecord};
 
-use super::super::super::layout::{GridData};
+use crate::{GridData};
 use super::super::types::*;
 
 //a Group element

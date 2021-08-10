@@ -331,10 +331,13 @@ borderwidth should be the color
 !*/
 
 //a Imports and exports
+mod grid;
 mod layout;
 mod constants;
 mod diagram;
 mod diagram_ml;
+
+pub (crate) use grid::{GridPlacement, GridDimension, GridDimensionIter, GridCellData, GridData};
 
 pub (crate) use layout::{Layout, LayoutBox, LayoutRecord};
 pub (crate) use self::diagram::{StyleSheet, StyleRule, DiagramContents};
