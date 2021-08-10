@@ -17,7 +17,9 @@ limitations under the License.
  */
 
 //a Imports
-use super::{GridData, GridDimension};
+use std::collections::{HashSet, HashMap};
+
+use super::{GridDimension};
 
 //a Global constants for debug
 const DEBUG_CELL_DATA      : bool = 1 == 0;
@@ -30,10 +32,10 @@ const DEBUG_CELL_DATA      : bool = 1 == 0;
 pub struct GridCellDataEntry {
     /// start is the index of the left-hand edge of the cell in the
     /// grid dimension
-    pub start : isize,
+    pub start : usize,
     /// end is the index of the right-hand edge of the cell in the
     /// grid dimension
-    pub end   : isize,
+    pub end   : usize,
     /// size is the desired size, or actual size post-expansion
     pub size  : f64,
 }
@@ -42,7 +44,7 @@ pub struct GridCellDataEntry {
 impl GridCellDataEntry {
 
     //fp new
-    pub fn new(start:isize, end:isize, size:f64) -> Self {
+    pub fn new(start:usize, end:usize, size:f64) -> Self {
         Self {start, end, size}
     }
 }
@@ -59,28 +61,156 @@ impl std::fmt::Display for GridCellDataEntry {
     //zz All done
 }
 
+//a Resolver
+struct Link {
+    start    : usize,
+    end      : usize,
+    min_size : f64,
+    growth   : Option<f64>,
+}
+
+impl Link {
+    fn new(cde:&GridCellDataEntry) -> Self {
+        Self {
+            start    : cde.start,
+            end      : cde.end,
+            min_size : cde.size,
+            growth   : None,
+        }
+    }
+    fn union(&mut self, cde:&GridCellDataEntry) {
+        if cde.size > self.min_size {
+            self.min_size = cde.size;
+        }
+    }
+}
+
+//ti Node
+/// A node in the grid row - in essence a border between cells
+///
+/// This can be linked to other cells through multiple content
+/// (GridCellDataEntry); this is handled by the [Link] references,
+/// which refer to the other end of the link
+struct Node {
+    /// The node id from the client structure
+    id : usize,
+    /// The position of the node
+    position  : Option<f64>,
+    /// The 'start's of links for which this node is the end
+    link_starts : Vec<usize>,
+    /// The 'end's of links for which this node is the start
+    link_ends : Vec<usize>,
+}
+impl Node {
+    fn new(id:usize) -> Self {
+        Self { id,
+               position : None,
+               link_starts : Vec::new(),
+               link_ends   : Vec::new(),
+        }
+    }
+    fn new_with_link_from(id:usize, s:usize) -> Self {
+        let mut n = Self::new(id);
+        n.add_startpoint(s);
+        n
+    }
+    fn new_with_link_to(id:usize, e:usize) -> Self {
+        let mut n = Self::new(id);
+        n.add_endpoint(e);
+        n
+    }
+    fn add_startpoint(&mut self, s:usize) {
+        self.link_starts.push(s);
+    }
+    fn add_endpoint(&mut self, e:usize) {
+        self.link_ends.push(e);
+    }
+}
+
+//tp Resolver
+struct Resolver {
+    /// Node structures indexed by node id
+    nodes  : HashMap<usize, Node>,
+    /// Links squashed
+    links  : HashMap<(usize, usize), Link>,
+    /// The node ids that are never the 'end' of a link
+    roots  : Vec<usize>,
+    /// Order in which nodes can be resolved
+    node_resolution_order : Vec<usize>,
+}
+
+impl Resolver {
+    //fp new
+    fn new(data : &Vec<GridCellDataEntry>) -> Self {
+        let mut links : HashMap<(usize, usize), Link> = HashMap::new();
+        let mut roots = HashSet::new();
+        for d in data.iter() {
+            roots.insert(d.start);
+            let key = (d.start, d.end);
+            if let Some(mut link) = links.get_mut(&key) {
+                link.union(d);
+            } else {
+                links.insert(key, Link::new(d));
+            }
+        }
+        let mut nodes : HashMap<usize, Node>= HashMap::new();
+        for (s,e) in links.keys() {
+            if let Some(mut node) = nodes.get_mut(&s) {
+                node.add_endpoint(*e);
+            } else {
+                nodes.insert(*s, Node::new_with_link_to(*s, *e));
+            }
+            if let Some(mut node) = nodes.get_mut(&e) {
+                node.add_startpoint(*s);
+            } else {
+                nodes.insert(*e, Node::new_with_link_from(*e, *s));
+            }
+            roots.remove(e);
+        }
+        let roots = roots.into_iter().collect();
+        let node_resolution_order = Self::create_node_resolution_order(&nodes);
+        Self { nodes, links, roots, node_resolution_order }
+    }
+    
+    //fi create_node_resolution_order
+    fn create_node_resolution_order(nodes:&HashMap<usize, Node>) -> Vec<usize> {
+        let mut node_resolution_order  = Vec::new();
+        let mut unresolved_link_counts = HashMap::new();
+        let mut node_stack             = Vec::new();
+        for (node_id, node) in nodes.iter() {
+            let num = node.link_starts.len();
+            unresolved_link_counts.insert(*node_id, num);
+            if num == 0 {
+                node_stack.push(*node_id);
+            }
+        }
+        while let Some(node_id) = node_stack.pop() {
+            // unresolved_link_counts.get(node_id) must be 0
+            node_resolution_order.push(node_id);
+            for e in &nodes.get(&node_id).unwrap().link_ends {
+                let count = unresolved_link_counts.get_mut(e).unwrap();
+                *count -= 1;
+                if *count == 0 {
+                    node_stack.push(*e);
+                }
+            }
+        }
+        node_resolution_order
+    }
+
+}
+
+//a GridCellData
 //tp GridCellData
 /// This structure holds the positions and sizes of one dimension of
 /// all the elements in a grid
 #[derive(Debug)]
 pub struct GridCellData {
-    pub data : Vec<GridCellDataEntry>,
-    pub start : isize,
-    pub end   : isize
-}
-
-//ip Display for GridCellData
-impl std::fmt::Display for GridCellData {
-    //mp fmt - format for display
-    /// Display
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for d in &self.data {
-            write!(f, "{}, ", d)?;
-        }
-        Ok(())
-    }
-
-    //zz All done
+    /// The declared start/end link ids and min size between them
+    ///
+    /// There may be more than one entry for the same start/end link
+    /// id. The max of the min sizes is what is required
+    data   : Vec<GridCellDataEntry>,
 }
 
 //ip GridCellData
@@ -88,157 +218,29 @@ impl GridCellData {
 
     //fp new
     pub fn new() -> Self {
-        Self { data:Vec::new(), start:0, end:0, }
-    }
-
-    //fi clone
-    /// Clone so that a sorted data version may be used non-destructively
-    fn clone(&self) -> Self {
-        let mut clone = Self { data:Vec::new(), start:self.start, end:self.end };
-        for cd in &self.data {
-            clone.data.push(cd.clone());
-        }
-        clone
+        let data = Vec::new();
+        Self { data }
     }
 
     //fp add
-    pub fn add(&mut self, start:isize, end:isize, size:f64) {
-        let (start,end) = { if start < end { (start,end) } else {(end,start)} };
-        let (start,end) = { if start != end { (start,end) } else {(start,end+1)} };
-        if start < self.start { self.start = start; }
-        if end   > self.end   { self.end   = end; }
+    pub fn add(&mut self, start:usize, end:usize, size:f64) {
         let size = if size < 0. {0.} else {size};
-        if self.data.len()==0 { self.start = start; self.end = end; }
         self.data.push(GridCellDataEntry::new(start, end, size));
-    }
-
-    //fp add_data
-    pub fn add_data(&mut self, grid_data:&GridData) {
-        self.add(grid_data.start, grid_data.end, grid_data.size);
-    }
-
-    //fi sort_cell_data
-    /// Sort the GridCellDataEntry so that they are in increasing order of
-    /// 'start'
-    fn sort_cell_data(&mut self) {
-        self.data.sort_by(|a,b| a.start.partial_cmp(&b.start).unwrap());
-    }
-
-    //fi find_next_column_and_size
-    /// Find the next column and the size given cell data
-    ///
-    fn find_next_column_and_size (&self, current_col:isize, mut index:usize) -> (isize, f64) {
-        let mut min_size = 0.;
-        let mut next_col = self.end+1;
-        while index < self.data.len() {
-            if DEBUG_CELL_DATA { println!("{}->{} min size {} : checking sd {} {:?}", current_col, next_col, min_size, index, self.data[index]); }
-            let GridCellDataEntry {start, end, size, ..} = self.data[index];
-            if size <= 0. {index+=1; continue;}
-            if start >= next_col {
-                break;
-            } else if start <= current_col {
-                // If this grid cell MUST ovelap with the current
-                // concept...
-                if end < next_col {
-                    // and if this is the shortest segment including
-                    // current_col so far then it is a better
-                    // candidate. Split in to:
-                    // current,end,size; end,next_col,min_size-size
-                    min_size = size;
-                    next_col = end;
-                } else if end == next_col {
-                    // else if it matches the shortest segment
-                    // including current_col so far then it is a
-                    // better candidate if it has a larger size
-                    // current,(end==next_col),size
-                    if size > min_size { min_size = size; }
-                    // next_col already == end
-                }
-                // else this region extends beyond the current
-                // current,next_col,min_size; next_col,end,size-min_size
-            } else if end <= next_col {
-                // If this grid cell starts in the middle of the
-                // region but this ends before the region finishes
-                if min_size <= size {
-                    // if the region is smaller than what this requires
-                    // then we can split into:
-                    // current,start,0. ; start,end,size ; end,next_col,0.
-                    next_col = start;
-                    min_size = 0.;
-                } else {
-                    // if the region is larger than what this requires
-                    // then we can split into:
-                    // current,start,min_size-size ; start,end,size ; end,next_col,0.
-                    next_col = start;
-                    min_size = min_size - size;
-                }
-            } else {
-                // if this grid cell starts in the middle of the region
-                // but ends after the region then
-                // current,next_col,min_size ; next_col,end,size-min_size
-                // will satisfy this region
-                // since the data is sorted, no other grid cells will overlap
-                // with the region, so stop
-                if min_size <= size {
-                    next_col = start;
-                    min_size = 0.;
-                } else {
-                    next_col = start;
-                    min_size = min_size - size;
-                }
-                break;
-            }
-            index += 1;
-        }
-        (next_col, min_size)
-    }
-
-    //mi remove_next_region
-    /// Find the next region starting at 'column' required by the cell data, knowing that
-    /// up to 'index' all the data has non-positive size
-    ///
-    /// Return a new index (skipping any more initial non-positive
-    /// size data) and a next_column and size for the next region,
-    /// having removed that size from all elements overlapping that
-    /// region
-    fn remove_next_region(&mut self, mut index:usize, column:isize) -> Option<(usize, isize, f64)> {
-        while index < self.data.len() {
-            if self.data[index].size > 0. {break;}
-            index += 1;
-        }
-        if index == self.data.len() {
-            None
-        } else {
-            if DEBUG_CELL_DATA { println!("moved past completed indices to sd index {}",index); }
-            let (next_col, min_size) = self.find_next_column_and_size(column, index);
-            if DEBUG_CELL_DATA { println!("{}->{} will have size {} [ {} ]",column, next_col, min_size, index); }
-        
-            // min_size can be zero if we have no cell requirements between (e.g.) cells 1 and 2
-            if min_size > 0. {
-                for i in index..self.data.len() {
-                    if self.data[i].start >= next_col {break;}
-                    if DEBUG_CELL_DATA { println!("reduce {} by {}",self.data[i], min_size); }
-                    self.data[i].size -= min_size; // This may reduce the size below zero
-                }
-            }
-            Some((index, next_col, min_size))
-        }
     }
 
     //fp create_grid_dimension
     /// Destructively create a grid dimension
-    pub fn create_grid_dimension(&self) -> GridDimension {
-        let mut gd = GridDimension::new(self.start, self.end);
+    pub fn create_grid_dimension(&mut self) -> GridDimension {
+        // self.create_link_resolution_order();
+        // let mut gd = GridDimension::new(self.start, self.end);
+        let mut gd = GridDimension::new(0,1);
         
         if DEBUG_CELL_DATA { println!("Generate cell positions of cell data {:?}", self.data); }
 
         if self.data.len() == 0 {return gd;}
 
-        let mut clone = self.clone();
-        clone.sort_cell_data();
-
         if DEBUG_CELL_DATA { println!("Sorted cell data {:?}", self.data); }
-
+/*
         let mut index = 0;
         let mut column  = clone.start;
         loop {
@@ -252,9 +254,24 @@ impl GridCellData {
             }
         }
         if clone.end > column { gd.add(column, clone.end, 0.); }
+*/
         gd.calculate_positions(0.,0.);
         if DEBUG_CELL_DATA { println!("Generated cell positions {:?}\n for cell data {:?}", gd, self.data); }
         gd
+    }
+
+    //zz All done
+}
+
+//ip Display for GridCellData
+impl std::fmt::Display for GridCellData {
+    //mp fmt - format for display
+    /// Display
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for d in &self.data {
+            write!(f, "{}, ", d)?;
+        }
+        Ok(())
     }
 
     //zz All done
