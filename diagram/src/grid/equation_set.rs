@@ -109,6 +109,7 @@ impl EquationSet {
     }
 
     //fi column_is_zero
+    #[allow(dead_code)]
     pub fn column_is_zero(&self, n: usize) -> bool {
         let size = self.size;
         for i in 0..size {
@@ -132,7 +133,7 @@ impl EquationSet {
 
     //fp invert
     pub fn invert(&mut self) -> Result<(), String> {
-        if let Some(mut lup) = LUPDecomposition::new(&self.matrix, self.size) {
+        if let Some(lup) = LUPDecomposition::new(&self.matrix, self.size) {
             if lup.invert(&mut self.matrix) {
                 Ok(())
             } else {
@@ -157,7 +158,8 @@ impl EquationSet {
             }
             results.push(x);
         }
-        std::mem::replace(&mut self.results, results);
+        // std::mem::replace(&mut self.results, results);
+        self.results = results;
         Ok(())
     }
 

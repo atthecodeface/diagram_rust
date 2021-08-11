@@ -14,6 +14,7 @@ impl LUPDecomposition {
     //fp new
     /// Create a new LUP decomposition
     pub fn new(matrix: &[f64], size: usize) -> Option<Self> {
+        assert!(size != 0);
         assert_eq!(matrix.len(), size * size);
         let mut data = vec![0.; size * size];
         data.copy_from_slice(matrix);
@@ -88,6 +89,7 @@ impl LUPDecomposition {
     //fp get_l
     /// Get a lower matrix from the decomposition - the diagonals are
     /// 1, and the upper (column > row) is 0.
+    #[allow(dead_code)]
     pub fn get_l(&self) -> Vec<f64> {
         let size = self.size;
         let mut result = self.data.clone();
@@ -106,6 +108,7 @@ impl LUPDecomposition {
     //fp get_u
     /// Get the upper matrix from the decomposition - the lower (row >
     /// column) is 0.
+    #[allow(dead_code)]
     pub fn get_u(&self) -> Vec<f64> {
         let size = self.size;
         let mut result = self.data.clone();
@@ -201,6 +204,7 @@ impl LUPDecomposition {
     }
 
     //mp unpivot
+    #[allow(dead_code)]
     pub fn unpivot(&self) -> Vec<f64> {
         let size = self.size;
         let mut result = self.data.clone();
@@ -219,6 +223,7 @@ impl LUPDecomposition {
 mod test_lup {
     use super::LUPDecomposition;
     //ft m_mult_v
+    #[allow(dead_code)]
     fn m_mult_v<const D: usize, const D2: usize>(m: &[f64; D2], v: &[f64; D]) -> [f64; D] {
         let mut r = [0.; D];
         for n in 0..D {

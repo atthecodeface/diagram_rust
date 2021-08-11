@@ -17,11 +17,11 @@ limitations under the License.
  */
 
 //a Imports
-use super::{GridCellDataEntry, GridData, NodeId, Resolver};
+use super::{GridCellDataEntry, GridData, Resolver};
 use geometry::Range;
 
 //a Global constants for debug
-const DEBUG_GRID_PLACEMENT: bool = 1 == 0;
+const DEBUG_GRID_PLACEMENT: bool = 1 == 1;
 
 //a Public GridPlacement type
 //tp GridPlacement
@@ -81,6 +81,9 @@ impl GridPlacement {
 
     //mp add_cell
     pub fn add_cell(&mut self, start: isize, end: isize, size: f64) {
+        if DEBUG_GRID_PLACEMENT {
+            println!("Add cell {} {} {}", start, end, size);
+        }
         let start = self.ref_of_isize(start);
         let end = self.ref_of_isize(end);
         assert!(end != start);
@@ -96,6 +99,9 @@ impl GridPlacement {
             let start = self.ref_of_isize(gd.start);
             let end = self.ref_of_isize(gd.end);
             let growth = gd.size;
+            if DEBUG_GRID_PLACEMENT {
+                println!("Add growth {} {} {}", start, end, growth);
+            }
             self.growth_data.push((start, end, growth));
         }
     }
@@ -109,14 +115,16 @@ impl GridPlacement {
     pub fn get_desired_geometry(&mut self) -> Range {
         self.resolver = Resolver::new(&mut self.cell_data.iter().map(|x| (x.start, x.end, x.size)));
         for (start, end, growth) in &self.growth_data {
-            self.resolver.set_growth_data(*start, *end, *growth);
+            if self.resolver.has_node(start) && self.resolver.has_node(end) {
+                self.resolver.set_growth_data(*start, *end, *growth);
+            }
         }
-        // should do placements
-        // Should only place roots if the placements don't lead to a resolution
-        self.resolver.place_roots(0.);
+        self.resolver.place_roots_to_resolve(0.);
         self.resolver.assign_min_positions();
         self.desired_range = self.resolver.find_bounds();
         self.size = self.desired_range.size();
+        // Centre on the origin
+        self.desired_range = self.desired_range.add(-self.size * 0.5);
         self.desired_range
     }
 
@@ -128,8 +136,13 @@ impl GridPlacement {
         let extra_space = size - self.size;
         let expanded_space = expansion * extra_space;
         let final_size = self.size + expanded_space;
-        self.resolver.place_roots(center - final_size * 0.5);
-        self.resolver.place_leaves(center + final_size * 0.5);
+        self.resolver.clear_node_placements();
+        let min = center - final_size * 0.5;
+        let max = center + final_size * 0.5;
+        self.resolver.place_roots_to_resolve(min);
+        self.resolver.assign_min_positions();
+        self.resolver
+            .place_edge_nodes(self.resolver.get_edge_nodes(1.0E-7), Some(min), Some(max));
         self.resolver.minimize_energy();
         self.size = self.resolver.find_bounds().size();
     }
@@ -137,6 +150,9 @@ impl GridPlacement {
     //mp get_span
     /// Find the span of a start/number of grid positions
     pub fn get_span(&self, start: isize, end: isize) -> (f64, f64) {
+        if DEBUG_GRID_PLACEMENT {
+            println!("Get span {} {}", start, end);
+        }
         let start = self.find_ref_of_isize(start).unwrap();
         let end = self.find_ref_of_isize(end).unwrap();
         assert!(end != start);
@@ -162,11 +178,13 @@ impl GridPlacement {
     pub fn get_positions(&self) -> Vec<(isize, f64)> {
         let mut result = Vec::new();
         for (n, (r, _)) in self.refs.iter().enumerate() {
-            let pos = self.resolver.get_node_position(n);
-            if DEBUG_GRID_PLACEMENT {
-                println!("{} : {} : {}", n, r, pos);
+            if self.resolver.has_node(&n) {
+                let pos = self.resolver.get_node_position(n);
+                if DEBUG_GRID_PLACEMENT {
+                    println!("get_pos - {} : {} : {}", n, r, pos);
+                }
+                result.push((*r, pos));
             }
-            result.push((*r, pos));
         }
         result
     }

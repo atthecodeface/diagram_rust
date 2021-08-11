@@ -6,7 +6,7 @@
 <path id="1_2" transform="translate(-27.8525 9.8778) scale(0.5000) " stroke="None" fill="#ffc0cb" stroke-width="0.0000" d="M 3.5355,3.5355 L 3.5355,-3.5355 L -3.5355,-3.5355 L -3.5355,3.5355 L 3.5355,3.5355 z" />
 <text id="2_1" transform="translate(-21.9366 -31.6614) " fill="#0000ff" x="0.0000" y="7.7611" font-size="7.0556" stroke="None">This text is in</text>
 <text id="2_1" transform="translate(-21.9366 -31.6614) " fill="#0000ff" x="0.0000" y="17.6389" font-size="7.0556" stroke="None">grid cell (2,1)</text>
-<text id="2_2" transform="translate(-21.9366 -0.0000) rotate(30.0000) " fill="#0000ff" x="0.0000" y="7.7611" font-size="7.0556" stroke="None">This text is in</text>
-<text id="2_2" transform="translate(-21.9366 -0.0000) rotate(30.0000) " fill="#0000ff" x="0.0000" y="17.6389" font-size="7.0556" stroke="None">grid cell (2,2)</text>
+<text id="2_2" transform="translate(-21.9366 0.0000) rotate(30.0000) " fill="#0000ff" x="0.0000" y="7.7611" font-size="7.0556" stroke="None">This text is in</text>
+<text id="2_2" transform="translate(-21.9366 0.0000) rotate(30.0000) " fill="#0000ff" x="0.0000" y="17.6389" font-size="7.0556" stroke="None">grid cell (2,2)</text>
 </g>
 </svg>

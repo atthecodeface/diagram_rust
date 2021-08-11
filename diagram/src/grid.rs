@@ -28,12 +28,11 @@ mod resolver;
 mod traits;
 
 pub use equation_set::EquationSet;
+pub use grid_cell_data::GridCellDataEntry;
+pub use grid_data::GridData;
+pub use grid_placement::GridPlacement;
 pub use grid_placement::GridPlacement;
 pub use link::Link;
 pub use lup_decomposition::LUPDecomposition;
 pub use node::Node;
 pub use resolver::Resolver;
-pub use traits::NodeId;
-// pub use grid_dimension::{GridDimension, GridDimensionIter};
-pub use grid_cell_data::GridCellDataEntry;
-pub use grid_data::GridData;
