@@ -17,12 +17,24 @@ limitations under the License.
  */
 
 //a Imports
+mod traits;
+mod link;
+mod node;
+mod equation_set;
+mod lup_decomposition;
 mod grid_data;
 mod grid_cell_data;
-mod grid_dimension;
+mod resolver;
 mod grid_placement;
+
+pub use traits::NodeId;
+pub use link::Link;
+pub use node::Node;
+pub use lup_decomposition::LUPDecomposition;
+pub use equation_set::EquationSet;
+pub use resolver::Resolver;
 pub use grid_placement::{GridPlacement};
-pub use grid_dimension::{GridDimension, GridDimensionIter};
-pub use grid_cell_data::{GridCellData};
+// pub use grid_dimension::{GridDimension, GridDimensionIter};
+pub use grid_cell_data::{GridCellDataEntry};
 pub use grid_data::{GridData};
 
