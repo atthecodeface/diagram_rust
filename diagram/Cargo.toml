@@ -11,4 +11,5 @@ geo-nd = "0.1.1"
 geometry    = { path="../geometry", version="0.1.0" }
 stylesheet  = { path="../stylesheet", version="0.1.0" }
 hml-rs = "0.0.2"
+indent-display = "0.1.0"
 

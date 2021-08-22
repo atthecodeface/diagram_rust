@@ -28,10 +28,17 @@ use super::ElementError;
 use super::ElementHeader;
 use super::ElementScope;
 use crate::constants::elements as el;
+use crate::constants::elements as el;
+use crate::DiagramDescriptor;
 use crate::DiagramDescriptor;
 use crate::Layout;
+use crate::Layout;
 use geometry::Rectangle;
+use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
+use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
+use stylesheet::{StylableNode, Tree};
 use stylesheet::{StylableNode, Tree};
 
 //a Element
@@ -175,25 +182,28 @@ impl<'a> Element<'a> {
     /// constraints
     ///
     /// If the element has a specified layout then it should have a 'none' desired geometry
-    /// if it is unplaced then its geometry should be its bounding box
     ///
     /// For normal elements (such as a shape) this requires finding
     /// the desired geometry, reporting this to the `LayoutBox`, and
     /// using the `LayoutBox` data to generate the boxed desired
     /// geometry, which is then added to the `Layout` element as a
     /// place or grid desire.
+    ///
+    /// This returns a None rectangle
     pub fn set_layout_properties(&mut self, layout: &mut Layout) -> Rectangle {
         let content_rect = self.content.get_desired_geometry(layout);
         self.header.set_layout_properties(layout, content_rect)
     }
 
     //fp apply_placement
-    /// The layout contains the data required to map a grid or placement layout of the element
+    /// This method is invoked after an [Element] has had its
+    /// 'set_layout_properties' invoked, and the layout has been given
+    /// its required rectangle, so that the [Layout] provided
+    /// comprehends the desired geometry and how to map that to its
+    /// actual geometry.
     ///
-    /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
-    ///
-    /// If the element requires any further layout, that should be performed; certainly its
-    /// transformation should be determined
+    /// Hence the [Layout] contains the data required to map a grid or
+    /// placement layout of the element
     pub fn apply_placement(&mut self, layout: &Layout) {
         let content_rect = self.header.apply_placement(layout);
         self.content.apply_placement(layout, &content_rect);
@@ -208,4 +218,14 @@ impl<'a> Element<'a> {
     }
 
     //zz All done
+}
+
+//ti IndentedDisplay for Element
+impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for Element<'diag> {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        self.header.indent(ind)?;
+        self.content.indent(ind)?;
+        Ok(())
+    }
 }

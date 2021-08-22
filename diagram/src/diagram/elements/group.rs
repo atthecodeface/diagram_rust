@@ -17,8 +17,10 @@ limitations under the License.
  */
 
 //a Imports
+use super::super::IndentOptions;
 use geo_nd::Vector;
 use geometry::{Point, Rectangle};
+use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::{StylableNode, Tree};
 
 use super::super::{
@@ -438,6 +440,44 @@ impl<'a> GenerateSvgElement for Group<'a> {
             let ele = svg.pop_element();
             svg.add_subelement(ele);
         }
+
+        Ok(())
+    }
+}
+
+//ti IndentedDisplay for Group
+impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Group<'diag> {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        match self.group_type {
+            GroupType::Marker => write!(ind, "Marker\n")?,
+            GroupType::Group => write!(ind, "Group\n")?,
+            GroupType::Layout => write!(ind, "Content\n")?,
+        }
+
+        let mut sub = ind.sub();
+        write!(&mut sub, "bbox       : {}\n", self.bbox)?;
+        write!(&mut sub, "ref_pt     : {}\n", self.ref_pt)?;
+        write!(
+            &mut sub,
+            "relief     : {}, {}\n",
+            self.relief.0, self.relief.1
+        )?;
+        write!(&mut sub, "flags      : {}\n", self.flags)?;
+        write!(&mut sub, "width      : {}\n", self.width)?;
+        write!(&mut sub, "height     : {}\n", self.height)?;
+        for (i, e) in self.content.iter().enumerate() {
+            write!(&mut sub, "Element {}\n", i + 1)?;
+            let mut sub = sub.sub();
+            e.indent(&mut sub)?;
+        }
+        // pub content : Vec<Element<'a>>,
+        // layout : Option<Layout>,
+        // layout_record : Option<LayoutRecord>,
+        // minx  : Vec<GridData>,
+        // miny  : Vec<GridData>,
+        // growx : Vec<GridData>,
+        // growy : Vec<GridData>,
 
         Ok(())
     }

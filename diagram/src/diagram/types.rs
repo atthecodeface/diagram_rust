@@ -20,12 +20,21 @@ limitations under the License.
 use super::font;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+use indent_display::IndentedOptions;
+
+use super::font;
+
 use stylesheet;
 pub type StyleValue = stylesheet::BaseValue;
 pub type StyleDescriptor<'a> = stylesheet::Descriptor<'a, StyleValue>;
 pub type StyleSet = stylesheet::NamedTypeSet<StyleValue>;
 pub type StyleSheet<'a> = stylesheet::Stylesheet<'a, StyleValue>;
 pub type StyleRule = stylesheet::StylableNodeRule;
+
 // pub type StyleAction          = stylesheet::StylableNodeAction<StyleValue>;
 pub type ValueError = stylesheet::ValueError;
 pub type RrcFont = Rc<RefCell<font::Font>>;
+
+pub struct IndentOptions {}
+impl IndentedOptions<'_> for IndentOptions {}

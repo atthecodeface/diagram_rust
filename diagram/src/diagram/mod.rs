@@ -36,7 +36,7 @@ pub use traits::DiagramElementContent;
 
 pub use self::descriptor::DiagramDescriptor;
 pub use self::diagram::{Diagram, DiagramContents};
-pub use self::types::{StyleRule, StyleSheet, ValueError}; // , StyleAction};
+pub use self::types::{IndentOptions, StyleRule, StyleSheet, ValueError}; // , StyleAction};
 pub use element::Element;
 pub use element_content::ElementContent;
 pub use element_error::ElementError;

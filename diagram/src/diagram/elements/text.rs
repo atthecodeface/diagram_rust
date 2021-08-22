@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use super::super::font::*;
 use super::super::text::*;
+use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
 };
@@ -27,6 +28,7 @@ use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::Layout;
 use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
 
 //a TextError
 //tp TextError
@@ -190,6 +192,21 @@ impl GenerateSvgElement for Text {
             ele.add_string(t.text);
             svg.add_subelement(ele);
         }
+        Ok(())
+    }
+}
+
+//ti IndentedDisplay for Text
+impl<'a> IndentedDisplay<'a, IndentOptions> for Text {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "Text\n")?;
+        let mut sub = ind.sub();
+        write!(&mut sub, "fill       : {:?}\n", self.fill)?;
+        write!(&mut sub, "font       : {:?}\n", self.font)?;
+        write!(&mut sub, "font_style : {:?}\n", self.font_style)?;
+        write!(&mut sub, "font_weight: {:?}\n", self.font_weight)?;
+        write!(&mut sub, "font_size  : {}\n", self.font_size)?;
         Ok(())
     }
 }

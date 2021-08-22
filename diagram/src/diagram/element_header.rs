@@ -29,6 +29,9 @@ use crate::constants::elements as el;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use geometry::Rectangle;
+use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
+use stylesheet::StylableNode;
 use stylesheet::StylableNode;
 
 //a ElementHeader
@@ -216,7 +219,14 @@ impl<'a> ElementHeader<'a> {
     }
 
     //mp set_layout_properties
-    /// By this point layout_box has had its desired_geometry set
+    /// This method is invoked to set the layout of this element in
+    /// its parent given a desired geometry of the content.
+    ///
+    /// NOT: It returns the desired geometry of the whole element, after
+    /// accounting for content transformation, padding, border and
+    /// margin
+    ///
+    /// INSTEAD: it returns a None rectangle
     pub fn set_layout_properties(
         &mut self,
         layout: &mut Layout,
@@ -229,12 +239,16 @@ impl<'a> ElementHeader<'a> {
     }
 
     //mp apply_placement
-    /// The layout contains the data required to map a grid or placement layout of the element
+    /// This method is invoked with a resolved [Layout] which knows
+    /// its real geometry and hence can map from a place or grid
+    /// layout to a render rectangle.
     ///
-    /// Note that `layout` is that of the parent layout (not the group this is part of, for example)
+    /// If the element requires any further layout, that should be
+    /// performed.
     ///
-    /// If the element requires any further layout, that should be performed; certainly its
-    /// transformation should be determined
+    /// After this has been invoked the content for the element will
+    /// have its placement applied using the [Rectangle] that this
+    /// method returns.
     pub fn apply_placement(&mut self, layout: &Layout) -> Rectangle {
         let rect = {
             match self.layout.placement {
@@ -256,4 +270,15 @@ impl<'a> ElementHeader<'a> {
         self.layout_box.display(indent_str);
     }
     //zz All done
+}
+
+//ti IndentedDisplay for ElementHeader
+impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for ElementHeader<'diag> {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "{} : {:?}\n", self.uid, self.id_name)?;
+        self.layout.indent(ind)?;
+        self.layout_box.indent(ind)?;
+        Ok(())
+    }
 }

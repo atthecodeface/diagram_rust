@@ -17,14 +17,18 @@ limitations under the License.
  */
 
 //a Imports
+use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
 };
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
+use crate::constants::attributes as at;
+use crate::constants::elements as el;
 use crate::constants::elements as el;
 use crate::Layout;
 use geometry::{Polygon, Rectangle};
+use indent_display::{IndentedDisplay, Indenter};
 
 //a Shape element
 //tp Shape - an Element that contains a polygon (or path?)
@@ -193,6 +197,12 @@ impl GenerateSvgElement for Shape {
         ele.add_size("stroke-width", self.stroke_width);
         ele.add_polygon_path(&self.polygon, true);
         svg.add_subelement(ele);
+        Ok(())
+    }
+}
+//ti IndentedDisplay for Shape
+impl<'a> IndentedDisplay<'a, IndentOptions> for Shape {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         Ok(())
     }
 }

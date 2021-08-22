@@ -22,10 +22,14 @@ limitations under the License.
 //a Imports
 use super::ElementError;
 use super::ElementHeader;
+use super::IndentOptions;
 use crate::constants::attributes as at;
 use crate::{Layout, LayoutBox};
 use geo_nd::Vector;
+use geo_nd::Vector;
 use geometry::{Point, Rectangle};
+use geometry::{Point, Rectangle};
+use indent_display::{IndentedDisplay, Indenter};
 
 //a ElementLayout
 //tp LayoutPlacement
@@ -245,6 +249,16 @@ impl ElementLayout {
     }
 
     //mp set_layout_box
+    /// This method is invoked to update the [LayoutBox] based on the
+    /// properties of this [ElementLayout] and given a desired content
+    /// geometry.
+    ///
+    /// The [LayoutBox] handles the actual management of the layout;
+    /// this provides a styling wrapper to provide the information for
+    /// the [LayoutBox].
+    ///
+    /// When this function returns the [LayoutBox] will have all the
+    /// information to provide its desired geometry.
     pub fn set_layout_box(&self, layout_box: &mut LayoutBox, content_desired: Rectangle) {
         let bbox = {
             if self.bbox.is_none() {
@@ -262,6 +276,14 @@ impl ElementLayout {
     }
 
     //mp set_layout_properties
+    /// This method is invoked after the desired geometry for the
+    /// element (in terms of size) has been determined, to inform the
+    /// parent [Layout] where this is placed or how it is gridded.
+    ///
+    /// It returns a None rectangle
+    ///
+    /// The [Layout] can later be interrogated to determine *its*
+    /// desired geometry, for hierarchical layout
     pub fn set_layout_properties(&self, layout: &mut Layout, bbox: Rectangle) -> Rectangle {
         match self.placement {
             LayoutPlacement::None => {
@@ -280,4 +302,30 @@ impl ElementLayout {
     }
 
     //zz All done
+}
+
+//ti IndentedDisplay for ElementLayout
+impl<'a> IndentedDisplay<'a, IndentOptions> for ElementLayout {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "Layout\n")?;
+        let mut sub = ind.sub();
+        if let Some(pt) = self.ref_pt {
+            write!(&mut sub, "ref_pt: {}\n", pt)?;
+        }
+        if !self.bbox.is_none() {
+            write!(&mut sub, "bbox:    {}\n", self.bbox)?;
+        }
+        write!(&mut sub, "anchor  : {}\n", self.anchor)?;
+        write!(&mut sub, "expand  : {}\n", self.expand)?;
+        write!(&mut sub, "scale   : {}\n", self.scale)?;
+        write!(&mut sub, "rotation: {}\n", self.rotation)?;
+        write!(&mut sub, "border wid: {}\n", self.border_width)?;
+        write!(&mut sub, "border rnd: {}\n", self.border_round)?;
+        write!(&mut sub, "border color: {:?}\n", self.border_color)?;
+        write!(&mut sub, "bg color: {:?}\n", self.bg)?;
+        write!(&mut sub, "pad: {:?}\n", self.pad)?;
+        write!(&mut sub, "margin: {:?}\n", self.margin)?;
+        Ok(())
+    }
 }

@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use geo_nd::Vector;
 use geometry::{Float4, Point, Polygon, Range, Rectangle, Transform};
+use indent_display::{IndentedDisplay, IndentedOptions, Indenter};
 
 //a Constants
 const DEBUG_LAYOUT_BOX: bool = 1 == 0;
@@ -414,6 +415,43 @@ impl LayoutBox {
     }
 
     //zz All done
+}
+
+//ti IndentedDisplay for ElementLayout
+impl<'a, O: IndentedOptions<'a>> IndentedDisplay<'a, O> for LayoutBox {
+    fn indent(&self, ind: &mut Indenter<'a, O>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "Layout box\n")?;
+        let mut sub = ind.sub();
+        write!(&mut sub, "anchor  : {}\n", self.anchor)?;
+        write!(&mut sub, "expand  : {}\n", self.expansion)?;
+        write!(&mut sub, "pad: {:?}\n", self.padding)?;
+        write!(&mut sub, "border wid: {}\n", self.border_width)?;
+        write!(&mut sub, "border rnd: {}\n", self.border_round)?;
+        // write!(&mut sub, "border color: {:?}\n", self.border_color)?;
+        write!(&mut sub, "margin: {:?}\n", self.margin)?;
+        write!(&mut sub, "content_scale   : {}\n", self.content_scale)?;
+        write!(&mut sub, "content_rotation: {}\n", self.content_rotation)?;
+        if let Some(pt) = self.content_ref {
+            write!(&mut sub, "content_ref: {}\n", pt)?;
+        }
+        if let Some(r) = self.content_desired {
+            write!(&mut sub, "content desired: {}\n", r)?;
+        }
+        if let Some(r) = self.outer_desired {
+            write!(&mut sub, "outer desired: {}\n", r)?;
+        }
+        if let Some(r) = self.outer {
+            write!(&mut sub, "outer actual: {}\n", r)?;
+        }
+        if let Some(r) = self.inner {
+            write!(&mut sub, "inner actual: {}\n", r)?;
+        }
+        if let Some(r) = self.content {
+            write!(&mut sub, "content actual: {}\n", r)?;
+        }
+        Ok(())
+    }
 }
 
 //mt Test for LayoutBox

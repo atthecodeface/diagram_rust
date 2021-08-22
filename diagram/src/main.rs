@@ -14,8 +14,10 @@ use clap::{App, Arg};
 use diagram::Diagram;
 use diagram::DiagramDescriptor;
 use diagram::DiagramML;
+use diagram::IndentOptions;
 use diagram::Svg;
 use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
 fn exit_on_err<T, U: std::fmt::Display>(result: Result<T, U>) -> T {
     match result {
         Err(e) => {
@@ -139,6 +141,9 @@ fn main() {
         println!("Generate geometry");
     }
     exit_on_err(diagram.geometry());
+    let mut stdout = std::io::stdout();
+    let mut ind = Indenter::new(&mut stdout, "  ", &IndentOptions {});
+    diagram.indent(&mut ind).unwrap();
     if diag_display {
         diagram.display();
     }

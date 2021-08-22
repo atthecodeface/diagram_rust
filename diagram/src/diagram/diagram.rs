@@ -18,11 +18,13 @@ limitations under the License.
 
 //a Imports
 use super::types::*;
+use super::IndentOptions;
 use super::{DiagramDescriptor, StyleSheet};
 use super::{Element, ElementError, ElementScope};
 use crate::constants::elements as el;
 use crate::Layout;
 use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::{StylableNode, Tree};
 
 //a DiagramError
@@ -243,6 +245,8 @@ impl<'a> Diagram<'a> {
             }
         };
 
+        // should we invoke layout.layout(rect)?
+
         self.contents.content_bbox = rect;
         if let Some(element) = &mut self.contents.root_layout {
             element.apply_placement(&layout);
@@ -276,4 +280,27 @@ impl<'a> Diagram<'a> {
     }
 
     //zz All done
+}
+
+//ti IndentedDisplay for Diagram
+impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for Diagram<'diag> {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "Diagram")?;
+        if let Some(element) = &self.contents.root_layout {
+            write!(ind, " root:")?;
+            let mut ind = ind.sub();
+            element.indent(&mut ind);
+        }
+        if self.contents.markers.is_empty() {
+            write!(ind, " No markers\n")?;
+        } else {
+            write!(ind, " markers:\n")?;
+            let mut ind = ind.sub();
+            for element in &self.contents.markers {
+                element.indent(&mut ind);
+            }
+        }
+        Ok(())
+    }
 }

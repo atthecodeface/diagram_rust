@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
 };
@@ -25,7 +26,10 @@ use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::Layout;
 use geo_nd::Vector;
+use geo_nd::Vector;
 use geometry::{Bezier, BezierPath, Point, Rectangle};
+use geometry::{Bezier, BezierPath, Point, Rectangle};
+use indent_display::{IndentedDisplay, Indenter};
 
 //a Constants
 const BEZIER_STRAIGHTNESS: f64 = 1E-2;
@@ -242,6 +246,25 @@ impl GenerateSvgElement for Path {
         path.round(self.round, self.closed);
         ele.add_bezier_path(&path, self.closed);
         svg.add_subelement(ele);
+        Ok(())
+    }
+}
+//ti IndentedDisplay for Path
+impl<'a> IndentedDisplay<'a, IndentOptions> for Path {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+        use std::fmt::Write;
+        write!(ind, "Path\n")?;
+        let mut sub = ind.sub();
+        write!(&mut sub, "center  : {}\n", self.center)?;
+        write!(&mut sub, "width   : {}\n", self.width)?;
+        write!(&mut sub, "height  : {}\n", self.height)?;
+        write!(&mut sub, "round   : {}\n", self.round)?;
+        write!(&mut sub, "closed  : {}\n", self.closed)?;
+        write!(&mut sub, "fill    : {:?}\n", self.fill)?;
+        write!(&mut sub, "stroke  : {:?}\n", self.stroke)?;
+        write!(&mut sub, "strokewidth  : {}\n", self.stroke_width)?;
+        write!(&mut sub, "markers  : {:?}\n", self.markers)?;
+        // pub coords : Vec<Point>, // relative to actual width and height
         Ok(())
     }
 }

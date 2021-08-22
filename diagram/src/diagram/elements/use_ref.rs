@@ -18,6 +18,7 @@ limitations under the License.
 
 //a Imports
 use super::super::types::*;
+use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, Element, ElementError, ElementHeader, ElementScope,
 };
@@ -26,6 +27,7 @@ use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::Layout;
 use geometry::Rectangle;
+use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::{StylableNode, Tree};
 
 //a Use element
@@ -178,6 +180,13 @@ impl<'a> GenerateSvgElement for Use<'a> {
             e.generate_svg(svg)?;
         }
 
+        Ok(())
+    }
+}
+
+//ti IndentedDisplay for Use
+impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Use<'diag> {
+    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         Ok(())
     }
 }
