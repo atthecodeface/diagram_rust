@@ -218,7 +218,7 @@ pub enum BaseValue {
     /// A `StringArray` value contains a number of strings; if the
     /// value is not set then the length of the vec is 0
     /// `StringArray` requires the style value to be a list of strings.
-    StringArray(Vec<String>),
+    StringArray(&'static str, bool, Vec<String>),
 }
 
 //ti BaseValue
@@ -274,8 +274,8 @@ impl BaseValue {
     }
 
     //fp string_array
-    pub fn string_array() -> Self {
-        Self::StringArray(Vec::new())
+    pub fn string_array(s: &'static str, r: bool) -> Self {
+        Self::StringArray(s, r, Vec::new())
     }
 
     //mp is_none
@@ -294,7 +294,7 @@ impl BaseValue {
             Self::Float(None) => true,
             Self::Int(None) => true,
             Self::String(None) => true,
-            Self::StringArray(v) => v.len() == 0,
+            Self::StringArray(_, _, v) => v.len() == 0,
             _ => false,
         }
     }
@@ -503,7 +503,7 @@ impl BaseValue {
     //mp as_strings
     pub fn as_strings<'a>(&'a self, default: Option<&'a Vec<String>>) -> Option<&'a Vec<String>> {
         match &self {
-            Self::StringArray(ref v) => {
+            Self::StringArray(_, _, v) => {
                 if v.len() == 0 {
                     default
                 } else {
@@ -519,14 +519,14 @@ impl BaseValue {
     /// ```
     ///  extern crate stylesheet;
     ///  use stylesheet::BaseValue;
-    ///  assert_eq!(true, BaseValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
-    ///  assert_eq!(true, BaseValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
-    ///  assert_eq!(false, BaseValue::StringArray(vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
+    ///  assert_eq!(true, BaseValue::StringArray("",true,vec!["string".to_string(),"another_string".to_string()]).has_token("string"));
+    ///  assert_eq!(true, BaseValue::StringArray("",true,vec!["string".to_string(),"another_string".to_string()]).has_token("another_string"));
+    ///  assert_eq!(false, BaseValue::StringArray("",true,vec!["string".to_string(),"another_string".to_string()]).has_token("not one of the strings"));
     ///  assert_eq!(false, BaseValue::Int(Some(0)).has_token("another_string"));
     /// ```
     pub fn has_token(&self, value: &str) -> bool {
         match self {
-            Self::StringArray(sv) => {
+            Self::StringArray(_, _, sv) => {
                 for s in sv {
                     if s == value {
                         return true;
@@ -579,7 +579,7 @@ impl BaseValue {
                 Self::Int(Some(v)) => Some(format!("{}", v)),
                 Self::Rgb(_) => self.as_color_string(None),
                 Self::String(Some(v)) => Some(v.clone()),
-                Self::StringArray(v) => Some(format!("{:?}", v)),
+                Self::StringArray(_, _, v) => Some(format!("{:?}", v)),
                 _ => None,
             }
         }
@@ -588,7 +588,7 @@ impl BaseValue {
     /// Add a string (to a string array)
     pub fn add_string(&mut self, s: String) -> () {
         match self {
-            Self::StringArray(v) => {
+            Self::StringArray(_, _, v) => {
                 v.push(s);
             }
             _ => (),
@@ -606,7 +606,7 @@ impl BaseValue {
             Self::Ints(n, _) => write!(f, "i{}", n),
             Self::Rgb(_) => write!(f, "rgb"),
             Self::String(_) => write!(f, "str"),
-            Self::StringArray(_) => write!(f, "tkn"),
+            Self::StringArray(..) => write!(f, "tkn"),
         }
     }
     //zz All done
@@ -651,7 +651,7 @@ impl TypeValue for BaseValue {
             Self::IntArray(_) => Self::int_array(),
             Self::Rgb(_) => Self::rgb(None),
             Self::String(_) => Self::string(None),
-            Self::StringArray(_) => Self::string_array(),
+            Self::StringArray(s, r, _) => Self::string_array(s, *r),
         }
     }
 
@@ -704,8 +704,17 @@ impl TypeValue for BaseValue {
             Self::String(ref mut f) => {
                 *f = Some(s.to_string());
             }
-            Self::StringArray(ref mut f) => {
-                *f = s.split_whitespace().map(|s| s.to_string()).collect();
+            Self::StringArray(sep, r, ref mut f) => {
+                if sep.is_empty() {
+                    *f = s.split_whitespace().map(|s| s.to_string()).collect();
+                } else {
+                    f.clear();
+                    for fs in s.split(*sep) {
+                        if !*r || !fs.is_empty() {
+                            f.push(fs.into());
+                        }
+                    }
+                }
             }
         }
         Ok(self)
