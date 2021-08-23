@@ -31,7 +31,6 @@ const DEBUG_GRID_PLACEMENT: bool = 1 == 1;
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug)]
 pub struct GridPlacement {
-    refs: Vec<(isize, String)>,
     cell_data: Vec<GridCellDataEntry>,
     resolver: Resolver<usize>,
     growth_data: Vec<(usize, usize, f64)>,
@@ -43,12 +42,10 @@ pub struct GridPlacement {
 impl GridPlacement {
     //fp new
     pub fn new() -> Self {
-        let refs = Vec::new();
         let cell_data = Vec::new();
         let resolver = Resolver::none();
         let growth_data = Vec::new();
         Self {
-            refs,
             cell_data,
             resolver,
             growth_data,
@@ -57,52 +54,33 @@ impl GridPlacement {
         }
     }
 
-    //mi find_ref_of_isize
-    fn find_ref_of_isize(&self, x: isize) -> Option<usize> {
-        let xs = format!("{}", x);
-        for (n, s) in self.refs.iter().enumerate() {
-            if s.1 == xs.as_str() {
-                return Some(n);
-            }
-        }
-        None
-    }
-
-    //mi ref_of_isize
-    fn ref_of_isize(&mut self, x: isize) -> usize {
-        if let Some(n) = self.find_ref_of_isize(x) {
-            n
-        } else {
-            let xs = format!("{}", x);
-            self.refs.push((x, xs));
-            self.refs.len() - 1
-        }
-    }
-
     //mp add_cell
-    pub fn add_cell(&mut self, eref: &str, start: isize, end: isize, size: f64) {
+    pub fn add_cell(&mut self, eref: &str, start: usize, end: usize, size: f64) {
         if DEBUG_GRID_PLACEMENT {
             println!("Add cell {} {} {} {}", eref, start, end, size);
         }
-        let start = self.ref_of_isize(start);
-        let end = self.ref_of_isize(end);
         assert!(end != start);
         let size = if size < 0. { 0. } else { size };
         self.cell_data
             .push(GridCellDataEntry::new(start, end, size));
     }
 
-    //mp add_growth_data
+    //mp add_cell_data
     /// Used to add growth of cell data
-    pub fn add_growth_data(&mut self, growth_data: &Vec<GridData>) {
+    pub fn add_cell_data(&mut self, growth_data: &Vec<GridData>) {
         for gd in growth_data {
-            let start = self.ref_of_isize(gd.start);
-            let end = self.ref_of_isize(gd.end);
-            let growth = gd.size;
-            if DEBUG_GRID_PLACEMENT {
-                println!("Add growth {} {} {}", start, end, growth);
+            match gd {
+                GridData::Width(start, end, size) => {
+                    self.cell_data
+                        .push(GridCellDataEntry::new(*start, *end, *size));
+                }
+                GridData::Growth(start, end, size) => {
+                    self.growth_data.push((*start, *end, *size));
+                }
+                _ => {
+                    todo!();
+                }
             }
-            self.growth_data.push((start, end, growth));
         }
     }
 
@@ -149,12 +127,10 @@ impl GridPlacement {
 
     //mp get_span
     /// Find the span of a start/number of grid positions
-    pub fn get_span(&self, start: isize, end: isize) -> (f64, f64) {
+    pub fn get_span(&self, start: usize, end: usize) -> (f64, f64) {
         if DEBUG_GRID_PLACEMENT {
             println!("Get span {} {}", start, end);
         }
-        let start = self.find_ref_of_isize(start).unwrap();
-        let end = self.find_ref_of_isize(end).unwrap();
         assert!(end != start);
         let start_posn = self.resolver.get_node_position(start);
         let end_posn = self.resolver.get_node_position(end);
@@ -173,24 +149,22 @@ impl GridPlacement {
         self.size
     }
 
-    //mp get_positions
-    /// Get the positions of all the references
-    pub fn get_positions(&self) -> Vec<(isize, f64)> {
-        let mut result = Vec::new();
-        for (n, (r, _)) in self.refs.iter().enumerate() {
-            if self.resolver.has_node(&n) {
-                let pos = self.resolver.get_node_position(n);
-                if DEBUG_GRID_PLACEMENT {
-                    println!("get_pos - {} : {} : {}", n, r, pos);
-                }
-                result.push((*r, pos));
+    //mp get_position
+    /// Get the position of all the references
+    pub fn get_position(&self, n: usize) -> Option<f64> {
+        if self.resolver.has_node(&n) {
+            let pos = self.resolver.get_node_position(n);
+            if DEBUG_GRID_PLACEMENT {
+                println!("get_pos - {} : {}", n, pos);
             }
+            Some(pos)
+        } else {
+            None
         }
-        result
     }
 
     // Display with an indent of indent_str plus six spaces
-    pub fn display(&self, indent_str: &str) {
+    pub fn display(&self, _indent_str: &str) {
         // println!("{}      {}", indent_str, self.cell_data);
         // println!("{}      {}", indent_str, self.grid_dimension);
         // println!("{}      {}", indent_str, self.growth_data);
@@ -204,20 +178,19 @@ impl GridPlacement {
 mod test_grid_placement {
     use super::*;
     //fi check_positions
-    fn check_positions(cp: &GridPlacement, e: &Vec<(isize, f64)>) {
-        let err = cp.get_positions().iter().zip(e.iter()).fold(
-            None,
-            |acc, ((cp_c, cp_s), (e_c, e_s))| {
-                acc.or({
-                    if *cp_c == *e_c && (*cp_s - *e_s).abs() < 1E-8 {
-                        None
-                    } else {
-                        Some((*cp_c, *cp_s, *e_c, *e_s))
-                    }
-                })
-            },
-        );
-        assert_eq!(err, None, "Expected positions {:?} got grid {:?}", e, cp);
+    fn check_positions(cp: &GridPlacement, exp: &Vec<(usize, f64)>) {
+        for (r, e) in exp {
+            let p = cp.get_position(*r);
+            assert!(p.is_some(), "Expected ref {} to have a position", r);
+            let p = p.unwrap();
+            assert!(
+                (p - e).abs() < 1E-8,
+                "For {} Expected position {} got grid {}",
+                r,
+                e,
+                p
+            );
+        }
     }
     //ft test_0
     // #[test]
@@ -227,7 +200,7 @@ mod test_grid_placement {
         gp.add_cell("", 4, 6, 2.);
         gp.calculate_positions(0., 0., 0.);
         assert_eq!(gp.get_size(), 6.);
-        check_positions(&gp, &vec![(0, -3.), (4, 1.), (6, 3.), (-999, 999.)]);
+        check_positions(&gp, &vec![(0, -3.), (4, 1.), (6, 3.)]);
         assert_eq!(gp.get_span(0, 4), (-3., 1.));
         assert_eq!(gp.get_span(4, 6), (1., 3.));
     }
@@ -237,15 +210,12 @@ mod test_grid_placement {
         let mut gp = GridPlacement::new();
         gp.add_cell("", 0, 4, 4.);
         gp.add_cell("", 4, 6, 2.);
-        gp.add_growth_data(&vec![GridData::new(2, 4, 1.)]);
+        gp.add_cell_data(&vec![GridData::new_growth(2, 4, 1.)]);
 
         gp.calculate_positions(0., 0., 0.); // so we can invoke gp.get_size()
         gp.calculate_positions(gp.get_size() + 2., 0., 1.);
         assert_eq!(gp.get_size(), 8.);
-        check_positions(
-            &gp,
-            &vec![(0, -4.), (2, -2.), (4, 2.), (6, 4.), (-999, 999.)],
-        );
+        check_positions(&gp, &vec![(0, -4.), (2, -2.), (4, 2.), (6, 4.)]);
         assert_eq!(gp.get_span(0, 4), (-4., 2.));
         assert_eq!(gp.get_span(4, 6), (2., 4.));
     }
@@ -254,19 +224,16 @@ mod test_grid_placement {
     fn test_2() {
         let mut gp = GridPlacement::new();
         gp.add_cell("", 0, 10, 10.);
-        gp.add_growth_data(&vec![
-            GridData::new(0, 2, 1.),
-            GridData::new(2, 8, 0.),
-            GridData::new(8, 10, 1.),
+        gp.add_cell_data(&vec![
+            GridData::new_growth(0, 2, 1.),
+            GridData::new_growth(2, 8, 0.),
+            GridData::new_growth(8, 10, 1.),
         ]);
 
         gp.calculate_positions(0., 0., 0.); // so we can invoke gp.get_size()
         gp.calculate_positions(gp.get_size() + 4., 7., 1.);
         assert_eq!(gp.get_size(), 14.);
-        check_positions(
-            &gp,
-            &vec![(0, 0.), (2, 4.), (8, 10.), (10, 14.), (-999, 999.)],
-        );
+        check_positions(&gp, &vec![(0, 0.), (2, 4.), (8, 10.), (10, 14.)]);
         assert_eq!(gp.get_span(0, 2), (0., 4.));
         assert_eq!(gp.get_span(2, 8), (4., 10.));
         assert_eq!(gp.get_span(8, 10), (10., 14.));

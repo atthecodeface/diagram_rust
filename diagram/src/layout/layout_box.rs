@@ -432,23 +432,26 @@ impl<'a, O: IndentedOptions<'a>> IndentedDisplay<'a, O> for LayoutBox {
         write!(&mut sub, "margin: {:?}\n", self.margin)?;
         write!(&mut sub, "content_scale   : {}\n", self.content_scale)?;
         write!(&mut sub, "content_rotation: {}\n", self.content_rotation)?;
-        if let Some(pt) = self.content_ref {
+        if let Some(pt) = &self.content_ref {
             write!(&mut sub, "content_ref: {}\n", pt)?;
         }
-        if let Some(r) = self.content_desired {
+        if let Some(r) = &self.content_desired {
             write!(&mut sub, "content desired: {}\n", r)?;
         }
-        if let Some(r) = self.outer_desired {
+        if let Some(r) = &self.outer_desired {
             write!(&mut sub, "outer desired: {}\n", r)?;
         }
-        if let Some(r) = self.outer {
+        if let Some(r) = &self.outer {
             write!(&mut sub, "outer actual: {}\n", r)?;
         }
-        if let Some(r) = self.inner {
+        if let Some(r) = &self.inner {
             write!(&mut sub, "inner actual: {}\n", r)?;
         }
-        if let Some(r) = self.content {
+        if let Some(r) = &self.content {
             write!(&mut sub, "content actual: {}\n", r)?;
+        }
+        if let Some(t) = &self.content_to_layout {
+            write!(&mut sub, "content to layout: {}\n", t)?;
         }
         Ok(())
     }

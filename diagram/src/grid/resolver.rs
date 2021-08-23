@@ -69,6 +69,7 @@ impl<N: NodeId> Resolver<N> {
         let roots = Vec::new();
         let leaves = Vec::new();
         let node_resolution_order = Vec::new();
+        let unresolved_nodes = HashSet::new();
         Self {
             node_ids,
             nodes,
@@ -131,7 +132,7 @@ impl<N: NodeId> Resolver<N> {
             node_resolution_order,
             unresolved_nodes,
         };
-        s.place_roots(0.);
+        // s.place_roots(0.);
         s
     }
 
@@ -207,7 +208,7 @@ impl<N: NodeId> Resolver<N> {
     //fi reachable_nodes
     /// Find the set of all `node_id`s reachable from a node_id
     fn reachable_nodes(&self, node_id: N) -> HashSet<N> {
-        // println!("reachable_nodes of {} self {:?}",node_id, self);
+        // println!("reachable_nodes of {} self {:?}", node_id, self);
         let mut to_do = Vec::new();
         let mut result = HashSet::new();
         result.insert(node_id);

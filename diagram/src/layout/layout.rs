@@ -17,9 +17,12 @@ limitations under the License.
  */
 
 //a Imports
+use std::collections::HashMap;
+
+use geometry::{Point, Rectangle, Transform};
+
 use super::Placements;
 use crate::{GridData, GridPlacement};
-use geometry::{Point, Rectangle, Transform};
 
 //a Constants
 const DEBUG_LAYOUT: bool = 1 == 0;
@@ -35,6 +38,7 @@ pub struct Layout {
     pub desired_grid: Rectangle,
     pub desired_placement: Rectangle,
     pub desired_geometry: Rectangle,
+    refs: (HashMap<String, usize>, HashMap<String, usize>),
     content_to_actual: Transform,
 }
 
@@ -43,14 +47,42 @@ impl Layout {
     pub fn new() -> Self {
         let grid_placements = (GridPlacement::new(), GridPlacement::new());
         let direct_placements = (Placements::new(), Placements::new());
+        let refs = (HashMap::new(), HashMap::new());
         Self {
             grid_placements,
             direct_placements,
             grid_expand: (0., 0.),
+            refs,
             desired_placement: Rectangle::none(),
             desired_grid: Rectangle::none(),
             desired_geometry: Rectangle::none(),
             content_to_actual: Transform::new(),
+        }
+    }
+
+    //mp find_grid_id
+    pub fn find_grid_id(&self, x: bool, s: &str) -> Option<&usize> {
+        if x {
+            self.refs.0.get(s)
+        } else {
+            self.refs.1.get(s)
+        }
+    }
+
+    //mp add_grid_id
+    pub fn add_grid_id(&mut self, x: bool, s: &str) -> usize {
+        if let Some(n) = self.find_grid_id(x, s) {
+            *n
+        } else {
+            if x {
+                let n = self.refs.0.len();
+                self.refs.0.insert(s.into(), n);
+                n
+            } else {
+                let n = self.refs.1.len();
+                self.refs.1.insert(s.into(), n);
+                n
+            }
         }
     }
 
@@ -60,8 +92,8 @@ impl Layout {
     pub fn add_grid_element(
         &mut self,
         eref: &str,
-        start: (isize, isize),
-        end: (isize, isize),
+        start: (usize, usize),
+        end: (usize, usize),
         size: (f64, f64),
     ) {
         self.grid_placements
@@ -88,24 +120,10 @@ impl Layout {
             .add_element(eref, pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
     }
 
-    //mp add_min_cell_data
-    pub fn add_min_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
-        for cd in x {
-            self.grid_placements
-                .0
-                .add_cell("", cd.start, cd.end, cd.size);
-        }
-        for cd in y {
-            self.grid_placements
-                .1
-                .add_cell("", cd.start, cd.end, cd.size);
-        }
-    }
-
-    //mp add_grow_cell_data
-    pub fn add_grow_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
-        self.grid_placements.0.add_growth_data(x);
-        self.grid_placements.1.add_growth_data(y);
+    //mp add_cell_data
+    pub fn add_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
+        self.grid_placements.0.add_cell_data(x);
+        self.grid_placements.1.add_cell_data(y);
     }
 
     //mp get_desired_geometry
@@ -182,7 +200,7 @@ impl Layout {
     }
 
     //mp get_grid_rectangle
-    pub fn get_grid_rectangle(&self, start: (isize, isize), end: (isize, isize)) -> Rectangle {
+    pub fn get_grid_rectangle(&self, start: (usize, usize), end: (usize, usize)) -> Rectangle {
         let (x0, x1) = self.grid_placements.0.get_span(start.0, end.0);
         let (y0, y1) = self.grid_placements.1.get_span(start.1, end.1);
         Rectangle::new(x0, y0, x1, y1)
@@ -196,12 +214,29 @@ impl Layout {
     //mp get_grid_positions
     /// Used to record the layout so it may, for example, be drawn
     ///
-    pub fn get_grid_positions(&self) -> (Vec<(isize, f64)>, Vec<(isize, f64)>) {
-        let mut result = (
-            self.grid_placements.0.get_positions(),
-            self.grid_placements.1.get_positions(),
-        );
-        result
+    pub fn get_grid_positions(
+        &self,
+    ) -> Result<(HashMap<String, f64>, HashMap<String, f64>), String> {
+        let mut result = (HashMap::new(), HashMap::new());
+        for (s, n) in self.refs.0.iter() {
+            result.0.insert(
+                s.clone(),
+                self.grid_placements
+                    .0
+                    .get_position(*n)
+                    .ok_or_else(|| format!("X grid id '{}' was not placed in its layout", s))?,
+            );
+        }
+        for (s, n) in self.refs.1.iter() {
+            result.1.insert(
+                s.clone(),
+                self.grid_placements
+                    .1
+                    .get_position(*n)
+                    .ok_or_else(|| format!("Y grid id '{}' was not placed in its layout", s))?,
+            );
+        }
+        Ok(result)
     }
 
     //mp display

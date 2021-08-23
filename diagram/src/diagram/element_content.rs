@@ -20,8 +20,6 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
-
-pub use super::elements::{Group, Path, Shape, Text, Use};
 pub use super::elements::{Group, Path, Shape, Text, Use};
 use super::types::*;
 use super::DiagramElementContent;
@@ -31,15 +29,10 @@ use super::ElementHeader;
 use super::ElementScope;
 use super::IndentOptions;
 use crate::constants::elements as el;
-use crate::constants::elements as el;
-use crate::DiagramDescriptor;
 use crate::DiagramDescriptor;
 use crate::Layout;
-use crate::Layout;
-use geometry::Rectangle;
 use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::{StylableNode, Tree};
 use stylesheet::{StylableNode, Tree};
 
 //a ElementContent - enumerated union of the above
@@ -96,7 +89,7 @@ impl<'a> ElementContent<'a> {
         header: &ElementHeader<'a>,
         scope: &ElementScope<'a, 'b>,
         uid: usize,
-    ) -> Result<bool, ElementError> {
+    ) -> Result<(bool, usize), ElementError> {
         match self {
             Self::Use(ref mut c) => c.uniquify(header, scope, uid),
             Self::Group(ref mut c) => c.uniquify(header, scope, uid),

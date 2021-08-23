@@ -95,10 +95,10 @@
 #layout}
 
 ;;; Fourth row - expand content anchored on center (anchor does not matter for expanded layout though)
-##layout id=row4 grid=1,4 expand=1,1 growx=-100,1.,100 growy=-100,1.,100
+##layout id=row4 grid=1,4 expand=1,1 minx=-100,+1.,100 miny=-100,+1.,100
 
 ;; On the fourth row we have a layout of a grid of four shapes with expansion
-###layout{ id=4_1 grid=1,1 expand=1,1 growx=1,1.0,2,2.0,3
+###layout{ id=4_1 grid=1,1 expand=1,1 minx=1,+1.0,2,+2.0,3
 #use id=g1_1     ref=medium grid=1,1 anchor=-1
 #use id=g2_1     ref=medium grid=2,1 anchor=-1
 #use id=g1_2     ref=medium grid=1,2 anchor=1

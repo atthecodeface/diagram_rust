@@ -28,17 +28,11 @@ use super::ElementError;
 use super::ElementHeader;
 use super::ElementScope;
 use crate::constants::elements as el;
-use crate::constants::elements as el;
-use crate::DiagramDescriptor;
 use crate::DiagramDescriptor;
 use crate::Layout;
-use crate::Layout;
-use geometry::Rectangle;
 use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
-use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
 use stylesheet::{StylableNode, Tree};
 
 //a Element
@@ -120,7 +114,7 @@ impl<'a> Element<'a> {
             // Updated the content, so uniquify again with the input uid
             self.uniquify(scope, uid)
         } else {
-            Ok((uniq_uid))
+            Ok(uniq_uid)
         }
     }
 
@@ -227,7 +221,6 @@ impl<'a> Element<'a> {
 //ti IndentedDisplay for Element
 impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for Element<'diag> {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
-        use std::fmt::Write;
         self.header.indent(ind)?;
         self.content.indent(ind)?;
         Ok(())

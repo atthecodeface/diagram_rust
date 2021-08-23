@@ -26,8 +26,6 @@ use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::Layout;
 use geo_nd::Vector;
-use geo_nd::Vector;
-use geometry::{Bezier, BezierPath, Point, Rectangle};
 use geometry::{Bezier, BezierPath, Point, Rectangle};
 use indent_display::{IndentedDisplay, Indenter};
 

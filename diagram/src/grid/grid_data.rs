@@ -22,18 +22,30 @@ limitations under the License.
 //tp GridData
 /// Used in external interfaces
 #[derive(Debug)]
-pub struct GridData {
-    pub start: isize,
-    pub end: isize,
-    pub size: f64,
+pub enum GridData {
+    Width(usize, usize, f64),
+    Growth(usize, usize, f64),
+    Place(usize, f64),
 }
 
 //ip GridData
 impl GridData {
-    //fp new
+    //fp new_width
     /// Create a new [GridData] element
-    pub fn new(start: isize, end: isize, size: f64) -> Self {
-        Self { start, end, size }
+    pub fn new_width(start: usize, end: usize, size: f64) -> Self {
+        Self::Width(start, end, size)
+    }
+
+    //fp new_growth
+    /// Create a new [GridData] element
+    pub fn new_growth(start: usize, end: usize, size: f64) -> Self {
+        Self::Growth(start, end, size)
+    }
+
+    //fp new_place
+    /// Create a new [GridData] element
+    pub fn new_place(start: usize, size: f64) -> Self {
+        Self::Place(start, size)
     }
 }
 
@@ -42,7 +54,11 @@ impl std::fmt::Display for GridData {
     //mp fmt - format a GridData
     /// Display the `GridData' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "({}->{}:{}]", self.start, self.end, self.size)
+        match self {
+            Self::Width(s, e, w) => write!(f, "[{}->{}:{}]", s, e, w),
+            Self::Growth(s, e, g) => write!(f, "[{}->{}:+{}]", s, e, g),
+            Self::Place(s, p) => write!(f, "[{}@{}]", s, p),
+        }
     }
 
     //zz All done

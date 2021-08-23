@@ -90,7 +90,7 @@
 #text fill-color="black" class="structure kernel i10" gridx=120,130 gridy=60,70  "per-i10-lane" "I/O queue"
 #text fill-color="black" class="structure kernel i10" gridx=120,130 gridy=80,90  "per-i10-lane" "TCP Tx/Rx" "buffers"
 
-#layout id="host" grid=60,30,120,60 expand=1 growx=0,1.,100 growy=0,1.,100
+#layout id="host" grid=60,30,120,60 expand=1 minx=0,+1.,100 miny=0,+1.,100
 ##use id=host_app1_bio1 ref=bio_pink        gridx=10,20 gridy=10,20
 ##use id=host_app1_bio2 ref=bio_pink        gridx=20,30 gridy=10,20
 ##use id=host_app2_bio ref=bio_lightgreen   gridx=30,40 gridy=10,20

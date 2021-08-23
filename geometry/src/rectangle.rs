@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use geo_nd::Vector;
 use super::{Point, Range};
+use geo_nd::Vector;
 
 //t Rectangle
 //tp Float4
@@ -28,18 +28,17 @@ use super::{Point, Range};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Float4 {
     /// One X coordinate
-    pub x0 : f64,
+    pub x0: f64,
     /// Second X coordinate
-    pub x1 : f64,
+    pub x1: f64,
     /// One Y coordinate
-    pub y0 : f64,
+    pub y0: f64,
     /// Second Y coordinate
-    pub y1 : f64,
+    pub y1: f64,
 }
 
 //ti Display for Float4
 impl std::fmt::Display for Float4 {
-
     //mp fmt - format for a human
     /// Display the Float4
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -54,13 +53,18 @@ impl Float4 {
     //fp none
     /// Create an empty float4 at 0,0
     pub const fn none() -> Self {
-        Self { x0:0., x1:0., y0:0., y1:0.}
+        Self {
+            x0: 0.,
+            x1: 0.,
+            y0: 0.,
+            y1: 0.,
+        }
     }
 
     //fp new
     /// Make a float4
-    pub fn new(x0:f64, y0:f64, x1:f64, y1:f64) -> Self {
-        Self {x0, x1, y0, y1}
+    pub fn new(x0: f64, y0: f64, x1: f64, y1: f64) -> Self {
+        Self { x0, x1, y0, y1 }
     }
 
     //zz All done
@@ -73,18 +77,17 @@ impl Float4 {
 /// region is deemed to be *none*
 pub struct Rectangle {
     /// smaller x coordinate of region
-    pub x0 : f64,
+    pub x0: f64,
     /// larger x coordinate of region
-    pub x1 : f64,
+    pub x1: f64,
     /// smaller y coordinate of region
-    pub y0 : f64,
+    pub y0: f64,
     /// larger y coordinate of region
-    pub y1 : f64,
+    pub y1: f64,
 }
 
 //ti Display for Rectangle
 impl std::fmt::Display for Rectangle {
-
     //mp fmt - format for a human
     /// Display the Rectangle
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -99,7 +102,12 @@ impl Rectangle {
     //fp none
     /// Create an empty rectangle at 0,0
     pub const fn none() -> Self {
-        Self { x0:0., x1:0., y0:0., y1:0.}
+        Self {
+            x0: 0.,
+            x1: 0.,
+            y0: 0.,
+            y1: 0.,
+        }
     }
 
     //mp is_none
@@ -111,15 +119,27 @@ impl Rectangle {
     //fp new
     /// Make a rectangle using the coordinates supplied, ensuring that
     /// the rectangle is correctly defined
-    pub fn new(x0:f64, y0:f64, x1:f64, y1:f64) -> Self {
-        let (x0,x1) = {if x0<x1 {(x0,x1)} else {(x1,x0)}};
-        let (y0,y1) = {if y0<y1 {(y0,y1)} else {(y1,y0)}};
-        Self {x0, x1, y0, y1}
+    pub fn new(x0: f64, y0: f64, x1: f64, y1: f64) -> Self {
+        let (x0, x1) = {
+            if x0 < x1 {
+                (x0, x1)
+            } else {
+                (x1, x0)
+            }
+        };
+        let (y0, y1) = {
+            if y0 < y1 {
+                (y0, y1)
+            } else {
+                (y1, y0)
+            }
+        };
+        Self { x0, x1, y0, y1 }
     }
 
     //cp to_ranges
     /// Set the rectangle to be the ranges supplied
-    pub fn to_ranges(mut self, x:Range, y:Range) -> Self {
+    pub fn to_ranges(mut self, x: Range, y: Range) -> Self {
         self.x0 = x.min;
         self.x1 = x.max;
         self.y0 = y.min;
@@ -129,7 +149,7 @@ impl Rectangle {
 
     //fp bbox_of_points
     /// Make a new rectangle that is the bounding box of a vec of points
-    pub fn bbox_of_points(pts:&Vec<Point>) -> Self {
+    pub fn bbox_of_points(pts: &Vec<Point>) -> Self {
         match pts.len() {
             0 => Self::none(),
             1 => Self::none(),
@@ -139,23 +159,33 @@ impl Rectangle {
                 let mut max_x = min_x;
                 let mut max_y = min_y;
                 for p in pts {
-                    if p[0] < min_x { min_x = p[0]; }
-                    if p[1] < min_y { min_y = p[1]; }
-                    if p[0] > max_x { max_x = p[0]; }
-                    if p[1] > max_y { max_y = p[1]; }
+                    if p[0] < min_x {
+                        min_x = p[0];
+                    }
+                    if p[1] < min_y {
+                        min_y = p[1];
+                    }
+                    if p[0] > max_x {
+                        max_x = p[0];
+                    }
+                    if p[1] > max_y {
+                        max_y = p[1];
+                    }
                 }
                 Self::new(min_x, min_y, max_x, max_y)
-            },
+            }
         }
     }
 
     //fp of_cwh
     /// Generate a rectangle from a centre `Point` and a width/height.
-    pub fn of_cwh(centre:Point, width:f64, height:f64) -> Self {
-        Self::new( centre[0] - width/2.,
-                   centre[1] - height/2.,
-                   centre[0] + width/2.,
-                   centre[1] + height/2. )
+    pub fn of_cwh(centre: Point, width: f64, height: f64) -> Self {
+        Self::new(
+            centre[0] - width / 2.,
+            centre[1] - height / 2.,
+            centre[0] + width / 2.,
+            centre[1] + height / 2.,
+        )
     }
 
     //mp pt_within
@@ -177,12 +207,12 @@ impl Rectangle {
     /// assert_eq!( r.pt_within(Point::from_array([5.,5.]))[0], 0.5 );
     /// assert_eq!( r.pt_within(Point::from_array([5.,5.]))[1], 1. );
     /// ```
-    pub fn pt_within(&self, mut pt:Point) -> Point {
+    pub fn pt_within(&self, mut pt: Point) -> Point {
         if self.is_none() {
             pt
         } else {
-            pt -= Point::from_array([self.x0,self.y0]);
-            pt /= Point::from_array([self.x1-self.x0,self.y1-self.y0]);
+            pt -= Point::from_array([self.x0, self.y0]);
+            pt /= Point::from_array([self.x1 - self.x0, self.y1 - self.y0]);
             pt
         }
     }
@@ -191,25 +221,27 @@ impl Rectangle {
     /// Create a vector of four points that are the
     /// anticlockwise-ordered corners of the rectangle starting at the
     /// minumum (x,y)
-    pub fn as_points(&self, close:bool, mut v:Vec<Point>) -> Vec<Point> {
-        v.push(Point::from_array([self.x0,self.y0]));
-        v.push(Point::from_array([self.x1,self.y0]));
-        v.push(Point::from_array([self.x1,self.y1]));
-        v.push(Point::from_array([self.x0,self.y1]));
-        if close { v.push(Point::from_array([self.x0,self.y0])); }
+    pub fn as_points(&self, close: bool, mut v: Vec<Point>) -> Vec<Point> {
+        v.push(Point::from_array([self.x0, self.y0]));
+        v.push(Point::from_array([self.x1, self.y0]));
+        v.push(Point::from_array([self.x1, self.y1]));
+        v.push(Point::from_array([self.x0, self.y1]));
+        if close {
+            v.push(Point::from_array([self.x0, self.y0]));
+        }
         v
     }
 
     //mp get_wh
     /// Return a point consisting of the width and height of the rectangle
     pub fn get_wh(&self) -> Point {
-        Point::from_array([self.x1-self.x0, self.y1-self.y0])
+        Point::from_array([self.x1 - self.x0, self.y1 - self.y0])
     }
 
     //mp get_center
     /// Return a point indicating the centre of the rectangle
     pub fn get_center(&self) -> Point {
-        Point::from_array([(self.x1+self.x0)/2., (self.y1+self.y0)/2.])
+        Point::from_array([(self.x1 + self.x0) / 2., (self.y1 + self.y0) / 2.])
     }
 
     //mp xrange
@@ -258,7 +290,9 @@ impl Rectangle {
     /// assert_eq!( r.width(), 14. );
     /// # assert_eq!( r.height(), 18. );
     /// ```
-    pub fn width(&self) -> f64 {self.x1-self.x0}
+    pub fn width(&self) -> f64 {
+        self.x1 - self.x0
+    }
 
     //mp height
     /// Return the height of the rectangle (`y1` - `y0`)
@@ -272,7 +306,9 @@ impl Rectangle {
     /// # assert_eq!( r.width(), 14. );
     /// assert_eq!( r.height(), 18. );
     /// ```
-    pub fn height(&self) -> f64 {self.y1-self.y0}
+    pub fn height(&self) -> f64 {
+        self.y1 - self.y0
+    }
 
     //mp get_cwh
     /// Get the centre, width and height of the rectangle
@@ -296,7 +332,7 @@ impl Rectangle {
     /// assert_eq!( r.y0, 24. );
     /// assert_eq!( r.y1, 60. );
     /// ```
-    pub fn scale(mut self, value:f64) -> Self {
+    pub fn scale(mut self, value: f64) -> Self {
         self.x0 *= value;
         self.y0 *= value;
         self.x1 *= value;
@@ -320,7 +356,7 @@ impl Rectangle {
     /// assert_eq!( r.y0, 11. );
     /// assert_eq!( r.y1, 31. );
     /// ```
-    pub fn enlarge(mut self, value:f64) -> Self {
+    pub fn enlarge(mut self, value: f64) -> Self {
         self.x0 -= value;
         self.y0 -= value;
         self.x1 += value;
@@ -343,7 +379,7 @@ impl Rectangle {
     /// assert_eq!( r.y0, 13. );
     /// assert_eq!( r.y1, 29. );
     /// ```
-    pub fn reduce(mut self, value:f64) -> Self {
+    pub fn reduce(mut self, value: f64) -> Self {
         self.x0 += value;
         self.y0 += value;
         self.x1 -= value;
@@ -353,7 +389,7 @@ impl Rectangle {
 
     //mp expand
     /// exand in-place by expansion scaled by 'scale'
-    pub fn expand(mut self, other:&Float4, scale:f64) -> Self {
+    pub fn expand(mut self, other: &Float4, scale: f64) -> Self {
         self.x0 -= scale * other.x0;
         self.y0 -= scale * other.y0;
         self.x1 += scale * other.x1;
@@ -363,13 +399,13 @@ impl Rectangle {
 
     //mp shrink
     /// shrink in-place by expansion scaled by 'scale'
-    pub fn shrink(self, other:&Float4, scale:f64) -> Self {
+    pub fn shrink(self, other: &Float4, scale: f64) -> Self {
         self.expand(other, -scale)
     }
 
     //mp union
     /// union this with another; if either is_zero then just the other
-    pub fn union(mut self, other:&Self) -> Self {
+    pub fn union(mut self, other: &Self) -> Self {
         if other.is_none() {
             ();
         } else if self.is_none() {
@@ -378,22 +414,54 @@ impl Rectangle {
             self.x1 = other.x1;
             self.y1 = other.y1;
         } else {
-            self.x0 = if other.x0<self.x0 {other.x0} else {self.x0};
-            self.y0 = if other.y0<self.y0 {other.y0} else {self.y0};
-            self.x1 = if other.x1>self.x1 {other.x1} else {self.x1};
-            self.y1 = if other.y1>self.y1 {other.y1} else {self.y1};
+            self.x0 = if other.x0 < self.x0 {
+                other.x0
+            } else {
+                self.x0
+            };
+            self.y0 = if other.y0 < self.y0 {
+                other.y0
+            } else {
+                self.y0
+            };
+            self.x1 = if other.x1 > self.x1 {
+                other.x1
+            } else {
+                self.x1
+            };
+            self.y1 = if other.y1 > self.y1 {
+                other.y1
+            } else {
+                self.y1
+            };
         }
         self
     }
 
     //mp intersect
     /// intersect this with another; if either is_zero then this will be zero
-    pub fn intersect(mut self, other:&Self) -> Self {
-        self.x0 = if other.x0>self.x0 {other.x0} else {self.x0};
-        self.y0 = if other.y0>self.y0 {other.y0} else {self.y0};
-        self.x1 = if other.x1<self.x1 {other.x1} else {self.x1};
-        self.y1 = if other.y1<self.y1 {other.y1} else {self.y1};
-        if self.x0>=self.x1 || self.y0>=self.y1 {
+    pub fn intersect(mut self, other: &Self) -> Self {
+        self.x0 = if other.x0 > self.x0 {
+            other.x0
+        } else {
+            self.x0
+        };
+        self.y0 = if other.y0 > self.y0 {
+            other.y0
+        } else {
+            self.y0
+        };
+        self.x1 = if other.x1 < self.x1 {
+            other.x1
+        } else {
+            self.x1
+        };
+        self.y1 = if other.y1 < self.y1 {
+            other.y1
+        } else {
+            self.y1
+        };
+        if self.x0 >= self.x1 || self.y0 >= self.y1 {
             self.x0 = 0.;
             self.y0 = 0.;
             self.x1 = 0.;
@@ -404,36 +472,36 @@ impl Rectangle {
 
     //mp translate
     /// translate in-place by scale*pt
-    pub fn translate(mut self, pt:&Point, scale:f64) -> Self {
-        self.x0 += scale*pt[0];
-        self.x1 += scale*pt[0];
-        self.y0 += scale*pt[1];
-        self.y1 += scale*pt[1];
+    pub fn translate(mut self, pt: &Point, scale: f64) -> Self {
+        self.x0 += scale * pt[0];
+        self.x1 += scale * pt[0];
+        self.y0 += scale * pt[1];
+        self.y1 += scale * pt[1];
         self
     }
 
     //mp new_rotated_around
     /// Rotate the rectangle around a point by an angle,
     /// generating a new rectangle that is the bounding box of that rotated rectangle
-    pub fn new_rotated_around(&self, pt:&Point, degrees:f64) -> Self{
+    pub fn new_rotated_around(&self, pt: &Point, degrees: f64) -> Self {
         let radians = degrees.to_radians();
-        let p0 = Point::from_array([self.x0,self.y0]).rotate_around(pt, radians, 0, 1);
-        let p1 = Point::from_array([self.x0,self.y1]).rotate_around(pt, radians, 0, 1);
-        let p2 = Point::from_array([self.x1,self.y1]).rotate_around(pt, radians, 0, 1);
-        let p3 = Point::from_array([self.x1,self.y0]).rotate_around(pt, radians, 0, 1);
-        let x0 = if p0[0]<p1[0] {p0[0]} else {p1[0]};
-        let x0 = if x0<p2[0] {x0} else {p2[0]};
-        let x0 = if x0<p3[0] {x0} else {p3[0]};
-        let y0 = if p0[1]<p1[1] {p0[1]} else {p1[1]};
-        let y0 = if y0<p2[1] {y0} else {p2[1]};
-        let y0 = if y0<p3[1] {y0} else {p3[1]};
-        let x1 = if p0[0]>p1[0] {p0[0]} else {p1[0]};
-        let x1 = if x1>p2[0] {x1} else {p2[0]};
-        let x1 = if x1>p3[0] {x1} else {p3[0]};
-        let y1 = if p0[1]>p1[1] {p0[1]} else {p1[1]};
-        let y1 = if y1>p2[1] {y1} else {p2[1]};
-        let y1 = if y1>p3[1] {y1} else {p3[1]};
-        Self {x0, x1, y0, y1}
+        let p0 = Point::from_array([self.x0, self.y0]).rotate_around(pt, radians, 0, 1);
+        let p1 = Point::from_array([self.x0, self.y1]).rotate_around(pt, radians, 0, 1);
+        let p2 = Point::from_array([self.x1, self.y1]).rotate_around(pt, radians, 0, 1);
+        let p3 = Point::from_array([self.x1, self.y0]).rotate_around(pt, radians, 0, 1);
+        let x0 = if p0[0] < p1[0] { p0[0] } else { p1[0] };
+        let x0 = if x0 < p2[0] { x0 } else { p2[0] };
+        let x0 = if x0 < p3[0] { x0 } else { p3[0] };
+        let y0 = if p0[1] < p1[1] { p0[1] } else { p1[1] };
+        let y0 = if y0 < p2[1] { y0 } else { p2[1] };
+        let y0 = if y0 < p3[1] { y0 } else { p3[1] };
+        let x1 = if p0[0] > p1[0] { p0[0] } else { p1[0] };
+        let x1 = if x1 > p2[0] { x1 } else { p2[0] };
+        let x1 = if x1 > p3[0] { x1 } else { p3[0] };
+        let y1 = if p0[1] > p1[1] { p0[1] } else { p1[1] };
+        let y1 = if y1 > p2[1] { y1 } else { p2[1] };
+        let y1 = if y1 > p3[1] { y1 } else { p3[1] };
+        Self { x0, x1, y0, y1 }
     }
 
     //mp fit_within_region
@@ -441,10 +509,23 @@ impl Rectangle {
     /// fit this region within an outer region
     ///
     /// See Range::fit_within_region for more details on each dimension
-    pub fn fit_within_dimension(self, outer:&Rectangle, anchor:&Point,  expand:&Point) -> (Point,Self) {
-        let (dx,xs) = Range::new(self.x0,self.x1).fit_within_dimension( &Range::new(outer.x0,outer.x1), anchor[0], expand[0]);
-        let (dy,ys) = Range::new(self.y0,self.y1).fit_within_dimension( &Range::new(outer.y0,outer.y1), anchor[1], expand[1]);
-        (Point::from_array([dx,dy]), self.to_ranges(xs, ys))
+    pub fn fit_within_dimension(
+        self,
+        outer: &Rectangle,
+        anchor: &Point,
+        expand: &Point,
+    ) -> (Point, Self) {
+        let (dx, xs) = Range::new(self.x0, self.x1).fit_within_dimension(
+            &Range::new(outer.x0, outer.x1),
+            anchor[0],
+            expand[0],
+        );
+        let (dy, ys) = Range::new(self.y0, self.y1).fit_within_dimension(
+            &Range::new(outer.y0, outer.y1),
+            anchor[1],
+            expand[1],
+        );
+        (Point::from_array([dx, dy]), self.to_ranges(xs, ys))
     }
 
     //zz All done
@@ -454,82 +535,94 @@ impl Rectangle {
 #[cfg(test)]
 mod tests_polygon {
     use super::*;
-    pub fn pt_eq(pt:&Point, x:f64, y:f64) {
-        assert!((pt[0]-x).abs()<1E-8, "mismatch in x {:?} {} {}",pt,x,y);
-        assert!((pt[1]-y).abs()<1E-8, "mismatch in y {:?} {} {}",pt,x,y);
+    pub fn pt_eq(pt: &Point, x: f64, y: f64) {
+        assert!(
+            (pt[0] - x).abs() < 1E-8,
+            "mismatch in x {:?} {} {}",
+            pt,
+            x,
+            y
+        );
+        assert!(
+            (pt[1] - y).abs() < 1E-8,
+            "mismatch in y {:?} {} {}",
+            pt,
+            x,
+            y
+        );
     }
     #[test]
     fn test_zero() {
         let x = Rectangle::none();
         assert!(x.is_none());
-        pt_eq(&x.get_center(),0.,0.);
-        pt_eq(&x.get_wh(),0.,0.);
-        assert_eq!(x.width(),0.);
-        assert_eq!(x.height(),0.);
-        pt_eq(&x.xrange(),0.,0.);
-        pt_eq(&x.yrange(),0.,0.);
+        pt_eq(&x.get_center(), 0., 0.);
+        pt_eq(&x.get_wh(), 0., 0.);
+        assert_eq!(x.width(), 0.);
+        assert_eq!(x.height(), 0.);
+        pt_eq(&x.xrange(), 0., 0.);
+        pt_eq(&x.yrange(), 0., 0.);
     }
     #[test]
     fn test_0() {
-        let x = Rectangle::new(-3.,1., 5.,7.);
-        pt_eq(&x.get_center(),1.,4.);
-        assert_eq!(x.width(),8.);
-        assert_eq!(x.height(),6.);
-        pt_eq(&x.get_wh(),8.,6.);
-        pt_eq(&x.xrange(),-3.,5.);
-        pt_eq(&x.yrange(),1.,7.);
-        pt_eq(&x.get_cwh().0,1.,4.);
-        assert_eq!(x.get_cwh().1,8.);
-        assert_eq!(x.get_cwh().2,6.);
+        let x = Rectangle::new(-3., 1., 5., 7.);
+        pt_eq(&x.get_center(), 1., 4.);
+        assert_eq!(x.width(), 8.);
+        assert_eq!(x.height(), 6.);
+        pt_eq(&x.get_wh(), 8., 6.);
+        pt_eq(&x.xrange(), -3., 5.);
+        pt_eq(&x.yrange(), 1., 7.);
+        pt_eq(&x.get_cwh().0, 1., 4.);
+        assert_eq!(x.get_cwh().1, 8.);
+        assert_eq!(x.get_cwh().2, 6.);
     }
     #[test]
     fn test_ops_0() {
-        let x = Rectangle::new(2.,1., 5.,7.);
-        let y = Rectangle::new(4.,0., 6.,3.);
-        let z = Rectangle::new(5.,1., 7.,4.);
+        let x = Rectangle::new(2., 1., 5., 7.);
+        let y = Rectangle::new(4., 0., 6., 3.);
+        let z = Rectangle::new(5., 1., 7., 4.);
         let x_and_y = x.clone().intersect(&y);
-        let x_or_y  = x.clone().union(&y);
+        let x_or_y = x.clone().union(&y);
         let x_and_z = x.clone().intersect(&z);
-        let x_or_z  = x.clone().union(&z);
-        println!("x_and_y:{}",x_and_y);
-        println!("x_or_y:{}",x_or_y);
-        println!("x_and_z:{}",x_and_z);
-        println!("x_or_z:{}",x_or_z);
-        pt_eq(&x_and_y.xrange(),4.,5.);
-        pt_eq(&x_and_y.yrange(),1.,3.);
-        pt_eq(&x_or_y.xrange(),2.,6.);
-        pt_eq(&x_or_y.yrange(),0.,7.);
+        let x_or_z = x.clone().union(&z);
+        println!("x_and_y:{}", x_and_y);
+        println!("x_or_y:{}", x_or_y);
+        println!("x_and_z:{}", x_and_z);
+        println!("x_or_z:{}", x_or_z);
+        pt_eq(&x_and_y.xrange(), 4., 5.);
+        pt_eq(&x_and_y.yrange(), 1., 3.);
+        pt_eq(&x_or_y.xrange(), 2., 6.);
+        pt_eq(&x_or_y.yrange(), 0., 7.);
 
         assert!(x_and_z.is_none());
-        pt_eq(&x_and_z.xrange(),0.,0.);
-        pt_eq(&x_and_z.yrange(),0.,0.);
-        pt_eq(&x_or_z.xrange(),2.,7.);
-        pt_eq(&x_or_z.yrange(),1.,7.);
+        pt_eq(&x_and_z.xrange(), 0., 0.);
+        pt_eq(&x_and_z.yrange(), 0., 0.);
+        pt_eq(&x_or_z.xrange(), 2., 7.);
+        pt_eq(&x_or_z.yrange(), 1., 7.);
     }
     #[test]
     fn test_ops_1() {
-        let x = Rectangle::new(2.,1., 5.,7.);
+        let x = Rectangle::new(2., 1., 5., 7.);
         let y = Float4::new(0.1, 0.2, 0.3, 0.5);
-        let x_p_y  = x.clone().expand(&y,1.);
-        let x_p_2y = x.clone().expand(&y,2.);
-        println!("x_p_y:{}",x_p_y);
-        println!("x_p_2y:{}",x_p_2y);
-        pt_eq(&x_p_y.xrange(),1.9, 5.3);
-        pt_eq(&x_p_y.yrange(),0.8, 7.5);
-        pt_eq(&x_p_2y.xrange(),1.8, 5.6);
-        pt_eq(&x_p_2y.yrange(),0.6, 8.);
+        let x_p_y = x.clone().expand(&y, 1.);
+        let x_p_2y = x.clone().expand(&y, 2.);
+        println!("x_p_y:{}", x_p_y);
+        println!("x_p_2y:{}", x_p_2y);
+        pt_eq(&x_p_y.xrange(), 1.9, 5.3);
+        pt_eq(&x_p_y.yrange(), 0.8, 7.5);
+        pt_eq(&x_p_2y.xrange(), 1.8, 5.6);
+        pt_eq(&x_p_2y.yrange(), 0.6, 8.);
     }
     #[test]
     fn test_ops_2() {
-        let x = Rectangle::new(2.,1., 5.,7.);
+        let x = Rectangle::new(2., 1., 5., 7.);
         let y = Float4::new(0.1, 0.2, 0.3, 0.5);
-        let x_m_y  = x.clone().shrink(&y,1.);
-        let x_m_2y = x.clone().shrink(&y,2.);
-        println!("x_m_y:{}",x_m_y);
-        println!("x_m_2y:{}",x_m_2y);
-        pt_eq(&x_m_y.xrange(),2.1, 4.7);
-        pt_eq(&x_m_y.yrange(),1.2, 6.5);
-        pt_eq(&x_m_2y.xrange(),2.2, 4.4);
-        pt_eq(&x_m_2y.yrange(),1.4, 6.);
+        let x_m_y = x.clone().shrink(&y, 1.);
+        let x_m_2y = x.clone().shrink(&y, 2.);
+        println!("x_m_y:{}", x_m_y);
+        println!("x_m_2y:{}", x_m_2y);
+        pt_eq(&x_m_y.xrange(), 2.1, 4.7);
+        pt_eq(&x_m_y.yrange(), 1.2, 6.5);
+        pt_eq(&x_m_2y.xrange(), 2.2, 4.4);
+        pt_eq(&x_m_2y.yrange(), 1.4, 6.);
     }
 }

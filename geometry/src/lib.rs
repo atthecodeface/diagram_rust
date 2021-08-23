@@ -38,21 +38,20 @@ some of its features are focused in that direction.
 mod range;
 // mod bezier;
 mod path;
-mod rectangle;
 mod polygon;
+mod rectangle;
 mod transform;
 
 /// The [Point] type is a 2D point of f64's
-pub type Point = geo_nd::FArray<f64,2>;
+pub type Point = geo_nd::FArray<f64, 2>;
 
 /// The [Bezier] type is a Bezier curve of [Point]s
-pub type Bezier = bezier_nd::Bezier<f64,Point,2>;
+pub type Bezier = bezier_nd::Bezier<f64, Point, 2>;
 
 pub use self::transform::Transform;
 // pub use self::point::{Point};
-pub use self::range::{Range};
+pub use self::range::Range;
 // pub use self::bezier::Bezier;
-pub use self::path::{BezierPath};
-pub use self::rectangle::{Rectangle, Float4};
+pub use self::path::BezierPath;
 pub use self::polygon::Polygon;
-
+pub use self::rectangle::{Float4, Rectangle};

@@ -23,8 +23,6 @@ use super::super::{
 };
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
-use crate::constants::attributes as at;
-use crate::constants::elements as el;
 use crate::constants::elements as el;
 use crate::Layout;
 use geometry::{Polygon, Rectangle};

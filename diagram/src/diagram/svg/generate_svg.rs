@@ -20,6 +20,7 @@ limitations under the License.
 use super::super::{Element, ElementContent, ElementHeader};
 use super::{Svg, SvgElement, SvgError};
 use crate::LayoutRecord;
+use std::collections::HashMap;
 
 //a GenerateSvg, GenerateSvgElement
 //pt GenerateSvgElement
@@ -131,12 +132,23 @@ impl GenerateSvg for LayoutRecord {
                     let line_width = 0.25;
                     let mut rx = String::new();
                     let mut ry = String::new();
-                    let xn = grid_x.len();
-                    let yn = grid_y.len();
-                    let x0 = grid_x[0].1;
-                    let x1 = grid_x[xn - 1].1;
-                    let y0 = grid_y[0].1;
-                    let y1 = grid_y[yn - 1].1;
+                    fn bounds_of_hash(hash: &HashMap<String, f64>) -> (f64, f64) {
+                        let mut bounds = (0., 0.);
+                        let found = false;
+                        for p in hash.values() {
+                            let p = *p;
+                            if !found {
+                                bounds = (p, p);
+                            } else if p < bounds.0 {
+                                bounds.0 = p;
+                            } else if p > bounds.1 {
+                                bounds.1 = p;
+                            }
+                        }
+                        bounds
+                    }
+                    let (x0, x1) = bounds_of_hash(grid_x);
+                    let (y0, y1) = bounds_of_hash(grid_y);
                     for (_, x) in grid_x {
                         rx.push_str(&format!("M {:.4},{:.4} v {:.4} ", x, y0, y1 - y0));
                     }

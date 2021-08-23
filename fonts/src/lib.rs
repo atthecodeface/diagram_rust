@@ -18,41 +18,39 @@ limitations under the License.
 
 //a Imports
 #![allow(dead_code)]
-mod traits;
-mod parameter;
-mod glyph_metrics;
-mod font_metrics;
 mod font;
-pub use traits::*;
-use parameter::Parameter;
-use glyph_metrics::GlyphMetrics;
+mod font_metrics;
+mod glyph_metrics;
+mod parameter;
+mod traits;
 use font_metrics::Metrics as FontMetrics;
+use glyph_metrics::GlyphMetrics;
+use parameter::Parameter;
+pub use traits::*;
 
 //a Font
 //tp FontStyle
 /// A font style as a size in points and flags for font styling options
 #[derive(Clone, Copy, Debug)]
 pub struct FontStyle {
-    size : f64, // in points
-    flags : usize, // italic, bold
+    size: f64,    // in points
+    flags: usize, // italic, bold
 }
 
 //ip FontStyle
 impl FontStyle {
     //fp new
     /// Create a new simple font style
-    pub fn new(size:f64, weight:Option<&str>, _style:Option<&str>) -> Self {
+    pub fn new(size: f64, weight: Option<&str>, _style: Option<&str>) -> Self {
         let weight_flags = {
             match weight {
-                Some("bold") |
-                Some("Bold") => { 1 },
+                Some("bold") | Some("Bold") => 1,
                 _ => 0,
             }
         };
         let style_flags = {
             match weight {
-                Some("italic") |
-                Some("Italic") => { 1 },
+                Some("italic") | Some("Italic") => 1,
                 _ => 0,
             }
         };
@@ -60,4 +58,3 @@ impl FontStyle {
         Self { size, flags }
     }
 }
-

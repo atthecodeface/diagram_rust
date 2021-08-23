@@ -26,8 +26,6 @@ use super::IndentOptions;
 use crate::constants::attributes as at;
 use crate::{Layout, LayoutBox};
 use geo_nd::Vector;
-use geo_nd::Vector;
-use geometry::{Point, Rectangle};
 use geometry::{Point, Rectangle};
 use indent_display::{IndentedDisplay, Indenter};
 
@@ -37,7 +35,7 @@ use indent_display::{IndentedDisplay, Indenter};
 pub enum LayoutPlacement {
     None,
     Place(Point),
-    Grid(isize, isize, isize, isize),
+    Grid(String, String, String, String),
 }
 
 //ip Display for LayoutPlacement
@@ -212,7 +210,12 @@ impl ElementLayout {
                 opt_grid
             }
         } {
-            layout.set_grid(sx, sy, ex, ey);
+            layout.set_grid(
+                format!("{}", sx),
+                format!("{}", sy),
+                format!("{}", ex),
+                format!("{}", ey),
+            );
         }
         if let Some((x, y)) = {
             match header.get_style_ints_of_name(at::PLACE).as_floats(None) {
@@ -239,7 +242,7 @@ impl ElementLayout {
     }
 
     //mp set_grid
-    pub fn set_grid(&mut self, sx: isize, sy: isize, ex: isize, ey: isize) {
+    pub fn set_grid(&mut self, sx: String, sy: String, ex: String, ey: String) {
         self.placement = LayoutPlacement::Grid(sx, sy, ex, ey);
     }
 
@@ -292,11 +295,15 @@ impl ElementLayout {
     /// The [Layout] can later be interrogated to determine *its*
     /// desired geometry, for hierarchical layout
     pub fn set_layout_properties(&self, eref: &str, layout: &mut Layout, bbox: Rectangle) {
-        match self.placement {
+        match &self.placement {
             LayoutPlacement::None => {
                 layout.add_placed_element(eref, &Point::zero(), &None, &bbox);
             }
             LayoutPlacement::Grid(sx, sy, ex, ey) => {
+                let sx = layout.add_grid_id(true, sx);
+                let sy = layout.add_grid_id(false, sy);
+                let ex = layout.add_grid_id(true, ex);
+                let ey = layout.add_grid_id(false, ey);
                 layout.add_grid_element(eref, (sx, sy), (ex, ey), (bbox.width(), bbox.height()));
             }
             LayoutPlacement::Place(pt) => {

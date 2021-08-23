@@ -17,6 +17,8 @@ limitations under the License.
  */
 
 //a Imports
+use std::collections::HashMap;
+
 use super::layout::Layout;
 
 //a LayoutRecord
@@ -24,7 +26,7 @@ use super::layout::Layout;
 /// A type used to preserve the layout for, e.g., display as a grid
 #[derive(Debug)]
 pub struct LayoutRecord {
-    pub grid_positions: Option<(Vec<(isize, f64)>, Vec<(isize, f64)>)>,
+    pub grid_positions: Option<(HashMap<String, f64>, HashMap<String, f64>)>,
 }
 
 //ip LayoutRecord
@@ -39,8 +41,9 @@ impl LayoutRecord {
 
     //mp capture_grid
     /// Capture the grid positions from a layout
-    pub fn capture_grid(&mut self, layout: &Layout) {
-        self.grid_positions = Some(layout.get_grid_positions());
+    pub fn capture_grid(&mut self, layout: &Layout) -> Result<(), String> {
+        self.grid_positions = Some(layout.get_grid_positions()?);
+        Ok(())
     }
 
     //zz All done

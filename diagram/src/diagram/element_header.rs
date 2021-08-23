@@ -29,9 +29,7 @@ use crate::constants::elements as el;
 use crate::DiagramDescriptor;
 use crate::{Layout, LayoutBox};
 use geometry::Rectangle;
-use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::StylableNode;
 use stylesheet::StylableNode;
 
 //a ElementHeader
@@ -263,10 +261,14 @@ impl<'a> ElementHeader<'a> {
     /// method returns.
     pub fn apply_placement(&mut self, layout: &Layout) -> Rectangle {
         let rect = {
-            match self.layout.placement {
+            match &self.layout.placement {
                 LayoutPlacement::None => self.layout_box.get_desired_bbox(),
                 LayoutPlacement::Grid(sx, sy, ex, ey) => {
-                    layout.get_grid_rectangle((sx, sy), (ex, ey))
+                    let sx = layout.find_grid_id(true, &sx).unwrap();
+                    let sy = layout.find_grid_id(false, &sy).unwrap();
+                    let ex = layout.find_grid_id(true, &ex).unwrap();
+                    let ey = layout.find_grid_id(false, &ey).unwrap();
+                    layout.get_grid_rectangle((*sx, *sy), (*ex, *ey))
                 }
                 LayoutPlacement::Place(pt) => layout.get_placed_rectangle(&pt, &self.layout.ref_pt),
             }

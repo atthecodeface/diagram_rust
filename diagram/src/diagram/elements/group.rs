@@ -59,10 +59,8 @@ pub struct Group<'a> {
     pub content: Vec<Element<'a>>,
     layout: Option<Layout>,
     layout_record: Option<LayoutRecord>,
-    minx: Vec<GridData>,
-    miny: Vec<GridData>,
-    growx: Vec<GridData>,
-    growy: Vec<GridData>,
+    x_cell_data: Vec<GridData>,
+    y_cell_data: Vec<GridData>,
     bbox: Rectangle,
 
     // For markers ONLY
@@ -97,10 +95,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             content: Vec::new(),
             layout,
             layout_record: None,
-            minx: Vec::new(),
-            miny: Vec::new(),
-            growx: Vec::new(),
-            growy: Vec::new(),
+            x_cell_data: Vec::new(),
+            y_cell_data: Vec::new(),
             bbox: Rectangle::none(),
             ref_pt: Point::zero(), // for markers
             relief: (0., 0.),
@@ -130,10 +126,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             content: Vec::new(),
             layout,
             layout_record: None,
-            minx: Vec::new(),
-            miny: Vec::new(),
-            growx: Vec::new(),
-            growy: Vec::new(),
+            x_cell_data: Vec::new(),
+            y_cell_data: Vec::new(),
             bbox: Rectangle::none(),
             ref_pt: Point::zero(), // for markers
             relief: (0., 0.),
@@ -168,12 +162,10 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
     fn get_style_names<'z>(name: &str) -> Vec<&'z str> {
         match name {
             el::GROUP => vec![],
-            el::LAYOUT => vec![at::MINX, at::MINY, at::GROWX, at::GROWY],
+            el::LAYOUT => vec![at::MINX, at::MINY],
             _ => vec![
                 at::MINX,
                 at::MINY,
-                at::GROWX,
-                at::GROWY,
                 at::POINT,
                 at::RELIEF,
                 at::WIDTH,
@@ -191,21 +183,22 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         descriptor: &DiagramDescriptor,
         header: &ElementHeader,
     ) -> Result<(), ElementError> {
-        if let Some(v) = header.get_style_floats_of_name(at::MINX).as_floats(None) {
-            self.minx = self.read_cell_data(header, v)?;
+        if let Some(v) = header.get_style_strings_of_name(at::MINX).as_strings(None) {
+            self.x_cell_data = self.read_cell_data(true, header, v)?;
         }
-        if let Some(v) = header.get_style_floats_of_name(at::MINY).as_floats(None) {
-            self.miny = self.read_cell_data(header, v)?;
-        }
-        if let Some(v) = header.get_style_floats_of_name(at::GROWX).as_floats(None) {
-            self.growx = self.read_cell_data(header, v)?;
-        }
-        if let Some(v) = header.get_style_floats_of_name(at::GROWY).as_floats(None) {
-            self.growy = self.read_cell_data(header, v)?;
+        if let Some(v) = header.get_style_strings_of_name(at::MINY).as_strings(None) {
+            self.y_cell_data = self.read_cell_data(false, header, v)?;
         }
         if let Some(layout) = &mut self.layout {
             layout.grid_expand.0 = header.layout.expand[0];
             layout.grid_expand.1 = header.layout.expand[1];
+        } else {
+            if header.layout.expand[0] != 0. {
+                return Err(ElementError::of_string(header, &format!("X Expand {} specified for element id {} but it is not directly part of a Layout", header.layout.expand[0], header.borrow_id())));
+            }
+            if header.layout.expand[1] != 0. {
+                return Err(ElementError::of_string(header, &format!("Y Expand {} specified for element id {} but it is not directly part of a Layout", header.layout.expand[1], header.borrow_id())));
+            }
         }
         // width, height, flags, ref point are only used in markers
         match header.get_style_floats_of_name(at::POINT).as_floats(None) {
@@ -251,8 +244,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             for e in self.content.iter_mut() {
                 e.set_layout_properties(layout);
             }
-            layout.add_min_cell_data(&self.minx, &self.miny);
-            layout.add_grow_cell_data(&self.growx, &self.growy);
+            layout.add_cell_data(&self.x_cell_data, &self.y_cell_data);
             let rect = layout.get_desired_geometry();
             self.bbox = rect;
             // println!("Group layout desires rectangle of {}", rect);
@@ -311,6 +303,44 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
 }
 
 //ip Group
+fn parse_float<'a>(
+    header: &ElementHeader,
+    s: &'a str,
+    ofs: usize,
+) -> Result<(&'a str, f64), ElementError> {
+    let s = if ofs > 0 {
+        let (_, s) = s.split_at(ofs);
+        s
+    } else {
+        s
+    };
+    let mut seen_point = false;
+    let mut end_index = None;
+    for (n, c) in s.char_indices() {
+        if !(char::is_numeric(c) || (c == '.' && !seen_point)) {
+            end_index = Some(n);
+            break;
+        }
+        if c == '.' {
+            seen_point = true;
+        }
+    }
+    let (s, ns) = {
+        if let Some(end_index) = end_index {
+            s.split_at(end_index)
+        } else {
+            (s, "")
+        }
+    };
+    match s.parse::<f64>() {
+        Err(x) => Err(ElementError::of_string(
+            header,
+            &format!("Failed to parse float {}: {}", ns, x),
+        )),
+        Ok(v) => Ok((ns, v)),
+    }
+}
+
 impl<'a> Group<'a> {
     //mp read_cell_data
     /// For styling, this uses an array of floats and attempts to produce an array of GridData,
@@ -324,42 +354,81 @@ impl<'a> Group<'a> {
     /// indices being integers, and the indices monotically
     /// increasing, and the floats all positive or zero.
     pub fn read_cell_data(
-        &self,
+        &mut self,
+        x: bool,
         header: &ElementHeader,
-        v: &Vec<f64>,
+        v: &Vec<String>,
     ) -> Result<Vec<GridData>, ElementError> {
-        if v.len() % 2 == 0 {
-            Err(ElementError::of_string(header, &format!("grid minimums must be int,(float,int)* and hence and odd number of items, but got {} items", v.len())))
-        } else {
-            fn as_int(header: &ElementHeader, x: f64, n: usize) -> Result<isize, ElementError> {
-                let x_i = x as isize;
-                if x - (x_i as f64) == 0. {
-                    Ok(x_i)
-                } else {
-                    Err(ElementError::of_string(
-                        header,
-                        &format!(
-                            "grid boundaries must be integers, but got {} for cell boundary {}",
-                            x, n
-                        ),
-                    ))
-                }
-            }
-            let mut n = 1;
-            let mut start = as_int(header, v[0], 1)?;
-            let mut result = Vec::new();
-            while n * 2 <= v.len() {
-                let size = v[n * 2 - 1];
-                let end = as_int(header, v[n * 2], n + 1)?;
-                result.push(GridData::new(start, end, size));
-                if end <= start {
-                    Err(ElementError::of_string(header, &format!("grid boundaries must increase left to right, but got {} followed by {}",start,end)))?;
-                }
-                start = end;
-                n += 1;
-            }
-            Ok(result)
+        if self.layout.is_none() {
+            return Err(ElementError::of_string(
+                header,
+                &format!(
+                    "Cell data layout specified for id {} but it is not a Layout element",
+                    header.borrow_id()
+                ),
+            ));
         }
+        let layout = self.layout.as_mut().unwrap();
+        let mut result = Vec::new();
+        let mut last_element = 0;
+        let mut expecting_data = false;
+        let mut pending_min_size = None;
+        let mut pending_growth = None;
+        for s in v {
+            let mut has_data = false;
+            if expecting_data {
+                let mut s = s.trim_start();
+                while !s.is_empty() {
+                    let opt_c = s.chars().next();
+                    if opt_c == Some('+') {
+                        let (ns, v) = parse_float(header, s, 1)?;
+                        s = ns.trim_start();
+                        pending_growth = Some(v);
+                        has_data = true;
+                    } else if opt_c == Some('=') {
+                        let (ns, v) = parse_float(header, s, 1)?;
+                        s = ns.trim_start();
+                        result.push(GridData::new_place(last_element, v));
+                        has_data = true;
+                    } else {
+                        match parse_float(header, s, 0) {
+                            Err(e) if has_data => {
+                                return Err(e);
+                            }
+                            Err(_) => {
+                                break;
+                            }
+                            Ok((ns, v)) => {
+                                s = ns.trim_start();
+                                pending_min_size = Some(v);
+                                has_data = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if has_data {
+                expecting_data = false;
+            } else {
+                if s.find(|c: char| (c == '+' || c == '.' || c == '='))
+                    .is_some()
+                {
+                    return Err(ElementError::of_string(header, &format!("grid cell data hit an id of '{}' which contained +, = or ., which are illegal in a grid cell id", s)));
+                }
+                let e = layout.add_grid_id(x, s.trim());
+                if let Some(size) = pending_min_size {
+                    result.push(GridData::new_width(last_element, e, size));
+                }
+                if let Some(size) = pending_growth {
+                    result.push(GridData::new_growth(last_element, e, size));
+                }
+                expecting_data = true;
+                last_element = e;
+                pending_min_size = None;
+                pending_growth = None;
+            }
+        }
+        Ok(result)
     }
 
     //mp add_element
@@ -467,6 +536,21 @@ impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Group<'diag> {
         write!(&mut sub, "flags      : {}\n", self.flags)?;
         write!(&mut sub, "width      : {}\n", self.width)?;
         write!(&mut sub, "height     : {}\n", self.height)?;
+        write!(&mut sub, "x cell data\n")?;
+        {
+            let mut sub = sub.sub();
+            for gd in &self.x_cell_data {
+                write!(&mut sub, "{}\n", gd)?;
+            }
+        }
+        write!(&mut sub, "y cell data\n")?;
+        {
+            let mut sub = sub.sub();
+            for gd in &self.y_cell_data {
+                write!(&mut sub, "{}\n", gd)?;
+            }
+        }
+
         for (i, e) in self.content.iter().enumerate() {
             write!(&mut sub, "Element {}\n", i + 1)?;
             let mut sub = sub.sub();
@@ -475,10 +559,6 @@ impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Group<'diag> {
         // pub content : Vec<Element<'a>>,
         // layout : Option<Layout>,
         // layout_record : Option<LayoutRecord>,
-        // minx  : Vec<GridData>,
-        // miny  : Vec<GridData>,
-        // growx : Vec<GridData>,
-        // growy : Vec<GridData>,
 
         Ok(())
     }
