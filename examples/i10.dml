@@ -45,6 +45,11 @@
 ;; the rows are:
 ;; -10     0      10  12       18    20   30       60   70  80     90  100    110
 ;;  .Apps .  Cores .   .syscall.      .vfs. .block. .i1o.    .tcp/ip.    .device.
+;;
+;; gridx = label_l label_r target1_l target1_r apps_l                apps_r target2_l target2_r
+;;                                                apps_sub_1 appr_sub_2
+;;
+;; minx = label_l,12.,label_r , 3., target1_l,20.,target_1_r
 #layout{ grid=1,1
          minx=0,12.,10,3.,20,40.,50,0.,60,12.,80,12.,100,12.,120,0.,130,30.,170
          miny=-10,5.,0,5.,10,5.,12,5.,18,5.,20,5.,30,5.,60,5.,70,5.,80,5.,90,5.,100,5.,110

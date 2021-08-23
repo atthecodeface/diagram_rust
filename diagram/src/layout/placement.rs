@@ -38,7 +38,14 @@ impl Placements {
     }
 
     //fp mp add_element
-    pub fn add_element(&mut self, placement: f64, ref_value: Option<f64>, min: f64, max: f64) {
+    pub fn add_element(
+        &mut self,
+        eref: &str,
+        placement: f64,
+        ref_value: Option<f64>,
+        min: f64,
+        max: f64,
+    ) {
         let ref_value = ref_value.unwrap_or(0.);
         // actual bounds are such that 'ref_value' is at 'placement'
         let min = min + placement - ref_value;

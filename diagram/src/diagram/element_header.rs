@@ -107,6 +107,11 @@ impl<'a> ElementHeader<'a> {
         self.uid = uid;
     }
 
+    //mp get_uid
+    pub fn get_uid(&self) -> usize {
+        self.uid
+    }
+
     //mp get_style_names
     pub fn get_style_names<'z>() -> Vec<&'z str> {
         vec![
@@ -232,20 +237,17 @@ impl<'a> ElementHeader<'a> {
     /// This method is invoked to set the layout of this element in
     /// its parent given a desired geometry of the content.
     ///
-    /// NOT: It returns the desired geometry of the whole element, after
-    /// accounting for content transformation, padding, border and
-    /// margin
-    ///
-    /// INSTEAD: it returns a None rectangle
-    pub fn set_layout_properties(
-        &mut self,
-        layout: &mut Layout,
-        content_desired: Rectangle,
-    ) -> Rectangle {
+    /// It invokes the layout
+    pub fn set_layout_properties(&mut self, layout: &mut Layout, content_desired: Rectangle) {
+        let eref = if let Some(name) = &self.id_name {
+            format!("{} : {}", self.uid, name)
+        } else {
+            format!("{}", self.uid)
+        };
         self.layout
-            .set_layout_box(&mut self.layout_box, content_desired);
+            .set_layout_box(&eref, &mut self.layout_box, content_desired);
         let bbox = self.layout_box.get_desired_bbox();
-        self.layout.set_layout_properties(layout, bbox)
+        self.layout.set_layout_properties(&eref, layout, bbox);
     }
 
     //mp apply_placement

@@ -194,11 +194,9 @@ impl<'a> Element<'a> {
     /// using the `LayoutBox` data to generate the boxed desired
     /// geometry, which is then added to the `Layout` element as a
     /// place or grid desire.
-    ///
-    /// This returns a None rectangle
-    pub fn set_layout_properties(&mut self, layout: &mut Layout) -> Rectangle {
+    pub fn set_layout_properties(&mut self, layout: &mut Layout) {
         let content_rect = self.content.get_desired_geometry(layout);
-        self.header.set_layout_properties(layout, content_rect)
+        self.header.set_layout_properties(layout, content_rect);
     }
 
     //fp apply_placement

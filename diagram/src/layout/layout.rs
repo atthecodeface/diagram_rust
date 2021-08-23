@@ -59,31 +59,46 @@ impl Layout {
     /// end, and a minimum size between them
     pub fn add_grid_element(
         &mut self,
+        eref: &str,
         start: (isize, isize),
         end: (isize, isize),
         size: (f64, f64),
     ) {
-        self.grid_placements.0.add_cell(start.0, end.0, size.0);
-        self.grid_placements.1.add_cell(start.1, end.1, size.1);
+        self.grid_placements
+            .0
+            .add_cell(eref, start.0, end.0, size.0);
+        self.grid_placements
+            .1
+            .add_cell(eref, start.1, end.1, size.1);
     }
 
     //mp add_placed_element
-    pub fn add_placed_element(&mut self, pt: &Point, ref_pt: &Option<Point>, bbox: &Rectangle) {
+    pub fn add_placed_element(
+        &mut self,
+        eref: &str,
+        pt: &Point,
+        ref_pt: &Option<Point>,
+        bbox: &Rectangle,
+    ) {
         self.direct_placements
             .0
-            .add_element(pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
+            .add_element(eref, pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
         self.direct_placements
             .1
-            .add_element(pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
+            .add_element(eref, pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
     }
 
     //mp add_min_cell_data
     pub fn add_min_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
         for cd in x {
-            self.grid_placements.0.add_cell(cd.start, cd.end, cd.size);
+            self.grid_placements
+                .0
+                .add_cell("", cd.start, cd.end, cd.size);
         }
         for cd in y {
-            self.grid_placements.1.add_cell(cd.start, cd.end, cd.size);
+            self.grid_placements
+                .1
+                .add_cell("", cd.start, cd.end, cd.size);
         }
     }
 

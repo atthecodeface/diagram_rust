@@ -131,7 +131,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
     fn get_desired_geometry(&mut self, layout: &mut Layout) -> Rectangle {
         let mut rect = Rectangle::none();
         for e in self.content.iter_mut() {
-            rect = rect.union(&e.set_layout_properties(layout));
+            e.set_layout_properties(layout);
+            // rect = rect.union(&e.set_layout_properties(layout));
         }
         rect
     }

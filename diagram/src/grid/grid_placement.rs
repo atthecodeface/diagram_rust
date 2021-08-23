@@ -80,9 +80,9 @@ impl GridPlacement {
     }
 
     //mp add_cell
-    pub fn add_cell(&mut self, start: isize, end: isize, size: f64) {
+    pub fn add_cell(&mut self, eref: &str, start: isize, end: isize, size: f64) {
         if DEBUG_GRID_PLACEMENT {
-            println!("Add cell {} {} {}", start, end, size);
+            println!("Add cell {} {} {} {}", eref, start, end, size);
         }
         let start = self.ref_of_isize(start);
         let end = self.ref_of_isize(end);
@@ -223,8 +223,8 @@ mod test_grid_placement {
     // #[test]
     fn test_0() {
         let mut gp = GridPlacement::new();
-        gp.add_cell(0, 4, 4.);
-        gp.add_cell(4, 6, 2.);
+        gp.add_cell("", 0, 4, 4.);
+        gp.add_cell("", 4, 6, 2.);
         gp.calculate_positions(0., 0., 0.);
         assert_eq!(gp.get_size(), 6.);
         check_positions(&gp, &vec![(0, -3.), (4, 1.), (6, 3.), (-999, 999.)]);
@@ -235,8 +235,8 @@ mod test_grid_placement {
     // #[test]
     fn test_1() {
         let mut gp = GridPlacement::new();
-        gp.add_cell(0, 4, 4.);
-        gp.add_cell(4, 6, 2.);
+        gp.add_cell("", 0, 4, 4.);
+        gp.add_cell("", 4, 6, 2.);
         gp.add_growth_data(&vec![GridData::new(2, 4, 1.)]);
 
         gp.calculate_positions(0., 0., 0.); // so we can invoke gp.get_size()
@@ -253,7 +253,7 @@ mod test_grid_placement {
     // #[test]
     fn test_2() {
         let mut gp = GridPlacement::new();
-        gp.add_cell(0, 10, 10.);
+        gp.add_cell("", 0, 10, 10.);
         gp.add_growth_data(&vec![
             GridData::new(0, 2, 1.),
             GridData::new(2, 8, 0.),

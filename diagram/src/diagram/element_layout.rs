@@ -257,9 +257,16 @@ impl ElementLayout {
     /// this provides a styling wrapper to provide the information for
     /// the [LayoutBox].
     ///
+    /// eref is a string that identifies the element for human debug
+    ///
     /// When this function returns the [LayoutBox] will have all the
     /// information to provide its desired geometry.
-    pub fn set_layout_box(&self, layout_box: &mut LayoutBox, content_desired: Rectangle) {
+    pub fn set_layout_box(
+        &self,
+        _eref: &str,
+        layout_box: &mut LayoutBox,
+        content_desired: Rectangle,
+    ) {
         let bbox = {
             if self.bbox.is_none() {
                 content_desired
@@ -280,32 +287,30 @@ impl ElementLayout {
     /// element (in terms of size) has been determined, to inform the
     /// parent [Layout] where this is placed or how it is gridded.
     ///
-    /// It returns a None rectangle
+    /// eref is a string that identifies the element for human debug
     ///
     /// The [Layout] can later be interrogated to determine *its*
     /// desired geometry, for hierarchical layout
-    pub fn set_layout_properties(&self, layout: &mut Layout, bbox: Rectangle) -> Rectangle {
+    pub fn set_layout_properties(&self, eref: &str, layout: &mut Layout, bbox: Rectangle) {
         match self.placement {
             LayoutPlacement::None => {
-                layout.add_placed_element(&Point::zero(), &None, &bbox);
-                Rectangle::none()
+                layout.add_placed_element(eref, &Point::zero(), &None, &bbox);
             }
             LayoutPlacement::Grid(sx, sy, ex, ey) => {
-                layout.add_grid_element((sx, sy), (ex, ey), (bbox.width(), bbox.height()));
-                Rectangle::none()
+                layout.add_grid_element(eref, (sx, sy), (ex, ey), (bbox.width(), bbox.height()));
             }
             LayoutPlacement::Place(pt) => {
-                layout.add_placed_element(&pt, &self.ref_pt, &bbox);
-                Rectangle::none()
+                layout.add_placed_element(eref, &pt, &self.ref_pt, &bbox);
             }
         }
     }
 
     //mp display
-    pub fn display(&self, indent_str:&str) {
+    pub fn display(&self, indent_str: &str) {
         println!("{}  ", self.placement);
-        if let Some(pt) = self.ref_pt { println!("{}  ref_pt:", pt); }
-        
+        if let Some(pt) = self.ref_pt {
+            println!("{}  ref_pt:", pt);
+        }
     }
 
     //zz All done
