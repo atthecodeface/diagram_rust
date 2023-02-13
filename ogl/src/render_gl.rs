@@ -1,20 +1,40 @@
+//a Imports
 use gl;
 use std;
 use std::ffi::{CStr, CString};
 
 use gl_model::shader::ShaderClass;
 
+//a Program
+//tp Program
+/// Program
 pub struct Program {
+    /// The GL ID of the program
     id: gl::types::GLuint,
 }
+
+//ip ShaderClass for Program
 impl ShaderClass for Program {
+    //fp get_attr
+    /// Get an attribute from the Program
     fn get_attr(&self, key: &str) -> Option<u32> {
-        if key == "vPosition" { Some(0) } else {None}
+        if key == "vPosition" {
+            Some(0)
+        } else {
+            None
+        }
     }
-    fn get_uniform(&self, _: &str) -> Option<u32> { None }
+
+    //fp get_uniform
+    /// No uniforms are supported so return None for all requests
+    fn get_uniform(&self, _: &str) -> Option<u32> {
+        None
+    }
 }
 
+///ip Program
 impl Program {
+    //fp from_shaders
     pub fn from_shaders(shaders: &[Shader]) -> Result<Program, String> {
         let program_id = unsafe { gl::CreateProgram() };
 
@@ -73,30 +93,39 @@ impl Program {
     }
 }
 
+//ip Drop for Program
 impl Drop for Program {
+    //fp drop
+    /// Drop requires the GLProgram to be deleted
     fn drop(&mut self) {
         unsafe {
             gl::DeleteProgram(self.id);
         }
     }
+
+    //zz All done
 }
 
+//a Shader
+//tp Shader
 pub struct Shader {
+    /// The GL ID of the shader
     id: gl::types::GLuint,
 }
 
+//ip Shader
 impl Shader {
-    pub fn from_source(source: &CStr, kind: gl::types::GLenum) -> Result<Shader, String> {
+    pub fn from_source(source: &CStr, kind: gl::types::GLenum) -> Result<Self, String> {
         let id = shader_from_source(source, kind)?;
-        Ok(Shader { id })
+        Ok(Self { id })
     }
 
-    pub fn from_vert_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::VERTEX_SHADER)
+    pub fn from_vert_source(source: &CStr) -> Result<Self, String> {
+        Self::from_source(source, gl::VERTEX_SHADER)
     }
 
-    pub fn from_frag_source(source: &CStr) -> Result<Shader, String> {
-        Shader::from_source(source, gl::FRAGMENT_SHADER)
+    pub fn from_frag_source(source: &CStr) -> Result<Self, String> {
+        Self::from_source(source, gl::FRAGMENT_SHADER)
     }
 
     pub fn id(&self) -> gl::types::GLuint {
@@ -104,6 +133,7 @@ impl Shader {
     }
 }
 
+//ip Drop for Shader
 impl Drop for Shader {
     fn drop(&mut self) {
         unsafe {
@@ -112,6 +142,8 @@ impl Drop for Shader {
     }
 }
 
+//a Functions
+//fp shader_from_source
 fn shader_from_source(source: &CStr, kind: gl::types::GLenum) -> Result<gl::types::GLuint, String> {
     let id = unsafe { gl::CreateShader(kind) };
     unsafe {
@@ -147,6 +179,7 @@ fn shader_from_source(source: &CStr, kind: gl::types::GLenum) -> Result<gl::type
     Ok(id)
 }
 
+//fp create_whitespace_cstring_with_len
 fn create_whitespace_cstring_with_len(len: usize) -> CString {
     // allocate buffer of correct size
     let mut buffer: Vec<u8> = Vec::with_capacity(len + 1);

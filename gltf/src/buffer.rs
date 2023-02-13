@@ -25,7 +25,7 @@ impl Buffer {
         //    data = self.uri.split(";base64,")[1]
         //    self.data = np.frombuffer(base64.b64decode(data),dtype=np.uint8)
         //   pass
-        //else:
+        // else:
         //    path = Path(self.uri)
         //    with path.open("rb") as f:
         //        data = f.read()
