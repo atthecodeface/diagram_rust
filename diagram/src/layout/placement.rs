@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::{Range};
+use geometry::Range;
 
 //a Types
 //tp Placements
@@ -25,25 +25,25 @@ use geometry::{Range};
 /// placed have a range that they fit within
 #[derive(Debug)]
 pub struct Placements {
-    elements : Vec<Range>
+    elements: Vec<Range>,
 }
 
 //ip Placements
 impl Placements {
-
     //fp new
     pub fn new() -> Self {
-        Self { elements:Vec::new(),
+        Self {
+            elements: Vec::new(),
         }
     }
 
     //fp mp add_element
-    pub fn add_element(&mut self, placement:f64, ref_value:Option<f64>, min:f64, max:f64) {
+    pub fn add_element(&mut self, placement: f64, ref_value: Option<f64>, min: f64, max: f64) {
         let ref_value = ref_value.unwrap_or(0.);
         // actual bounds are such that 'ref_value' is at 'placement'
         let min = min + placement - ref_value;
         let max = max + placement - ref_value;
-        self.elements.push(Range::new(min,max));
+        self.elements.push(Range::new(min, max));
     }
 
     //mp get_desired_geometry
@@ -57,7 +57,7 @@ impl Placements {
                     range = range.union(e);
                 }
                 range
-            },
+            }
         }
     }
 

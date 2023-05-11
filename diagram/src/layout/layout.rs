@@ -17,63 +17,80 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::{Transform, Point, Rectangle};
+use super::Placements;
 use crate::{GridData, GridPlacement};
-use super::{Placements};
+use geometry::{Point, Rectangle, Transform};
 
 //a Constants
-const DEBUG_LAYOUT     : bool = 1 == 0;
+const DEBUG_LAYOUT: bool = 1 == 0;
 
 //a Layout
 //tp Layout
 #[derive(Debug)]
 pub struct Layout {
-    pub grid_placements   : (GridPlacement, GridPlacement),
+    pub grid_placements: (GridPlacement, GridPlacement),
     /// 0. to 1. for each dimension to expand layout to fill its parent
-    pub grid_expand       : (f64, f64),
-    pub direct_placements : (Placements, Placements),
-    pub desired_grid      : Rectangle,
-    pub desired_placement : Rectangle,
-    pub desired_geometry  : Rectangle,
-    content_to_actual : Transform,
+    pub grid_expand: (f64, f64),
+    pub direct_placements: (Placements, Placements),
+    pub desired_grid: Rectangle,
+    pub desired_placement: Rectangle,
+    pub desired_geometry: Rectangle,
+    content_to_actual: Transform,
 }
 
 //ip Layout
 impl Layout {
     pub fn new() -> Self {
-        let grid_placements   = ( GridPlacement::new(), GridPlacement::new() );
-        let direct_placements = ( Placements::new(), Placements::new() );
-        Self { grid_placements, direct_placements,
-               grid_expand : (0., 0.),
-               desired_placement : Rectangle::none(),
-               desired_grid      : Rectangle::none(),
-               desired_geometry  : Rectangle::none(),
-               content_to_actual : Transform::new(),
+        let grid_placements = (GridPlacement::new(), GridPlacement::new());
+        let direct_placements = (Placements::new(), Placements::new());
+        Self {
+            grid_placements,
+            direct_placements,
+            grid_expand: (0., 0.),
+            desired_placement: Rectangle::none(),
+            desired_grid: Rectangle::none(),
+            desired_geometry: Rectangle::none(),
+            content_to_actual: Transform::new(),
         }
     }
 
     //mp add_grid_element
-    pub fn add_grid_element(&mut self, start:(isize,isize), end:(isize,isize), size:(f64,f64)) {
+    /// Add a grid element given two references for each start and
+    /// end, and a minimum size between them
+    pub fn add_grid_element(
+        &mut self,
+        start: (isize, isize),
+        end: (isize, isize),
+        size: (f64, f64),
+    ) {
         self.grid_placements.0.add_cell(start.0, end.0, size.0);
         self.grid_placements.1.add_cell(start.1, end.1, size.1);
     }
 
     //mp add_placed_element
-    pub fn add_placed_element(&mut self, pt:&Point, ref_pt:&Option<Point>, bbox:&Rectangle) {
-        self.direct_placements.0.add_element(pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
-        self.direct_placements.1.add_element(pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
+    pub fn add_placed_element(&mut self, pt: &Point, ref_pt: &Option<Point>, bbox: &Rectangle) {
+        self.direct_placements
+            .0
+            .add_element(pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
+        self.direct_placements
+            .1
+            .add_element(pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
     }
 
     //mp add_min_cell_data
-    pub fn add_min_cell_data(&mut self, x:&Vec<GridData>, y:&Vec<GridData>) {
-        for cd in x { self.grid_placements.0.add_cell_data( cd ); }
-        for cd in y { self.grid_placements.1.add_cell_data( cd ); }
+    pub fn add_min_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
+        for cd in x {
+            self.grid_placements.0.add_cell(cd.start, cd.end, cd.size);
+        }
+        for cd in y {
+            self.grid_placements.1.add_cell(cd.start, cd.end, cd.size);
+        }
     }
 
     //mp add_grow_cell_data
-    pub fn add_grow_cell_data(&mut self, x:&Vec<GridData>, y:&Vec<GridData>) {
-        self.grid_placements.0.add_growth_data( x );
-        self.grid_placements.1.add_growth_data( y );
+    pub fn add_grow_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
+        self.grid_placements.0.add_growth_data(x);
+        self.grid_placements.1.add_growth_data(y);
     }
 
     //mp get_desired_geometry
@@ -85,7 +102,7 @@ impl Layout {
         self.grid_placements.0.calculate_positions(0., 0., 0.);
         self.grid_placements.1.calculate_positions(0., 0., 0.);
 
-        let grid_width  = self.grid_placements.0.get_size();
+        let grid_width = self.grid_placements.0.get_size();
         let grid_height = self.grid_placements.1.get_size();
 
         let place_x_pt = self.direct_placements.0.get_desired_geometry();
@@ -95,7 +112,12 @@ impl Layout {
             if grid_width == 0. || grid_height == 0. {
                 Rectangle::none()
             } else {
-                Rectangle::new( grid_width * -0.5, grid_height * -0.5, grid_width * 0.5, grid_height * 0.5 )
+                Rectangle::new(
+                    grid_width * -0.5,
+                    grid_height * -0.5,
+                    grid_width * 0.5,
+                    grid_height * 0.5,
+                )
             }
         };
         self.desired_placement = {
@@ -112,7 +134,12 @@ impl Layout {
                 self.desired_placement.clone().union(&self.desired_grid)
             }
         };
-        if DEBUG_LAYOUT { println!("Layout has desired geometries of grid:{}, place:{}, union {}", self.desired_grid, self.desired_placement, self.desired_geometry); }
+        if DEBUG_LAYOUT {
+            println!(
+                "Layout has desired geometries of grid:{}, place:{}, union {}",
+                self.desired_grid, self.desired_placement, self.desired_geometry
+            );
+        }
         self.desired_geometry.clone()
     }
 
@@ -120,13 +147,25 @@ impl Layout {
     /// All the placement data must have been provided, and a layout of the box can be performed.
     ///
     /// For any grid within the layout this requires a possibly expansion, plus a translation
-    pub fn layout(&mut self, within:&Rectangle) {// expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<GridCellData>) -> Self {
-        if DEBUG_LAYOUT { println!("Laying out Layout {} : {} : {} within rectangle {}", self.desired_geometry, self.desired_placement, self.desired_grid, within); }
-        let (ac,aw,ah) = within.get_cwh();
-        let (dc,_dw,_dh) = self.desired_geometry.get_cwh();
-        if DEBUG_LAYOUT { println!("Why not centre on ac {}?",ac); }
-        self.grid_placements.0.calculate_positions(aw, 0., self.grid_expand.0);
-        self.grid_placements.1.calculate_positions(ah, 0., self.grid_expand.1);
+    pub fn layout(&mut self, within: &Rectangle) {
+        // expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<GridCellData>) -> Self {
+        if DEBUG_LAYOUT {
+            println!(
+                "Laying out Layout {} : {} : {} within rectangle {}",
+                self.desired_geometry, self.desired_placement, self.desired_grid, within
+            );
+        }
+        let (ac, aw, ah) = within.get_cwh();
+        let (dc, _dw, _dh) = self.desired_geometry.get_cwh();
+        if DEBUG_LAYOUT {
+            println!("Why not centre on ac {}?", ac);
+        }
+        self.grid_placements
+            .0
+            .calculate_positions(aw, 0., self.grid_expand.0);
+        self.grid_placements
+            .1
+            .calculate_positions(ah, 0., self.grid_expand.1);
         self.content_to_actual = Transform::of_translation(ac - dc);
     }
 
@@ -136,34 +175,34 @@ impl Layout {
     }
 
     //mp get_grid_rectangle
-    pub fn get_grid_rectangle(&self, start:(isize,isize), end:(isize,isize)) -> Rectangle {
+    pub fn get_grid_rectangle(&self, start: (isize, isize), end: (isize, isize)) -> Rectangle {
         let (x0, x1) = self.grid_placements.0.get_span(start.0, end.0);
         let (y0, y1) = self.grid_placements.1.get_span(start.1, end.1);
-        Rectangle::new(x0,y0,x1,y1)
+        Rectangle::new(x0, y0, x1, y1)
     }
 
     //mp get_place_rectangle
-    pub fn get_placed_rectangle(&self, _pt:&Point, _ref_pt:&Option<Point>) -> Rectangle {
-        Rectangle::new(0.,0.,10.,10.)
+    pub fn get_placed_rectangle(&self, _pt: &Point, _ref_pt: &Option<Point>) -> Rectangle {
+        Rectangle::new(0., 0., 10., 10.)
     }
 
     //mp get_grid_positions
     /// Used to record the layout so it may, for example, be drawn
     ///
-    pub fn get_grid_positions(&self) -> (Vec<(isize,f64)>,Vec<(isize,f64)>) {
+    pub fn get_grid_positions(&self) -> (Vec<(isize, f64)>, Vec<(isize, f64)>) {
         let mut result = (Vec::new(), Vec::new());
-        for (p,s) in self.grid_placements.0.iter_positions() {
-            result.0.push( (p,s) );
+        for (p, s) in self.grid_placements.0.iter_positions() {
+            result.0.push((p, s));
         }
-        for (p,s) in self.grid_placements.1.iter_positions() {
-            result.1.push( (p,s) );
+        for (p, s) in self.grid_placements.1.iter_positions() {
+            result.1.push((p, s));
         }
         result
     }
 
     //mp display
     // Display with an indent of indent_str plus two spaces
-    pub fn display(&self, indent_str:&str) {
+    pub fn display(&self, indent_str: &str) {
         println!("{}  Layout NOT DONE", indent_str);
     }
     //zz All done
@@ -306,5 +345,3 @@ let get_layout_bbox = Layout.get_bbox
 
 
 */
-
-

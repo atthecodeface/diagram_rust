@@ -24,7 +24,7 @@ use super::layout::Layout;
 /// A type used to preserve the layout for, e.g., display as a grid
 #[derive(Debug)]
 pub struct LayoutRecord {
-    pub grid_positions : Option<(Vec<(isize,f64)>,Vec<(isize,f64)>)>
+    pub grid_positions: Option<(Vec<(isize, f64)>, Vec<(isize, f64)>)>,
 }
 
 //ip LayoutRecord
@@ -33,13 +33,13 @@ impl LayoutRecord {
     /// Create a new layout record
     pub fn new() -> Self {
         Self {
-            grid_positions : None
+            grid_positions: None,
         }
     }
 
     //mp capture_grid
     /// Capture the grid positions from a layout
-    pub fn capture_grid(&mut self, layout:&Layout) {
+    pub fn capture_grid(&mut self, layout: &Layout) {
         self.grid_positions = Some(layout.get_grid_positions());
     }
 
