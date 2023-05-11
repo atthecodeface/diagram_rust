@@ -20,6 +20,11 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use indent_display::{IndentedDisplay, Indenter};
+use stylesheet::{StylableNode, Tree};
+use vg_rs::layout::Layout;
+use vg_rs::BBox;
+
 pub use super::elements::{Group, Path, Shape, Text, Use};
 use super::types::*;
 use super::DiagramElementContent;
@@ -30,10 +35,6 @@ use super::ElementScope;
 use super::IndentOptions;
 use crate::constants::elements as el;
 use crate::DiagramDescriptor;
-use crate::Layout;
-use geometry::Rectangle;
-use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::{StylableNode, Tree};
 
 //a ElementContent - enumerated union of the above
 //tp ElementContent
@@ -182,7 +183,7 @@ impl<'a> ElementContent<'a> {
     }
 
     //mp get_desired_geometry
-    pub fn get_desired_geometry(&mut self, layout: &mut Layout) -> Rectangle {
+    pub fn get_desired_geometry(&mut self, layout: &mut Layout) -> BBox {
         match self {
             Self::Shape(ref mut s) => s.get_desired_geometry(layout),
             Self::Path(ref mut s) => s.get_desired_geometry(layout),
@@ -199,7 +200,7 @@ impl<'a> ElementContent<'a> {
     ///
     /// If the element requires any further layout, that should be performed; certainly its
     /// transformation should be determined
-    pub fn apply_placement(&mut self, layout: &Layout, rect: &Rectangle) {
+    pub fn apply_placement(&mut self, layout: &Layout, rect: &BBox) {
         match self {
             Self::Path(ref mut g) => g.apply_placement(layout, rect),
             Self::Group(ref mut g) => g.apply_placement(layout, rect),

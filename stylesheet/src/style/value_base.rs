@@ -731,3 +731,329 @@ impl TypeValue for BaseValue {
 
     //zz All done
 }
+
+//a NVBTrait
+use std::any::{Any, TypeId};
+pub trait NVBTrait: std::fmt::Debug + 'static {
+    fn as_any(&self) -> &dyn Any;
+    //    fn new(&self) -> Box<Self>;
+    fn new_nvb(&self) -> Box<dyn NVBTrait>;
+    fn count(&self) -> usize;
+    fn is_none(&self) -> bool;
+    fn as_string(&self) -> String;
+    fn get_floats(&self, data: &mut [f64]) -> usize;
+    fn get_ints(&self, data: &mut [isize]) -> usize;
+    fn eq(&self, other: &dyn Any) -> bool {
+        false
+    }
+    fn clone(&self) -> Box<dyn NVBTrait> {
+        self.new_nvb()
+    }
+}
+
+//ip NVBTrait for isize
+impl NVBTrait for isize {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        Box::new(0)
+    }
+    fn count(&self) -> usize {
+        1
+    }
+    fn is_none(&self) -> bool {
+        false
+    }
+    fn as_string(&self) -> String {
+        format!("{}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        if data.len() > 0 {
+            data[0] = *self as f64;
+            1
+        } else {
+            0
+        }
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        if data.len() > 0 {
+            data[0] = *self;
+            1
+        } else {
+            0
+        }
+    }
+}
+
+//ip NVBTrait for [isize; N]
+impl<const N: usize> NVBTrait for [isize; N] {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        Box::new([0; N])
+    }
+    fn count(&self) -> usize {
+        N
+    }
+    fn is_none(&self) -> bool {
+        false
+    }
+    fn as_string(&self) -> String {
+        format!("{:?}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= N {
+                return N;
+            }
+            *d = self[i] as f64;
+        }
+        data.len()
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= N {
+                return N;
+            }
+            *d = self[i];
+        }
+        data.len()
+    }
+}
+
+//ip NVBTrait for Vec<isize>
+impl NVBTrait for Vec<isize> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        let v: Vec<isize> = vec![];
+        Box::new(v)
+    }
+    fn count(&self) -> usize {
+        self.len()
+    }
+    fn is_none(&self) -> bool {
+        self.is_empty()
+    }
+    fn as_string(&self) -> String {
+        format!("{:?}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= self.len() {
+                return self.len();
+            }
+            *d = self[i] as f64;
+        }
+        data.len()
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= self.len() {
+                return self.len();
+            }
+            *d = self[i];
+        }
+        data.len()
+    }
+}
+
+//ip NVBTrait for f64
+impl NVBTrait for f64 {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        Box::new(0)
+    }
+    fn count(&self) -> usize {
+        1
+    }
+    fn is_none(&self) -> bool {
+        false
+    }
+    fn as_string(&self) -> String {
+        format!("{}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        if data.len() > 0 {
+            data[0] = *self;
+            1
+        } else {
+            0
+        }
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        if data.len() > 0 {
+            data[0] = *self as isize;
+            1
+        } else {
+            0
+        }
+    }
+}
+
+//ip NVBTrait for [f64; N]
+impl<const N: usize> NVBTrait for [f64; N] {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        Box::new([0; N])
+    }
+    fn count(&self) -> usize {
+        N
+    }
+    fn is_none(&self) -> bool {
+        false
+    }
+    fn as_string(&self) -> String {
+        format!("{:?}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= N {
+                return N;
+            }
+            *d = self[i];
+        }
+        data.len()
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= N {
+                return N;
+            }
+            *d = self[i] as isize;
+        }
+        data.len()
+    }
+}
+
+//ip NVBTrait for Vec<f64>
+impl NVBTrait for Vec<f64> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    //    fn new(&self) -> Box<Self> {
+    //        Box::new(0)
+    //    }
+    fn new_nvb(&self) -> Box<dyn NVBTrait> {
+        let v: Vec<f64> = vec![];
+        Box::new(v)
+    }
+    fn count(&self) -> usize {
+        self.len()
+    }
+    fn is_none(&self) -> bool {
+        self.is_empty()
+    }
+    fn as_string(&self) -> String {
+        format!("{:?}", self)
+    }
+    fn get_floats(&self, data: &mut [f64]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= self.len() {
+                return self.len();
+            }
+            *d = self[i];
+        }
+        data.len()
+    }
+    fn get_ints(&self, data: &mut [isize]) -> usize {
+        for (i, d) in data.iter_mut().enumerate() {
+            if i >= self.len() {
+                return self.len();
+            }
+            *d = self[i] as isize;
+        }
+        data.len()
+    }
+}
+
+//a Stuff2
+#[derive(Debug)]
+struct NewValueBase2 {
+    value: Box<dyn NVBTrait>,
+}
+impl std::fmt::Display for NewValueBase2 {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        std::fmt::Debug::fmt(&self.value, fmt)
+    }
+}
+impl std::clone::Clone for NewValueBase2 {
+    fn clone(&self) -> Self {
+        let value = self.value.clone();
+        Self { value }
+    }
+}
+impl std::cmp::PartialEq<NewValueBase2> for NewValueBase2 {
+    fn eq(&self, other: &Self) -> bool {
+        self.value.eq(other.value.as_any())
+    }
+}
+impl NewValueBase2 {
+    pub fn new<T: NVBTrait>(value: T) -> Self {
+        let value = Box::new(value);
+        Self { value }
+    }
+    pub fn of_type(&self) -> Self {
+        let value = self.value.new_nvb();
+        Self { value }
+    }
+    pub fn is_type<T: NVBTrait>(&self) -> bool {
+        self.value.as_any().type_id() == TypeId::of::<T>()
+    }
+    pub fn as_t<T: NVBTrait>(&self) -> &T {
+        self.value.as_any().downcast_ref::<T>().unwrap()
+        //            .as_ref()
+    }
+    //    pub fn as_nvb_trait(&self) -> Option<&NVBTrait> {
+    //        None
+    //    }
+}
+
+impl TypeValue for NewValueBase2 {
+    fn new_value(&self) -> Self {
+        self.clone()
+    }
+    fn as_type(&self) -> Self {
+        self.clone()
+    }
+    //mp from_string
+    /// Set the value from a string
+    fn from_string<'a>(&'a mut self, s: &str) -> Result<&'a mut Self, ValueError> {
+        Err(ValueError::bad_value("NYI"))
+    }
+    fn eq_string(&self, s: &str) -> bool {
+        false
+    }
+}
+#[test]
+fn test_2() {
+    let v_isize = NewValueBase2::new(73_isize);
+    let t_isize = v_isize.of_type();
+    assert!(
+        v_isize.is_type::<isize>(),
+        "Expect isize to be of type isize"
+    );
+    assert_eq!(v_isize.as_t::<isize>(), &73, "Expect value to be isize 73");
+}

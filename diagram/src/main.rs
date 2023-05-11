@@ -16,8 +16,9 @@ use diagram::DiagramDescriptor;
 use diagram::DiagramML;
 use diagram::IndentOptions;
 use diagram::Svg;
-use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
+use vg_rs::BBox;
+
 fn exit_on_err<T, U: std::fmt::Display>(result: Result<T, U>) -> T {
     match result {
         Err(e) => {
@@ -135,8 +136,8 @@ fn main() {
     if DEBUG_MAIN {
         println!("Lay out");
     }
-    // exit_on_err( diagram.layout(&Rectangle::new(0.,0.,297.,210.)) );
-    exit_on_err(diagram.layout(&Rectangle::none()));
+    // exit_on_err( diagram.layout(&BBox::new(0.,0.,297.,210.)) );
+    exit_on_err(diagram.layout(&BBox::none()));
     if DEBUG_MAIN {
         println!("Generate geometry");
     }

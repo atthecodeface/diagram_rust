@@ -9,7 +9,7 @@ xml-rs = "0.8.3"
 lazy_static = "1.2.0"
 geo-nd = "0.5"
 indent-display = "0.1"
-geometry    = { path="../geometry", version="0.1.0" }
+vg-rs    = { path="../vg-rs", version="0.1.0" }
 stylesheet  = { path="../stylesheet", version="0.1.0" }
 hml-rs = "0.0.2"
 

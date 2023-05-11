@@ -18,7 +18,7 @@ limitations under the License.
 
 //a Imports
 use geo_nd::Vector;
-use geometry::{BezierPath, Point, Polygon, Rectangle, Transform};
+use vg_rs::{BBox, BezierPath, Point, Polygon, Transform};
 
 //a Useful stuff
 fn pt_as_str(pt: &Point) -> String {
@@ -60,17 +60,18 @@ impl SvgElement {
     //fp add_transform
     pub fn add_transform(&mut self, transform: &Transform) {
         let mut r = String::new();
-        if !transform.translation.is_zero() {
+        if !transform.translation().is_zero() {
             r.push_str(&format!(
                 "translate({:.4} {:.4}) ",
-                transform.translation[0], transform.translation[1]
+                transform.translation()[0],
+                transform.translation()[1]
             ));
         }
-        if transform.rotation != 0. {
-            r.push_str(&format!("rotate({:.4}) ", transform.rotation));
+        if transform.rotation() != 0. {
+            r.push_str(&format!("rotate({:.4}) ", transform.rotation()));
         }
-        if transform.scale != 1. {
-            r.push_str(&format!("scale({:.4}) ", transform.scale));
+        if transform.scale() != 1. {
+            r.push_str(&format!("scale({:.4}) ", transform.scale()));
         }
         if r.len() > 0 {
             self.add_attribute("transform", &r);
@@ -144,18 +145,13 @@ impl SvgElement {
     //fp new_grid
     /// Create a grid element with given region, spacing, line
     /// width and color
-    pub(super) fn new_grid(
-        rect: Rectangle,
-        spacing: f64,
-        line_width: f64,
-        color: &str,
-    ) -> Option<Self> {
-        let xmin = ((rect.x0 / spacing) + 0.).floor() as isize;
-        let xmax = ((rect.x1 / spacing) + 1.).floor() as isize;
+    pub(super) fn new_grid(rect: BBox, spacing: f64, line_width: f64, color: &str) -> Option<Self> {
+        let xmin = ((rect.x.min() / spacing) + 0.).floor() as isize;
+        let xmax = ((rect.x.max() / spacing) + 1.).floor() as isize;
         let xlen = xmax - xmin;
 
-        let ymin = ((rect.y0 / spacing) + 0.).floor() as isize;
-        let ymax = ((rect.y1 / spacing) + 1.).floor() as isize;
+        let ymin = ((rect.y.min() / spacing) + 0.).floor() as isize;
+        let ymax = ((rect.y.max() / spacing) + 1.).floor() as isize;
         let ylen = ymax - ymin;
 
         if xlen < 2 || ylen < 2 {
@@ -165,12 +161,22 @@ impl SvgElement {
         let mut r = String::new();
         for i in xmin..xmax + 1 {
             let coord = (i as f64) * spacing;
-            r.push_str(&format!("M {},{} v {} ", coord, rect.y0, rect.y1 - rect.y0));
+            r.push_str(&format!(
+                "M {},{} v {} ",
+                coord,
+                rect.y.min(),
+                rect.y.max() - rect.y.min()
+            ));
         }
 
         for i in ymin..ymax + 1 {
             let coord = (i as f64) * spacing;
-            r.push_str(&format!("M {},{} h {} ", rect.x0, coord, rect.x1 - rect.x0));
+            r.push_str(&format!(
+                "M {},{} h {} ",
+                rect.x.min(),
+                coord,
+                rect.x.max() - rect.x.min()
+            ));
         }
 
         let mut grid = SvgElement::new("path");

@@ -17,28 +17,19 @@ limitations under the License.
  */
 
 //a Imports
-use super::Bezier;
-use super::Point;
+use crate::{Bezier, Point};
 use geo_nd::Vector;
 
 //a Types
 //tp BezierPath
 /// A path is a set of Beziers that start and end at the same points
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct BezierPath {
     elements: Vec<Bezier>,
 }
 
 //ip BezierPath
 impl BezierPath {
-    //fp new
-    /// Create a new BezierPath
-    pub fn new() -> Self {
-        Self {
-            elements: Vec::new(),
-        }
-    }
-
     //fp of_ellipse
     /// Create a set of paths that make an ellipse
     pub fn of_ellipse(origin: &Point, radius: f64, eccentricity: f64, degrees: f64) -> Self {
@@ -57,7 +48,7 @@ impl BezierPath {
     //fp of_points
     /// Generate a set of Beziers that join the corners
     pub fn of_points(corners: &Vec<Point>, rounding: f64) -> Self {
-        let mut bp = Self::new();
+        let mut bp = Self::default();
         let n = corners.len();
         for i in 0..n {
             let i_0 = (i) % n;

@@ -17,6 +17,11 @@ limitations under the License.
  */
 
 //a Imports
+use geo_nd::Vector;
+use indent_display::{IndentedDisplay, Indenter};
+use vg_rs::layout::Layout;
+use vg_rs::{BBox, Bezier, BezierPath, Point};
+
 use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
@@ -24,10 +29,6 @@ use super::super::{
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-use crate::Layout;
-use geo_nd::Vector;
-use geometry::{Bezier, BezierPath, Point, Rectangle};
-use indent_display::{IndentedDisplay, Indenter};
 
 //a Constants
 const BEZIER_STRAIGHTNESS: f64 = 1E-2;
@@ -152,12 +153,12 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Path {
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
-        Rectangle::of_cwh(self.center, self.width, self.height)
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> BBox {
+        BBox::of_cwh(self.center, self.width, self.height)
     }
 
     //fp apply_placement
-    fn apply_placement(&mut self, _layout: &Layout, rect: &Rectangle) {
+    fn apply_placement(&mut self, _layout: &Layout, rect: &BBox) {
         // Policy decision not to reduce by stroke_width
         // let (c,w,h) = rect.clone().reduce(self.stroke_width).get_cwh();
         let (c, w, h) = rect.get_cwh();
@@ -212,7 +213,7 @@ impl GenerateSvgElement for Path {
         for c in &self.coords {
             coords.push((*c) * scale_xy + self.center);
         }
-        let mut path = BezierPath::new();
+        let mut path = BezierPath::default();
         for i in 0..coords.len() - 1 {
             path.add_bezier(Bezier::line(&coords[i], &coords[i + 1]));
         }

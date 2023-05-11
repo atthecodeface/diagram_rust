@@ -36,4 +36,3 @@ pub use lup_decomposition::LUPDecomposition;
 pub use node::Node;
 pub use resolver::Resolver;
 pub use traits::NodeId;
-

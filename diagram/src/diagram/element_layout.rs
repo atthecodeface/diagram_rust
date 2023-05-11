@@ -20,14 +20,15 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use geo_nd::Vector;
+use indent_display::{IndentedDisplay, Indenter};
+use vg_rs::layout::{Layout, LayoutBox};
+use vg_rs::{BBox, Point};
+
 use super::ElementError;
 use super::ElementHeader;
 use super::IndentOptions;
 use crate::constants::attributes as at;
-use crate::{Layout, LayoutBox};
-use geo_nd::Vector;
-use geometry::{Point, Rectangle};
-use indent_display::{IndentedDisplay, Indenter};
 
 //a ElementLayout
 //tp LayoutPlacement
@@ -59,7 +60,7 @@ pub struct ElementLayout {
     pub placement: LayoutPlacement,
     debug: String,
     pub ref_pt: Option<Point>,
-    bbox: Rectangle,
+    bbox: BBox,
     pub anchor: Point,
     pub expand: Point,
     pub scale: f64,
@@ -81,7 +82,7 @@ impl ElementLayout {
             placement: LayoutPlacement::None,
             debug: "".to_string(),
             ref_pt: None,
-            bbox: Rectangle::none(),
+            bbox: BBox::none(),
             anchor: Point::zero(),
             expand: Point::zero(),
             scale: 1.,
@@ -106,16 +107,16 @@ impl ElementLayout {
             Some(g) => match g.len() {
                 0 => (),
                 1 => {
-                    layout.bbox = Rectangle::of_cwh(Point::zero(), g[0], g[0]);
+                    layout.bbox = BBox::of_cwh(Point::zero(), g[0], g[0]);
                 }
                 2 => {
-                    layout.bbox = Rectangle::of_cwh(Point::zero(), g[0], g[1]);
+                    layout.bbox = BBox::of_cwh(Point::zero(), g[0], g[1]);
                 }
                 3 => {
-                    layout.bbox = Rectangle::of_cwh(Point::from_array([g[0], g[1]]), g[2], g[2]);
+                    layout.bbox = BBox::of_cwh(Point::from_array([g[0], g[1]]), g[2], g[2]);
                 }
                 _ => {
-                    layout.bbox = Rectangle::new(g[0], g[1], g[2], g[3]);
+                    layout.bbox = BBox::new(g[0], g[1], g[2], g[3]);
                 }
             },
             _ => (),
@@ -264,12 +265,7 @@ impl ElementLayout {
     ///
     /// When this function returns the [LayoutBox] will have all the
     /// information to provide its desired geometry.
-    pub fn set_layout_box(
-        &self,
-        _eref: &str,
-        layout_box: &mut LayoutBox,
-        content_desired: Rectangle,
-    ) {
+    pub fn set_layout_box(&self, _eref: &str, layout_box: &mut LayoutBox, content_desired: BBox) {
         let bbox = {
             if self.bbox.is_none() {
                 content_desired
@@ -294,7 +290,7 @@ impl ElementLayout {
     ///
     /// The [Layout] can later be interrogated to determine *its*
     /// desired geometry, for hierarchical layout
-    pub fn set_layout_properties(&self, eref: &str, layout: &mut Layout, bbox: Rectangle) {
+    pub fn set_layout_properties(&self, eref: &str, layout: &mut Layout, bbox: BBox) {
         match &self.placement {
             LayoutPlacement::None => {
                 layout.add_placed_element(eref, &Point::zero(), &None, &bbox);

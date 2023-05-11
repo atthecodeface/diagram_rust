@@ -17,6 +17,10 @@ limitations under the License.
  */
 
 //a Imports
+use indent_display::{IndentedDisplay, Indenter};
+use vg_rs::layout::Layout;
+use vg_rs::BBox;
+
 use super::super::font::*;
 use super::super::text::*;
 use super::super::IndentOptions;
@@ -26,9 +30,6 @@ use super::super::{
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-use crate::Layout;
-use geometry::Rectangle;
-use indent_display::{IndentedDisplay, Indenter};
 
 //a TextError
 //tp TextError
@@ -126,9 +127,9 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Text {
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> BBox {
         let (w, h) = self.text_area.get_bbox();
-        Rectangle::new(0., 0., w, h)
+        BBox::new(0., 0., w, h)
     }
 
     //mp display

@@ -17,6 +17,10 @@ limitations under the License.
  */
 
 //a Imports
+use indent_display::{IndentedDisplay, Indenter};
+use vg_rs::layout::Layout;
+use vg_rs::{BBox, Polygon};
+
 use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
@@ -24,9 +28,6 @@ use super::super::{
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-use crate::Layout;
-use geometry::{Polygon, Rectangle};
-use indent_display::{IndentedDisplay, Indenter};
 
 //a Shape element
 //tp Shape - an Element that contains a polygon (or path?)
@@ -160,7 +161,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Shape {
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> BBox {
         let rect = self.polygon.get_bbox();
         rect.enlarge(self.stroke_width / 2.)
     }

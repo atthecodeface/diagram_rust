@@ -17,6 +17,11 @@ limitations under the License.
  */
 
 //a Imports
+use indent_display::{IndentedDisplay, Indenter};
+use stylesheet::{StylableNode, Tree};
+use vg_rs::layout::Layout;
+use vg_rs::BBox;
+
 use super::super::types::*;
 use super::super::IndentOptions;
 use super::super::{
@@ -25,10 +30,6 @@ use super::super::{
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-use crate::Layout;
-use geometry::Rectangle;
-use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::{StylableNode, Tree};
 
 //a Use element
 //tp Use - an Element that is a reference to a group or other element
@@ -128,8 +129,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, layout: &mut Layout) -> Rectangle {
-        let rect = Rectangle::none();
+    fn get_desired_geometry(&mut self, layout: &mut Layout) -> BBox {
+        let rect = BBox::none();
         for e in self.content.iter_mut() {
             e.set_layout_properties(layout);
             // rect = rect.union(&e.set_layout_properties(layout));
@@ -139,7 +140,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
     }
 
     //fp apply_placement
-    fn apply_placement(&mut self, layout: &Layout, _rect: &Rectangle) {
+    fn apply_placement(&mut self, layout: &Layout, _rect: &BBox) {
         for e in self.content.iter_mut() {
             e.apply_placement(layout);
         }

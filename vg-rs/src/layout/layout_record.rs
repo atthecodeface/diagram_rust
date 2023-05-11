@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    layout.rs
-@brief   Layout of placed items and grids
+@file    layout_record.rs
+@brief   Recording the layout of placed items and grids
  */
 
 //a Imports
 use std::collections::HashMap;
 
-use super::layout::Layout;
+use crate::layout::Layout;
 
 //a LayoutRecord
 //tp LayoutRecord

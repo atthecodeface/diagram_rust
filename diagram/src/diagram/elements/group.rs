@@ -17,22 +17,22 @@ limitations under the License.
  */
 
 //a Imports
-use super::super::IndentOptions;
 use geo_nd::Vector;
-use geometry::{Point, Rectangle};
 use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::{StylableNode, Tree};
+use vg_rs::grid::GridData;
+use vg_rs::layout::{Layout, LayoutRecord};
+use vg_rs::{BBox, Point};
 
+use super::super::IndentOptions;
 use super::super::{
     DiagramDescriptor, DiagramElementContent, Element, ElementError, ElementHeader, ElementScope,
 };
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-use crate::{Layout, LayoutRecord};
 
 use super::super::types::*;
-use crate::GridData;
 
 //a Group element
 //tp GroupType
@@ -61,7 +61,7 @@ pub struct Group<'a> {
     layout_record: Option<LayoutRecord>,
     x_cell_data: Vec<GridData>,
     y_cell_data: Vec<GridData>,
-    bbox: Rectangle,
+    bbox: BBox,
 
     // For markers ONLY
     // Reference point - where the 'end' of the marker is in its content
@@ -97,7 +97,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             layout_record: None,
             x_cell_data: Vec::new(),
             y_cell_data: Vec::new(),
-            bbox: Rectangle::none(),
+            bbox: BBox::none(),
             ref_pt: Point::zero(), // for markers
             relief: (0., 0.),
             flags: 0,
@@ -128,7 +128,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             layout_record: None,
             x_cell_data: Vec::new(),
             y_cell_data: Vec::new(),
-            bbox: Rectangle::none(),
+            bbox: BBox::none(),
             ref_pt: Point::zero(), // for markers
             relief: (0., 0.),
             flags: 0,
@@ -239,7 +239,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, layout: &mut Layout) -> Rectangle {
+    fn get_desired_geometry(&mut self, layout: &mut Layout) -> BBox {
         if let Some(layout) = &mut self.layout {
             for e in self.content.iter_mut() {
                 e.set_layout_properties(layout);
@@ -254,12 +254,12 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             for e in self.content.iter_mut() {
                 e.set_layout_properties(layout);
             }
-            Rectangle::none()
+            BBox::none()
         }
     }
 
     //fp apply_placement
-    fn apply_placement(&mut self, layout: &Layout, rect: &Rectangle) {
+    fn apply_placement(&mut self, layout: &Layout, rect: &BBox) {
         if let Some(layout) = &mut self.layout {
             // println!("Lay out group within {}", rect);
             layout.layout(rect);
@@ -480,10 +480,10 @@ impl<'a> GenerateSvgElement for Group<'a> {
                 "viewBox",
                 &format!(
                     "{} {} {} {}",
-                    self.bbox.x0,
-                    self.bbox.y0,
-                    self.bbox.x1 - self.bbox.x0,
-                    self.bbox.y1 - self.bbox.y0,
+                    self.bbox.x.min(),
+                    self.bbox.y.min(),
+                    self.bbox.x.max() - self.bbox.x.min(),
+                    self.bbox.y.max() - self.bbox.y.min(),
                 ),
             );
             ele.add_size("refX", self.ref_pt[0]);

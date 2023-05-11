@@ -1,5 +1,5 @@
 [package]
-name = "geometry"
+name = "vg-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,4 +9,8 @@ version = "0.5"
 [dependencies.bezier-nd]
 version = "0.5"
 
+[dependencies.thiserror]
+version = "1.0"
 
+[dependencies.indent-display]
+version = "0.1"

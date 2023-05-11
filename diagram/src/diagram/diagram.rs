@@ -17,15 +17,16 @@ limitations under the License.
  */
 
 //a Imports
-use super::types::*;
-use super::IndentOptions;
-use super::{DiagramDescriptor, StyleSheet};
-use super::{Element, ElementError, ElementScope};
-use crate::constants::elements as el;
-use crate::Layout;
-use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::{StylableNode, Tree};
+use vg_rs::layout::Layout;
+use vg_rs::BBox;
+
+use super::types::*;
+use super::{Element, ElementError, ElementScope};
+use crate::constants::elements as el;
+use crate::IndentOptions;
+use crate::{DiagramDescriptor, StyleSheet};
 
 //a DiagramError
 //tp DiagramError
@@ -63,7 +64,7 @@ pub struct DiagramContents<'a> {
     pub definitions: Vec<Element<'a>>,
     pub markers: Vec<Element<'a>>, // All these elements MUST be markers
     pub root_layout: Option<Element<'a>>,
-    pub content_bbox: Rectangle,
+    pub content_bbox: BBox,
 }
 
 //ip DiagramContents
@@ -75,7 +76,7 @@ impl<'a> DiagramContents<'a> {
             definitions: Vec::new(),
             markers: Vec::new(),
             root_layout: None,
-            content_bbox: Rectangle::none(),
+            content_bbox: BBox::none(),
         }
     }
 
@@ -232,7 +233,7 @@ impl<'a> Diagram<'a> {
     /// bbox, which will generate the positions of the grid elements,
     /// and so on
     ///
-    pub fn layout(&mut self, within: &Rectangle) -> Result<(), DiagramError> {
+    pub fn layout(&mut self, within: &BBox) -> Result<(), DiagramError> {
         let mut layout = Layout::new();
         if let Some(element) = &mut self.contents.root_layout {
             element.set_layout_properties(&mut layout);

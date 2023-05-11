@@ -17,10 +17,11 @@ limitations under the License.
  */
 
 //a Imports
+use vg_rs::layout::LayoutRecord;
+use vg_rs::BBox;
+
 use super::super::Diagram;
 use super::{ElementIter, GenerateSvg, SvgElement, SvgError};
-use crate::LayoutRecord;
-use geometry::Rectangle;
 
 //a Svg
 //tp Svg
@@ -141,20 +142,26 @@ impl<'a> Svg<'a> {
         ele.add_attribute("version", &format!("{:.1}", (self.version as f64) / 10.));
         ele.add_attribute(
             "width",
-            &format!("{}mm", contents.content_bbox.x1 - contents.content_bbox.x0),
+            &format!(
+                "{}mm",
+                contents.content_bbox.x.max() - contents.content_bbox.x.min()
+            ),
         );
         ele.add_attribute(
             "height",
-            &format!("{}mm", contents.content_bbox.y1 - contents.content_bbox.y0),
+            &format!(
+                "{}mm",
+                contents.content_bbox.y.max() - contents.content_bbox.y.min()
+            ),
         );
         ele.add_attribute(
             "viewBox",
             &format!(
                 "{} {} {} {}",
-                contents.content_bbox.x0,
-                contents.content_bbox.y0,
-                contents.content_bbox.x1 - contents.content_bbox.x0,
-                contents.content_bbox.y1 - contents.content_bbox.y0,
+                contents.content_bbox.x.min(),
+                contents.content_bbox.y.min(),
+                contents.content_bbox.x.max() - contents.content_bbox.x.min(),
+                contents.content_bbox.y.max() - contents.content_bbox.y.min(),
             ),
         );
         self.push_element(ele);
@@ -171,7 +178,7 @@ impl<'a> Svg<'a> {
 
         if self.show_grid {
             if let Some(ele) =
-                SvgElement::new_grid(Rectangle::new(-100., -100., 100., 100.), 10., 0.1, "grey")
+                SvgElement::new_grid(BBox::new(-100., -100., 100., 100.), 10., 0.1, "grey")
             {
                 self.add_subelement(ele);
             }

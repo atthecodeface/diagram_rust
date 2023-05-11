@@ -20,12 +20,13 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
-pub use super::elements::{Group, Path, Shape, Text, Use};
-use super::{ElementError, ElementHeader, ElementScope};
 use crate::constants::elements as el;
 use crate::DiagramDescriptor;
-use crate::Layout;
-use geometry::Rectangle;
+use vg_rs::layout::Layout;
+use vg_rs::BBox;
+
+pub use super::elements::{Group, Path, Shape, Text, Use};
+use super::{ElementError, ElementHeader, ElementScope};
 
 //a DiagramElementContent trait
 //tp DiagramElementContent
@@ -82,8 +83,8 @@ pub trait DiagramElementContent<'a, 'b>: Sized + std::fmt::Debug {
     /// header + element content) -- by setting their layout
     /// properties -- but does not effect the *content* of a single
     /// element
-    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
-        Rectangle::none()
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> BBox {
+        BBox::none()
     }
 
     //fp apply_placement
@@ -93,7 +94,7 @@ pub trait DiagramElementContent<'a, 'b>: Sized + std::fmt::Debug {
     ///
     /// The rectangle supplied is the content-space rectangle derived
     /// for the content
-    fn apply_placement(&mut self, _layout: &Layout, _rect: &Rectangle) {
+    fn apply_placement(&mut self, _layout: &Layout, _rect: &BBox) {
         // No need to do anything
     }
 

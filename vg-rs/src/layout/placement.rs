@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::Range;
+use crate::Range;
 
 //a Types
 //tp Placements

@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    layout.rs
+@file    layout_box.rs
 @brief   Layout of placed items and grids
  */
 
 //a Imports
+use crate::{BBox, Point, Polygon, Range, Transform};
 use geo_nd::Vector;
-use geometry::{Float4, Point, Polygon, Range, Rectangle, Transform};
 use indent_display::{IndentedDisplay, IndentedOptions, Indenter};
 
 //a Constants
@@ -33,13 +33,13 @@ pub struct LayoutBox {
     /// This indicates how much where to anchor the content within its laid-out space; if the expansion is 1 then this is irrelevant. -1 indicates to the minimum X/Y, +1 indicates to the maximum X/Y
     anchor: Point,
     /// The margin may be specified for each of the four sides - it reduces the laid-out space, with the border within the margin
-    margin: Option<Float4>,
+    margin: Option<[f64; 4]>,
     /// The border is a fixed width all round, and may be 0. for no border; the border is within the laid-out margin, around the padding around the content
     border_width: f64,
     /// The border may be rounded
     border_round: f64,
     /// The padding may be specified for each of the four sides - it reduces the laid-out space for the content within the border
-    padding: Option<Float4>,
+    padding: Option<[f64; 4]>,
     /// The content may be rotated within its laid-out (post-padding) space; it will still be rectangular, so it will be the largest rectangle permitted at the rotation provided by the laid-out rectangle
     content_rotation: f64,
     /// The content may be scaled its space, by a uniform amount in X and Y
@@ -47,17 +47,17 @@ pub struct LayoutBox {
     /// The content reference is a fractional point within the content rectangle; this is required for 'placement'
     content_ref: Option<Point>,
     /// This rectangle specifies in content coordinates the desired rectangle for the content
-    content_desired: Option<Rectangle>,
+    content_desired: Option<BBox>,
     /// This rectangle is derived from the content_desired rectangle by scaling, rotation, padding, adding border, and adding margin
-    outer_desired: Option<Rectangle>,
+    outer_desired: Option<BBox>,
     /// The outer rectangle is provided by the layout - it is the actual laid-out outer rectangle, from which the inner laid-out regions are derived
-    outer: Option<Rectangle>,
+    outer: Option<BBox>,
     /// The border_shape is an optional Polygon (rectangle) that may be drawn with a fill, or a stroke width of `border_width`, to provide the required border
     border_shape: Option<Polygon>,
     /// The inner rectangle is the region into which the rotated, scale content fits
-    inner: Option<Rectangle>,
+    inner: Option<BBox>,
     /// The content rectangle is the content-coordinate space rectangle for the laid-out content
-    content: Option<Rectangle>,
+    content: Option<BBox>,
     /// The content transform maps from the content coordinate system to the layout coordinate system
     content_to_layout: Option<Transform>,
 }
@@ -90,7 +90,7 @@ impl LayoutBox {
     /// Sets the content's desired geometry
     pub fn set_content_geometry(
         &mut self,
-        rect: Rectangle,
+        rect: BBox,
         ref_pt: Point,
         scale: f64,
         rotation: f64,
@@ -116,7 +116,7 @@ impl LayoutBox {
     //fp set_margin
     pub fn set_margin(&mut self, value: &Option<(f64, f64, f64, f64)>) {
         if let Some((x0, y0, x1, y1)) = value.as_ref() {
-            self.margin = Some(Float4::new(*x0, *y0, *x1, *y1));
+            self.margin = Some([*x0, *y0, *x1, *y1]);
         } else {
             self.margin = None;
         }
@@ -125,7 +125,7 @@ impl LayoutBox {
     //fp set_padding
     pub fn set_padding(&mut self, value: &Option<(f64, f64, f64, f64)>) {
         if let Some((x0, y0, x1, y1)) = value.as_ref() {
-            self.padding = Some(Float4::new(*x0, *y0, *x1, *y1));
+            self.padding = Some([*x0, *y0, *x1, *y1]);
         } else {
             self.padding = None;
         }
@@ -143,13 +143,18 @@ impl LayoutBox {
     }
 
     //fp get_desired_bbox
-    pub fn get_desired_bbox(&self) -> Rectangle {
+    pub fn get_desired_bbox(&self) -> BBox {
         let mut rect = {
             match &self.content_desired {
-                None => Rectangle::none(),
-                Some(r) => r
-                    .new_rotated_around(self.content_ref.as_ref().unwrap(), self.content_rotation)
-                    .scale(self.content_scale),
+                None => BBox::none(),
+                Some(bbox) => {
+                    let bbox = bbox.new_rotated_around(
+                        self.content_ref.as_ref().unwrap(),
+                        self.content_rotation,
+                    );
+                    let bbox = bbox * self.content_scale;
+                    bbox
+                }
             }
         };
         rect = self.padding.map_or(rect, |r| rect.expand(&r, 1.));
@@ -295,7 +300,7 @@ impl LayoutBox {
     /// Sets the inner rectangle based on an outer rectangle, allowing for border
     ///
     /// This also creates any border shape required later
-    fn inner_within_outer(&mut self, rectangle: Rectangle) -> () {
+    fn inner_within_outer(&mut self, rectangle: BBox) -> () {
         if DEBUG_LAYOUT_BOX {
             println!(
                 "Create inner within outer rectangle {} {} {}",
@@ -334,14 +339,14 @@ impl LayoutBox {
         let cd = self.content_desired.unwrap();
 
         // Find the inner-scale coordinates for rectangle of content after scaling prior to rotation around centre of inner
-        let di_x_range = Range::new(cd.x0 * self.content_scale, cd.x1 * self.content_scale);
+        let di_x_range = cd.x * self.content_scale;
         let a_x_range = Range::new(ic[0] - aw / 2., ic[0] + aw / 2.);
         let (x_translation, ci_x_range) =
             di_x_range
                 .clone()
                 .fit_within_dimension(&a_x_range, self.anchor[0], self.expansion[0]);
 
-        let di_y_range = Range::new(cd.y0 * self.content_scale, cd.y1 * self.content_scale);
+        let di_y_range = cd.y * self.content_scale;
         let a_y_range = Range::new(ic[1] - ah / 2., ic[1] + ah / 2.);
         let (y_translation, ci_y_range) =
             di_y_range
@@ -359,12 +364,9 @@ impl LayoutBox {
                 di_x_range, di_y_range, a_x_range, a_y_range, ci_x_range, ci_y_range
             );
         }
-        self.content = Some(
-            Rectangle::none()
-                .to_ranges(ci_x_range, ci_y_range)
-                .translate(&Point::from_array([x_translation, y_translation]), -1.)
-                .scale(1.0 / self.content_scale),
-        );
+        let bbox = BBox::of_ranges(ci_x_range, ci_y_range);
+        self.content =
+            Some((bbox - Point::from_array([x_translation, y_translation])) / self.content_scale);
 
         // content_to_layout transform is scale, rotate, and then translate from 0,0 to ic
         let transform = Transform::of_trs(
@@ -372,11 +374,11 @@ impl LayoutBox {
             self.content_rotation,
             self.content_scale,
         );
-        let dc = cd.get_center();
+        let dc = cd.center();
         let t2 = Transform::of_translation(-dc);
-        let transform = transform.apply(&t2);
+        let transform = transform.apply_to_transform(&t2);
         let t2 = Transform::of_translation(dc);
-        let transform = t2.apply(&transform);
+        let transform = t2.apply_to_transform(&transform);
         // if cd.get_center().len() > 0.001 {
         //     println!("Transform of {} for {:?}", transform, cd);
         // }
@@ -386,7 +388,7 @@ impl LayoutBox {
     //mp layout_within_rectangle
     /// Layout the LayoutBox within a specified rectangle within layout coordinate space, generating any border required and the inner geometry,
     /// and the content transformation
-    pub fn layout_within_rectangle(&mut self, rectangle: Rectangle) {
+    pub fn layout_within_rectangle(&mut self, rectangle: BBox) {
         self.inner_within_outer(rectangle);
         self.content_within_inner();
     }
@@ -395,7 +397,7 @@ impl LayoutBox {
     /// Get the content rectangle
     ///
     /// Must only be invoked after layout_within_rectangle has been called
-    pub fn get_content_rectangle(&self) -> Rectangle {
+    pub fn get_content_rectangle(&self) -> BBox {
         self.content.unwrap()
     }
 

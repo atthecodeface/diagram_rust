@@ -19,10 +19,10 @@ limitations under the License.
 //a Imports
 use std::collections::HashMap;
 
-use geometry::{Point, Rectangle, Transform};
+use crate::{BBox, Point, Transform};
 
-use super::Placements;
-use crate::{GridData, GridPlacement};
+use crate::grid::{GridData, GridPlacement};
+use crate::layout::Placements;
 
 //a Constants
 const DEBUG_LAYOUT: bool = 1 == 0;
@@ -35,9 +35,9 @@ pub struct Layout {
     /// 0. to 1. for each dimension to expand layout to fill its parent
     pub grid_expand: (f64, f64),
     pub direct_placements: (Placements, Placements),
-    pub desired_grid: Rectangle,
-    pub desired_placement: Rectangle,
-    pub desired_geometry: Rectangle,
+    pub desired_grid: BBox,
+    pub desired_placement: BBox,
+    pub desired_geometry: BBox,
     refs: (HashMap<String, usize>, HashMap<String, usize>),
     content_to_actual: Transform,
 }
@@ -53,10 +53,10 @@ impl Layout {
             direct_placements,
             grid_expand: (0., 0.),
             refs,
-            desired_placement: Rectangle::none(),
-            desired_grid: Rectangle::none(),
-            desired_geometry: Rectangle::none(),
-            content_to_actual: Transform::new(),
+            desired_placement: BBox::none(),
+            desired_grid: BBox::none(),
+            desired_geometry: BBox::none(),
+            content_to_actual: Transform::default(),
         }
     }
 
@@ -110,14 +110,22 @@ impl Layout {
         eref: &str,
         pt: &Point,
         ref_pt: &Option<Point>,
-        bbox: &Rectangle,
+        bbox: &BBox,
     ) {
-        self.direct_placements
-            .0
-            .add_element(eref, pt[0], ref_pt.map(|pt| pt[0]), bbox.x0, bbox.x1);
-        self.direct_placements
-            .1
-            .add_element(eref, pt[1], ref_pt.map(|pt| pt[1]), bbox.y0, bbox.y1);
+        self.direct_placements.0.add_element(
+            eref,
+            pt[0],
+            ref_pt.map(|pt| pt[0]),
+            bbox.x.min(),
+            bbox.x.max(),
+        );
+        self.direct_placements.1.add_element(
+            eref,
+            pt[1],
+            ref_pt.map(|pt| pt[1]),
+            bbox.y.min(),
+            bbox.y.max(),
+        );
     }
 
     //mp add_cell_data
@@ -131,7 +139,7 @@ impl Layout {
     ///
     /// Any placements provide a true bbox
     /// A grid has a desired width and height, centred on 0,0
-    pub fn get_desired_geometry(&mut self) -> Rectangle {
+    pub fn get_desired_geometry(&mut self) -> BBox {
         let grid_x = self.grid_placements.0.get_desired_geometry();
         let grid_y = self.grid_placements.1.get_desired_geometry();
 
@@ -140,23 +148,23 @@ impl Layout {
 
         self.desired_grid = {
             if grid_x.is_none() || grid_y.is_none() {
-                Rectangle::none()
+                BBox::none()
             } else {
-                Rectangle::none().to_ranges(grid_x, grid_y)
+                BBox::of_ranges(grid_x, grid_y)
             }
         };
         self.desired_placement = {
             if place_x_pt.is_none() || place_y_pt.is_none() {
-                Rectangle::none()
+                BBox::none()
             } else {
-                Rectangle::none().to_ranges(place_x_pt, place_y_pt)
+                BBox::of_ranges(place_x_pt, place_y_pt)
             }
         };
         self.desired_geometry = {
             if self.desired_placement.is_none() {
                 self.desired_grid.clone()
             } else {
-                self.desired_placement.clone().union(&self.desired_grid)
+                self.desired_placement.clone().union(self.desired_grid)
             }
         };
         if DEBUG_LAYOUT {
@@ -172,7 +180,7 @@ impl Layout {
     /// All the placement data must have been provided, and a layout of the box can be performed.
     ///
     /// For any grid within the layout this requires a possibly expansion, plus a translation
-    pub fn layout(&mut self, within: &Rectangle) {
+    pub fn layout(&mut self, within: &BBox) {
         // expand_default:(f64,f64), expand:Vec<(isize,f64)>, cell_data:&'a Vec<GridCellData>) -> Self {
         if DEBUG_LAYOUT {
             println!(
@@ -200,15 +208,15 @@ impl Layout {
     }
 
     //mp get_grid_rectangle
-    pub fn get_grid_rectangle(&self, start: (usize, usize), end: (usize, usize)) -> Rectangle {
+    pub fn get_grid_rectangle(&self, start: (usize, usize), end: (usize, usize)) -> BBox {
         let (x0, x1) = self.grid_placements.0.get_span(start.0, end.0);
         let (y0, y1) = self.grid_placements.1.get_span(start.1, end.1);
-        Rectangle::new(x0, y0, x1, y1)
+        BBox::new(x0, y0, x1, y1)
     }
 
     //mp get_place_rectangle
-    pub fn get_placed_rectangle(&self, _pt: &Point, _ref_pt: &Option<Point>) -> Rectangle {
-        Rectangle::new(0., 0., 10., 10.)
+    pub fn get_placed_rectangle(&self, _pt: &Point, _ref_pt: &Option<Point>) -> BBox {
+        BBox::new(0., 0., 10., 10.)
     }
 
     //mp get_grid_positions

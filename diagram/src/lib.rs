@@ -334,14 +334,9 @@ borderwidth should be the color
 mod constants;
 mod diagram;
 mod diagram_ml;
-mod grid;
-mod layout;
-
-pub(crate) use grid::{GridData, GridPlacement};
 
 pub(crate) use self::diagram::{DiagramContents, StyleRule, StyleSheet};
-pub(crate) use layout::{Layout, LayoutBox, LayoutRecord};
 
-pub use self::diagram::{Diagram, DiagramDescriptor, IndentOptions};
-pub use self::diagram::{GenerateSvg, Svg};
+pub use diagram::{Diagram, DiagramDescriptor, IndentOptions};
+pub use diagram::{GenerateSvg, Svg};
 pub use diagram_ml::{DiagramML, MLErrorList};

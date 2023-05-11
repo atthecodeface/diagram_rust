@@ -20,6 +20,13 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
+use crate::constants::elements as el;
+use crate::DiagramDescriptor;
+use indent_display::{IndentedDisplay, Indenter};
+use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
+use stylesheet::{StylableNode, Tree};
+use vg_rs::layout::Layout;
+
 use super::elements::{Group, Path, Shape, Text, Use};
 use super::types::*;
 use super::DiagramElementContent;
@@ -27,12 +34,6 @@ use super::ElementContent;
 use super::ElementError;
 use super::ElementHeader;
 use super::ElementScope;
-use crate::constants::elements as el;
-use crate::DiagramDescriptor;
-use crate::Layout;
-use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
 
 //a Element
 //tp Element

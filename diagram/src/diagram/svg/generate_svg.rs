@@ -17,10 +17,12 @@ limitations under the License.
  */
 
 //a Imports
+use std::collections::HashMap;
+
+use vg_rs::layout::LayoutRecord;
+
 use super::super::{Element, ElementContent, ElementHeader};
 use super::{Svg, SvgElement, SvgError};
-use crate::LayoutRecord;
-use std::collections::HashMap;
 
 //a GenerateSvg, GenerateSvgElement
 //pt GenerateSvgElement

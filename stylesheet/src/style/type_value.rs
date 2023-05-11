@@ -17,30 +17,21 @@ limitations under the License.
  */
 
 //a Imports
+use thiserror::Error;
 
 //a Value error
 //tp ValueError
-#[derive(std::fmt::Debug)]
+#[derive(Error, Debug)]
 pub enum ValueError {
-    BadValue(String),
+    #[error("Bad value {reason}")]
+    BadValue { reason: String },
 }
 
 //ti ValueError
 impl ValueError {
-    pub fn bad_value(s: &str) -> Self {
-        Self::BadValue(s.to_string())
-    }
-}
-
-//ti Display for ValueError
-//ip std::fmt::Display for ValueError
-impl std::fmt::Display for ValueError {
-    //mp fmt - format a ValueError for display
-    /// Display the ValueError
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::BadValue(s) => write!(f, "Bad value '{}'", s),
-        }
+    pub fn bad_value<I: Into<String>>(s: I) -> Self {
+        let reason = s.into();
+        Self::BadValue { reason }
     }
 }
 

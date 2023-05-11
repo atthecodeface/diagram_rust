@@ -20,6 +20,11 @@ limitations under the License.
 const DEBUG_ELEMENT_HEADER: bool = 1 == 0;
 
 //a Imports
+use indent_display::{IndentedDisplay, Indenter};
+use stylesheet::StylableNode;
+use vg_rs::layout::{Layout, LayoutBox};
+use vg_rs::BBox;
+
 use super::types::*;
 use super::ElementError;
 use super::ElementScope;
@@ -27,10 +32,6 @@ use super::{ElementLayout, LayoutPlacement};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
 use crate::DiagramDescriptor;
-use crate::{Layout, LayoutBox};
-use geometry::Rectangle;
-use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::StylableNode;
 
 //a ElementHeader
 //tp ElementHeader
@@ -236,7 +237,7 @@ impl<'a> ElementHeader<'a> {
     /// its parent given a desired geometry of the content.
     ///
     /// It invokes the layout
-    pub fn set_layout_properties(&mut self, layout: &mut Layout, content_desired: Rectangle) {
+    pub fn set_layout_properties(&mut self, layout: &mut Layout, content_desired: BBox) {
         let eref = if let Some(name) = &self.id_name {
             format!("{} : {}", self.uid, name)
         } else {
@@ -257,9 +258,9 @@ impl<'a> ElementHeader<'a> {
     /// performed.
     ///
     /// After this has been invoked the content for the element will
-    /// have its placement applied using the [Rectangle] that this
+    /// have its placement applied using the [BBox] that this
     /// method returns.
-    pub fn apply_placement(&mut self, layout: &Layout) -> Rectangle {
+    pub fn apply_placement(&mut self, layout: &Layout) -> BBox {
         let rect = {
             match &self.layout.placement {
                 LayoutPlacement::None => self.layout_box.get_desired_bbox(),

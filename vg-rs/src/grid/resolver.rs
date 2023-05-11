@@ -19,9 +19,10 @@ limitations under the License.
 //a To do
 
 //a Imports
-use super::{EquationSet, Link, Node, NodeId};
-use geometry::Range;
 use std::collections::{HashMap, HashSet};
+
+use crate::grid::{EquationSet, Link, Node, NodeId};
+use crate::Range;
 
 //a Global constants for debug
 const DEBUG_CELL_DATA: bool = 1 == 0;
@@ -420,9 +421,9 @@ impl<N: NodeId> Resolver<N> {
             for (node_id, node) in self.nodes.iter() {
                 if node.has_position() {
                     let p = node.get_position();
-                    if p <= bounds.min + epsilon {
+                    if p <= bounds.min() + epsilon {
                         result.push((*node_id, false));
-                    } else if p >= bounds.max - epsilon {
+                    } else if p >= bounds.max() - epsilon {
                         result.push((*node_id, true));
                     }
                 }

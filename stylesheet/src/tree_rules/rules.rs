@@ -47,22 +47,13 @@ pub enum RuleResult {
 impl RuleResult {
     pub fn new(depth: usize, matched: bool, sideways: bool, max_depth: usize) -> Self {
         let downwards = (max_depth == 0) || (depth < max_depth);
-        if matched {
-            if downwards && sideways {
-                Self::MatchPropagateAgain
-            } else if downwards {
-                Self::MatchPropagateChildren
-            } else if sideways {
-                Self::MatchEndAgain
-            } else {
-                Self::MatchEndChildren
-            }
-        } else {
-            if downwards {
-                Self::MismatchPropagate
-            } else {
-                Self::MismatchEnd
-            }
+        match (matched, downwards, sideways) {
+            (true, true, true) => Self::MatchPropagateAgain,
+            (true, true, false) => Self::MatchPropagateChildren,
+            (true, false, true) => Self::MatchEndAgain,
+            (true, _, _) => Self::MatchEndChildren,
+            (_, true, _) => Self::MismatchPropagate,
+            _ => Self::MismatchEnd,
         }
     }
 }

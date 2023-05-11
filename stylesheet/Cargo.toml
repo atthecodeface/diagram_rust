@@ -1,9 +1,10 @@
 [package]
 name = "stylesheet"
 version = "0.1.0"
+edition = "2021"
 
 [dependencies]
 num = "0.3"
 regex = "1"
 lazy_static = "1.2.0"
-
+thiserror = "1.0"

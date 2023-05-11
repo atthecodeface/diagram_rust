@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use super::{GridCellDataEntry, GridData, Resolver};
-use geometry::Range;
+use crate::grid::{GridCellDataEntry, GridData, Resolver};
+use crate::Range;
 
 //a Global constants for debug
 const DEBUG_GRID_PLACEMENT: bool = 1 == 1;
@@ -110,7 +110,7 @@ impl GridPlacement {
         self.desired_range = self.resolver.find_bounds();
         self.size = self.desired_range.size();
         // Centre on the origin
-        self.desired_range = self.desired_range.add(-self.size * 0.5);
+        self.desired_range -= self.size * 0.5;
         self.desired_range
     }
 
