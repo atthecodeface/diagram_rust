@@ -342,6 +342,6 @@ pub(crate) use grid::{GridData, GridPlacement};
 pub(crate) use self::diagram::{DiagramContents, StyleRule, StyleSheet};
 pub(crate) use layout::{Layout, LayoutBox, LayoutRecord};
 
-pub use self::diagram::{Diagram, DiagramDescriptor};
+pub use self::diagram::{Diagram, DiagramDescriptor, IndentOptions};
 pub use self::diagram::{GenerateSvg, Svg};
 pub use diagram_ml::{DiagramML, MLErrorList};
