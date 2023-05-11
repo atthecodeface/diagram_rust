@@ -24,17 +24,16 @@ Make ParseError be of hml::ReaderError<R:Reader> then it will include the span
  */
 
 //a Imports
+mod diagram_ml;
 mod error;
 mod error_list;
-mod name_ids;
 mod ml_event;
 mod ml_reader;
-mod diagram_ml;
-pub use name_ids::{NameIds, KnownName};
+mod name_ids;
 pub use error::{MLError, MLResult};
 pub use error_list::MLErrorList;
-pub use ml_reader::MLReader;
 pub use ml_event::MLReadElement;
+pub use ml_reader::MLReader;
+pub use name_ids::{KnownName, NameIds};
 
 pub use diagram_ml::DiagramML;
-

@@ -17,11 +17,11 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{Diagram};
-use super::{MLReader};
-use hml_rs::names::{Namespace};
-use hml_rs::reader::Reader    as HmlReader;
-use hml_rs::string::Reader    as StringReader;
+use super::MLReader;
+use crate::Diagram;
+use hml_rs::names::Namespace;
+use hml_rs::reader::Reader as HmlReader;
+use hml_rs::string::Reader as StringReader;
 
 //a DiagramML
 //tp DiagramML
@@ -47,7 +47,7 @@ pub struct DiagramML<'a, 'diag> {
 }
 
 //ip DiagramML
-impl <'a, 'diag> DiagramML<'a, 'diag> {
+impl<'a, 'diag> DiagramML<'a, 'diag> {
     //fp new
     /// Create a new mark-up diagram reader `DiagramML`, for the provided diagram.
     ///
@@ -57,19 +57,27 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
     /// It is possible that the reader will support including other
     /// files within a file being read; this will require the reader
     /// to invoke a new reader with the new file.
-    pub fn new(d:&'a mut Diagram<'diag>) -> Self {
-        Self { diagram:d }
+    pub fn new(d: &'a mut Diagram<'diag>) -> Self {
+        Self { diagram: d }
     }
 
     //mp read_file
     /// Read a file as HML (currently), using its contents to build
     /// the `Diagram` that this reader is constructing.
-    pub fn read_file<F:std::io::Read>(&mut self, mut f:F, is_library:bool) -> Result<(), Vec<String>> {
+    pub fn read_file<F: std::io::Read>(
+        &mut self,
+        mut f: F,
+        is_library: bool,
+    ) -> Result<(), Vec<String>> {
         let mut namespace = Namespace::new(true);
         let mut contents = String::new();
         let mut reader = {
             match StringReader::of_file(&mut f, &mut contents) {
-                Err(e) => { let mut r=Vec::new(); r.push(format!("{}",e)); return Err(r);},
+                Err(e) => {
+                    let mut r = Vec::new();
+                    r.push(format!("{}", e));
+                    return Err(r);
+                }
                 Ok(x) => x,
             }
         };
@@ -82,17 +90,19 @@ impl <'a, 'diag> DiagramML<'a, 'diag> {
                     let mut s = String::new();
                     use std::fmt::Write;
                     if let Some(span) = e.borrow_span() {
-                        reader.fmt_context(&mut s, span.start(), span.end()).unwrap();
+                        reader
+                            .fmt_context(&mut s, span.start(), span.end())
+                            .unwrap();
                         e.write_without_span(&mut s).unwrap();
-                        write!(&mut s, " at {}", span.start() ).unwrap();
+                        write!(&mut s, " at {}", span.start()).unwrap();
                     } else {
                         write!(&mut s, "{}", e).unwrap();
                     }
                     r.push(s);
                 }
                 Err(r)
-            },
-            _ => Ok(())
+            }
+            _ => Ok(()),
         }
     }
 
@@ -108,8 +118,8 @@ mod tests {
         let style_set = DiagramDescriptor::create_style_set();
         let diagram_descriptor = DiagramDescriptor::new(&style_set);
         let mut diagram = Diagram::new(&diagram_descriptor);
-        let mut dml     = DiagramML::new(&mut diagram);
-        dml.read_file("#diagram".as_bytes(),false).unwrap();
+        let mut dml = DiagramML::new(&mut diagram);
+        dml.read_file("#diagram".as_bytes(), false).unwrap();
         let (_, contents, _) = diagram.borrow_contents_descriptor();
         assert_eq!(0, contents.definitions.len());
     }
