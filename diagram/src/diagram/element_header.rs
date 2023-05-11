@@ -152,7 +152,7 @@ impl <'a> ElementHeader <'a> {
     //mp get_style_strings_of_name
     pub fn get_style_strings_of_name(&self, name:&str) -> StyleValue {
         match self.get_opt_style_value_of_name(name) {
-            None        => StyleValue::string_array(),
+            None        => StyleValue::string_array("",true),
             Some(value) => value,
         }
     }

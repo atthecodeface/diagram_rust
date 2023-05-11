@@ -81,7 +81,7 @@ impl <'a> DiagramDescriptor<'a> {
             .add_type(at::COORDS,      StyleValue::float_array(), false)
             .add_type(at::ROUND,       StyleValue::float(None),   true)
             .add_type(at::STELLATE,    StyleValue::float(None),   true)
-            .add_type(at::MARKERS,     StyleValue::string_array(),  true)
+            .add_type(at::MARKERS,     StyleValue::string_array("",true),  true)
             .add_type(at::FONT,        StyleValue::string(None),  true)
             .add_type(at::FONTSIZE,    StyleValue::float(None),   true)
             .add_type(at::FONTWEIGHT,  StyleValue::string(None),  true)
