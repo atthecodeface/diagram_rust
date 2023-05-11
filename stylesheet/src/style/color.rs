@@ -26,12 +26,12 @@ Garamond (serif)
 Courier New (monospace)
 Brush Script MT (cursive)
 
-      
+
 
  */
 
 use std::collections::HashMap;
-const COLOR_DICTIONARY : [(u32, &str);147] = [
+const COLOR_DICTIONARY: [(u32, &str); 147] = [
     (0xfff8f0, "aliceblue"),
     (0xd7ebfa, "antiquewhite"),
     (0xffff00, "aqua"),
@@ -181,74 +181,88 @@ const COLOR_DICTIONARY : [(u32, &str);147] = [
     (0x32cd9a, "yellowgreen"),
 ];
 
-lazy_static!{
-    static ref COLOR_OF_RGB: HashMap<u32, &'static str>  = COLOR_DICTIONARY.iter().map(|(a,b)| (*a,*b)).collect();
-    static ref COLOR_OF_NAME: HashMap<&'static str, u32> = COLOR_DICTIONARY.iter().map(|(a,b)| (*b,*a)).collect();
+lazy_static! {
+    static ref COLOR_OF_RGB: HashMap<u32, &'static str> =
+        COLOR_DICTIONARY.iter().map(|(a, b)| (*a, *b)).collect();
+    static ref COLOR_OF_NAME: HashMap<&'static str, u32> =
+        COLOR_DICTIONARY.iter().map(|(a, b)| (*b, *a)).collect();
 }
 
-pub fn rgb_of_name(s:&str) -> Option<&'static u32> {
+pub fn rgb_of_name(s: &str) -> Option<&'static u32> {
     COLOR_OF_NAME.get(s)
 }
 
-pub fn name_of_rgb(rgb:u32) -> Option<&'static str> {
+pub fn name_of_rgb(rgb: u32) -> Option<&'static str> {
     match COLOR_OF_RGB.get(&rgb) {
         None => None,
-        Some(c) => Some(*c)
+        Some(c) => Some(*c),
     }
 }
 
-pub fn as_floats(rgb:u32, v:&mut Vec<f64>) -> () {
-    let (r,g,b) = ( (  (rgb>> 0) & 0xff) as f64,
-                      ((rgb>> 8) & 0xff) as f64,
-                      ((rgb>>16) & 0xff) as f64,
+pub fn as_floats(rgb: u32, v: &mut Vec<f64>) -> () {
+    let (r, g, b) = (
+        ((rgb >> 0) & 0xff) as f64,
+        ((rgb >> 8) & 0xff) as f64,
+        ((rgb >> 16) & 0xff) as f64,
     );
-    while v.len()<3 { v.push(0.); }
-    v[0] = r/255.; v[1] = g/255.; v[2] = b/255.;
+    while v.len() < 3 {
+        v.push(0.);
+    }
+    v[0] = r / 255.;
+    v[1] = g / 255.;
+    v[2] = b / 255.;
 }
 
-pub fn as_u32(rgb:&Vec<f64>) -> u32 {
+pub fn as_u32(rgb: &Vec<f64>) -> u32 {
     match rgb.len() {
         0 => 0,
-        1 => ((rgb[0]*255.) as u32) * 0x010101,
-        2 => (((rgb[0]*255.) as u32) << 0) | (((rgb[1]*255.) as u32) << 8) | (((rgb[0]*255.) as u32) << 16),
-        _ => (((rgb[0]*255.) as u32) << 0) | (((rgb[1]*255.) as u32) << 8) | (((rgb[2]*255.) as u32) << 16),
+        1 => ((rgb[0] * 255.) as u32) * 0x010101,
+        2 => {
+            (((rgb[0] * 255.) as u32) << 0)
+                | (((rgb[1] * 255.) as u32) << 8)
+                | (((rgb[0] * 255.) as u32) << 16)
+        }
+        _ => {
+            (((rgb[0] * 255.) as u32) << 0)
+                | (((rgb[1] * 255.) as u32) << 8)
+                | (((rgb[2] * 255.) as u32) << 16)
+        }
     }
 }
 
-pub fn as_string(rgb:u32) -> String {
+pub fn as_string(rgb: u32) -> String {
     match name_of_rgb(rgb) {
         Some(s) => s.to_string(),
-        None    => format!("#{:06x}",rgb),
+        None => format!("#{:06x}", rgb),
     }
 }
 
 //fp of_string
-pub fn of_string(s:&str) -> Option<u32> {
+pub fn of_string(s: &str) -> Option<u32> {
     match rgb_of_name(s) {
         Some(rgb) => Some(*rgb),
-        None      => {
-            if s.bytes().nth(0)!=Some(35) {
+        None => {
+            if s.bytes().nth(0) != Some(35) {
                 None
             } else {
                 let short_rgb = s.len() < 7;
-                match u32::from_str_radix(s.split_at(1).1,16) {
+                match u32::from_str_radix(s.split_at(1).1, 16) {
                     Ok(rgb) => {
                         if short_rgb {
                             let b = (rgb >> 8) & 0xf;
                             let g = (rgb >> 4) & 0xf;
                             let r = (rgb >> 0) & 0xf;
-                            let rgb = (b <<20) | (b<<16) |
-                            (g<<12) | (g<<8) |
-                            (r<< 4) | (r<<0);
+                            let rgb =
+                                (b << 20) | (b << 16) | (g << 12) | (g << 8) | (r << 4) | (r << 0);
                             Some(rgb)
                         } else {
                             Some(rgb & 0xffffff)
                         }
-                    },
+                    }
                     _ => None,
                 }
             }
-        },
+        }
     }
 }
 
@@ -258,22 +272,34 @@ mod tests {
     use super::*;
     #[test]
     fn test_of_string() {
-        assert_eq!( Some(0x000000), of_string("black")       ,"mismatch in black");
-        assert_eq!( Some(0x000000), of_string("#0")          ,"mismatch in #0");
-        assert_eq!( Some(0x000000), of_string("#0000000")    ,"mismatch in #0000000");
-        assert_eq!( Some(0x000000), of_string("#000000000")  ,"mismatch in #000000000");
-        assert_eq!( Some(0xffffff), of_string("white")       ,"mismatch in white");
-        assert_eq!( Some(0x012345), of_string("#012345")     ,"mismatch in #012345");
-        assert_eq!( Some(0x234567), of_string("#01234567")   ,"mismatch in #01234567");
-        assert_eq!( None,           of_string("#0123456789") ,"mismatch in #0123456789");
-        assert_eq!( Some(0x0000ff), of_string("red")         ,"mismatch in red");
-        assert_eq!( Some(0x00ff00), of_string("lime")        ,"mismatch in lime");
-        assert_eq!( Some(0xff0000), of_string("blue")        ,"mismatch in blue");
+        assert_eq!(Some(0x000000), of_string("black"), "mismatch in black");
+        assert_eq!(Some(0x000000), of_string("#0"), "mismatch in #0");
+        assert_eq!(
+            Some(0x000000),
+            of_string("#0000000"),
+            "mismatch in #0000000"
+        );
+        assert_eq!(
+            Some(0x000000),
+            of_string("#000000000"),
+            "mismatch in #000000000"
+        );
+        assert_eq!(Some(0xffffff), of_string("white"), "mismatch in white");
+        assert_eq!(Some(0x012345), of_string("#012345"), "mismatch in #012345");
+        assert_eq!(
+            Some(0x234567),
+            of_string("#01234567"),
+            "mismatch in #01234567"
+        );
+        assert_eq!(None, of_string("#0123456789"), "mismatch in #0123456789");
+        assert_eq!(Some(0x0000ff), of_string("red"), "mismatch in red");
+        assert_eq!(Some(0x00ff00), of_string("lime"), "mismatch in lime");
+        assert_eq!(Some(0xff0000), of_string("blue"), "mismatch in blue");
     }
     #[test]
     fn test_as_string() {
-        assert_eq!( "black", as_string(0x000000) );
-        assert_eq!( "coral", as_string(0x507fff) );
-        assert_eq!( "#507ffe", as_string(0x507ffe) );
+        assert_eq!("black", as_string(0x000000));
+        assert_eq!("coral", as_string(0x507fff));
+        assert_eq!("#507ffe", as_string(0x507ffe));
     }
 }

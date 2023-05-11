@@ -17,50 +17,50 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::HashMap;
 use crate::TypeValue;
+use std::collections::HashMap;
 
 //tp NamedTypeSet
 #[derive(Debug)]
-pub struct NamedTypeSet<V:TypeValue> {
-    set:HashMap<String,(V,bool)>
+pub struct NamedTypeSet<V: TypeValue> {
+    set: HashMap<String, (V, bool)>,
 }
 
 //ti std::fmt::Display for NamedTypeSet
-impl <V:TypeValue> std::fmt::Display for NamedTypeSet< V> {
+impl<V: TypeValue> std::fmt::Display for NamedTypeSet<V> {
     //mp fmt - format for display
     /// Display the style id
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for (name,(value,inheritable)) in self.set.iter() {
+        for (name, (value, inheritable)) in self.set.iter() {
             write!(f, "   {} => {}:{}\n", name, inheritable, value.as_type())?;
         }
         Ok(())
     }
-    
+
     //zz All done
 }
 
 //ti NamedTypeSet
-impl < V:TypeValue> NamedTypeSet< V> {
+impl<V: TypeValue> NamedTypeSet<V> {
     //fp new
     /// Create a new set
     pub fn new() -> Self {
         Self {
-            set : HashMap::new(),
+            set: HashMap::new(),
         }
     }
 
     //cp add_type
     /// Constructor to add a new named type to the set, and indicated
     /// whether it is inherited from a parent
-    pub fn add_type(mut self, s:&str, value:V, inheritable:bool) -> Self {
+    pub fn add_type(mut self, s: &str, value: V, inheritable: bool) -> Self {
         self.set.insert(s.to_string(), (value, inheritable));
         self
     }
-    
+
     //cp borrow_type
     /// Borrow a type from the set, if it is there, and whether it is inheritable
-    pub fn borrow_type(&self, s:&str) -> Option<(&V, bool)> {
+    pub fn borrow_type(&self, s: &str) -> Option<(&V, bool)> {
         match self.set.get(s) {
             Some((value, inheritable)) => Some((value, *inheritable)),
             _ => None,
@@ -69,4 +69,3 @@ impl < V:TypeValue> NamedTypeSet< V> {
 
     //zz All done
 }
-

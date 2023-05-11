@@ -27,7 +27,7 @@ pub enum ValueError {
 
 //ti ValueError
 impl ValueError {
-    pub fn bad_value(s:&str) -> Self {
+    pub fn bad_value(s: &str) -> Self {
         Self::BadValue(s.to_string())
     }
 }
@@ -39,11 +39,10 @@ impl std::fmt::Display for ValueError {
     /// Display the ValueError
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Self::BadValue(s) => write!(f, "Bad value '{}'", s)
+            Self::BadValue(s) => write!(f, "Bad value '{}'", s),
         }
     }
 }
-
 
 //a TypeValue trait
 //tp TypeValue
@@ -56,13 +55,11 @@ impl std::fmt::Display for ValueError {
 /// the other direction, creating a new value from an actual (possibly
 /// unset, or 'no value') value.
 ///
-pub trait TypeValue : std::fmt::Display + std::fmt::Debug + Clone + PartialEq + Sized {
+pub trait TypeValue: std::fmt::Display + std::fmt::Debug + Clone + PartialEq + Sized {
     fn new_value(&self) -> Self;
     fn as_type(&self) -> Self;
     //mp from_string
     /// Set the value from a string
-    fn from_string<'a>(&'a mut self, s:&str) -> Result<&'a mut Self,ValueError>;
-    fn eq_string(&self, s:&str) -> bool;
-    
+    fn from_string<'a>(&'a mut self, s: &str) -> Result<&'a mut Self, ValueError>;
+    fn eq_string(&self, s: &str) -> bool;
 }
-

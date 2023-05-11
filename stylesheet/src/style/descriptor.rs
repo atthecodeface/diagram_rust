@@ -17,18 +17,22 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{TypeValue, NamedTypeSet};
+use crate::{NamedTypeSet, TypeValue};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 #[derive(Debug)]
-pub struct Descriptor<'a, V:TypeValue> {
+pub struct Descriptor<'a, V: TypeValue> {
     pub style_set: &'a NamedTypeSet<V>,
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
-    pub state_classes : Vec<(String,  Vec<(String,isize)>)>,
+    pub state_classes: Vec<(String, Vec<(String, isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
-    pub styles : Vec<(String, V /* as type and default value */, bool /* is inheritable by default? */)>,
+    pub styles: Vec<(
+        String,
+        V,    /* as type and default value */
+        bool, /* is inheritable by default? */
+    )>,
 }
 
 /* styles was this:
@@ -69,10 +73,14 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-impl <'a, V:TypeValue> Descriptor<'a, V> {
+impl<'a, V: TypeValue> Descriptor<'a, V> {
     //fp new
-    pub fn new(style_set:&'a NamedTypeSet<V>) -> Self {
-        Self { style_set, state_classes:Vec::new(), styles:Vec::new() }
+    pub fn new(style_set: &'a NamedTypeSet<V>) -> Self {
+        Self {
+            style_set,
+            state_classes: Vec::new(),
+            styles: Vec::new(),
+        }
     }
 
     //fp new_rrc
@@ -83,20 +91,24 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
      */
 
     //cp add_style
-    pub fn add_style(&mut self, name:&str ) -> () {
+    pub fn add_style(&mut self, name: &str) -> () {
         let (value, inheritable) = {
             match self.style_set.borrow_type(name) {
-                None     => {
-                    panic!("Failed to add style {} as it is not in NamedTypeSet  {}\n",name,self.style_set);
-                },
+                None => {
+                    panic!(
+                        "Failed to add style {} as it is not in NamedTypeSet  {}\n",
+                        name, self.style_set
+                    );
+                }
                 Some(vi) => vi,
             }
         };
-        self.styles.push( (name.to_string(), value.as_type(), inheritable) );
+        self.styles
+            .push((name.to_string(), value.as_type(), inheritable));
     }
 
     //mp add_styles
-    pub fn add_styles(&mut self, names:Vec<&str> ) -> () {
+    pub fn add_styles(&mut self, names: Vec<&str>) -> () {
         for name in names {
             self.add_style(name);
         }
@@ -112,7 +124,7 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
     }
 
     //mp clone_style_value_array
-    pub fn clone_style_value_array(&self, values:&Vec<(bool, V)>) -> Vec<(bool, V)> {
+    pub fn clone_style_value_array(&self, values: &Vec<(bool, V)>) -> Vec<(bool, V)> {
         let mut result = Vec::new();
         for v in values.iter() {
             result.push(v.clone());
@@ -121,10 +133,12 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str) -> Option<usize> {
-        let mut n=0;
+    pub fn find_style_index(&self, s: &str) -> Option<usize> {
+        let mut n = 0;
         for (sn, _, _) in &self.styles {
-            if sn==s { return Some(n); }
+            if sn == s {
+                return Some(n);
+            }
             n += 1
         }
         None
@@ -132,4 +146,3 @@ impl <'a, V:TypeValue> Descriptor<'a, V> {
 
     //zz All done
 }
-

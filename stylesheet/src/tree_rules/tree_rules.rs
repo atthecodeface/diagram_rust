@@ -18,11 +18,11 @@ limitations under the License.
 
 //a Imports
 use super::bitmask::{BitMask, BitMaskU32, BitMaskU64, BitMaskX};
-use super::rules::{RuleResult, RuleFn, Action, RuleSet};
-use super::tree::{TreeIterOp};
+use super::rules::{Action, RuleFn, RuleResult, RuleSet};
+use super::tree::TreeIterOp;
 
 //a Global constants for debug
-const DEBUG_RULE_TREE      : bool = 1 == 0;
+const DEBUG_RULE_TREE: bool = 1 == 0;
 
 //a TreeApplicator
 //tp TreeApplicator
@@ -45,53 +45,73 @@ const DEBUG_RULE_TREE      : bool = 1 == 0;
 /// supports an arbitrary number of rules using, for example, an array
 /// of bitmasks.
 pub struct TreeApplicator<'a, V, A, F, M>
-where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
+where
+    V: std::fmt::Debug,
+    A: Action<V>,
+    F: RuleFn<V>,
+    M: BitMask,
+{
     /// The rules that this tree can handle
-    rules        : &'a RuleSet<V, A, F>,
-    num_rules    : usize,
-    active_stack : Vec<M>,
+    rules: &'a RuleSet<V, A, F>,
+    num_rules: usize,
+    active_stack: Vec<M>,
 }
 
 //ip TreeApplicator
-impl <'a, V, A, F, M> TreeApplicator<'a, V, A, F, M>
-where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
+impl<'a, V, A, F, M> TreeApplicator<'a, V, A, F, M>
+where
+    V: std::fmt::Debug,
+    A: Action<V>,
+    F: RuleFn<V>,
+    M: BitMask,
+{
     //fp new
     /// Create a new TreeApplicator consuming a given RuleSet
-    pub fn new(rules:&'a RuleSet<V, A, F>) -> Self {
+    pub fn new(rules: &'a RuleSet<V, A, F>) -> Self {
         let num_rules = rules.num_rules();
         let mut active_stack = Vec::new();
         let mut active_mask = M::new(num_rules);
         for i in 0..num_rules {
-            if rules.is_toplevel(i) { active_mask.set(i); }
+            if rules.is_toplevel(i) {
+                active_mask.set(i);
+            }
         }
         active_stack.push(active_mask);
-        Self { rules, num_rules, active_stack }
+        Self {
+            rules,
+            num_rules,
+            active_stack,
+        }
     }
 
     //mi try_rules
     /// Try applying the active rules in the set to a node
     ///
-    /// 
-    fn try_rules(&mut self, mut active_mask:M, node:&mut V) {
-        if DEBUG_RULE_TREE {println!("Try mask {:?} to node content {:?}", active_mask, node);}
+    ///
+    fn try_rules(&mut self, mut active_mask: M, node: &mut V) {
+        if DEBUG_RULE_TREE {
+            println!("Try mask {:?} to node content {:?}", active_mask, node);
+        }
         let depth = self.active_stack.len();
         let mut result_mask = active_mask.clone(self.num_rules);
         for i in 0..self.num_rules {
             if active_mask.is_set(i) {
                 let action = {
                     let result = self.rules.apply(i, depth, node);
-                    if DEBUG_RULE_TREE {println!("Apply rule {} yields result {}", i, result);}
+                    if DEBUG_RULE_TREE {
+                        println!("Apply rule {} yields result {}", i, result);
+                    }
                     match result {
                         // No match, and dont propagate so clear mask bit
                         RuleResult::MismatchEnd => {
                             result_mask.clear(i);
                             false
-                        },
+                        }
                         // No match, but propagate so leave mask bit
                         RuleResult::MismatchPropagate => {
                             // no action
                             false
-                        },
+                        }
                         // Match, and propagate just child rules to child nodes
                         RuleResult::MatchEndChildren => {
                             for j in self.rules.iter_children(i) {
@@ -99,14 +119,14 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
                             }
                             result_mask.clear(i);
                             true
-                        },
+                        }
                         // Match, and dont propagate this and child rules to child nodes
                         RuleResult::MatchPropagateChildren => {
                             for j in self.rules.iter_children(i) {
                                 result_mask.set(*j);
                             }
                             true
-                        },
+                        }
                         // Match, and propagate just child rules to this and child nodes
                         RuleResult::MatchEndAgain => {
                             for j in self.rules.iter_children(i) {
@@ -114,14 +134,14 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
                             }
                             result_mask.clear(i);
                             true
-                        },
+                        }
                         // Match, and propagate this and child rules to this and child nodes
                         RuleResult::MatchPropagateAgain => {
                             for j in self.rules.iter_children(i) {
                                 active_mask.set(*j); // so that it child rules will apply to this node
                             }
                             true
-                        },
+                        }
                     }
                 };
                 if action {
@@ -129,7 +149,13 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
                 }
             }
         }
-        if DEBUG_RULE_TREE {println!("Depth after matching now {} with mask {:?}", self.active_stack.len()+1, result_mask);}
+        if DEBUG_RULE_TREE {
+            println!(
+                "Depth after matching now {} with mask {:?}",
+                self.active_stack.len() + 1,
+                result_mask
+            );
+        }
         self.active_stack.push(result_mask);
     }
 
@@ -137,7 +163,7 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
     /// This handles a tree operation returned by a Tree::iter_tree()
     ///
     /// The stack is maintained as:
-    /// 
+    ///
     ///   .. gp parent last_node
     ///
     /// A Push operation leads to:
@@ -153,33 +179,32 @@ where V:std::fmt::Debug, A:Action<V>, F: RuleFn<V>, M:BitMask {
     ///   .. parent last_node
     ///
     /// And no children is a nop (in a sense it is push and pop)
-    /// 
+    ///
     ///   .. gp parent last_node
     ///
-    pub fn handle_tree_op(&mut self, top:TreeIterOp<&mut V>) {
+    pub fn handle_tree_op(&mut self, top: TreeIterOp<&mut V>) {
         match top {
-            TreeIterOp::Push(node)    => {
+            TreeIterOp::Push(node) => {
                 let n = self.active_stack.len();
-                let am = self.active_stack[n-1].clone(self.num_rules);
+                let am = self.active_stack[n - 1].clone(self.num_rules);
                 self.try_rules(am, node) // will push updated am
             }
             TreeIterOp::Sibling(node) => {
                 self.active_stack.pop().unwrap();
                 let n = self.active_stack.len();
-                let am = self.active_stack[n-1].clone(self.num_rules);
+                let am = self.active_stack[n - 1].clone(self.num_rules);
                 self.try_rules(am, node) // will push updated am
-            },
-            TreeIterOp::Pop        => {
+            }
+            TreeIterOp::Pop => {
                 self.active_stack.pop();
-                if DEBUG_RULE_TREE {println!("Pop to depth {}", self.active_stack.len());}
+                if DEBUG_RULE_TREE {
+                    println!("Pop to depth {}", self.active_stack.len());
+                }
             }
-            TreeIterOp::NoChildren => {
-            }
+            TreeIterOp::NoChildren => {}
         };
-        
     }
 }
-
 
 //tp TreeApplicator32, TreeApplicator64
 /// An instance of the TreeApplicator that works for up to 32 rules
@@ -194,28 +219,33 @@ pub type TreeApplicatorX<'a, T, A, F> = TreeApplicator<'a, T, A, F, BitMaskX>;
 //tm Test code
 #[cfg(test)]
 mod test_ruleset {
-    use crate::Tree;
     use super::*;
+    use crate::Tree;
     #[derive(Debug)]
     struct UsizeNode {
-        pub value : usize,
-        pub liked : bool,
+        pub value: usize,
+        pub liked: bool,
     }
     impl UsizeNode {
-        fn new(value:usize) -> Self {
-            Self { value, liked:false }
+        fn new(value: usize) -> Self {
+            Self {
+                value,
+                liked: false,
+            }
         }
     }
-    struct ActionUsize <'a> {
-        callback : Box<dyn Fn(&UsizeNode)->bool + 'a>,
+    struct ActionUsize<'a> {
+        callback: Box<dyn Fn(&UsizeNode) -> bool + 'a>,
     }
-    impl <'a> ActionUsize<'a> {
-        pub fn new(callback: impl Fn(&UsizeNode)->bool + 'a) -> Self {
-            Self { callback:Box::new(callback) }
+    impl<'a> ActionUsize<'a> {
+        pub fn new(callback: impl Fn(&UsizeNode) -> bool + 'a) -> Self {
+            Self {
+                callback: Box::new(callback),
+            }
         }
     }
     impl Action<UsizeNode> for ActionUsize<'_> {
-        fn apply(&self, _rule:usize, _depth:usize, value:&mut UsizeNode)  {
+        fn apply(&self, _rule: usize, _depth: usize, value: &mut UsizeNode) {
             if (self.callback)(value) {
                 value.liked = true;
             }
@@ -223,29 +253,29 @@ mod test_ruleset {
     }
     #[derive(Default)]
     pub struct UsizeRule {
-        min_value : usize,
-        max_value : usize,
-        mask : usize,
-        value : usize,
+        min_value: usize,
+        max_value: usize,
+        mask: usize,
+        value: usize,
     }
     impl UsizeRule {
         pub fn new() -> Self {
-            let result : Self = std::default::Default::default();
+            let result: Self = std::default::Default::default();
             result
         }
-        pub fn range(mut self, min_value:usize, max_value:usize) -> Self {
+        pub fn range(mut self, min_value: usize, max_value: usize) -> Self {
             self.min_value = min_value;
             self.max_value = max_value;
             self
         }
-        pub fn mask_value(mut self, mask:usize, value:usize) -> Self {
-            self.mask =  mask;
+        pub fn mask_value(mut self, mask: usize, value: usize) -> Self {
+            self.mask = mask;
             self.value = value;
             self
         }
     }
     impl RuleFn<UsizeNode> for UsizeRule {
-        fn apply(&self, _depth:usize, value:&UsizeNode) -> RuleResult {
+        fn apply(&self, _depth: usize, value: &UsizeNode) -> RuleResult {
             if self.min_value < self.max_value {
                 if value.value >= self.min_value && value.value < self.max_value {
                     RuleResult::MatchPropagateChildren
@@ -262,7 +292,7 @@ mod test_ruleset {
         }
     }
     impl RuleFn<usize> for UsizeRule {
-        fn apply(&self, _depth:usize, value:&usize) -> RuleResult {
+        fn apply(&self, _depth: usize, value: &usize) -> RuleResult {
             if self.min_value < self.max_value {
                 if *value >= self.min_value && *value < self.max_value {
                     RuleResult::MatchPropagateChildren
@@ -281,18 +311,27 @@ mod test_ruleset {
     #[test]
     fn test_apply() {
         let mut rules = RuleSet::new();
-        let act_0 = rules.add_action(ActionUsize::new(|s| {println!("like this {} {}",s.value, s.liked);false}));
-        let act_1 = rules.add_action(ActionUsize::new(|s| {println!("Really like this - odd inside ancestor with range 0 to 3 - {} {}",s.value, s.liked);true}));
-        let rule_0 = rules.add_rule(None, UsizeRule::new().range(0,4),      Some(act_0));
-        rules.add_rule(Some(rule_0), UsizeRule::new().mask_value(1,1), Some(act_1));
+        let act_0 = rules.add_action(ActionUsize::new(|s| {
+            println!("like this {} {}", s.value, s.liked);
+            false
+        }));
+        let act_1 = rules.add_action(ActionUsize::new(|s| {
+            println!(
+                "Really like this - odd inside ancestor with range 0 to 3 - {} {}",
+                s.value, s.liked
+            );
+            true
+        }));
+        let rule_0 = rules.add_rule(None, UsizeRule::new().range(0, 4), Some(act_0));
+        rules.add_rule(Some(rule_0), UsizeRule::new().mask_value(1, 1), Some(act_1));
         {
-            let mut root    = UsizeNode::new(16);
-            let mut group0  = UsizeNode::new(0); // liked
+            let mut root = UsizeNode::new(16);
+            let mut group0 = UsizeNode::new(0); // liked
             let mut node0_0 = UsizeNode::new(1); // liked and really liked
             let mut node0_1 = UsizeNode::new(2); // liked
             let mut node0_2 = UsizeNode::new(4);
             let mut node0_3 = UsizeNode::new(8);
-            let mut group1  = UsizeNode::new(4);
+            let mut group1 = UsizeNode::new(4);
             let mut node1_0 = UsizeNode::new(1); // liked
             let mut node1_1 = UsizeNode::new(2); // liked
             let mut node1_2 = UsizeNode::new(4);
@@ -316,16 +355,18 @@ mod test_ruleset {
             let mut iter = tree.it_create();
             loop {
                 match tree.it_next(&mut iter) {
-                    Some (n) => applicator.handle_tree_op(n.map(|(_,x)| tree.borrow_mut(x))),
-                    None => {break;},
+                    Some(n) => applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x))),
+                    None => {
+                        break;
+                    }
                 }
             }
             for top in tree.iter_tree() {
-                top.as_option().map(|(depth,n)| println!("{} {:?}",depth, n.borrow()));
+                top.as_option()
+                    .map(|(depth, n)| println!("{} {:?}", depth, n.borrow()));
             }
         }
         // FIXME make this a useful test
         // assert!(false);
     }
 }
-

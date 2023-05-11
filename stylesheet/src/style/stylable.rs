@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{TypeValue, ValueError, Descriptor};
-use crate::{RuleResult, RuleFn, Action};
+use crate::{Action, RuleFn, RuleResult};
+use crate::{Descriptor, TypeValue, ValueError};
 
 //tp StylableNode
 /// A `StylableNode` is an element that is part of a hierarchy of elements, which
@@ -38,7 +38,7 @@ use crate::{RuleResult, RuleFn, Action};
 ///
 /// ```
 #[derive(Debug)]
-pub struct StylableNode<'a, V:TypeValue>{
+pub struct StylableNode<'a, V: TypeValue> {
     /// The `parent` of a node is the parent in the hierarchy; this is
     /// required to provide inheritance by a child of style values
     /// from its parent
@@ -49,31 +49,31 @@ pub struct StylableNode<'a, V:TypeValue>{
     // children              : Vec<RrcStylableNode<'a, V>>,
     /// The descriptor provides the description of the styles required by the node
     // descriptor            : RrcDescriptor<V>,
-    descriptor            : &'a Descriptor<'a, V>,
+    descriptor: &'a Descriptor<'a, V>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
-    pub(crate) id_name               : Option<String>,
+    pub(crate) id_name: Option<String>,
     /// node_type is the type of the element, such as 'line' or 'circle'; it may be used in rules.
-    pub(crate) node_type             : String,
-    /// classes is an array of class names that the element belongs to, the styles of all 
+    pub(crate) node_type: String,
+    /// classes is an array of class names that the element belongs to, the styles of all
     /// of which may be used to specify style values; it may be used in rules.
-    pub(crate) classes               : Vec<String>,
+    pub(crate) classes: Vec<String>,
     /// `extra_sids` provides values for a stylesheet that do *not*
     /// belong to the node, but may be inherited by children of the
     /// node
-    pub(crate) extra_sids            : Vec<(String, V)>,
+    pub(crate) extra_sids: Vec<(String, V)>,
     /// `values` contains the nodes values for each of the styles in
     /// the descriptor; it contains bool and value, the bool
     /// indicating whether it is set by the node or not
-    pub(crate) values                : Vec<(bool, V)>,
+    pub(crate) values: Vec<(bool, V)>,
     /// state is a vector the same length as the descriptor.state_classes
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
     /// this has a 1-to-1 correspondence with descriptor.state_classes
-    pub(crate) state                 : Vec<isize>,
+    pub(crate) state: Vec<isize>,
     // style_change_callback : t_style_change_callback,
 }
 
-impl <'a, V:TypeValue> StylableNode<'a, V> {
+impl<'a, V: TypeValue> StylableNode<'a, V> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
     /// any name_values that are not specific to the node descriptor, but that are permitted by the stylesheet, are added as 'extra_value's
@@ -81,35 +81,39 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new(node_type:&str, descriptor:&'a Descriptor<V>) -> Self { 
+    pub fn new(node_type: &str, descriptor: &'a Descriptor<V>) -> Self {
         let extra_sids = Vec::new();
-        let classes    = Vec::new();
-        let values     = descriptor.build_style_value_array();
-        let id_name    = None;
+        let classes = Vec::new();
+        let values = descriptor.build_style_value_array();
+        let id_name = None;
         Self {
             descriptor,
             extra_sids,
             values,
             id_name,
-            state:       Vec::new(),
-            node_type:   node_type.to_string(),
+            state: Vec::new(),
+            node_type: node_type.to_string(),
             classes,
         }
     }
 
     //fp clone
-    pub fn clone(&self, id_name:&str) -> Self {
-        let extra_sids = self.extra_sids.iter().map(|(s,v)| (s.clone(),v.clone())).collect();
-        let classes    = self.classes.iter().map(|s| s.clone()).collect();
-        let values     = self.descriptor.clone_style_value_array(&self.values);
-        let id_name    = Some(id_name.to_string());
+    pub fn clone(&self, id_name: &str) -> Self {
+        let extra_sids = self
+            .extra_sids
+            .iter()
+            .map(|(s, v)| (s.clone(), v.clone()))
+            .collect();
+        let classes = self.classes.iter().map(|s| s.clone()).collect();
+        let values = self.descriptor.clone_style_value_array(&self.values);
+        let id_name = Some(id_name.to_string());
         let node = Self {
             descriptor: self.descriptor,
             extra_sids,
             values,
             id_name,
-            state:       Vec::new(),
-            node_type:   self.node_type.clone(),
+            state: Vec::new(),
+            node_type: self.node_type.clone(),
             classes,
         };
         node
@@ -119,16 +123,16 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
     pub fn borrow_id(&self) -> Option<&str> {
         match &self.id_name {
             None => None,
-            Some(s) => Some(s)
+            Some(s) => Some(s),
         }
     }
-    
+
     //mp add_name_value
-    pub fn add_name_value(&mut self, name:&str, value:&str) -> Result<(),ValueError> {
-        if name=="id" {
+    pub fn add_name_value(&mut self, name: &str, value: &str) -> Result<(), ValueError> {
+        if name == "id" {
             self.id_name = Some(value.to_string());
             Ok(())
-        } else if name=="class" {
+        } else if name == "class" {
             for s in value.split_whitespace() {
                 self.classes.push(s.to_string());
             }
@@ -140,35 +144,42 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
         } else if let Some((v, _inheritable)) = self.descriptor.style_set.borrow_type(name) {
             let mut v = v.new_value();
             v.from_string(value)?;
-            self.extra_sids.push((name.to_string(),v));
+            self.extra_sids.push((name.to_string(), v));
             Ok(())
         } else {
-            Err(ValueError::bad_value(&format!("name '{}' has no known value type in style set",name)))
+            Err(ValueError::bad_value(&format!(
+                "name '{}' has no known value type in style set",
+                name
+            )))
         }
     }
 
     //mp find_style_index -- was find_sid_index(_exn)
-    pub fn find_style_index(&self, s:&str) -> Option<usize> {
+    pub fn find_style_index(&self, s: &str) -> Option<usize> {
         // println!("Find style index {} {}",s,self.values.len());
         match self.descriptor.find_style_index(s) {
             Some(n) => Some(n),
             None => {
                 let mut n = self.descriptor.styles.len();
                 for (sn, _) in &self.extra_sids {
-                    if sn==s { return Some(n); }
+                    if sn == s {
+                        return Some(n);
+                    }
                     n += 1
                 }
                 None
-            },
+            }
         }
     }
 
     //mp override_values
-    pub fn override_values(&mut self, other:&Self) {
+    pub fn override_values(&mut self, other: &Self) {
         for c in &other.classes {
             let mut found = false;
             for s in &self.classes {
-                if s == c { found = true; }
+                if s == c {
+                    found = true;
+                }
             }
             if !found {
                 self.classes.push(c.clone());
@@ -179,24 +190,31 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                 self.values[n].1 = value.clone();
                 self.values[n].0 = true;
             } else {
-                self.extra_sids.push( (name.clone(), value.clone()) );
+                self.extra_sids.push((name.clone(), value.clone()));
             }
         }
     }
 
     //mp has_id
-    pub fn has_id(&self, s:&str) -> bool {
-        match &self.id_name { Some(id) => s == id, None => false }
+    pub fn has_id(&self, s: &str) -> bool {
+        match &self.id_name {
+            Some(id) => s == id,
+            None => false,
+        }
     }
 
     //mp has_class
-    pub fn has_class(&self, s:&str) -> bool {
-        for c in &self.classes { if c==s {return true;} }
+    pub fn has_class(&self, s: &str) -> bool {
+        for c in &self.classes {
+            if c == s {
+                return true;
+            }
+        }
         false
     }
 
     //mp borrow_style_value_of_name
-    pub fn get_style_value_of_name(&self, s:&str) -> Option<&V> {
+    pub fn get_style_value_of_name(&self, s: &str) -> Option<&V> {
         match self.find_style_index(s) {
             None => None,
             Some(n) => {
@@ -204,14 +222,14 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                 if n < nv {
                     Some(&self.values[n].1)
                 } else {
-                    Some(&self.extra_sids[n-nv].1)
+                    Some(&self.extra_sids[n - nv].1)
                 }
-            },
+            }
         }
     }
 
     //mp borrow_mut_style_value_of_name
-    pub fn borrow_mut_style_value_of_name(&mut self, s:&str) -> Option<&mut V> {
+    pub fn borrow_mut_style_value_of_name(&mut self, s: &str) -> Option<&mut V> {
         match self.find_style_index(s) {
             None => None,
             Some(n) => {
@@ -219,41 +237,41 @@ impl <'a, V:TypeValue> StylableNode<'a, V> {
                 if n < nv {
                     Some(&mut self.values[n].1)
                 } else {
-                    Some(&mut self.extra_sids[n-nv].1)
+                    Some(&mut self.extra_sids[n - nv].1)
                 }
-            },
+            }
         }
     }
 
     /*
-    //mp get_value_ref
-    pub fn get_value_ref(&self, sheet, s:&str) ->  {
-        let sid = style_id_of_name_exn s sheet in
-            let sindex = find_sid_index_exn sid t in
-            t.values.(sindex)
-    }
+        //mp get_value_ref
+        pub fn get_value_ref(&self, sheet, s:&str) ->  {
+            let sid = style_id_of_name_exn s sheet in
+                let sindex = find_sid_index_exn sid t in
+                t.values.(sindex)
+        }
 
-    (*f get_value *)
-        let get_value t sheet (s:string) =
-        Value_ref.get_value (get_value_ref t sheet s)
-*/
+        (*f get_value *)
+            let get_value t sheet (s:string) =
+            Value_ref.get_value (get_value_ref t sheet s)
+    */
 
     //zz All done
 }
 
 //a Action
 #[derive(Debug)]
-pub struct StylableNodeAction <V:TypeValue> {
-    values : Vec<(String, V)>,
+pub struct StylableNodeAction<V: TypeValue> {
+    values: Vec<(String, V)>,
 }
-impl <V:TypeValue> StylableNodeAction<V> {
-    pub fn new(values:Vec<(String, V)>) -> Self {
+impl<V: TypeValue> StylableNodeAction<V> {
+    pub fn new(values: Vec<(String, V)>) -> Self {
         Self { values }
     }
 }
-impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<V> {
-    fn apply(&self, _rule:usize, _depth:usize, value:&mut StylableNode<'a, V>)  {
-        for (n,v) in &self.values {
+impl<'a, V: TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<V> {
+    fn apply(&self, _rule: usize, _depth: usize, value: &mut StylableNode<'a, V>) {
+        for (n, v) in &self.values {
             if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
                 *x = v.clone();
             }
@@ -264,39 +282,52 @@ impl <'a, V:TypeValue> Action<StylableNode<'a, V>> for StylableNodeAction<V> {
 //a StylableNodeRule
 #[derive(Debug)]
 pub struct StylableNodeRule {
-    id_matches : Option<String>,
-    has_class  : Option<String>,
-    sideways   : bool,
-    propagate_depth : usize,
+    id_matches: Option<String>,
+    has_class: Option<String>,
+    sideways: bool,
+    propagate_depth: usize,
 }
 impl StylableNodeRule {
     pub fn new() -> Self {
-        Self { id_matches:None, has_class:None, sideways:false, propagate_depth:0 }
+        Self {
+            id_matches: None,
+            has_class: None,
+            sideways: false,
+            propagate_depth: 0,
+        }
     }
-    pub fn sideways(mut self, sideways:bool) -> Self {
+    pub fn sideways(mut self, sideways: bool) -> Self {
         self.sideways = sideways;
         self
     }
-    pub fn max_depth(mut self, depth:usize) -> Self {
+    pub fn max_depth(mut self, depth: usize) -> Self {
         self.propagate_depth = depth;
         self
     }
-    pub fn has_id(mut self, s:&str) -> Self {
+    pub fn has_id(mut self, s: &str) -> Self {
         self.id_matches = Some(s.to_string());
         self
     }
-    pub fn has_class(mut self, s:&str) -> Self {
+    pub fn has_class(mut self, s: &str) -> Self {
         self.has_class = Some(s.to_string());
         self
     }
 }
-impl <'a, V:TypeValue> RuleFn<StylableNode<'a, V>> for StylableNodeRule {
-    fn apply(&self, depth:usize, value:&StylableNode<'a, V>) -> RuleResult {
+impl<'a, V: TypeValue> RuleFn<StylableNode<'a, V>> for StylableNodeRule {
+    fn apply(&self, depth: usize, value: &StylableNode<'a, V>) -> RuleResult {
         let matched = {
-            if let Some(s) = self.id_matches.as_ref() { value.has_id(s) } else { false }
+            if let Some(s) = self.id_matches.as_ref() {
+                value.has_id(s)
+            } else {
+                false
+            }
         };
         let matched = matched || {
-            if let Some(s) = self.has_class.as_ref() { value.has_class(s) } else { false }
+            if let Some(s) = self.has_class.as_ref() {
+                value.has_class(s)
+            } else {
+                false
+            }
         };
         RuleResult::new(depth, matched, self.sideways, self.propagate_depth)
     }
@@ -328,5 +359,5 @@ impl <'a, V:TypeValue> RuleFn<StylableNode<'a, V>> for StylableNodeRule {
   Array.iteri set_inheritance t.values;
   t
 }
-        
+
 */

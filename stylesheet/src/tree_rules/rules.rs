@@ -45,15 +45,24 @@ pub enum RuleResult {
 
 //ip RuleResult
 impl RuleResult {
-    pub fn new(depth:usize, matched:bool, sideways: bool, max_depth:usize) -> Self {
+    pub fn new(depth: usize, matched: bool, sideways: bool, max_depth: usize) -> Self {
         let downwards = (max_depth == 0) || (depth < max_depth);
         if matched {
-            if downwards && sideways { Self::MatchPropagateAgain    }
-            else if downwards        { Self::MatchPropagateChildren }
-            else if sideways         { Self::MatchEndAgain }
-            else                     { Self::MatchEndChildren }
+            if downwards && sideways {
+                Self::MatchPropagateAgain
+            } else if downwards {
+                Self::MatchPropagateChildren
+            } else if sideways {
+                Self::MatchEndAgain
+            } else {
+                Self::MatchEndChildren
+            }
         } else {
-            if downwards { Self::MismatchPropagate } else { Self::MismatchEnd }
+            if downwards {
+                Self::MismatchPropagate
+            } else {
+                Self::MismatchEnd
+            }
         }
     }
 }
@@ -64,16 +73,18 @@ impl std::fmt::Display for RuleResult {
     /// Display the rule
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
-            Self::MismatchEnd        => write!(f, "mismatch"),
-            Self::MismatchPropagate  => write!(f, "mismatch but apply rule to children"),
-            Self::MatchEndChildren        => write!(f, "*match*"),
-            Self::MatchPropagateChildren  => write!(f, "*match* and also apply rule to children"),
-            Self::MatchEndAgain           => write!(f, "*match* and apply child rules to this node"),
-            Self::MatchPropagateAgain     => write!(f, "*match* and apply child rules only to this node and this rule to children"),
+            Self::MismatchEnd => write!(f, "mismatch"),
+            Self::MismatchPropagate => write!(f, "mismatch but apply rule to children"),
+            Self::MatchEndChildren => write!(f, "*match*"),
+            Self::MatchPropagateChildren => write!(f, "*match* and also apply rule to children"),
+            Self::MatchEndAgain => write!(f, "*match* and apply child rules to this node"),
+            Self::MatchPropagateAgain => write!(
+                f,
+                "*match* and apply child rules only to this node and this rule to children"
+            ),
         }
     }
 }
-
 
 //tp trait RuleFn<T>
 /// This trait must be satisfied by a struct that a RuleSet can be made for
@@ -83,7 +94,7 @@ impl std::fmt::Display for RuleResult {
 /// rule to that value
 pub trait RuleFn<T> {
     /// Apply the rule to the value, at a given depth in the tree
-    fn apply(&self, depth:usize, value:&T) -> RuleResult;
+    fn apply(&self, depth: usize, value: &T) -> RuleResult;
 }
 
 //tp trait Action<T>
@@ -95,7 +106,7 @@ pub trait RuleFn<T> {
 /// rule to that value
 pub trait Action<T> {
     /// Apply the action to the value, at a given depth in the tree
-    fn apply(&self, _rule:usize, depth:usize, _value:&mut T) {
+    fn apply(&self, _rule: usize, depth: usize, _value: &mut T) {
         println!("Application of action not defined {}", depth);
     }
 }
@@ -106,21 +117,27 @@ pub trait Action<T> {
 /// indices in to the RuleSet
 ///
 /// This type is private to this module
-struct Rule<T, F:RuleFn<T>> {
+struct Rule<T, F: RuleFn<T>> {
     match_fn: F,
-    parent : Option<usize>,
-    action : Option<usize>,
-    child_rules : Vec<usize>,
-    phantom : std::marker::PhantomData::<T>,
+    parent: Option<usize>,
+    action: Option<usize>,
+    child_rules: Vec<usize>,
+    phantom: std::marker::PhantomData<T>,
 }
 
 //ip Rule
-impl <T, F:RuleFn<T>> Rule<T, F> {
+impl<T, F: RuleFn<T>> Rule<T, F> {
     //fp new
     /// Create a new rule given a RuleFn to match against and an
     /// optional action to take if the rule is matched
-    fn new(parent:Option<usize>, match_fn:F, action:Option<usize>) -> Self {
-        Self { parent, match_fn, action, child_rules:Vec::new(), phantom:std::marker::PhantomData }
+    fn new(parent: Option<usize>, match_fn: F, action: Option<usize>) -> Self {
+        Self {
+            parent,
+            match_fn,
+            action,
+            child_rules: Vec::new(),
+            phantom: std::marker::PhantomData,
+        }
     }
 
     //fp add_child
@@ -129,7 +146,7 @@ impl <T, F:RuleFn<T>> Rule<T, F> {
     /// children (if the rule optional action to take if the rule is
     /// matched with a '..Children' result) or this node (if the rule
     /// is matched with a '..Again' result).
-    fn add_child(&mut self, rule:usize) {
+    fn add_child(&mut self, rule: usize) {
         self.child_rules.push(rule);
     }
 
@@ -138,7 +155,7 @@ impl <T, F:RuleFn<T>> Rule<T, F> {
     pub fn iter_children(&self) -> std::slice::Iter<usize> {
         self.child_rules.iter()
     }
-    
+
     //zz All done
 }
 
@@ -156,19 +173,20 @@ impl <T, F:RuleFn<T>> Rule<T, F> {
 ///
 /// Note that the rule's children will all have a greater rule index
 /// than the parent rule. This invariant is required
-pub struct RuleSet<T, A:Action<T>, F:RuleFn<T>> {
-    rules :   Vec<Rule<T,F>>,
-    actions : Vec<A>,
+pub struct RuleSet<T, A: Action<T>, F: RuleFn<T>> {
+    rules: Vec<Rule<T, F>>,
+    actions: Vec<A>,
 }
 
 //ip RuleSet
-impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
+impl<T, A: Action<T>, F: RuleFn<T>> RuleSet<T, A, F> {
     //fp new
     /// Create an empty rule set
     #[inline]
     pub fn new() -> Self {
-        Self { rules : Vec::new(),
-               actions : Vec::new()
+        Self {
+            rules: Vec::new(),
+            actions: Vec::new(),
         }
     }
 
@@ -178,22 +196,22 @@ impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
     pub fn num_rules(&self) -> usize {
         self.rules.len()
     }
-    
+
     //mp add_action
     /// Add an action to the set
-    pub fn add_action(&mut self, action:A) -> usize {
+    pub fn add_action(&mut self, action: A) -> usize {
         let action_num = self.actions.len();
         self.actions.push(action);
         action_num
     }
-    
+
     //mp add_rule
     /// Add a rule to the set, and return its handle; it may be a
     /// child of a parent rule given by a handle, or a toplevel rule.
     ///
     /// Note that the rule's children will all have a greater index
     /// than the rule. This invariant is required
-    pub fn add_rule(&mut self, parent:Option<usize>, match_fn:F, action:Option<usize>) -> usize {
+    pub fn add_rule(&mut self, parent: Option<usize>, match_fn: F, action: Option<usize>) -> usize {
         let rule = Rule::new(parent, match_fn, action);
         let rule_num = self.rules.len();
         if let Some(parent) = parent {
@@ -203,34 +221,34 @@ impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
         self.rules.push(rule);
         rule_num
     }
-    
+
     //mp is_toplevel
     /// Returns true if the rule has no parents - so it should be
     /// tested from the start to all root nodes
-    pub fn is_toplevel(&self, rule:usize) -> bool {
+    pub fn is_toplevel(&self, rule: usize) -> bool {
         self.rules[rule].parent.is_none()
     }
 
     //mp apply
     #[inline]
-    pub fn apply(&self, rule:usize, depth:usize, node:&T) -> RuleResult {
+    pub fn apply(&self, rule: usize, depth: usize, node: &T) -> RuleResult {
         self.rules[rule].match_fn.apply(depth, node)
     }
-    
+
     //mp fire
     #[inline]
-    pub fn fire(&self, rule:usize, depth:usize, node:&mut T) {
+    pub fn fire(&self, rule: usize, depth: usize, node: &mut T) {
         if let Some(action) = self.rules[rule].action {
             self.actions[action].apply(rule, depth, node);
         }
     }
-    
+
     //mp iter_children
     #[inline]
-    pub fn iter_children(&self, rule:usize) -> std::slice::Iter<usize> {
+    pub fn iter_children(&self, rule: usize) -> std::slice::Iter<usize> {
         self.rules[rule].iter_children()
     }
-    
+
     //zz All done
 }
 
@@ -240,19 +258,27 @@ impl <T, A:Action<T>, F:RuleFn<T>> RuleSet <T, A, F> {
 mod test_types {
     use super::*;
     pub struct UsizeRule {
-        min_value : usize,
-        max_value : usize,
+        min_value: usize,
+        max_value: usize,
     }
     impl UsizeRule {
-        pub fn new(min_value:usize, max_value:usize) -> Self { Self { min_value, max_value } }
+        pub fn new(min_value: usize, max_value: usize) -> Self {
+            Self {
+                min_value,
+                max_value,
+            }
+        }
     }
     impl Action<usize> for usize {
-        fn apply(&self, rule:usize, depth:usize, value:&mut usize)  {
-            println!("Apply to {} because of rule {} at depth {}", value, rule, depth);
+        fn apply(&self, rule: usize, depth: usize, value: &mut usize) {
+            println!(
+                "Apply to {} because of rule {} at depth {}",
+                value, rule, depth
+            );
         }
     }
     impl RuleFn<usize> for UsizeRule {
-        fn apply(&self, _depth:usize, value:&usize) -> RuleResult {
+        fn apply(&self, _depth: usize, value: &usize) -> RuleResult {
             if *value >= self.min_value && *value < self.max_value {
                 RuleResult::MatchPropagateChildren
             } else {
@@ -263,13 +289,12 @@ mod test_types {
 }
 #[cfg(test)]
 mod test_ruleset {
-    use super::*;
     use super::test_types::*;
+    use super::*;
     #[test]
     fn test_simple() {
         let mut rules = RuleSet::new();
         rules.add_action(0);
-        rules.add_rule(None, UsizeRule::new(0,10), None);
+        rules.add_rule(None, UsizeRule::new(0, 10), None);
     }
 }
-

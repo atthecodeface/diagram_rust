@@ -24,22 +24,21 @@ limitations under the License.
 //! consists of style names and types.
 
 //a Imports
-extern crate regex;
 extern crate num;
+extern crate regex;
 #[macro_use]
 extern crate lazy_static;
 
 mod style;
 mod tree_rules;
 
-pub use style::{TypeValue, ValueError, BaseValue};
-pub use style::{NamedTypeSet};
+pub use style::Descriptor;
+pub use style::NamedTypeSet;
+pub use style::Stylesheet;
+pub use style::{BaseValue, TypeValue, ValueError};
 pub use style::{StylableNode, StylableNodeAction, StylableNodeRule};
-pub use style::{Stylesheet};
-pub use style::{Descriptor};
 
+pub use tree_rules::{Action, RuleFn, RuleResult, RuleSet};
 pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};
-pub use tree_rules::{RuleResult, RuleFn, Action, RuleSet};
 pub use tree_rules::{Tree, TreeIterOp};
 pub use tree_rules::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
-

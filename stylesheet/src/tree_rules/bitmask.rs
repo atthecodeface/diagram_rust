@@ -24,78 +24,87 @@ use num;
 
 //a BitMask
 //tt BitMask
-pub trait BitMask : Sized + std::fmt::Debug {
-    fn new(n:usize) -> Self;
-    fn clone(&self, n:usize) -> Self;
-    fn set(&mut self, n:usize);
-    fn clear(&mut self, n:usize);
-    fn is_set(&mut self, n:usize) -> bool;
+pub trait BitMask: Sized + std::fmt::Debug {
+    fn new(n: usize) -> Self;
+    fn clone(&self, n: usize) -> Self;
+    fn set(&mut self, n: usize);
+    fn clear(&mut self, n: usize);
+    fn is_set(&mut self, n: usize) -> bool;
 }
-
 
 //a BitMaskU
 //tp BitMaskU - a u8/u16/u32/u64 that has the trait BitMask
 /// This struct is a generic implementation of BitMask using a single u<>
-pub struct BitMaskU<U> where U:num::Unsigned {
-    mask : U,
+pub struct BitMaskU<U>
+where
+    U: num::Unsigned,
+{
+    mask: U,
 }
 
 //tt Maskable - the required trait for an BitMaskU subtype is complex, so alias it
 /// This is effectively a trait alias for unsigned values that support
 /// copy and the relevant bit ops/casts
-pub trait Maskable<U> :
-    Copy +
-    num::Unsigned +
-    num::Integer +
-    num::NumCast +
-    std::fmt::LowerHex +
-    std::ops::BitOr<Output = U> +
-    std::ops::BitAnd<Output = U> +
-    std::ops::Not<Output = U> +
-    std::ops::Shr<usize, Output = U> +
-    std::ops::Shl<usize, Output = U>
-{}
+pub trait Maskable<U>:
+    Copy
+    + num::Unsigned
+    + num::Integer
+    + num::NumCast
+    + std::fmt::LowerHex
+    + std::ops::BitOr<Output = U>
+    + std::ops::BitAnd<Output = U>
+    + std::ops::Not<Output = U>
+    + std::ops::Shr<usize, Output = U>
+    + std::ops::Shl<usize, Output = U>
+{
+}
 
 //ip std::fmt::Debug for BitMaskU
-impl <U> std::fmt::Debug for BitMaskU<U>  where U:Maskable<U> {
+impl<U> std::fmt::Debug for BitMaskU<U>
+where
+    U: Maskable<U>,
+{
     //mp fmt
     /// Make it human-readable
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:0x}", self.mask)
     }
-    
+
     //zz All done
 }
 
 //ip BitMask for BitMaskU
 /// Implementation of BitMask for an unsigned value used as a bit mask
-impl <U> BitMask for BitMaskU<U>  where U:Maskable<U> {
+impl<U> BitMask for BitMaskU<U>
+where
+    U: Maskable<U>,
+{
     //fp new
     /// Create a new mask
     #[inline]
-    fn new(n:usize) -> Self {
-        assert!(n <= 8*std::mem::size_of::<U>());
+    fn new(n: usize) -> Self {
+        assert!(n <= 8 * std::mem::size_of::<U>());
         let mask = U::zero();
         Self { mask }
     }
 
     #[inline]
-    fn clone(&self, _n:usize) -> Self {
-        Self { mask:self.mask }
+    fn clone(&self, _n: usize) -> Self {
+        Self { mask: self.mask }
     }
 
     #[inline]
-    fn set(&mut self, n:usize) {
-        self.mask = self.mask | (U::one().shl(n) );
+    fn set(&mut self, n: usize) {
+        self.mask = self.mask | (U::one().shl(n));
     }
 
     #[inline]
-    fn clear(&mut self, n:usize) {
-        self.mask = self.mask & !(U::one().shl(n) );
+    fn clear(&mut self, n: usize) {
+        self.mask = self.mask & !(U::one().shl(n));
     }
 
     #[inline]
-    fn is_set(&mut self, n:usize) -> bool {
+    fn is_set(&mut self, n: usize) -> bool {
         (self.mask.shr(n)) & U::one() == U::one()
     }
 }
@@ -106,8 +115,6 @@ pub type BitMaskU32 = BitMaskU<u64>;
 impl Maskable<u64> for u64 {}
 pub type BitMaskU64 = BitMaskU<u64>;
 
-
-
 //a BitMaskX
 //tp BitMaskX - an arbitrarily-sized vector
 /// This supports arbitrarily-sized vectors
@@ -116,49 +123,52 @@ pub type BitMaskU64 = BitMaskU<u64>;
 /// where more than 64 bits are required
 #[derive(Debug)]
 pub struct BitMaskX {
-    mask : Vec<u64>,
+    mask: Vec<u64>,
 }
 
 //ip BitMask for BitMaskX
 /// Implementation of BitMask for an array of unsigned values used as a bit mask
-impl BitMask for BitMaskX{
+impl BitMask for BitMaskX {
     //fp new
     /// Create a new mask
     #[inline]
-    fn new(n:usize) -> Self {
-        let num_u64 = (n+63)/64;
+    fn new(n: usize) -> Self {
+        let num_u64 = (n + 63) / 64;
         let mut mask = Vec::with_capacity(num_u64);
-        for _ in 0..num_u64 { mask.push(0); }
+        for _ in 0..num_u64 {
+            mask.push(0);
+        }
         Self { mask }
     }
 
     #[inline]
-    fn clone(&self, n:usize) -> Self {
-        let num_u64 = (n+63)/64;
+    fn clone(&self, n: usize) -> Self {
+        let num_u64 = (n + 63) / 64;
         let mut mask = Vec::with_capacity(num_u64);
-        for i in 0..num_u64 { mask.push(self.mask[i]); }
+        for i in 0..num_u64 {
+            mask.push(self.mask[i]);
+        }
         Self { mask }
     }
 
     #[inline]
-    fn set(&mut self, n:usize) {
+    fn set(&mut self, n: usize) {
         let b = n % 64;
         let n = n / 64;
-        self.mask[n] = self.mask[n] | (1<<b);
+        self.mask[n] = self.mask[n] | (1 << b);
     }
 
     #[inline]
-    fn clear(&mut self, n:usize) {
+    fn clear(&mut self, n: usize) {
         let b = n % 64;
         let n = n / 64;
-        self.mask[n] = self.mask[n] & !(1<<b);
+        self.mask[n] = self.mask[n] & !(1 << b);
     }
 
     #[inline]
-    fn is_set(&mut self, n:usize) -> bool {
+    fn is_set(&mut self, n: usize) -> bool {
         let b = n % 64;
         let n = n / 64;
         (self.mask[n] >> b) & 1 == 1
     }
 }
-
