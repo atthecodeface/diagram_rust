@@ -8,11 +8,11 @@
 <path stroke="#ffa500" stroke-width="0.1000" fill="None" d="M 5.3417,2.5194 L 5.3417,-2.5194 L -5.3417,-2.5194 L -5.3417,2.5194 L 5.3417,2.5194 z" />
 </g>
 <path stroke="#ff0000" stroke-width="0.2000" fill="None" d="M -5.0389,5.4917 L -5.0389,-5.4917 L -10.3778,-5.4917 L -10.3778,5.4917 L -5.0389,5.4917 z" />
-<text transform="translate(0.1000 -5.2917) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 2</text>
+<text transform="translate(-7.6611 -2.4694) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 2</text>
 <path stroke="#ffff00" stroke-width="0.1000" fill="None" d="M 0.1500,5.5417 L 0.1500,-5.5417 L -4.8889,-5.5417 L -4.8889,5.5417 L 0.1500,5.5417 z" />
-<text transform="translate(5.2389 -5.2917) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 3</text>
+<text transform="translate(-2.5222 -2.4694) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 3</text>
 <path stroke="#ffff00" stroke-width="0.1000" fill="None" d="M 5.2889,5.5417 L 5.2889,-5.5417 L 0.2500,-5.5417 L 0.2500,5.5417 L 5.2889,5.5417 z" />
-<text transform="translate(10.3778 -5.2917) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 4</text>
+<text transform="translate(2.6167 -2.4694) rotate(90.0000) " fill="#000000" x="0.0000" y="3.8806" font-size="3.5278" stroke="None">Text 4</text>
 <path stroke="#ffff00" stroke-width="0.1000" fill="None" d="M 10.4278,5.5417 L 10.4278,-5.5417 L 5.3889,-5.5417 L 5.3889,5.5417 L 10.4278,5.5417 z" />
 </g>
 <path stroke="#800080" stroke-width="0.3000" fill="None" d="M 10.6278,5.7417 L 10.6278,-5.7417 L -10.6278,-5.7417 L -10.6278,5.7417 L 10.6278,5.7417 z" />
