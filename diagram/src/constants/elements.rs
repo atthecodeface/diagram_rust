@@ -18,20 +18,20 @@ limitations under the License.
 macro_rules! tag {
     ( $n:ident , $v:literal ) => {
         /// Tag
-        pub const $n : & str = $v ;
+        pub const $n: &str = $v;
     };
 }
 
-    tag!(MARKER,   "marker");
-    tag!(USE,      "use");
-    tag!(DIAGRAM,  "diagram");
-    tag!(GROUP,    "group");
-    tag!(LAYOUT,   "layout");
-    tag!(RECT,     "rect");
-    tag!(CIRCLE,   "circle");
-    tag!(POLYGON,  "polygon");
-    tag!(TEXT,     "text");
-    tag!(PATH,     "path");
+tag!(MARKER, "marker");
+tag!(USE, "use");
+tag!(DIAGRAM, "diagram");
+tag!(GROUP, "group");
+tag!(LAYOUT, "layout");
+tag!(RECT, "rect");
+tag!(CIRCLE, "circle");
+tag!(POLYGON, "polygon");
+tag!(TEXT, "text");
+tag!(PATH, "path");
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Typ {
