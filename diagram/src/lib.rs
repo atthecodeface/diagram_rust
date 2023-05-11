@@ -337,7 +337,7 @@ mod diagram_ml;
 mod grid;
 mod layout;
 
-pub(crate) use grid::{GridData, GridDimension, GridDimensionIter, GridPlacement};
+pub(crate) use grid::{GridData, GridPlacement};
 
 pub(crate) use self::diagram::{DiagramContents, StyleRule, StyleSheet};
 pub(crate) use layout::{Layout, LayoutBox, LayoutRecord};
