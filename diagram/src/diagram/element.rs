@@ -20,42 +20,62 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
-use geometry::{Rectangle};
-use stylesheet::TypeValue;    // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
-use crate::constants::elements   as el;
-use crate::DiagramDescriptor;
-use crate::{Layout};
-use super::elements::{Group, Shape, Path, Text, Use};
+use super::elements::{Group, Path, Shape, Text, Use};
 use super::types::*;
 use super::DiagramElementContent;
-use super::{ElementError};
-use super::{ElementScope};
-use super::{ElementContent};
-use super::{ElementHeader};
+use super::ElementContent;
+use super::ElementError;
+use super::ElementHeader;
+use super::ElementScope;
+use crate::constants::elements as el;
+use crate::DiagramDescriptor;
+use crate::Layout;
+use geometry::Rectangle;
+use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
+use stylesheet::{StylableNode, Tree};
 
 //a Element
 //tp Element
 #[derive(Debug)]
 pub struct Element<'a> {
-    pub header  : ElementHeader<'a>,
-    pub content : ElementContent<'a>,
+    pub header: ElementHeader<'a>,
+    pub content: ElementContent<'a>,
 }
 
 //ip Element
-impl <'a> Element <'a> {
+impl<'a> Element<'a> {
     //fp add_content_descriptors {
-    pub fn add_content_descriptors(descriptor:&mut DiagramDescriptor) {
-        descriptor.add_content_descriptor(el::Typ::Use,      false, Use::get_style_names(el::USE));
-        descriptor.add_content_descriptor(el::Typ::Diagram,  true,  Group::get_style_names(el::DIAGRAM));
-        descriptor.add_content_descriptor(el::Typ::Group,    true,  Group::get_style_names(el::GROUP));
-        descriptor.add_content_descriptor(el::Typ::Layout,   true,  Group::get_style_names(el::LAYOUT));
-        descriptor.add_content_descriptor(el::Typ::Marker,   true,  Group::get_style_names(el::MARKER));
-        descriptor.add_content_descriptor(el::Typ::Text,     true,  Text::get_style_names(el::TEXT));
-        descriptor.add_content_descriptor(el::Typ::Polygon,  true,  Shape::get_style_names(el::POLYGON));
-        descriptor.add_content_descriptor(el::Typ::Rect,     true,  Shape::get_style_names(el::RECT));
-        descriptor.add_content_descriptor(el::Typ::Circle,   true,  Shape::get_style_names(el::CIRCLE));
-        descriptor.add_content_descriptor(el::Typ::Path,     true,  Path::get_style_names(el::PATH));
+    pub fn add_content_descriptors(descriptor: &mut DiagramDescriptor) {
+        descriptor.add_content_descriptor(el::Typ::Use, false, Use::get_style_names(el::USE));
+        descriptor.add_content_descriptor(
+            el::Typ::Diagram,
+            true,
+            Group::get_style_names(el::DIAGRAM),
+        );
+        descriptor.add_content_descriptor(el::Typ::Group, true, Group::get_style_names(el::GROUP));
+        descriptor.add_content_descriptor(
+            el::Typ::Layout,
+            true,
+            Group::get_style_names(el::LAYOUT),
+        );
+        descriptor.add_content_descriptor(
+            el::Typ::Marker,
+            true,
+            Group::get_style_names(el::MARKER),
+        );
+        descriptor.add_content_descriptor(el::Typ::Text, true, Text::get_style_names(el::TEXT));
+        descriptor.add_content_descriptor(
+            el::Typ::Polygon,
+            true,
+            Shape::get_style_names(el::POLYGON),
+        );
+        descriptor.add_content_descriptor(el::Typ::Rect, true, Shape::get_style_names(el::RECT));
+        descriptor.add_content_descriptor(
+            el::Typ::Circle,
+            true,
+            Shape::get_style_names(el::CIRCLE),
+        );
+        descriptor.add_content_descriptor(el::Typ::Path, true, Path::get_style_names(el::PATH));
     }
 
     //mp borrow_id
@@ -64,21 +84,25 @@ impl <'a> Element <'a> {
     }
 
     //mp has_id
-    pub fn has_id(&self, name:&str) -> bool {
+    pub fn has_id(&self, name: &str) -> bool {
         self.header.stylable.has_id(name)
     }
 
     //fp new
-    pub fn new(descriptor:&'a DiagramDescriptor, name:el::Typ, name_values:&mut dyn Iterator<Item = (String, &str)>) -> Result<Self, ElementError> {
+    pub fn new(
+        descriptor: &'a DiagramDescriptor,
+        name: el::Typ,
+        name_values: &mut dyn Iterator<Item = (String, &str)>,
+    ) -> Result<Self, ElementError> {
         // println!("New element name '{}'", name);
-        let header  = ElementHeader::new(descriptor, name, name_values)?;
+        let header = ElementHeader::new(descriptor, name, name_values)?;
         let content = ElementContent::new(&header, name)?;
-        Ok( Self { header, content })
+        Ok(Self { header, content })
     }
 
     //mp uniquify
     /// Generates a *replacement* if the content requires it
-    pub fn uniquify<'b>(&mut self, scope:&ElementScope<'a, 'b>) -> Result<(), ElementError> {
+    pub fn uniquify<'b>(&mut self, scope: &ElementScope<'a, 'b>) -> Result<(), ElementError> {
         if self.content.uniquify(&self.header, scope)? {
             // Updated the content, so uniquify again
             self.uniquify(scope)
@@ -88,26 +112,30 @@ impl <'a> Element <'a> {
     }
 
     //mp clone
-    pub fn clone<'b>(&self, scope:&ElementScope<'a, 'b>) -> Result<Element<'a>, ElementError> {
+    pub fn clone<'b>(&self, scope: &ElementScope<'a, 'b>) -> Result<Element<'a>, ElementError> {
         let header = self.header.clone(scope);
         let content = self.content.clone(&header, scope)?;
-        Ok( Self { header, content })
+        Ok(Self { header, content })
     }
 
     //fp add_string
-    pub fn add_string(&mut self, s:&str) -> Result<(),ElementError> {
+    pub fn add_string(&mut self, s: &str) -> Result<(), ElementError> {
         self.content.add_string(&self.header, s)
     }
 
     //fp add_element
-    pub fn add_element(&mut self, element:Element<'a>) {
+    pub fn add_element(&mut self, element: Element<'a>) {
         self.content.add_element(element);
     }
 
     //fp value_of_name
-    pub fn value_of_name(name_values:Vec<(String,String)>, name:&str, mut value:StyleValue) -> Result<StyleValue,ValueError> {
-        for (n,v) in name_values {
-            if n==name {
+    pub fn value_of_name(
+        name_values: Vec<(String, String)>,
+        name: &str,
+        mut value: StyleValue,
+    ) -> Result<StyleValue, ValueError> {
+        for (n, v) in name_values {
+            if n == name {
                 value.from_string(&v)?;
             }
         }
@@ -115,23 +143,26 @@ impl <'a> Element <'a> {
     }
 
     //mp borrow_marker
-    pub fn borrow_marker<'z> (&'z self) -> Option<(&'z ElementHeader<'a>, &'z Group<'a>)> {
+    pub fn borrow_marker<'z>(&'z self) -> Option<(&'z ElementHeader<'a>, &'z Group<'a>)> {
         match self.content.borrow_group() {
             None => None,
-            Some(x) => Some((&self.header, x))
+            Some(x) => Some((&self.header, x)),
         }
     }
 
     //fp tree_add_element
-    pub fn tree_add_element<'b>(&'b mut self, mut tree:Tree<'b, StylableNode<'a, StyleValue>>) -> Tree<'b, StylableNode<'a, StyleValue>>{
+    pub fn tree_add_element<'b>(
+        &'b mut self,
+        mut tree: Tree<'b, StylableNode<'a, StyleValue>>,
+    ) -> Tree<'b, StylableNode<'a, StyleValue>> {
         tree.open_container(&mut self.header.stylable);
         tree = self.content.tree_add_element(tree);
         tree.close_container();
         tree
-        }
+    }
 
     //mp style
-    pub fn style(&mut self, descriptor:&DiagramDescriptor) -> Result<(),ElementError> {
+    pub fn style(&mut self, descriptor: &DiagramDescriptor) -> Result<(), ElementError> {
         // println!("Style  {} ", self.header.borrow_id());
         self.header.style()?;
         self.content.style(descriptor, &self.header)?;
@@ -151,7 +182,7 @@ impl <'a> Element <'a> {
     /// using the `LayoutBox` data to generate the boxed desired
     /// geometry, which is then added to the `Layout` element as a
     /// place or grid desire.
-    pub fn set_layout_properties(&mut self, layout:&mut Layout) -> Rectangle {
+    pub fn set_layout_properties(&mut self, layout: &mut Layout) -> Rectangle {
         let content_rect = self.content.get_desired_geometry(layout);
         self.header.set_layout_properties(layout, content_rect)
     }
@@ -163,14 +194,14 @@ impl <'a> Element <'a> {
     ///
     /// If the element requires any further layout, that should be performed; certainly its
     /// transformation should be determined
-    pub fn apply_placement(&mut self, layout:&Layout) {
+    pub fn apply_placement(&mut self, layout: &Layout) {
         let content_rect = self.header.apply_placement(layout);
         self.content.apply_placement(layout, &content_rect);
     }
 
     //fp display
-    pub fn display(&self, indent:usize) {
-        const INDENT_STRING : &str="                                                            ";
+    pub fn display(&self, indent: usize) {
+        const INDENT_STRING: &str = "                                                            ";
         let indent_str = &INDENT_STRING[0..indent];
         self.header.display(indent_str);
         self.content.display(indent, indent_str);
@@ -178,5 +209,3 @@ impl <'a> Element <'a> {
 
     //zz All done
 }
-
-

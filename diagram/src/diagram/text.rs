@@ -17,9 +17,9 @@ limitations under the License.
  */
 
 //a Imports
+use super::font::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use super::font::*;
 
 //a Text span
 #[derive(Debug)]
@@ -29,36 +29,41 @@ pub enum Bullet {
     Alphabet(usize),
 }
 #[derive(Debug)]
-pub struct TextSpan<F:FontMetrics> {
-    font  : Rc<RefCell<F>>,
-    style : FontStyle,
-    text  : String, // single line
+pub struct TextSpan<F: FontMetrics> {
+    font: Rc<RefCell<F>>,
+    style: FontStyle,
+    text: String, // single line
 }
 
-impl <F:FontMetrics> TextSpan <F> {
-    pub fn new(text:&str, font:Rc<RefCell<F>>, style:FontStyle) -> Self {
-        Self { font, style, text:text.to_string() }
+impl<F: FontMetrics> TextSpan<F> {
+    pub fn new(text: &str, font: Rc<RefCell<F>>, style: FontStyle) -> Self {
+        Self {
+            font,
+            style,
+            text: text.to_string(),
+        }
     }
     pub fn get_metrics(&self) -> TextMetrics {
-        self.font.borrow().get_metrics( &self.text, &self.style )
+        self.font.borrow().get_metrics(&self.text, &self.style)
     }
 }
 
 //a Text line
 #[derive(Debug)]
-pub struct TextLine <F:FontMetrics> {
-    indent  : usize,
-    bullet  : Option<Bullet>,
-    spans   : Vec<TextSpan<F>>,
+pub struct TextLine<F: FontMetrics> {
+    indent: usize,
+    bullet: Option<Bullet>,
+    spans: Vec<TextSpan<F>>,
 }
-impl <F:FontMetrics> TextLine<F> {
-    pub fn new(indent:usize, bullet:Option<Bullet>) -> Self {
-        Self { indent,
-               bullet,
-               spans:Vec::new(),
+impl<F: FontMetrics> TextLine<F> {
+    pub fn new(indent: usize, bullet: Option<Bullet>) -> Self {
+        Self {
+            indent,
+            bullet,
+            spans: Vec::new(),
         }
     }
-    pub fn add_span(&mut self, span:TextSpan<F>) {
+    pub fn add_span(&mut self, span: TextSpan<F>) {
         self.spans.push(span);
     }
     pub fn line_metrics(&self) -> f64 {
@@ -68,39 +73,48 @@ impl <F:FontMetrics> TextLine<F> {
         let mut max_asc = 0.;
         let mut max_desc = 0.;
         let mut width = self.line_metrics();
-        if self.bullet.is_some() { width = width + 7.; }
+        if self.bullet.is_some() {
+            width = width + 7.;
+        }
         for s in &self.spans {
             let tm = s.get_metrics();
             width += tm.width;
-            if max_asc  < tm.ascender  { max_asc  = tm.ascender; }
-            if max_desc < tm.descender { max_desc = tm.descender; }
+            if max_asc < tm.ascender {
+                max_asc = tm.ascender;
+            }
+            if max_desc < tm.descender {
+                max_desc = tm.descender;
+            }
         }
-        TextMetrics { width, ascender:max_asc, descender:max_desc }
+        TextMetrics {
+            width,
+            ascender: max_asc,
+            descender: max_desc,
+        }
     }
 }
 
 //a Text area
 //ip TextArea
 #[derive(Debug)]
-pub struct TextArea<F:FontMetrics> {
-    lines : Vec<TextLine<F>>,
+pub struct TextArea<F: FontMetrics> {
+    lines: Vec<TextLine<F>>,
 }
 
 //ip TextArea
-impl <F:FontMetrics> TextArea<F> {
+impl<F: FontMetrics> TextArea<F> {
     //fp new
     pub fn new() -> Self {
-        Self { lines:Vec::new(),
-        }
+        Self { lines: Vec::new() }
     }
 
     //mp add_line
-    pub fn add_line(&mut self, line:TextLine<F>) {
+    pub fn add_line(&mut self, line: TextLine<F>) {
         self.lines.push(line);
     }
 
     //mp add_text
-    pub fn add_text(&mut self, text:&str, font:Rc<RefCell<F>>, style:FontStyle) {
+    pub fn add_text(&mut self, text: &str, font: Rc<RefCell<F>>, style: FontStyle) {
         for l in text.lines() {
             let mut bullet = None;
             let mut sl = &l[..];
@@ -120,18 +134,20 @@ impl <F:FontMetrics> TextArea<F> {
                 sl = &sl[2..];
             }
             let mut line = TextLine::new(indent, bullet);
-            line.add_span( TextSpan::new(sl, font.clone(), style) );
+            line.add_span(TextSpan::new(sl, font.clone(), style));
             self.add_line(line);
         }
     }
 
     //mp get_bbox
-    pub fn get_bbox(&self) -> (f64,f64) {
+    pub fn get_bbox(&self) -> (f64, f64) {
         let mut width = 0.;
         let mut height = 0.;
         for l in &self.lines {
             let tm = l.get_metrics();
-            if width < tm.width { width = tm.width; }
+            if width < tm.width {
+                width = tm.width;
+            }
             height += tm.ascender + tm.descender;
         }
         (width, height)
@@ -139,7 +155,7 @@ impl <F:FontMetrics> TextArea<F> {
 
     //mp iter_spans
     pub fn iter_spans(&self) -> TextSpanIter<F> {
-        TextSpanIter::new( self )
+        TextSpanIter::new(self)
     }
 
     //zz All done
@@ -147,32 +163,40 @@ impl <F:FontMetrics> TextArea<F> {
 
 //a TextSpan iterator
 //tp TextSpanIter
-pub struct TextSpanIter<'a, F:FontMetrics> {
+pub struct TextSpanIter<'a, F: FontMetrics> {
     area: &'a TextArea<F>,
-    top_y : f64,
+    top_y: f64,
     x: f64,
-    ascender : f64,
-    descender : f64,
-    line : usize,
-    span : usize,
+    ascender: f64,
+    descender: f64,
+    line: usize,
+    span: usize,
 }
 
 //ip TextSpanIter
-impl <'a, F:FontMetrics> TextSpanIter<'a, F> {
-    pub fn new(area:&'a TextArea<F>) -> Self {
-        Self { area, top_y:0., x:0., line:0, span: 0, ascender:0., descender:0. }
+impl<'a, F: FontMetrics> TextSpanIter<'a, F> {
+    pub fn new(area: &'a TextArea<F>) -> Self {
+        Self {
+            area,
+            top_y: 0.,
+            x: 0.,
+            line: 0,
+            span: 0,
+            ascender: 0.,
+            descender: 0.,
+        }
     }
 }
 
 #[derive(Debug)]
 pub struct TextSpanElement<'a> {
-    pub x:f64,
-    pub y:f64,
-    pub text:&'a str,
+    pub x: f64,
+    pub y: f64,
+    pub text: &'a str,
 }
 
 //ip Iterator for TextSpanIter
-impl <'a, F:FontMetrics> Iterator for TextSpanIter<'a, F> {
+impl<'a, F: FontMetrics> Iterator for TextSpanIter<'a, F> {
     type Item = TextSpanElement<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.line >= self.area.lines.len() {
@@ -186,7 +210,7 @@ impl <'a, F:FontMetrics> Iterator for TextSpanIter<'a, F> {
             if self.span == 0 {
                 let lm = self.area.lines[self.line].line_metrics();
                 let tm = self.area.lines[self.line].get_metrics();
-                self.ascender  = tm.ascender;
+                self.ascender = tm.ascender;
                 self.descender = tm.descender;
                 self.x = lm;
             }
@@ -194,15 +218,15 @@ impl <'a, F:FontMetrics> Iterator for TextSpanIter<'a, F> {
             self.span += 1;
             let span = &self.area.lines[self.line].spans[i];
             let tm = span.get_metrics();
-            let y = self.top_y+self.ascender; // not sure where the text should go - tm.ascender;
+            let y = self.top_y + self.ascender; // not sure where the text should go - tm.ascender;
             let x = self.x;
             self.x += tm.width;
-            let text_span_element = TextSpanElement{
-                x, y, text:&span.text
+            let text_span_element = TextSpanElement {
+                x,
+                y,
+                text: &span.text,
             };
             Some(text_span_element)
         }
     }
 }
-
-

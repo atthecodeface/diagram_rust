@@ -17,31 +17,31 @@ limitations under the License.
  */
 
 //a Imports
-mod font;
-mod text;
 mod descriptor;
-mod traits;
-mod element;
 mod diagram;
-mod svg;
-mod element_error;
-mod element_scope;
-mod element_layout;
+mod element;
 mod element_content;
+mod element_error;
 mod element_header;
+mod element_layout;
+mod element_scope;
 mod elements;
+mod font;
+mod svg;
+mod text;
+mod traits;
 
 pub mod types;
 pub use traits::DiagramElementContent;
 
-pub use self::types::{ValueError, StyleSheet, StyleRule}; // , StyleAction};
 pub use self::descriptor::DiagramDescriptor;
-pub use element_error::{ElementError};
-pub use element_scope::{ElementScope};
-pub use element_layout::{ElementLayout, LayoutPlacement};
-pub use element_content::{ElementContent};
-pub use element_header::{ElementHeader};
-pub use element::{Element};
-pub use elements::{Shape, Group, Text, Use, Path};
 pub use self::diagram::{Diagram, DiagramContents};
-pub use svg::{Svg, SvgElement, GenerateSvg, GenerateSvgElement, SvgError};
+pub use self::types::{StyleRule, StyleSheet, ValueError}; // , StyleAction};
+pub use element::Element;
+pub use element_content::ElementContent;
+pub use element_error::ElementError;
+pub use element_header::ElementHeader;
+pub use element_layout::{ElementLayout, LayoutPlacement};
+pub use element_scope::ElementScope;
+pub use elements::{Group, Path, Shape, Text, Use};
+pub use svg::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};

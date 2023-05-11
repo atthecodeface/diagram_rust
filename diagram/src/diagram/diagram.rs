@@ -17,13 +17,13 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::{Rectangle};
-use stylesheet::{StylableNode, Tree};
-use crate::constants::elements   as el;
-use super::{DiagramDescriptor, StyleSheet};
-use super::{Element, ElementScope, ElementError};
-use crate::{Layout};
 use super::types::*;
+use super::{DiagramDescriptor, StyleSheet};
+use super::{Element, ElementError, ElementScope};
+use crate::constants::elements as el;
+use crate::Layout;
+use geometry::Rectangle;
+use stylesheet::{StylableNode, Tree};
 
 //a DiagramError
 //tp DiagramError
@@ -52,33 +52,33 @@ impl From<ElementError> for DiagramError {
     }
 }
 
-
 //a Diagram Definition
 //tp DiagramContents
 /// The contents of a diagram that are constructed; this is mutable
 /// during construction, whereas other parts of a diagram are
 /// immutable (such as its DiagramDescriptor).
 pub struct DiagramContents<'a> {
-    pub definitions       : Vec<Element<'a>>,
-    pub markers           : Vec<Element<'a>>, // All these elements MUST be markers
-    pub root_layout       : Option<Element<'a>>,
-    pub content_bbox      : Rectangle,
+    pub definitions: Vec<Element<'a>>,
+    pub markers: Vec<Element<'a>>, // All these elements MUST be markers
+    pub root_layout: Option<Element<'a>>,
+    pub content_bbox: Rectangle,
 }
 
 //ip DiagramContents
-impl <'a> DiagramContents<'a> {
+impl<'a> DiagramContents<'a> {
     //fp new
     /// Create a new empty `DiagramContents`
     pub(self) fn new() -> Self {
-        Self { definitions:Vec::new(),
-               markers    :Vec::new(),
-               root_layout:None,
-               content_bbox : Rectangle::none(),
+        Self {
+            definitions: Vec::new(),
+            markers: Vec::new(),
+            root_layout: None,
+            content_bbox: Rectangle::none(),
         }
     }
 
     //mp set_root_element
-    pub fn set_root_element(&mut self, element:Element<'a>) {
+    pub fn set_root_element(&mut self, element: Element<'a>) {
         self.root_layout = Some(element);
     }
 
@@ -93,22 +93,23 @@ impl <'a> DiagramContents<'a> {
 ///
 /// Once constructed, contents are added to the diagram
 pub struct Diagram<'a> {
-    descriptor    : &'a DiagramDescriptor<'a>,
-    pub(super) stylesheet    : StyleSheet<'a>,
-    pub(super) contents      : DiagramContents<'a>,
+    descriptor: &'a DiagramDescriptor<'a>,
+    pub(super) stylesheet: StyleSheet<'a>,
+    pub(super) contents: DiagramContents<'a>,
 }
 
 //ti Diagram
-impl <'a> Diagram <'a> {
+impl<'a> Diagram<'a> {
     //fp new
     /// Create a new diagram using a `DiagramDescriptor` that has
     /// already been created.
-    pub fn new(descriptor:&'a DiagramDescriptor) -> Self {
+    pub fn new(descriptor: &'a DiagramDescriptor) -> Self {
         let contents = DiagramContents::new();
         let stylesheet = StyleSheet::new(&descriptor.style_set);
-        Self { descriptor,
-               stylesheet,
-               contents,
+        Self {
+            descriptor,
+            stylesheet,
+            contents,
         }
     }
 
@@ -119,14 +120,20 @@ impl <'a> Diagram <'a> {
     /// the mutable borrow of the contents, required for building,
     /// will be for that of the caller, although the contents have a
     /// lifetime of the diagram.
-    pub fn borrow_contents_descriptor<'z>(&'z mut self) -> (&'a DiagramDescriptor<'a>, &'z mut DiagramContents<'a>, &'z mut StyleSheet<'a>) {
+    pub fn borrow_contents_descriptor<'z>(
+        &'z mut self,
+    ) -> (
+        &'a DiagramDescriptor<'a>,
+        &'z mut DiagramContents<'a>,
+        &'z mut StyleSheet<'a>,
+    ) {
         (&self.descriptor, &mut self.contents, &mut self.stylesheet)
     }
 
     //mp find_definition
     /// Find the definition of an id, if it exists in the contents
     /// 'definitions' section
-    pub fn find_definition<'b>(&'b self, name:&str) -> Option<&'b Element<'a>> {
+    pub fn find_definition<'b>(&'b self, name: &str) -> Option<&'b Element<'a>> {
         for i in &self.contents.definitions {
             if i.has_id(name) {
                 return Some(i);
@@ -138,7 +145,7 @@ impl <'a> Diagram <'a> {
     //mp find_marker
     /// Find the marker of an id, if it exists in the contents
     /// 'markers' section
-    pub fn find_marker<'z>(&'z self, name:&str) -> Option<&'z Element<'a>> {
+    pub fn find_marker<'z>(&'z self, name: &str) -> Option<&'z Element<'a>> {
         for i in &self.contents.markers {
             if i.has_id(name) {
                 return Some(i);
@@ -149,7 +156,7 @@ impl <'a> Diagram <'a> {
 
     //mp borrow_marker
     /// Borrow the marker header and content of a marker
-    pub fn borrow_marker<'z>(&'z self, name:&str) -> Option<&'z Element<'a>> {
+    pub fn borrow_marker<'z>(&'z self, name: &str) -> Option<&'z Element<'a>> {
         for i in &self.contents.markers {
             if i.has_id(name) {
                 return Some(i);
@@ -162,9 +169,9 @@ impl <'a> Diagram <'a> {
     /// Convert all 'use <id_ref>'s in to copies of the definition
     /// that has id==<id_ref>, uniquifying the contents within that
     /// definition too along with the ids therein
-    pub fn uniquify(&mut self) -> Result<(),DiagramError> {
+    pub fn uniquify(&mut self) -> Result<(), DiagramError> {
         let scope = ElementScope::new("", &self.contents.definitions);
-        if let Some(element) = &mut self.contents.root_layout{
+        if let Some(element) = &mut self.contents.root_layout {
             element.uniquify(&scope)?;
         }
         for element in &mut self.contents.markers {
@@ -182,9 +189,12 @@ impl <'a> Diagram <'a> {
     /// stylesheet and its rules; the actually styling is then
     /// appllied in `style`.
     pub fn apply_stylesheet(&mut self) {
-        let mut x = StylableNode::<'a, StyleValue>::new("diagram",self.descriptor.get(el::Typ::Group).unwrap());
+        let mut x = StylableNode::<'a, StyleValue>::new(
+            "diagram",
+            self.descriptor.get(el::Typ::Group).unwrap(),
+        );
         let mut tree = Tree::new(&mut x);
-        if let Some(element) = &mut self.contents.root_layout{
+        if let Some(element) = &mut self.contents.root_layout {
             tree = element.tree_add_element(tree);
         }
         for element in &mut self.contents.markers {
@@ -196,8 +206,8 @@ impl <'a> Diagram <'a> {
 
     //mp style
     /// Style the contents of the diagram, using the stylesheet
-    pub fn style(&mut self) -> Result<(),DiagramError> {
-        if let Some(element) = &mut self.contents.root_layout{
+    pub fn style(&mut self) -> Result<(), DiagramError> {
+        if let Some(element) = &mut self.contents.root_layout {
             element.style(self.descriptor)?;
         }
         for element in &mut self.contents.markers {
@@ -219,7 +229,7 @@ impl <'a> Diagram <'a> {
     /// bbox, which will generate the positions of the grid elements,
     /// and so on
     ///
-    pub fn layout(&mut self, within:&Rectangle) -> Result<(),DiagramError> {
+    pub fn layout(&mut self, within: &Rectangle) -> Result<(), DiagramError> {
         let mut layout = Layout::new();
         if let Some(element) = &mut self.contents.root_layout {
             element.set_layout_properties(&mut layout);
@@ -250,14 +260,14 @@ impl <'a> Diagram <'a> {
     //mp geometry
     /// Resolve the geometry of the contents of the diagram based on
     /// how it has been laid out
-    pub fn geometry(&mut self) -> Result<(),DiagramError> {
+    pub fn geometry(&mut self) -> Result<(), DiagramError> {
         Ok(())
     }
 
     //mp display
     /// Display the diagram in a human-parseable form, generally for debugging
     pub fn display(&self) {
-        if let Some(element) = &self.contents.root_layout{
+        if let Some(element) = &self.contents.root_layout {
             element.display(0);
         }
         for element in &self.contents.markers {
@@ -267,4 +277,3 @@ impl <'a> Diagram <'a> {
 
     //zz All done
 }
-

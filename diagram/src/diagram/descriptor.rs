@@ -17,14 +17,14 @@ limitations under the License.
  */
 
 //a Imports
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::collections::HashMap;
+use super::font::*;
 use super::types::*;
 use super::{Element, ElementHeader};
-use super::font::*;
 use crate::constants::attributes as at;
-use crate::constants::elements   as el;
+use crate::constants::elements as el;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 //a Diagram Descriptor - covers
 //tp DiagramDescriptor - contains the StyleSet and StyleDescriptor's for each element type
@@ -37,59 +37,58 @@ use crate::constants::elements   as el;
 /// The `Diagram` can borrow references to it, and hence it must
 /// outlive the Diagram.
 pub struct DiagramDescriptor<'a> {
-    pub(super) style_set   : &'a StyleSet,
-    descriptors : HashMap<el::Typ, StyleDescriptor<'a>>,
-    fonts       : HashMap<&'a str, RrcFont>,
+    pub(super) style_set: &'a StyleSet,
+    descriptors: HashMap<el::Typ, StyleDescriptor<'a>>,
+    fonts: HashMap<&'a str, RrcFont>,
 }
 
 //ti DiagramDescriptor
-impl <'a> DiagramDescriptor<'a> {
+impl<'a> DiagramDescriptor<'a> {
     //fp create_style_set
     /// Create the `StyleSet` required by the `DiagramDescriptor`
     /// The `StyleSet` must have a lifetime that exceeds the descriptor,
     /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
         let style_set = StyleSet::new()
-            .add_type(at::DEBUG,       StyleValue::string(None),  false)
-            .add_type(at::BBOX,        StyleValue::float_array(), false)
-            .add_type(at::GRID,        StyleValue::int_array(),   false)
-            .add_type(at::GRIDX,       StyleValue::int_array(),   false)
-            .add_type(at::GRIDY,       StyleValue::int_array(),   false)
-            .add_type(at::MINX,        StyleValue::float_array(), false)
-            .add_type(at::MINY,        StyleValue::float_array(), false)
-            .add_type(at::GROWX,       StyleValue::float_array(), false)
-            .add_type(at::GROWY,       StyleValue::float_array(), false)
-            .add_type(at::PLACE,       StyleValue::float_array(), false)
-            .add_type(at::ANCHOR,      StyleValue::floats(2),     true)
-            .add_type(at::EXPAND,      StyleValue::floats(2),     true)
-            .add_type(at::PAD,         StyleValue::floats(4),     false)
-            .add_type(at::MARGIN,      StyleValue::floats(4),     true)
-            .add_type(at::BORDERWIDTH, StyleValue::float(None),   true)
-            .add_type(at::BORDERROUND, StyleValue::float(None),   true)
-            .add_type(at::BORDERCOLOR, StyleValue::rgb(None),     true)
-            .add_type(at::BG,          StyleValue::rgb(None),     true)
-            .add_type(at::SCALE,       StyleValue::float(None),   true)
-            .add_type(at::ROTATE,      StyleValue::float(None),   true)
-            .add_type(at::TRANSLATE,   StyleValue::floats(2),     true)
-            .add_type(at::POINT,       StyleValue::floats(2),     true)
-            .add_type(at::RELIEF,      StyleValue::floats(2),     true)
-            .add_type(at::FILL,        StyleValue::rgb(None),     true)
-            .add_type(at::STROKE,      StyleValue::rgb(None),     true)
-            .add_type(at::STROKEWIDTH, StyleValue::float(None),   true)
-            .add_type(at::WIDTH,       StyleValue::float(None),   true)
-            .add_type(at::HEIGHT,      StyleValue::float(None),   true)
-            .add_type(at::COORDS,      StyleValue::float_array(), false)
-            .add_type(at::ROUND,       StyleValue::float(None),   true)
-            .add_type(at::STELLATE,    StyleValue::float(None),   true)
-            .add_type(at::MARKERS,     StyleValue::string_array("",true),  true)
-            .add_type(at::FONT,        StyleValue::string(None),  true)
-            .add_type(at::FONTSIZE,    StyleValue::float(None),   true)
-            .add_type(at::FONTWEIGHT,  StyleValue::string(None),  true)
-            .add_type(at::FONTSTYLE,   StyleValue::string(None),  true)
-            .add_type(at::VERTICES,    StyleValue::int(None),     true)
-            .add_type(at::FLAGS,       StyleValue::int(None),     true)
-            .add_type(at::REF,         StyleValue::string(None),  false)
-            ;
+            .add_type(at::DEBUG, StyleValue::string(None), false)
+            .add_type(at::BBOX, StyleValue::float_array(), false)
+            .add_type(at::GRID, StyleValue::int_array(), false)
+            .add_type(at::GRIDX, StyleValue::int_array(), false)
+            .add_type(at::GRIDY, StyleValue::int_array(), false)
+            .add_type(at::MINX, StyleValue::float_array(), false)
+            .add_type(at::MINY, StyleValue::float_array(), false)
+            .add_type(at::GROWX, StyleValue::float_array(), false)
+            .add_type(at::GROWY, StyleValue::float_array(), false)
+            .add_type(at::PLACE, StyleValue::float_array(), false)
+            .add_type(at::ANCHOR, StyleValue::floats(2), true)
+            .add_type(at::EXPAND, StyleValue::floats(2), true)
+            .add_type(at::PAD, StyleValue::floats(4), false)
+            .add_type(at::MARGIN, StyleValue::floats(4), true)
+            .add_type(at::BORDERWIDTH, StyleValue::float(None), true)
+            .add_type(at::BORDERROUND, StyleValue::float(None), true)
+            .add_type(at::BORDERCOLOR, StyleValue::rgb(None), true)
+            .add_type(at::BG, StyleValue::rgb(None), true)
+            .add_type(at::SCALE, StyleValue::float(None), true)
+            .add_type(at::ROTATE, StyleValue::float(None), true)
+            .add_type(at::TRANSLATE, StyleValue::floats(2), true)
+            .add_type(at::POINT, StyleValue::floats(2), true)
+            .add_type(at::RELIEF, StyleValue::floats(2), true)
+            .add_type(at::FILL, StyleValue::rgb(None), true)
+            .add_type(at::STROKE, StyleValue::rgb(None), true)
+            .add_type(at::STROKEWIDTH, StyleValue::float(None), true)
+            .add_type(at::WIDTH, StyleValue::float(None), true)
+            .add_type(at::HEIGHT, StyleValue::float(None), true)
+            .add_type(at::COORDS, StyleValue::float_array(), false)
+            .add_type(at::ROUND, StyleValue::float(None), true)
+            .add_type(at::STELLATE, StyleValue::float(None), true)
+            .add_type(at::MARKERS, StyleValue::string_array("", true), true)
+            .add_type(at::FONT, StyleValue::string(None), true)
+            .add_type(at::FONTSIZE, StyleValue::float(None), true)
+            .add_type(at::FONTWEIGHT, StyleValue::string(None), true)
+            .add_type(at::FONTSTYLE, StyleValue::string(None), true)
+            .add_type(at::VERTICES, StyleValue::int(None), true)
+            .add_type(at::FLAGS, StyleValue::int(None), true)
+            .add_type(at::REF, StyleValue::string(None), false);
         style_set
     }
 
@@ -112,16 +111,18 @@ impl <'a> DiagramDescriptor<'a> {
     /// dml.read_file("#diagram ##circle id=circle vertices=0".as_bytes(), false).unwrap();
     /// # Ok::<(), diagram::MLErrorList<hml_rs::string::Position, hml_rs::string::Error>>(())
     /// ```
-    pub fn new(style_set:&'a StyleSet) -> Self {
+    pub fn new(style_set: &'a StyleSet) -> Self {
         let descriptors = HashMap::new();
-        let fonts       = HashMap::new();
+        let fonts = HashMap::new();
         let mut descriptor = Self {
             style_set,
             descriptors,
             fonts,
         };
         Element::add_content_descriptors(&mut descriptor);
-        descriptor.fonts.insert("default", Rc::new(RefCell::new(Font::default())) );
+        descriptor
+            .fonts
+            .insert("default", Rc::new(RefCell::new(Font::default())));
         descriptor
     }
 
@@ -131,7 +132,12 @@ impl <'a> DiagramDescriptor<'a> {
     ///
     /// This is only invoked by the `Element` type to add the required
     /// descriptors for the element types for styling.
-    pub(super) fn add_content_descriptor(&mut self, name:el::Typ, include_hdr:bool, styles:Vec<&str>) {
+    pub(super) fn add_content_descriptor(
+        &mut self,
+        name: el::Typ,
+        include_hdr: bool,
+        styles: Vec<&str>,
+    ) {
         let mut descriptor = StyleDescriptor::new(&self.style_set);
         if include_hdr {
             descriptor.add_styles(ElementHeader::get_style_names());
@@ -142,9 +148,11 @@ impl <'a> DiagramDescriptor<'a> {
 
     //mp get
     /// Get the descriptor belonging to a tag name
-    pub(crate) fn get(&self, tag:el::Typ) -> Option<&StyleDescriptor> {
-        match self.descriptors.get(&tag)
-        { Some(rrc) => Some(rrc), None => None}
+    pub(crate) fn get(&self, tag: el::Typ) -> Option<&StyleDescriptor> {
+        match self.descriptors.get(&tag) {
+            Some(rrc) => Some(rrc),
+            None => None,
+        }
     }
 
     //mp get_font

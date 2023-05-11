@@ -17,62 +17,65 @@ limitations under the License.
  */
 
 //a Imports
-use crate::constants::attributes as at;
-use crate::constants::elements   as el;
+use super::super::{
+    DiagramDescriptor, DiagramElementContent, ElementError, ElementHeader, ElementScope,
+};
 use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
-use super::super::{DiagramDescriptor, DiagramElementContent, ElementScope, ElementHeader, ElementError};
-use crate::{Layout};
-use geometry::{Rectangle, Polygon};
+use crate::constants::attributes as at;
+use crate::constants::elements as el;
+use crate::Layout;
+use geometry::{Polygon, Rectangle};
 
 //a Shape element
 //tp Shape - an Element that contains a polygon (or path?)
 #[derive(Debug, Clone, Copy)]
 pub enum ShapeType {
-    Rect, Circle, Polygon
+    Rect,
+    Circle,
+    Polygon,
 }
 #[derive(Debug)]
 pub struct Shape {
-    pub shape_type : ShapeType,
-    pub polygon : Polygon,
-    pub fill   : Option<(f64,f64,f64)>,
-    pub stroke : Option<(f64,f64,f64)>,
-    pub stroke_width : f64,
-    pub markers : (Option<String>, Option<String>, Option<String>),
+    pub shape_type: ShapeType,
+    pub polygon: Polygon,
+    pub fill: Option<(f64, f64, f64)>,
+    pub stroke: Option<(f64, f64, f64)>,
+    pub stroke_width: f64,
+    pub markers: (Option<String>, Option<String>, Option<String>),
 }
 
 //ip DiagramElementContent for Shape
-impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
+impl<'a, 'b> DiagramElementContent<'a, 'b> for Shape {
     //fp new
-    fn new(_header:&ElementHeader, name:el::Typ) -> Result<Self,ElementError> {
-
+    fn new(_header: &ElementHeader, name: el::Typ) -> Result<Self, ElementError> {
         let shape_type = {
             match name {
                 el::Typ::Circle => ShapeType::Circle,
-                el::Typ::Rect   => ShapeType::Rect,
-                _ =>               ShapeType::Polygon,
+                el::Typ::Rect => ShapeType::Rect,
+                _ => ShapeType::Polygon,
             }
         };
         let polygon = Polygon::new(0, 0.);
-        Ok( Self {
+        Ok(Self {
             shape_type,
             polygon,
-            stroke_width:0.,
-            stroke : None,
-            fill : None,
-            markers : (None, None, None),
-        } )
+            stroke_width: 0.,
+            stroke: None,
+            fill: None,
+            markers: (None, None, None),
+        })
     }
 
     //fp clone
     /// Clone element given clone of header within scope
-    fn clone(&self, header:&ElementHeader, _scope:&ElementScope ) -> Result<Self,ElementError>{
+    fn clone(&self, header: &ElementHeader, _scope: &ElementScope) -> Result<Self, ElementError> {
         let mut clone = Self::new(header, el::Typ::Clone)?;
         clone.shape_type = self.shape_type;
-        Ok( clone )
+        Ok(clone)
     }
 
     //fp get_style_names
-    fn get_style_names<'z> (name:&str) -> Vec<&'z str> {
+    fn get_style_names<'z>(name: &str) -> Vec<&'z str> {
         match name {
             el::CIRCLE => vec![
                 at::FILL,
@@ -82,7 +85,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
                 at::WIDTH,
                 at::HEIGHT,
             ],
-            el::RECT  =>  vec![
+            el::RECT => vec![
                 at::FILL,
                 at::STROKE,
                 at::STROKEWIDTH,
@@ -91,7 +94,7 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
                 at::WIDTH,
                 at::HEIGHT,
             ],
-            _ =>        vec![
+            _ => vec![
                 at::FILL,
                 at::STROKE,
                 at::STROKEWIDTH,
@@ -106,68 +109,88 @@ impl <'a, 'b> DiagramElementContent <'a, 'b> for Shape {
     }
 
     //mp style
-    fn style(&mut self, _descriptor:&DiagramDescriptor, header:&ElementHeader) -> Result<(),ElementError> {
+    fn style(
+        &mut self,
+        _descriptor: &DiagramDescriptor,
+        header: &ElementHeader,
+    ) -> Result<(), ElementError> {
         if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
-            self.fill = Some((v[0],v[1],v[2]));
+            self.fill = Some((v[0], v[1], v[2]));
         }
         if let Some(v) = header.get_style_rgb_of_name(at::STROKE).as_floats(None) {
-            self.stroke = Some((v[0],v[1],v[2]));
+            self.stroke = Some((v[0], v[1], v[2]));
         }
-        self.stroke_width = header.get_style_of_name_float(at::STROKEWIDTH,Some(0.)).unwrap();
-        let round    = header.get_style_of_name_float(at::ROUND,Some(0.)).unwrap();
-        let width    = header.get_style_of_name_float(at::WIDTH,Some(1.)).unwrap();
-        let height   = header.get_style_of_name_float(at::HEIGHT,Some(width)).unwrap();
-        let stellate = header.get_style_of_name_float(at::STELLATE,Some(0.)).unwrap();
+        self.stroke_width = header
+            .get_style_of_name_float(at::STROKEWIDTH, Some(0.))
+            .unwrap();
+        let round = header.get_style_of_name_float(at::ROUND, Some(0.)).unwrap();
+        let width = header.get_style_of_name_float(at::WIDTH, Some(1.)).unwrap();
+        let height = header
+            .get_style_of_name_float(at::HEIGHT, Some(width))
+            .unwrap();
+        let stellate = header
+            .get_style_of_name_float(at::STELLATE, Some(0.))
+            .unwrap();
         match self.shape_type {
             ShapeType::Polygon => {
-                let vertices = header.get_style_of_name_int(at::VERTICES,Some(4)).unwrap() as usize;
+                let vertices =
+                    header.get_style_of_name_int(at::VERTICES, Some(4)).unwrap() as usize;
                 self.polygon.set_vertices(vertices);
-                self.polygon.set_size(height/2., width/height);
-            },
+                self.polygon.set_size(height / 2., width / height);
+            }
             ShapeType::Circle => {
                 self.polygon.set_vertices(0);
-                self.polygon.set_size(height/2., width/height);
-            },
+                self.polygon.set_size(height / 2., width / height);
+            }
             ShapeType::Rect => {
                 self.polygon.set_vertices(4);
                 let eccentricity = width / height;
-                let height       = height / (2.0_f64.sqrt());
+                let height = height / (2.0_f64.sqrt());
                 self.polygon.set_size(height, eccentricity);
-            },
+            }
         };
 
         self.polygon.set_rounding(round);
-        if stellate != 0. { self.polygon.set_stellate_size(stellate); }
+        if stellate != 0. {
+            self.polygon.set_stellate_size(stellate);
+        }
         Ok(())
     }
 
     //mp get_desired_geometry
-    fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
         let rect = self.polygon.get_bbox();
-        rect.enlarge(self.stroke_width/2.)
+        rect.enlarge(self.stroke_width / 2.)
     }
 
     //zz All done
 }
 //ip Shape
-impl Shape {
-}
+impl Shape {}
 
 //ip GenerateSvgElement for Shape
 impl GenerateSvgElement for Shape {
-    fn generate_svg(&self, svg:&mut Svg, header:&ElementHeader) -> Result<(), SvgError> {
+    fn generate_svg(&self, svg: &mut Svg, header: &ElementHeader) -> Result<(), SvgError> {
         let mut ele = SvgElement::new("path");
         header.svg_add_transform(&mut ele);
         match &self.stroke {
-            None      => {ele.add_attribute("stroke","None");},
-            Some(rgb) => {ele.add_color("stroke",rgb);},
+            None => {
+                ele.add_attribute("stroke", "None");
+            }
+            Some(rgb) => {
+                ele.add_color("stroke", rgb);
+            }
         }
         match &self.fill {
-            None      => {ele.add_attribute("fill","None");},
-            Some(rgb) => {ele.add_color("fill",rgb);},
+            None => {
+                ele.add_attribute("fill", "None");
+            }
+            Some(rgb) => {
+                ele.add_color("fill", rgb);
+            }
         }
         ele.add_markers(&self.markers);
-        ele.add_size("stroke-width",self.stroke_width);
+        ele.add_size("stroke-width", self.stroke_width);
         ele.add_polygon_path(&self.polygon, true);
         svg.add_subelement(ele);
         Ok(())

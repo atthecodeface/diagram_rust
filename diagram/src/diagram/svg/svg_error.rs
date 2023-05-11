@@ -21,7 +21,7 @@ limitations under the License.
 //a SvgError
 //tp SvgError
 pub enum SvgError {
-    None
+    None,
 }
 
 //ip Display for SvgError
@@ -34,4 +34,3 @@ impl std::fmt::Display for SvgError {
 
     //zz All done
 }
-

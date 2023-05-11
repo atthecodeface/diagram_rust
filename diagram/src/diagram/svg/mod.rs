@@ -17,14 +17,14 @@ limitations under the License.
  */
 
 //a Imports
-mod svg_error;
-mod svg_element_iter;
-mod svg_element;
-mod svg;
 mod generate_svg;
+mod svg;
+mod svg_element;
+mod svg_element_iter;
+mod svg_error;
 
-pub use self::svg_error::{SvgError};
-pub use self::svg_element_iter::{ElementIter};
-pub use self::svg_element::{SvgElement};
-pub use self::svg::{Svg};
 pub use self::generate_svg::{GenerateSvg, GenerateSvgElement};
+pub use self::svg::Svg;
+pub use self::svg_element::SvgElement;
+pub use self::svg_element_iter::ElementIter;
+pub use self::svg_error::SvgError;

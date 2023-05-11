@@ -17,16 +17,15 @@ limitations under the License.
  */
 
 //a Imports
+use super::font;
 use std::cell::RefCell;
 use std::rc::Rc;
 use stylesheet;
-use super::font;
-pub type StyleValue           = stylesheet::BaseValue;
-pub type StyleDescriptor<'a>  = stylesheet::Descriptor<'a, StyleValue>;
-pub type StyleSet             = stylesheet::NamedTypeSet<StyleValue>;
-pub type StyleSheet<'a>       = stylesheet::Stylesheet<'a, StyleValue>;
-pub type StyleRule            = stylesheet::StylableNodeRule;
+pub type StyleValue = stylesheet::BaseValue;
+pub type StyleDescriptor<'a> = stylesheet::Descriptor<'a, StyleValue>;
+pub type StyleSet = stylesheet::NamedTypeSet<StyleValue>;
+pub type StyleSheet<'a> = stylesheet::Stylesheet<'a, StyleValue>;
+pub type StyleRule = stylesheet::StylableNodeRule;
 // pub type StyleAction          = stylesheet::StylableNodeAction<StyleValue>;
-pub type ValueError           = stylesheet::ValueError;
+pub type ValueError = stylesheet::ValueError;
 pub type RrcFont = Rc<RefCell<font::Font>>;
-

@@ -17,10 +17,10 @@ limitations under the License.
  */
 
 //a Imports
-use geometry::{Rectangle};
-use super::super::{Diagram};
-use crate::{LayoutRecord};
-use super::{SvgError, ElementIter, SvgElement, GenerateSvg};
+use super::super::Diagram;
+use super::{ElementIter, GenerateSvg, SvgElement, SvgError};
+use crate::LayoutRecord;
+use geometry::Rectangle;
 
 //a Svg
 //tp Svg
@@ -31,41 +31,41 @@ use super::{SvgError, ElementIter, SvgElement, GenerateSvg};
 /// This method requires the `GenerateSvg` to be brought in to scope.
 pub struct Svg<'a> {
     /// Diagram that the SVG is being built for
-    pub diagram            : &'a Diagram<'a>,
+    pub diagram: &'a Diagram<'a>,
     /// version of SVG - 10, 11 or 20
-    pub(super) version     : usize,
+    pub(super) version: usize,
     /// if asserted then show grid at the toplevel layout
-    pub(super) show_grid   : bool,
+    pub(super) show_grid: bool,
     /// if asserted then show layout of grids
-    pub(super) show_layout : bool,
+    pub(super) show_layout: bool,
     /// if asserted then show content rectangles as translucent green rectangles
-    pub(super) show_content_rectangles : bool,
+    pub(super) show_content_rectangles: bool,
     /// if asserted then display SVG elements to stdout
-    pub(super) display     : bool,
+    pub(super) display: bool,
     /// Stack of elements being created
-    stack : Vec<SvgElement>,
+    stack: Vec<SvgElement>,
 }
 
 //ip Svg
-impl <'a> Svg <'a> {
+impl<'a> Svg<'a> {
     //fp new
     /// Create a new `Svg` instance, to render a `Diagram` into
-    pub fn new(diagram:&'a Diagram) -> Self  {
+    pub fn new(diagram: &'a Diagram) -> Self {
         Self {
             diagram,
-            version : 20,
-            stack : Vec::new(),
-            show_grid : false,
-            show_layout : false,
-            show_content_rectangles : false,
-            display : false,
+            version: 20,
+            stack: Vec::new(),
+            show_grid: false,
+            show_layout: false,
+            show_content_rectangles: false,
+            display: false,
         }
     }
 
     //cp set_version
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a version in to the SVG output
-    pub fn set_version(mut self, version:usize) -> Self {
+    pub fn set_version(mut self, version: usize) -> Self {
         self.version = version;
         self
     }
@@ -73,7 +73,7 @@ impl <'a> Svg <'a> {
     //cp set_grid
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a grid in to the SVG output
-    pub fn set_grid(mut self, grid:bool) -> Self {
+    pub fn set_grid(mut self, grid: bool) -> Self {
         self.show_grid = grid;
         self
     }
@@ -82,7 +82,7 @@ impl <'a> Svg <'a> {
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of lines indicating the `Layout`
     /// grids.
-    pub fn set_layout(mut self, layout:bool) -> Self {
+    pub fn set_layout(mut self, layout: bool) -> Self {
         self.show_layout = layout;
         self
     }
@@ -91,7 +91,7 @@ impl <'a> Svg <'a> {
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the display to stdout of the Svg element hierarchy,
     /// once created from the diagram.
-    pub fn set_display(mut self, display:bool) -> Self {
+    pub fn set_display(mut self, display: bool) -> Self {
         self.display = display;
         self
     }
@@ -99,13 +99,13 @@ impl <'a> Svg <'a> {
     //cp set_content_rectangles
     /// Used in a construction, to update the `Svg` instance to enable
     /// or disable the incorporation of a grid in to the SVG output
-    pub fn set_content_rectangles(mut self, show:bool) -> Self {
+    pub fn set_content_rectangles(mut self, show: bool) -> Self {
         self.show_content_rectangles = show;
         self
     }
 
     //mp push_element
-    pub(crate) fn push_element(&mut self, e:SvgElement) {
+    pub(crate) fn push_element(&mut self, e: SvgElement) {
         self.stack.push(e);
     }
     //mp pop_element
@@ -113,16 +113,19 @@ impl <'a> Svg <'a> {
         self.stack.pop().unwrap()
     }
     //mp add_subelement
-    pub(crate) fn add_subelement(&mut self, e:SvgElement) {
+    pub(crate) fn add_subelement(&mut self, e: SvgElement) {
         let n = self.stack.len();
-        self.stack[n-1].contents.push(e);
+        self.stack[n - 1].contents.push(e);
     }
 
     //mp generate_layout_recoredd_svg
-    pub(crate) fn generate_layout_recorded_svg(&mut self, layout_record:&Option<LayoutRecord> ) -> Result<(), SvgError> {
+    pub(crate) fn generate_layout_recorded_svg(
+        &mut self,
+        layout_record: &Option<LayoutRecord>,
+    ) -> Result<(), SvgError> {
         if self.show_layout {
             if let Some(lr) = layout_record.as_ref() {
-                lr.generate_svg( self )?;
+                lr.generate_svg(self)?;
             }
         }
         Ok(())
@@ -133,38 +136,49 @@ impl <'a> Svg <'a> {
     pub fn generate_diagram(&mut self) -> Result<(), SvgError> {
         let contents = &self.diagram.contents;
         let mut ele = SvgElement::new("svg");
-        ele.add_attribute("xmlns:svg","http://www.w3.org/2000/svg");
-        ele.add_attribute("xmlns","http://www.w3.org/2000/svg");
-        ele.add_attribute("version",&format!("{:.1}", (self.version as f64)/10.));
-        ele.add_attribute("width" , &format!("{}mm", contents.content_bbox.x1-contents.content_bbox.x0));
-        ele.add_attribute("height", &format!("{}mm", contents.content_bbox.y1-contents.content_bbox.y0));
-        ele.add_attribute("viewBox",
-                          &format!("{} {} {} {}",
-                                   contents.content_bbox.x0,
-                                   contents.content_bbox.y0,
-                                   contents.content_bbox.x1-contents.content_bbox.x0,
-                                   contents.content_bbox.y1-contents.content_bbox.y0,
-                                   ) );
+        ele.add_attribute("xmlns:svg", "http://www.w3.org/2000/svg");
+        ele.add_attribute("xmlns", "http://www.w3.org/2000/svg");
+        ele.add_attribute("version", &format!("{:.1}", (self.version as f64) / 10.));
+        ele.add_attribute(
+            "width",
+            &format!("{}mm", contents.content_bbox.x1 - contents.content_bbox.x0),
+        );
+        ele.add_attribute(
+            "height",
+            &format!("{}mm", contents.content_bbox.y1 - contents.content_bbox.y0),
+        );
+        ele.add_attribute(
+            "viewBox",
+            &format!(
+                "{} {} {} {}",
+                contents.content_bbox.x0,
+                contents.content_bbox.y0,
+                contents.content_bbox.x1 - contents.content_bbox.x0,
+                contents.content_bbox.y1 - contents.content_bbox.y0,
+            ),
+        );
         self.push_element(ele);
 
         let ele = SvgElement::new("defs");
         self.push_element(ele);
 
         for e in &contents.markers {
-            e.generate_svg( self )?;
+            e.generate_svg(self)?;
         }
 
         let ele = self.pop_element();
         self.add_subelement(ele);
 
         if self.show_grid {
-            if let Some(ele) = SvgElement::new_grid(Rectangle::new(-100.,-100.,100.,100.),10.,0.1,"grey") {
+            if let Some(ele) =
+                SvgElement::new_grid(Rectangle::new(-100., -100., 100., 100.), 10., 0.1, "grey")
+            {
                 self.add_subelement(ele);
             }
         }
 
-        if let Some(element) = &contents.root_layout{
-            element.generate_svg( self )?;
+        if let Some(element) = &contents.root_layout {
+            element.generate_svg(self)?;
         }
 
         if self.display {
@@ -187,4 +201,3 @@ impl <'a> Svg <'a> {
 
     //zz All done
 }
-

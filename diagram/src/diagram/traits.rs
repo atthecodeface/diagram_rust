@@ -20,27 +20,31 @@ limitations under the License.
 // const DEBUG_ELEMENT_HEADER : bool = 1 == 0;
 
 //a Imports
-use geometry::{Rectangle};
-use crate::DiagramDescriptor;
-use crate::{Layout};
+pub use super::elements::{Group, Path, Shape, Text, Use};
+use super::{ElementError, ElementHeader, ElementScope};
 use crate::constants::elements as el;
-pub use super::elements::{Group, Shape, Path, Text, Use};
-use super::{ElementHeader, ElementScope, ElementError};
+use crate::DiagramDescriptor;
+use crate::Layout;
+use geometry::Rectangle;
 
 //a DiagramElementContent trait
 //tp DiagramElementContent
 /// 'a is the lifetime of the diagram
 /// 'b is the lifetime of a scope while uniqifying/cloning contents of the diagram
-pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
+pub trait DiagramElementContent<'a, 'b>: Sized + std::fmt::Debug {
     //fp new
     /// Create a new element of the given name
-    fn new(header:&ElementHeader<'a>, name:el::Typ ) -> Result<Self,ElementError>;
+    fn new(header: &ElementHeader<'a>, name: el::Typ) -> Result<Self, ElementError>;
 
     //fp clone
     /// Clone element given clone of header within scope
     ///
     /// This method is only invoke prior to styling, so often is the same as `new`
-    fn clone(&self, header:&ElementHeader<'a>, scope:&ElementScope<'a, 'b> ) -> Result<Self,ElementError>;
+    fn clone(
+        &self,
+        header: &ElementHeader<'a>,
+        scope: &ElementScope<'a, 'b>,
+    ) -> Result<Self, ElementError>;
 
     //mp uniquify
     /// Sets internal self.content to a clone of a resolved definition
@@ -48,18 +52,26 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     /// The id_ref should identify an element in `scope`.
     /// The header may have to be cloned - it has layout information etc, and indeed any of its
     /// name/values override those of
-    fn uniquify(&mut self, _header:&ElementHeader<'a>, _scope:&ElementScope<'a,'b>) -> Result<bool, ElementError> {
+    fn uniquify(
+        &mut self,
+        _header: &ElementHeader<'a>,
+        _scope: &ElementScope<'a, 'b>,
+    ) -> Result<bool, ElementError> {
         Ok(false)
     }
 
     //fp get_style_names
     /// Get the style descriptor for this element when referenced by the name
-    fn get_style_names<'c>(_name:&str) -> Vec<&'c str>;
+    fn get_style_names<'c>(_name: &str) -> Vec<&'c str>;
 
     //mp style
     /// Style the element within the Diagram's descriptor, using the
     /// header if required to extract styles
-    fn style(&mut self, _descriptor:&DiagramDescriptor, _header:&ElementHeader) -> Result<(),ElementError> {
+    fn style(
+        &mut self,
+        _descriptor: &DiagramDescriptor,
+        _header: &ElementHeader,
+    ) -> Result<(), ElementError> {
         Ok(())
     }
 
@@ -69,7 +81,7 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     /// header + element content) -- by setting their layout
     /// properties -- but does not effect the *content* of a single
     /// element
-    fn get_desired_geometry(&mut self, _layout:&mut Layout) -> Rectangle {
+    fn get_desired_geometry(&mut self, _layout: &mut Layout) -> Rectangle {
         Rectangle::none()
     }
 
@@ -80,16 +92,14 @@ pub trait DiagramElementContent <'a, 'b> : Sized+std::fmt::Debug {
     ///
     /// The rectangle supplied is the content-space rectangle derived
     /// for the content
-    fn apply_placement(&mut self, _layout:&Layout, _rect:&Rectangle) {
+    fn apply_placement(&mut self, _layout: &Layout, _rect: &Rectangle) {
         // No need to do anything
     }
 
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4
-    fn display(&self, _indent:usize, _indent_str:&str) {
-    }
+    fn display(&self, _indent: usize, _indent_str: &str) {}
 
     //zz All done
 }
-

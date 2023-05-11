@@ -1,12 +1,11 @@
 mod group;
-mod text;
-mod shape;
 mod path;
+mod shape;
+mod text;
 mod use_ref;
 
-pub use self::group::Group as Group;
-pub use self::shape::Shape as Shape;
-pub use self::path::Path   as Path;
-pub use self::text::Text as Text;
-pub use self::use_ref::Use as Use;
-
+pub use self::group::Group;
+pub use self::path::Path;
+pub use self::shape::Shape;
+pub use self::text::Text;
+pub use self::use_ref::Use;
