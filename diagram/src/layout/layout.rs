@@ -99,25 +99,17 @@ impl Layout {
     /// Any placements provide a true bbox
     /// A grid has a desired width and height, centred on 0,0
     pub fn get_desired_geometry(&mut self) -> Rectangle {
-        self.grid_placements.0.calculate_positions(0., 0., 0.);
-        self.grid_placements.1.calculate_positions(0., 0., 0.);
-
-        let grid_width = self.grid_placements.0.get_size();
-        let grid_height = self.grid_placements.1.get_size();
+        let grid_x = self.grid_placements.0.get_desired_geometry();
+        let grid_y = self.grid_placements.1.get_desired_geometry();
 
         let place_x_pt = self.direct_placements.0.get_desired_geometry();
         let place_y_pt = self.direct_placements.1.get_desired_geometry();
 
         self.desired_grid = {
-            if grid_width == 0. || grid_height == 0. {
+            if grid_x.is_none() || grid_y.is_none() {
                 Rectangle::none()
             } else {
-                Rectangle::new(
-                    grid_width * -0.5,
-                    grid_height * -0.5,
-                    grid_width * 0.5,
-                    grid_height * 0.5,
-                )
+                Rectangle::none().to_ranges(grid_x, grid_y)
             }
         };
         self.desired_placement = {
@@ -190,13 +182,10 @@ impl Layout {
     /// Used to record the layout so it may, for example, be drawn
     ///
     pub fn get_grid_positions(&self) -> (Vec<(isize, f64)>, Vec<(isize, f64)>) {
-        let mut result = (Vec::new(), Vec::new());
-        for (p, s) in self.grid_placements.0.iter_positions() {
-            result.0.push((p, s));
-        }
-        for (p, s) in self.grid_placements.1.iter_positions() {
-            result.1.push((p, s));
-        }
+        let mut result = (
+            self.grid_placements.0.get_positions(),
+            self.grid_placements.1.get_positions(),
+        );
         result
     }
 
