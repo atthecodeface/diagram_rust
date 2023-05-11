@@ -90,18 +90,20 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
         &mut self,
         header: &ElementHeader<'a>,
         scope: &ElementScope<'a, 'b>,
-    ) -> Result<bool, ElementError> {
+        uid: usize,
+    ) -> Result<(bool, usize), ElementError> {
         match self.content.len() {
             0 => {
                 let (scope, element) = scope.new_subscope(header, &self.id_ref, self.depth + 1)?;
                 let mut clone = element.clone(&scope)?;
                 clone.header.override_values(header)?;
                 self.content.push(clone);
-                Ok(true)
+                Ok((true, 0)) // uid is irrelevant if uniquified - this has to be invoked again
             }
             _ => {
-                self.content[0].uniquify(scope)?;
-                Ok(false)
+                // has content (and it must be the only content), so has been uniqified already
+                let uid = self.content[0].uniquify(scope, uid)?;
+                Ok((false, uid))
             }
         }
     }

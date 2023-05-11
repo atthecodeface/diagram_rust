@@ -55,9 +55,10 @@ pub trait DiagramElementContent<'a, 'b>: Sized + std::fmt::Debug {
     fn uniquify(
         &mut self,
         _header: &ElementHeader<'a>,
-        _scope: &ElementScope<'a, 'b>,
-    ) -> Result<bool, ElementError> {
-        Ok(false)
+        scope: &ElementScope<'a, 'b>,
+        uid: usize,
+    ) -> Result<(bool, usize), ElementError> {
+        Ok((false, uid))
     }
 
     //fp get_style_names

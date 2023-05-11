@@ -95,11 +95,12 @@ impl<'a> ElementContent<'a> {
         &'c mut self,
         header: &ElementHeader<'a>,
         scope: &ElementScope<'a, 'b>,
+        uid: usize,
     ) -> Result<bool, ElementError> {
         match self {
-            Self::Use(ref mut c) => c.uniquify(header, scope),
-            Self::Group(ref mut c) => c.uniquify(header, scope),
-            _ => Ok(false),
+            Self::Use(ref mut c) => c.uniquify(header, scope, uid),
+            Self::Group(ref mut c) => c.uniquify(header, scope, uid),
+            _ => Ok((false, uid)),
         }
     }
 

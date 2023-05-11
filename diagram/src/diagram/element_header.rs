@@ -38,6 +38,7 @@ use stylesheet::StylableNode;
 //tp ElementHeader
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
+    pub uid: usize,
     pub stylable: StylableNode<'a, StyleValue>,
     pub id_name: Option<String>, // replicated from stylable
     pub layout_box: LayoutBox,
@@ -54,11 +55,13 @@ impl<'a> ElementHeader<'a> {
     ) -> Result<Self, ElementError> {
         if let Some(styles) = descriptor.get(name) {
             // &RrcStyleDescriptor
+            let uid = 0;
             let stylable = StylableNode::new(name.as_str(), styles);
             let id_name = None;
             let layout_box = LayoutBox::new();
             let layout = ElementLayout::new();
             let mut hdr = ElementHeader {
+                uid,
                 stylable,
                 id_name,
                 layout_box,
@@ -85,16 +88,23 @@ impl<'a> ElementHeader<'a> {
         id_name.push_str(".");
         id_name.push_str(self.borrow_id());
         // println!("Clone header with new id {}", id_name);
+        let uid = 0;
         let stylable = self.stylable.clone(&id_name);
         let id_name = Some(id_name);
         let layout_box = LayoutBox::new();
         let layout = ElementLayout::new();
         ElementHeader {
+            uid,
             stylable,
             id_name,
             layout_box,
             layout,
         }
+    }
+
+    //mp set_uid
+    pub fn set_uid(&mut self, uid: usize) {
+        self.uid = uid;
     }
 
     //mp get_style_names
@@ -266,7 +276,8 @@ impl<'a> ElementHeader<'a> {
 
     //mp display
     pub fn display(&self, indent_str: &str) {
-        println!("{}{:?} {}", indent_str, self.id_name, self.layout.placement);
+        println!("{}{}: {:?}", indent_str, self.uid, self.id_name);
+        self.layout.display(indent_str);
         self.layout_box.display(indent_str);
     }
     //zz All done

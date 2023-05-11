@@ -173,11 +173,12 @@ impl<'a> Diagram<'a> {
     /// definition too along with the ids therein
     pub fn uniquify(&mut self) -> Result<(), DiagramError> {
         let scope = ElementScope::new("", &self.contents.definitions);
+        let mut uid = 1;
         if let Some(element) = &mut self.contents.root_layout {
-            element.uniquify(&scope)?;
+            uid = element.uniquify(&scope, uid)?;
         }
         for element in &mut self.contents.markers {
-            element.uniquify(&scope)?;
+            uid = element.uniquify(&scope, uid)?;
         }
         Ok(())
     }

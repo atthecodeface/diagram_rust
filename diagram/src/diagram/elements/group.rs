@@ -153,11 +153,12 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         &mut self,
         _header: &ElementHeader<'a>,
         scope: &ElementScope<'a, 'b>,
-    ) -> Result<bool, ElementError> {
+        mut uid: usize,
+    ) -> Result<(bool, usize), ElementError> {
         for e in self.content.iter_mut() {
-            e.uniquify(scope)?;
+            uid = e.uniquify(scope, uid)?;
         }
-        Ok(false)
+        Ok((false, uid))
     }
 
     //fp get_style_names

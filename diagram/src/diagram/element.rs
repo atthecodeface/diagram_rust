@@ -109,12 +109,18 @@ impl<'a> Element<'a> {
 
     //mp uniquify
     /// Generates a *replacement* if the content requires it
-    pub fn uniquify<'b>(&mut self, scope: &ElementScope<'a, 'b>) -> Result<(), ElementError> {
-        if self.content.uniquify(&self.header, scope)? {
-            // Updated the content, so uniquify again
-            self.uniquify(scope)
+    pub fn uniquify<'b>(
+        &mut self,
+        scope: &ElementScope<'a, 'b>,
+        uid: usize,
+    ) -> Result<usize, ElementError> {
+        self.header.set_uid(uid);
+        let (uniquified, uniq_uid) = self.content.uniquify(&self.header, scope, uid + 1)?;
+        if uniquified {
+            // Updated the content, so uniquify again with the input uid
+            self.uniquify(scope, uid)
         } else {
-            Ok(())
+            Ok((uniq_uid))
         }
     }
 
