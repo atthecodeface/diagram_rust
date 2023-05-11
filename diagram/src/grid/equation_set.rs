@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use super::{LUPDecomposition};
+use super::LUPDecomposition;
 
 //a EquationSet
 //tp EquationSet
@@ -57,36 +57,40 @@ use super::{LUPDecomposition};
 /// accomplished using the `force_value` method.
 pub struct EquationSet {
     /// The number of equations
-    size    : usize,
+    size: usize,
     /// The matrix of coefficients, length size*size
     ///
     /// This holds the inverse
-    matrix  : Vec<f64>,
+    matrix: Vec<f64>,
     /// The vector of result values, length size*size
-    results : Vec<f64>,
+    results: Vec<f64>,
 }
 
 //ip EquationSet
 impl EquationSet {
     //fp new
-    pub fn new(size:usize) -> Self {
-        let matrix  = vec![0.0f64; size * size];
+    pub fn new(size: usize) -> Self {
+        let matrix = vec![0.0f64; size * size];
         let results = vec![0.0f64; size];
-        Self {size, matrix, results}
+        Self {
+            size,
+            matrix,
+            results,
+        }
     }
 
     //fp add_growth_link
-    pub fn add_growth_link(&mut self, start:usize, end:usize, length:f64, growth:f64) {
+    pub fn add_growth_link(&mut self, start: usize, end: usize, length: f64, growth: f64) {
         let size = self.size;
         let inv_growth = 1.0 / growth;
 
-        self.matrix[start * size + start] +=  inv_growth;
-        self.matrix[start * size + end]   -=  inv_growth;
-        self.results[start]               -=  inv_growth * length;
+        self.matrix[start * size + start] += inv_growth;
+        self.matrix[start * size + end] -= inv_growth;
+        self.results[start] -= inv_growth * length;
 
-        self.matrix[end * size + start] -=  inv_growth;
-        self.matrix[end * size + end]   +=  inv_growth;
-        self.results[end]               +=  inv_growth * length;
+        self.matrix[end * size + start] -= inv_growth;
+        self.matrix[end * size + end] += inv_growth;
+        self.results[end] += inv_growth * length;
     }
 
     //fp force_value
@@ -95,29 +99,33 @@ impl EquationSet {
     /// This will make its row be 0 0 0 .. 1 .. 0 0 and the result
     /// `value`
     ///
-    pub fn force_value(&mut self, n:usize, value:f64) {
+    pub fn force_value(&mut self, n: usize, value: f64) {
         let size = self.size;
         for i in 0..size {
-            self.matrix[n*size + i] = 0.;
+            self.matrix[n * size + i] = 0.;
         }
-        self.matrix[n*size + n] = 1.;
+        self.matrix[n * size + n] = 1.;
         self.results[n] = value;
     }
 
     //fi column_is_zero
-    pub fn column_is_zero(&self, n:usize) -> bool {
+    pub fn column_is_zero(&self, n: usize) -> bool {
         let size = self.size;
         for i in 0..size {
-            if self.matrix[i*size + n] != 0. {return false;}
+            if self.matrix[i * size + n] != 0. {
+                return false;
+            }
         }
         true
     }
 
     //fi row_is_zero
-    pub fn row_is_zero(&self, n:usize) -> bool {
+    pub fn row_is_zero(&self, n: usize) -> bool {
         let size = self.size;
         for i in 0..size {
-            if self.matrix[n*size + i] != 0. {return false;}
+            if self.matrix[n * size + i] != 0. {
+                return false;
+            }
         }
         true
     }
@@ -128,7 +136,9 @@ impl EquationSet {
             if lup.invert(&mut self.matrix) {
                 Ok(())
             } else {
-                Err(format!("Failed to invert after decomposition, not invertible"))
+                Err(format!(
+                    "Failed to invert after decomposition, not invertible"
+                ))
             }
         } else {
             Err(format!("Failed to decompose, not invertible"))
@@ -143,7 +153,7 @@ impl EquationSet {
         for n in 0..size {
             let mut x = 0.;
             for j in 0..size {
-                x += self.matrix[n*size+j] * self.results[j];
+                x += self.matrix[n * size + j] * self.results[j];
             }
             results.push(x);
         }
@@ -167,11 +177,10 @@ impl std::fmt::Display for EquationSet {
         for i in 0..self.size {
             write!(f, "\n|")?;
             for j in 0..self.size {
-                write!(f, " {:8}", self.matrix[i*self.size + j])?;
+                write!(f, " {:8}", self.matrix[i * self.size + j])?;
             }
             write!(f, "|  ({:8})", self.results[i])?;
         }
         write!(f, "\n")
     }
 }
-

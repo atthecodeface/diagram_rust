@@ -23,21 +23,22 @@ limitations under the License.
 /// Used in external interfaces
 #[derive(Debug)]
 pub struct GridData {
-    pub start:isize,
-    pub end:isize,
-    pub size:f64,
+    pub start: isize,
+    pub end: isize,
+    pub size: f64,
 }
 
 //ip GridData
 impl GridData {
-    pub fn new(start:isize, end:isize, size:f64) -> Self {
+    //fp new
+    /// Create a new [GridData] element
+    pub fn new(start: isize, end: isize, size: f64) -> Self {
         Self { start, end, size }
     }
 }
 
 //ip Display for GridData
 impl std::fmt::Display for GridData {
-
     //mp fmt - format a GridData
     /// Display the `GridData' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -46,4 +47,3 @@ impl std::fmt::Display for GridData {
 
     //zz All done
 }
-

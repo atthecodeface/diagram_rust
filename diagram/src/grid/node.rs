@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::{HashSet, HashMap};
-use super::{NodeId};
+use super::NodeId;
+use std::collections::{HashMap, HashSet};
 
 //a Node
 //ti Node
@@ -27,11 +27,11 @@ use super::{NodeId};
 /// This can be linked to other cells through multiple content handled by the `Link` references,
 /// which refer to the other end of the link
 #[derive(Debug)]
-pub struct Node<N:NodeId> {
+pub struct Node<N: NodeId> {
     /// The index into our vec of ids
-    pub index : usize,
+    pub index: usize,
     /// The forced position of the node
-    pub forced_position  : Option<f64>,
+    pub forced_position: Option<f64>,
     /// The placed position of the node
     ///
     /// A node that is forced will have a placed_position set to its
@@ -39,7 +39,7 @@ pub struct Node<N:NodeId> {
     /// because it is a root or leaf of the network with no dependency
     /// on forced nodes will have a placed_position but not a
     /// forced_position
-    pub placed_position  : Option<f64>,
+    pub placed_position: Option<f64>,
     /// The derived position of the node
     ///
     /// A node that is forced/placed will have a position set to its
@@ -48,31 +48,32 @@ pub struct Node<N:NodeId> {
     /// The position may be otherwise derived - from simply following
     /// links or from the spring model
     ///
-    pub position  : Option<f64>,
+    pub position: Option<f64>,
     /// The `node_id`s of the 'start's of links for which this node is the end
-    pub link_starts : Vec<N>,
+    pub link_starts: Vec<N>,
     /// The `node_id`s of the 'end's of links for which this node is the start
-    pub link_ends : Vec<N>,
+    pub link_ends: Vec<N>,
 }
 
 //ip Node
-impl <N:NodeId> Node<N> {
+impl<N: NodeId> Node<N> {
     //fp new
     /// Create a new node with a given client id
-    fn new(index:usize) -> Self {
-        Self { index,
-               forced_position : None,
-               placed_position : None,
-               position : None,
-               link_starts : Vec::new(),
-               link_ends   : Vec::new(),
+    fn new(index: usize) -> Self {
+        Self {
+            index,
+            forced_position: None,
+            placed_position: None,
+            position: None,
+            link_starts: Vec::new(),
+            link_ends: Vec::new(),
         }
     }
 
     //fp new_with_link_from
     /// Create a new node with a given client index that is linked from
     /// another startpoint id
-    pub fn new_with_link_from(index:usize, s:N) -> Self {
+    pub fn new_with_link_from(index: usize, s: N) -> Self {
         let mut n = Self::new(index);
         n.add_startpoint(s);
         n
@@ -81,7 +82,7 @@ impl <N:NodeId> Node<N> {
     //fp new_with_link_to
     /// Create a new node with a given client index that links to
     /// another startpoint id
-    pub fn new_with_link_to(index:usize, e:N) -> Self {
+    pub fn new_with_link_to(index: usize, e: N) -> Self {
         let mut n = Self::new(index);
         n.add_endpoint(e);
         n
@@ -91,7 +92,7 @@ impl <N:NodeId> Node<N> {
     /// Add another node_id to the list of nodes that link to this one
     ///
     /// The node_id *must not* already be in the list
-    pub fn add_startpoint(&mut self, s:N) {
+    pub fn add_startpoint(&mut self, s: N) {
         self.link_starts.push(s);
     }
 
@@ -99,19 +100,19 @@ impl <N:NodeId> Node<N> {
     /// Add another node_id to the list of nodes that this links to
     ///
     /// The node_id *must not* already be in the list
-    pub fn add_endpoint(&mut self, e:N) {
+    pub fn add_endpoint(&mut self, e: N) {
         self.link_ends.push(e);
     }
 
     //fp forced_position
     /// Set the forced position
-    pub fn forced_position(&mut self, forced_position:Option<f64>) {
+    pub fn forced_position(&mut self, forced_position: Option<f64>) {
         self.forced_position = forced_position;
     }
 
     //fp placed_position
     /// Set the placed position
-    pub fn placed_position(&mut self, placed_position:Option<f64>) {
+    pub fn placed_position(&mut self, placed_position: Option<f64>) {
         self.placed_position = placed_position;
     }
 
@@ -125,11 +126,13 @@ impl <N:NodeId> Node<N> {
     /// Set the minimum position of the [Node]. This is the
     /// furthest-to-the-right (i.e. max value) of the two positions
     /// (if there are two)
-    pub fn set_min_position(&mut self, p:f64) {
+    pub fn set_min_position(&mut self, p: f64) {
         if self.is_placed() {
             self.position = Some(self.get_position());
         } else if let Some(pos) = self.position {
-            if p > pos { self.position = Some(p); }
+            if p > pos {
+                self.position = Some(p);
+            }
         } else {
             self.position = Some(p);
         }
@@ -139,11 +142,13 @@ impl <N:NodeId> Node<N> {
     /// Set the maximum position of the [Node]. This is the
     /// furthest-to-the-left (i.e. min value) of the two positions
     /// (if there are two)
-    pub fn set_max_position(&mut self, p:f64) {
+    pub fn set_max_position(&mut self, p: f64) {
         if self.is_placed() {
             self.position = Some(self.get_position());
         } else if let Some(pos) = self.position {
-            if p < pos { self.position = Some(p); }
+            if p < pos {
+                self.position = Some(p);
+            }
         } else {
             self.position = Some(p);
         }
@@ -152,24 +157,23 @@ impl <N:NodeId> Node<N> {
     //fp has_position
     /// Return true if the node has a position
     pub fn has_position(&self) -> bool {
-        self.forced_position.is_some() ||
-            self.placed_position.is_some() ||
-            self.position.is_some()
+        self.forced_position.is_some() || self.placed_position.is_some() || self.position.is_some()
     }
 
     //fp is_placed
     /// Return true if the node is placed or forced
     pub fn is_placed(&self) -> bool {
-        self.forced_position.is_some() ||
-            self.placed_position.is_some()
+        self.forced_position.is_some() || self.placed_position.is_some()
     }
 
     //fp get_position
     /// Get the position of the [Node]
     pub fn get_position(&self) -> f64 {
-        if let Some(p) = self.forced_position { p }
-        else if let Some(p) = self.placed_position { p }
-        else {
+        if let Some(p) = self.forced_position {
+            p
+        } else if let Some(p) = self.placed_position {
+            p
+        } else {
             assert!(self.position.is_some());
             self.position.unwrap()
         }
@@ -177,4 +181,3 @@ impl <N:NodeId> Node<N> {
 
     //zz All done
 }
-

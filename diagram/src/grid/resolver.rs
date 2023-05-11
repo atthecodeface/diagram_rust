@@ -17,12 +17,12 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::{HashSet, HashMap};
-use geometry::{Range};
 use super::{EquationSet, Link, Node, NodeId};
+use geometry::Range;
+use std::collections::{HashMap, HashSet};
 
 //a Global constants for debug
-const DEBUG_CELL_DATA      : bool = 1 == 0;
+const DEBUG_CELL_DATA: bool = 1 == 0;
 
 //a Resolver
 //tp Resolver
@@ -39,39 +39,46 @@ const DEBUG_CELL_DATA      : bool = 1 == 0;
 /// link-node to that node have already been traversed (and hence
 /// assigned positions).
 #[derive(Debug)]
-pub struct Resolver<N:NodeId> {
+pub struct Resolver<N: NodeId> {
     /// All the node ids used
-    node_ids  : Vec<N>,
+    node_ids: Vec<N>,
     /// Node structures indexed by node id
-    nodes  : HashMap<N, Node<N>>,
+    nodes: HashMap<N, Node<N>>,
     /// Links squashed
-    links  : HashMap<(N, N), Link<N>>,
+    links: HashMap<(N, N), Link<N>>,
     /// The node ids that are never the 'end' of a link
-    roots  : Vec<N>,
+    roots: Vec<N>,
     /// The node ids that are never the 'start' of a link
-    leaves  : Vec<N>,
+    leaves: Vec<N>,
     /// Order in which nodes can be resolved
-    node_resolution_order : Vec<N>,
+    node_resolution_order: Vec<N>,
 }
 
 //ip Resolver
-impl <N:NodeId> Resolver<N> {
+impl<N: NodeId> Resolver<N> {
     //fp none
     /// Create a new resolver with no data
     pub fn none() -> Self {
         let node_ids = Vec::new();
         let nodes = HashMap::new();
         let links = HashMap::new();
-        let roots  = Vec::new();
+        let roots = Vec::new();
         let leaves = Vec::new();
         let node_resolution_order = Vec::new();
-        Self { node_ids, nodes, links, roots, leaves, node_resolution_order }
+        Self {
+            node_ids,
+            nodes,
+            links,
+            roots,
+            leaves,
+            node_resolution_order,
+        }
     }
 
     //fp new
     /// Create a new resolver from the provided cell data
-    pub fn new(link_data : &mut dyn Iterator<Item = (N, N, f64)>) -> Self {
-        let mut links : HashMap<(N, N), Link<N>> = HashMap::new();
+    pub fn new(link_data: &mut dyn Iterator<Item = (N, N, f64)>) -> Self {
+        let mut links: HashMap<(N, N), Link<N>> = HashMap::new();
         let mut roots = HashSet::new();
         let mut leaves = HashSet::new();
         for (start, end, size) in link_data {
@@ -84,9 +91,9 @@ impl <N:NodeId> Resolver<N> {
                 links.insert(key, Link::new(start, end, size));
             }
         }
-        let mut nodes : HashMap<N, Node<N>>= HashMap::new();
+        let mut nodes: HashMap<N, Node<N>> = HashMap::new();
         let mut node_ids = Vec::new();
-        for (s,e) in links.keys() {
+        for (s, e) in links.keys() {
             if let Some(node) = nodes.get_mut(&s) {
                 node.add_endpoint(*e);
             } else {
@@ -107,62 +114,78 @@ impl <N:NodeId> Resolver<N> {
         let roots = roots.into_iter().collect();
         let leaves = leaves.into_iter().collect();
         let node_resolution_order = Vec::new();
-        let mut s = Self { node_ids, nodes, links, roots, leaves, node_resolution_order };
+        let mut s = Self {
+            node_ids,
+            nodes,
+            links,
+            roots,
+            leaves,
+            node_resolution_order,
+        };
         s.place_roots(0.);
         s
     }
 
     //mp set_growth_data
-    pub fn set_growth_data(&mut self, start:N, end:N, growth:f64) -> Result<(),String> {
-        let reachable   = self.reachable_nodes(start);
+    pub fn set_growth_data(&mut self, start: N, end: N, growth: f64) -> Result<(), String> {
+        let reachable = self.reachable_nodes(start);
         let predecessor = self.predecessor_nodes(end);
-        let intersection : HashSet<N>  = reachable.intersection(&predecessor).map(|x| *x).collect();
+        let intersection: HashSet<N> = reachable.intersection(&predecessor).map(|x| *x).collect();
         for node_id in intersection.iter() {
             for e in &self.nodes[node_id].link_ends {
                 if intersection.contains(&e) {
-                    self.links.get_mut(&(*node_id, *e)).unwrap().set_growth(growth);
+                    self.links
+                        .get_mut(&(*node_id, *e))
+                        .unwrap()
+                        .set_growth(growth);
                 }
             }
         }
         Ok(())
     }
-        
+
     //mp force_node
-    pub fn force_node(&mut self, node:N, position:Option<f64>) {
+    pub fn force_node(&mut self, node: N, position: Option<f64>) {
         self.nodes.get_mut(&node).unwrap().forced_position(position);
     }
-        
+
     //mp place_node
-    pub fn place_node(&mut self, node:N, position:Option<f64>) {
+    pub fn place_node(&mut self, node: N, position: Option<f64>) {
         self.nodes.get_mut(&node).unwrap().placed_position(position);
     }
-        
+
     //mp clear_node_placements
     pub fn clear_node_placements(&mut self) {
-        for (_,node) in self.nodes.iter_mut() {
+        for (_, node) in self.nodes.iter_mut() {
             node.placed_position(None);
         }
     }
-        
+
     //mp place_roots
-    pub fn place_roots(&mut self, position:f64) {
+    pub fn place_roots(&mut self, position: f64) {
         for r in &self.roots {
-            self.nodes.get_mut(r).unwrap().placed_position(Some(position));
+            self.nodes
+                .get_mut(r)
+                .unwrap()
+                .placed_position(Some(position));
         }
     }
-        
+
     //mp place_leaves
-    pub fn place_leaves(&mut self, position:f64) {
+    pub fn place_leaves(&mut self, position: f64) {
         for r in &self.leaves {
-            self.nodes.get_mut(r).unwrap().placed_position(Some(position));
+            self.nodes
+                .get_mut(r)
+                .unwrap()
+                .placed_position(Some(position));
         }
     }
-        
+
     //mp assign_min_positions
     /// Assign the minimum positions for each node
     pub fn assign_min_positions(&mut self) {
         self.create_node_resolution_order();
-        for (_,n) in self.nodes.iter_mut() {
+        for (_, n) in self.nodes.iter_mut() {
             n.reset_position();
         }
         for n in &self.node_resolution_order {
@@ -180,24 +203,28 @@ impl <N:NodeId> Resolver<N> {
             }
             drop(node);
             for (start, max_pos) in start_updates {
-                self.nodes.get_mut(&start).unwrap().set_max_position(max_pos);
+                self.nodes
+                    .get_mut(&start)
+                    .unwrap()
+                    .set_max_position(max_pos);
             }
             for (end, min_pos) in end_updates {
                 self.nodes.get_mut(&end).unwrap().set_min_position(min_pos);
             }
         }
     }
-    
+
     //fi reachable_nodes
     /// Find the set of all `node_id`s reachable from a node_id
-    fn reachable_nodes(&self, node_id:N) -> HashSet<N> {
+    fn reachable_nodes(&self, node_id: N) -> HashSet<N> {
         let mut to_do = Vec::new();
         let mut result = HashSet::new();
         result.insert(node_id);
         to_do.push(node_id);
         while let Some(node_id) = to_do.pop() {
             for e in &self.nodes[&node_id].link_ends {
-                if result.insert(*e) { // was not in the set before
+                if result.insert(*e) {
+                    // was not in the set before
                     to_do.push(*e);
                 }
             }
@@ -207,14 +234,15 @@ impl <N:NodeId> Resolver<N> {
 
     //fi predecessor_nodes
     /// Find the set of all `node_id`s that can reach from a node_id
-    fn predecessor_nodes(&self, node_id:N) -> HashSet<N> {
+    fn predecessor_nodes(&self, node_id: N) -> HashSet<N> {
         let mut to_do = Vec::new();
         let mut result = HashSet::new();
         result.insert(node_id);
         to_do.push(node_id);
         while let Some(node_id) = to_do.pop() {
             for e in &self.nodes[&node_id].link_starts {
-                if result.insert(*e) { // was not in the set before
+                if result.insert(*e) {
+                    // was not in the set before
                     to_do.push(*e);
                 }
             }
@@ -227,17 +255,21 @@ impl <N:NodeId> Resolver<N> {
     ///
     /// Create a count of unresolved links for every node
     ///
-    /// A placed node is explicitly resolved; 
+    /// A placed node is explicitly resolved;
     ///
     /// Returns the count of unresolved nodes
     pub fn create_node_resolution_order(&mut self) -> usize {
-        if DEBUG_CELL_DATA { println!("Create node resolution order"); }
-        let mut node_stack:Vec<N> = Vec::new();
+        if DEBUG_CELL_DATA {
+            println!("Create node resolution order");
+        }
+        let mut node_stack: Vec<N> = Vec::new();
         let mut unresolved_link_starts = HashMap::new();
         let mut unresolved_link_ends = HashMap::new();
         for (node_id, node) in self.nodes.iter() {
             if node.is_placed() {
-                if DEBUG_CELL_DATA { println!("Placed {} {:?}", node_id, node); }
+                if DEBUG_CELL_DATA {
+                    println!("Placed {} {:?}", node_id, node);
+                }
                 node_stack.push(*node_id);
             }
             unresolved_link_starts.insert(*node_id, node.link_starts.len());
@@ -245,11 +277,13 @@ impl <N:NodeId> Resolver<N> {
         }
 
         let mut resolved_nodes = HashSet::new();
-        let mut node_resolution_order  = Vec::new();
+        let mut node_resolution_order = Vec::new();
         while let Some(node_id) = node_stack.pop() {
             if resolved_nodes.insert(node_id) {
                 let node = self.nodes.get(&node_id).unwrap();
-                if DEBUG_CELL_DATA { println!("add {} {:?}", node_id, node); }
+                if DEBUG_CELL_DATA {
+                    println!("add {} {:?}", node_id, node);
+                }
                 node_resolution_order.push(node_id);
                 for e in &node.link_ends {
                     let count = unresolved_link_starts.get_mut(e).unwrap();
@@ -283,27 +317,32 @@ impl <N:NodeId> Resolver<N> {
     /// If any node is unconstrained (which should not happen!) then
     /// force it to its min position
     pub fn create_energy_matrix(&self) -> EquationSet {
-        let num_nodes  = self.node_ids.len();
-        let mut eqns   = EquationSet::new(num_nodes);
-        for (se,link) in self.links.iter() {
+        let num_nodes = self.node_ids.len();
+        let mut eqns = EquationSet::new(num_nodes);
+        for (se, link) in self.links.iter() {
             if let Some(growth) = link.growth {
-                let (s,e) = se;
+                let (s, e) = se;
                 let s = self.nodes[s].index;
                 let e = self.nodes[e].index;
                 let length = link.min_size;
-                eqns.add_growth_link( s, e, length, growth);
+                eqns.add_growth_link(s, e, length, growth);
             }
         }
         for (_, node) in self.nodes.iter() {
             if node.is_placed() {
-                println!("Placed {} at {}",node.index, node.get_position());
+                println!("Placed {} at {}", node.index, node.get_position());
                 eqns.force_value(node.index, node.get_position());
             }
         }
         for i in 0..num_nodes {
             if eqns.row_is_zero(i) {
                 let node_id = self.node_ids[i];
-                println!("Row {} = {} is zero, force to {}", i, node_id, self.nodes[&node_id].get_position());
+                println!(
+                    "Row {} = {} is zero, force to {}",
+                    i,
+                    node_id,
+                    self.nodes[&node_id].get_position()
+                );
                 eqns.force_value(i, self.nodes[&node_id].get_position());
             }
         }
@@ -317,7 +356,10 @@ impl <N:NodeId> Resolver<N> {
         eqns.solve()?;
         for (i, position) in eqns.results() {
             let node_id = self.node_ids[i];
-            self.nodes.get_mut(&node_id).unwrap().set_min_position(*position);
+            self.nodes
+                .get_mut(&node_id)
+                .unwrap()
+                .set_min_position(*position);
         }
         Ok(())
     }
@@ -329,14 +371,14 @@ impl <N:NodeId> Resolver<N> {
         for (_, node) in self.nodes.iter() {
             if node.has_position() {
                 let p = node.get_position();
-                if let Some((min,max)) = min_max {
+                if let Some((min, max)) = min_max {
                     if p < min {
-                        min_max = Some((p,max));
+                        min_max = Some((p, max));
                     } else if p > max {
-                        min_max = Some((min,p));
+                        min_max = Some((min, p));
                     }
                 } else {
-                    min_max = Some((p,p));
+                    min_max = Some((p, p));
                 }
             }
         }
@@ -349,12 +391,12 @@ impl <N:NodeId> Resolver<N> {
 
     //mp get_node_index
     #[cfg(test)]
-    pub fn get_node_index(&self, node:N) -> usize {
+    pub fn get_node_index(&self, node: N) -> usize {
         self.nodes[&node].index
     }
 
     //mp get_node_position
-    pub fn get_node_position(&self, node:N) -> f64 {
+    pub fn get_node_position(&self, node: N) -> f64 {
         self.nodes[&node].get_position()
     }
 
@@ -362,13 +404,13 @@ impl <N:NodeId> Resolver<N> {
     pub fn borrow_roots(&self) -> &Vec<N> {
         &self.roots
     }
-    
+
     //mp borrow_resolution_order
     #[cfg(test)]
     pub fn borrow_resolution_order(&self) -> &Vec<N> {
         &self.node_resolution_order
     }
-    
+
     //zz All done
 }
 
@@ -380,11 +422,11 @@ mod test_resolver {
     //ft test_0
     #[test]
     fn test_0() {
-        let data = vec![ (0,100,10.),  (100,50,10.) ];
+        let data = vec![(0, 100, 10.), (100, 50, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.create_node_resolution_order();
         assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0,100,50]);
+        assert_eq!(res.borrow_resolution_order(), &vec![0, 100, 50]);
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(100), 10.);
@@ -394,7 +436,7 @@ mod test_resolver {
     //ft test_1
     #[test]
     fn test_1() {
-        let data = vec![ (0,100,10.), (100,50,10.), (100,250,5.) ];
+        let data = vec![(0, 100, 10.), (100, 50, 10.), (100, 250, 5.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         assert_eq!(res.borrow_roots(), &vec![0]);
         // assert_eq!(res.borrow_resolution_order(), &vec![0,100,50,250]);
@@ -407,20 +449,20 @@ mod test_resolver {
         res.create_energy_matrix();
     }
     //fi approx_eq
-    fn approx_eq(x:f64, e:f64) {
-        assert!( (x-e).abs()<0.001, "{} should be approx {}", x, e);        
+    fn approx_eq(x: f64, e: f64) {
+        assert!((x - e).abs() < 0.001, "{} should be approx {}", x, e);
     }
-    
+
     //ft test_2
     #[test]
     fn test_2() {
-        let data = vec![ (0,1,10.),  (1,2,10.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.create_node_resolution_order();
         assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0,1,2]);
-        res.set_growth_data( 0,1,1. );
-        res.set_growth_data( 1,2,0.00001 );
+        assert_eq!(res.borrow_resolution_order(), &vec![0, 1, 2]);
+        res.set_growth_data(0, 1, 1.);
+        res.set_growth_data(1, 2, 0.00001);
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(1), 10.);
@@ -440,12 +482,12 @@ mod test_resolver {
     //ft test_3
     #[test]
     fn test_3() {
-        let data = vec![ (0,1,10.),  (1,2,10.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.create_node_resolution_order();
         assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0,1,2]);
-        res.set_growth_data( 0,2,1. );
+        assert_eq!(res.borrow_resolution_order(), &vec![0, 1, 2]);
+        res.set_growth_data(0, 2, 1.);
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(1), 10.);
@@ -471,9 +513,9 @@ mod test_resolver {
     #[test]
     fn test_4() {
         // Even growth of the extra 10.
-        let data = vec![ (0,1,10.),  (1,2,10.),  (1,2,10.), (2,3,10.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.), (1, 2, 10.), (2, 3, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
-        res.set_growth_data( 0,3,1. );
+        res.set_growth_data(0, 3, 1.);
         res.assign_min_positions();
         res.place_leaves(40.);
         res.minimize_energy();
@@ -486,10 +528,10 @@ mod test_resolver {
     #[test]
     fn test_5() {
         // Dbl growth of the extra 10. in 1->2
-        let data = vec![ (0,1,10.),  (1,2,10.),  (1,2,10.), (2,3,10.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.), (1, 2, 10.), (2, 3, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
-        res.set_growth_data( 0,3,1. );
-        res.set_growth_data( 1,2,2. );
+        res.set_growth_data(0, 3, 1.);
+        res.set_growth_data(1, 2, 2.);
         res.assign_min_positions();
         res.place_leaves(40.);
         res.minimize_energy();
@@ -502,10 +544,10 @@ mod test_resolver {
     #[test]
     fn test_6() {
         // Dbl growth of the extra 40. in 1->2
-        let data = vec![ (0,1,0.),  (1,2,0.),  (1,2,0.), (2,3,0.)];
+        let data = vec![(0, 1, 0.), (1, 2, 0.), (1, 2, 0.), (2, 3, 0.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
-        res.set_growth_data( 0,3,1. );
-        res.set_growth_data( 1,2,2. );
+        res.set_growth_data(0, 3, 1.);
+        res.set_growth_data(1, 2, 2.);
         res.assign_min_positions();
         res.place_leaves(40.);
         res.minimize_energy();
@@ -518,11 +560,11 @@ mod test_resolver {
     #[test]
     fn test_7() {
         // Dbl growth of the extra 40. in 1->2, no effect having 0->3 connection
-        let data = vec![ (0,1,0.),  (1,2,0.), (2,3,0.), (0,2,0.)];
+        let data = vec![(0, 1, 0.), (1, 2, 0.), (2, 3, 0.), (0, 2, 0.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
-        res.set_growth_data( 0,1,1. );
-        res.set_growth_data( 1,2,2. );
-        res.set_growth_data( 2,3,1. );
+        res.set_growth_data(0, 1, 1.);
+        res.set_growth_data(1, 2, 2.);
+        res.set_growth_data(2, 3, 1.);
         res.assign_min_positions();
         res.place_leaves(40.);
         res.minimize_energy();
@@ -535,13 +577,13 @@ mod test_resolver {
     #[test]
     fn test_8() {
         // Test some placement
-        let data = vec![ (0,1,10.),  (1,2,10.), (2,3,10.), (0,2,0.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.), (2, 3, 10.), (0, 2, 0.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.clear_node_placements();
         assert_eq!(res.create_node_resolution_order(), 4);
-        res.set_growth_data( 0,1,1. );
-        res.set_growth_data( 1,2,2. );
-        res.set_growth_data( 2,3,1. );
+        res.set_growth_data(0, 1, 1.);
+        res.set_growth_data(1, 2, 2.);
+        res.set_growth_data(2, 3, 1.);
         res.place_leaves(40.);
         assert_eq!(res.create_node_resolution_order(), 0);
         // res.assign_min_positions();
@@ -556,13 +598,13 @@ mod test_resolver {
     fn test_9() {
         // Test placement of a middle value
         // Note that this requires the middle value to not be in a loop - so node 2 would not work
-        let data = vec![ (0,1,10.),  (1,2,10.), (2,3,10.), (1,3,0.)];
+        let data = vec![(0, 1, 10.), (1, 2, 10.), (2, 3, 10.), (1, 3, 0.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.clear_node_placements();
-        res.place_node(1,Some(20.));
-        res.set_growth_data( 0,1,1. );
-        res.set_growth_data( 1,2,2. );
-        res.set_growth_data( 2,3,1. );
+        res.place_node(1, Some(20.));
+        res.set_growth_data(0, 1, 1.);
+        res.set_growth_data(1, 2, 2.);
+        res.set_growth_data(2, 3, 1.);
         assert_eq!(res.create_node_resolution_order(), 0);
         res.minimize_energy();
         approx_eq(res.get_node_position(0), 10.);

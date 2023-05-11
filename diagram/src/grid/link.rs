@@ -17,34 +17,36 @@ limitations under the License.
  */
 
 //a Imports
-use super::{NodeId};
+use super::NodeId;
 
 //a Link
 //tp Link
 /// A link between two grid points
 #[derive(Debug)]
-pub struct Link<N:NodeId> {
+pub struct Link<N: NodeId> {
     /// Start client id
-    pub start    : N,
-    pub end      : N,
-    pub min_size : f64,
-    pub growth   : Option<f64>,
+    pub start: N,
+    pub end: N,
+    pub min_size: f64,
+    pub growth: Option<f64>,
 }
 
 //ip Link
-impl <N:NodeId> Link<N> {
+impl<N: NodeId> Link<N> {
     //fp new
     /// Create a new link with unknown growth
-    pub fn new(start:N, end:N, min_size:f64) -> Self {
+    pub fn new(start: N, end: N, min_size: f64) -> Self {
         Self {
-            start, end, min_size,
-            growth   : None,
+            start,
+            end,
+            min_size,
+            growth: None,
         }
     }
 
     //fp union
     /// Make the link at least the size of the larger link
-    pub fn union(&mut self, min_size:f64) {
+    pub fn union(&mut self, min_size: f64) {
         if min_size > self.min_size {
             self.min_size = min_size;
         }
@@ -52,10 +54,9 @@ impl <N:NodeId> Link<N> {
 
     //fp set_growth
     /// Take the growth from the new one if it has a growth
-    pub fn set_growth(&mut self, growth:f64) {
+    pub fn set_growth(&mut self, growth: f64) {
         self.growth = Some(growth);
     }
 
     //zz All done
 }
-

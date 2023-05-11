@@ -19,5 +19,8 @@ limitations under the License.
 //a Imports
 
 //a Traits
-pub trait NodeId : Sized + PartialEq + Eq + std::hash::Hash + Copy + std::fmt::Debug + std::fmt::Display {}
+pub trait NodeId:
+    Sized + PartialEq + Eq + std::hash::Hash + Copy + std::fmt::Debug + std::fmt::Display
+{
+}
 impl NodeId for usize {}

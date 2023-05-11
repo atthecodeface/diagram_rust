@@ -19,7 +19,7 @@ limitations under the License.
 //a Imports
 
 //a Global constants for debug
-const DEBUG_CELL_DATA      : bool = 1 == 0;
+const DEBUG_CELL_DATA: bool = 1 == 0;
 
 //a Internal types
 //ti GridCellDataEntry
@@ -29,26 +29,24 @@ const DEBUG_CELL_DATA      : bool = 1 == 0;
 pub struct GridCellDataEntry {
     /// start is the index of the left-hand edge of the cell in the
     /// grid dimension
-    pub start : usize,
+    pub start: usize,
     /// end is the index of the right-hand edge of the cell in the
     /// grid dimension
-    pub end   : usize,
+    pub end: usize,
     /// size is the desired size, or actual size post-expansion
-    pub size  : f64,
+    pub size: f64,
 }
 
 //ii GridCellDataEntry
 impl GridCellDataEntry {
-
     //fp new
-    pub fn new(start:usize, end:usize, size:f64) -> Self {
-        Self {start, end, size}
+    pub fn new(start: usize, end: usize, size: f64) -> Self {
+        Self { start, end, size }
     }
 }
 
 //it Display for GridCellDataEntry
 impl std::fmt::Display for GridCellDataEntry {
-
     //mp fmt - format a GridCellDataEntry
     /// Display the `GridCellDataEntry' as (min->max:size)
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -57,4 +55,3 @@ impl std::fmt::Display for GridCellDataEntry {
 
     //zz All done
 }
-
