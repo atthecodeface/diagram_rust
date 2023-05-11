@@ -30,7 +30,6 @@ use super::ElementScope;
 use crate::constants::elements as el;
 use crate::DiagramDescriptor;
 use crate::Layout;
-use geometry::Rectangle;
 use indent_display::{IndentedDisplay, Indenter};
 use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
 use stylesheet::{StylableNode, Tree};

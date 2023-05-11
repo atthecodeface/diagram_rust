@@ -55,7 +55,7 @@ pub trait DiagramElementContent<'a, 'b>: Sized + std::fmt::Debug {
     fn uniquify(
         &mut self,
         _header: &ElementHeader<'a>,
-        scope: &ElementScope<'a, 'b>,
+        _scope: &ElementScope<'a, 'b>,
         uid: usize,
     ) -> Result<(bool, usize), ElementError> {
         Ok((false, uid))

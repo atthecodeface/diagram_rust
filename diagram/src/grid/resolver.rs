@@ -123,7 +123,7 @@ impl<N: NodeId> Resolver<N> {
         let roots = roots.into_iter().collect();
         let leaves = leaves.into_iter().collect();
         let node_resolution_order = Vec::new();
-        let mut s = Self {
+        let s = Self {
             node_ids,
             nodes,
             links,
@@ -155,6 +155,8 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp force_node
+    /// This should be used by place?
+    #[allow(dead_code)]
     pub fn force_node(&mut self, node: N, position: Option<f64>) {
         self.nodes.get_mut(&node).unwrap().forced_position(position);
     }
@@ -394,6 +396,7 @@ impl<N: NodeId> Resolver<N> {
 
     //mp get_node_index
     #[cfg(test)]
+    #[allow(dead_code)]
     pub fn get_node_index(&self, node: N) -> usize {
         self.nodes[&node].index
     }
@@ -446,6 +449,8 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp borrow_roots
+    /// Borrow the roots, for test mainly
+    #[allow(dead_code)]
     pub fn borrow_roots(&self) -> &Vec<N> {
         &self.roots
     }
@@ -479,6 +484,8 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp place_leaves_to_resolve
+    /// For test mainly
+    #[allow(dead_code)]
     pub fn place_leaves_to_resolve(&mut self, pos: f64) -> bool {
         while !self.unresolved_nodes.is_empty() {
             let mut placed = false;

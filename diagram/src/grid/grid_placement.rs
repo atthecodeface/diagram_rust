@@ -94,7 +94,15 @@ impl GridPlacement {
         self.resolver = Resolver::new(&mut self.cell_data.iter().map(|x| (x.start, x.end, x.size)));
         for (start, end, growth) in &self.growth_data {
             if self.resolver.has_node(start) && self.resolver.has_node(end) {
-                self.resolver.set_growth_data(*start, *end, *growth);
+                match self.resolver.set_growth_data(*start, *end, *growth) {
+                    Err(x) => {
+                        eprintln!(
+                            "Warning: Could not set growth data {} {} {}: {}",
+                            *start, *end, *growth, x
+                        );
+                    }
+                    _ => (),
+                }
             }
         }
         self.resolver.place_roots_to_resolve(0.);
@@ -121,7 +129,12 @@ impl GridPlacement {
         self.resolver.assign_min_positions();
         self.resolver
             .place_edge_nodes(self.resolver.get_edge_nodes(1.0E-7), Some(min), Some(max));
-        self.resolver.minimize_energy();
+        match self.resolver.minimize_energy() {
+            Err(x) => {
+                eprintln!("Warning: failed to resolve cleanly: {}", x);
+            }
+            _ => (),
+        }
         self.size = self.resolver.find_bounds().size();
     }
 
@@ -194,6 +207,8 @@ mod test_grid_placement {
     }
     //ft test_0
     // #[test]
+    // This test is old and does not work with current system
+    #[allow(dead_code)]
     fn test_0() {
         let mut gp = GridPlacement::new();
         gp.add_cell("", 0, 4, 4.);
@@ -206,6 +221,8 @@ mod test_grid_placement {
     }
     //ft test_1
     // #[test]
+    // This test is old and does not work with current system
+    #[allow(dead_code)]
     fn test_1() {
         let mut gp = GridPlacement::new();
         gp.add_cell("", 0, 4, 4.);
@@ -221,6 +238,8 @@ mod test_grid_placement {
     }
     //ft test_2
     // #[test]
+    // This test is old and does not work with current system
+    #[allow(dead_code)]
     fn test_2() {
         let mut gp = GridPlacement::new();
         gp.add_cell("", 0, 10, 10.);

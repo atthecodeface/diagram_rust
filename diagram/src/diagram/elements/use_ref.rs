@@ -129,10 +129,11 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
 
     //mp get_desired_geometry
     fn get_desired_geometry(&mut self, layout: &mut Layout) -> Rectangle {
-        let mut rect = Rectangle::none();
+        let rect = Rectangle::none();
         for e in self.content.iter_mut() {
             e.set_layout_properties(layout);
             // rect = rect.union(&e.set_layout_properties(layout));
+            dbg!("Use should get desired layout rectangle?");
         }
         rect
     }
@@ -189,7 +190,7 @@ impl<'a> GenerateSvgElement for Use<'a> {
 
 //ti IndentedDisplay for Use
 impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Use<'diag> {
-    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+    fn indent(&self, _ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         Ok(())
     }
 }

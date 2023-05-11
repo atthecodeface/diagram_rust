@@ -86,7 +86,7 @@ impl BezierPath {
         }
         loop {
             let i_1 = (i + 1) % n;
-            if self.elements[i].is_line() && self.elements[i_1].is_line() {
+            if self.elements[i].degree() == 1 && self.elements[i_1].degree() == 1 {
                 let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
                 let v0 = self.elements[i].tangent_at(1.);
                 let v1 = -self.elements[i_1].tangent_at(0.);
@@ -143,13 +143,10 @@ impl BezierPath {
             } else {
                 let (t, _in_bezier) = b.t_of_distance(straightness, distance);
                 if t == 0. {
-                    ()
                 } else if t == 1. {
                     self.elements.remove(0);
-                    ()
                 } else {
                     self.elements[0] = b.bezier_between(t, 1.);
-                    ()
                 }
             }
         } else {
@@ -164,12 +161,9 @@ impl BezierPath {
                 let (t, _in_bezier) = b.t_of_distance(straightness, l - distance);
                 if t == 0. {
                     self.elements.pop();
-                    ()
                 } else if t == 1. {
-                    ()
                 } else {
                     self.elements[n - 1] = b.bezier_between(0., t);
-                    ()
                 }
             }
         }
@@ -205,12 +199,12 @@ mod test_path {
         );
     }
     pub fn bezier_eq(bez: &Bezier, v: Vec<(f64, f64)>) {
-        if bez.is_cubic() {
+        if bez.degree() == 3 {
             pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
             pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
             pt_eq(bez.borrow_pt(3), v[2].0, v[2].1);
             pt_eq(bez.borrow_pt(1), v[3].0, v[3].1);
-        } else if bez.is_quadratic() {
+        } else if bez.degree() == 2 {
             pt_eq(bez.borrow_pt(0), v[0].0, v[0].1);
             pt_eq(bez.borrow_pt(2), v[1].0, v[1].1);
             pt_eq(bez.borrow_pt(1), v[2].0, v[2].1);

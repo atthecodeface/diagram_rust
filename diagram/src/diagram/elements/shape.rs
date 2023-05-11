@@ -200,7 +200,7 @@ impl GenerateSvgElement for Shape {
 }
 //ti IndentedDisplay for Shape
 impl<'a> IndentedDisplay<'a, IndentOptions> for Shape {
-    fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
+    fn indent(&self, _ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         Ok(())
     }
 }

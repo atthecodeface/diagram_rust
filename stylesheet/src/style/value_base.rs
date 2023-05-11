@@ -549,7 +549,7 @@ impl BaseValue {
     /// ```
     pub fn equals_string(&self, value: &str) -> bool {
         match self {
-            Self::String(Some(s)) => (s == value),
+            Self::String(Some(s)) => s == value,
             _ => false,
         }
     }

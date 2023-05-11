@@ -313,7 +313,7 @@ impl ElementLayout {
     }
 
     //mp display
-    pub fn display(&self, indent_str: &str) {
+    pub fn display(&self, _indent_str: &str) {
         println!("{}  ", self.placement);
         if let Some(pt) = self.ref_pt {
             println!("{}  ref_pt:", pt);

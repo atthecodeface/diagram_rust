@@ -105,6 +105,9 @@ impl<N: NodeId> Node<N> {
 
     //fp forced_position
     /// Set the forced position
+    ///
+    /// This should be used by 'place'?
+    #[allow(dead_code)]
     pub fn forced_position(&mut self, forced_position: Option<f64>) {
         self.forced_position = forced_position;
     }

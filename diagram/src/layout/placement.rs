@@ -40,7 +40,7 @@ impl Placements {
     //fp mp add_element
     pub fn add_element(
         &mut self,
-        eref: &str,
+        _eref: &str,
         placement: f64,
         ref_value: Option<f64>,
         min: f64,

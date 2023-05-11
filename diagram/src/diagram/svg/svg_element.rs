@@ -109,21 +109,25 @@ impl SvgElement {
         let mut r = String::new();
         r.push_str(&format!("M {}", pt_as_str(&bp.get_pt(0))));
         for b in bp.iter_beziers() {
-            if b.is_line() {
-                r.push_str(&format!(" L {}", pt_as_str(b.borrow_pt(1))));
-            } else if b.is_quadratic() {
-                r.push_str(&format!(
-                    " Q {} {}",
-                    pt_as_str(b.borrow_pt(2)),
-                    pt_as_str(b.borrow_pt(1))
-                ));
-            } else {
-                r.push_str(&format!(
-                    " C {} {} {}",
-                    pt_as_str(b.borrow_pt(2)),
-                    pt_as_str(b.borrow_pt(3)),
-                    pt_as_str(b.borrow_pt(1))
-                ));
+            match b.degree() {
+                1 => {
+                    r.push_str(&format!(" L {}", pt_as_str(b.borrow_pt(1))));
+                }
+                2 => {
+                    r.push_str(&format!(
+                        " Q {} {}",
+                        pt_as_str(b.borrow_pt(2)),
+                        pt_as_str(b.borrow_pt(1))
+                    ));
+                }
+                _ => {
+                    r.push_str(&format!(
+                        " C {} {} {}",
+                        pt_as_str(b.borrow_pt(2)),
+                        pt_as_str(b.borrow_pt(3)),
+                        pt_as_str(b.borrow_pt(1))
+                    ));
+                }
             }
         }
         if closed {

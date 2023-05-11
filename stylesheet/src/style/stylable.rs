@@ -69,6 +69,7 @@ pub struct StylableNode<'a, V: TypeValue> {
     /// state is a vector the same length as the descriptor.state_classes
     /// possibly the state is animatable state - i.e. 'is this thing covered by the mouse'
     /// this has a 1-to-1 correspondence with descriptor.state_classes
+    #[allow(dead_code)]
     pub(crate) state: Vec<isize>,
     // style_change_callback : t_style_change_callback,
 }

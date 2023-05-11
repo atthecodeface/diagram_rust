@@ -33,5 +33,7 @@ pub type StyleRule = stylesheet::StylableNodeRule;
 pub type ValueError = stylesheet::ValueError;
 pub type RrcFont = Rc<RefCell<font::Font>>;
 
+//tp IndentedOptions
+/// No indentation options as yet
 pub struct IndentOptions {}
 impl IndentedOptions<'_> for IndentOptions {}

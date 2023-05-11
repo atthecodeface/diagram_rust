@@ -291,15 +291,15 @@ impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for Diagram<'diag> {
         if let Some(element) = &self.contents.root_layout {
             write!(ind, " root:")?;
             let mut ind = ind.sub();
-            element.indent(&mut ind);
+            element.indent(&mut ind)?;
         }
         if self.contents.markers.is_empty() {
-            write!(ind, " No markers\n")?;
+            writeln!(ind, " No markers")?;
         } else {
-            write!(ind, " markers:\n")?;
+            writeln!(ind, " markers:")?;
             let mut ind = ind.sub();
             for element in &self.contents.markers {
-                element.indent(&mut ind);
+                element.indent(&mut ind)?;
             }
         }
         Ok(())

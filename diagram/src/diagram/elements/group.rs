@@ -250,11 +250,11 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             // println!("Group layout desires rectangle of {}", rect);
             rect
         } else {
-            let mut rect = Rectangle::none();
+            dbg!("Should this get the content rectangle?");
             for e in self.content.iter_mut() {
                 e.set_layout_properties(layout);
             }
-            rect
+            Rectangle::none()
         }
     }
 
@@ -269,7 +269,12 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             match self.layout_record {
                 None => {
                     let mut layout_record = LayoutRecord::new();
-                    layout_record.capture_grid(&layout);
+                    match layout_record.capture_grid(&layout) {
+                        Err(x) => {
+                            eprintln!("Warning: failed to apply grid layout {}", x);
+                        }
+                        _ => (),
+                    }
                     self.layout_record = Some(layout_record);
                 }
                 _ => (),

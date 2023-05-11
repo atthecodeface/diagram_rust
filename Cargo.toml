@@ -2,7 +2,7 @@
 members = [
 #	"hmlm",
 	"fonts",
-	"geometry",
+#	"geometry",
 	"stylesheet",
 	"diagram",
 ]

@@ -18,11 +18,8 @@ limitations under the License.
 
 //a Imports
 
-//a Global constants for debug
-const DEBUG_CELL_DATA: bool = 1 == 0;
-
 //a Internal types
-//ti GridCellDataEntry
+//tp GridCellDataEntry
 /// This holds the desired placement of actual data with overlapping GridData in an array (the GridCellData
 /// structure)
 #[derive(Debug, Clone)]
