@@ -285,8 +285,8 @@ impl Polygon {
 //a Test
 #[cfg(test)]
 mod tests_polygon {
-    use super::super::Bezier;
     use super::*;
+    use crate::Bezier;
     pub fn pt_eq(pt: &Point, x: f64, y: f64) {
         assert!(
             (pt[0] - x).abs() < 1E-7,

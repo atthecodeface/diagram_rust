@@ -337,6 +337,6 @@ mod diagram_ml;
 
 pub(crate) use self::diagram::{DiagramContents, StyleRule, StyleSheet};
 
-pub use diagram::{Diagram, DiagramDescriptor, IndentOptions};
-pub use diagram::{GenerateSvg, Svg};
+pub use crate::diagram::{Diagram, DiagramDescriptor, IndentOptions};
+pub use crate::diagram::{GenerateSvg, Svg};
 pub use diagram_ml::{DiagramML, MLErrorList};

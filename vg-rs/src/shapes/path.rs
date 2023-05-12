@@ -210,7 +210,7 @@ mod test_path {
         let p1 = Point::from_array([1., 0.]);
         let p2 = Point::from_array([1., 1.]);
         let p3 = Point::from_array([0., 1.]);
-        let mut bp = BezierPath::new();
+        let mut bp = BezierPath::default();
         bp.add_bezier(Bezier::line(&p0, &p1));
         bp.add_bezier(Bezier::line(&p1, &p2));
         bp.add_bezier(Bezier::line(&p2, &p3));
@@ -234,7 +234,7 @@ mod test_path {
         let p1 = Point::from_array([1., 0.]);
         let p2 = Point::from_array([1., 1.]);
         let p3 = Point::from_array([0., 1.]);
-        let mut bp = BezierPath::new();
+        let mut bp = BezierPath::default();
         bp.add_bezier(Bezier::line(&p0, &p1));
         bp.add_bezier(Bezier::line(&p1, &p2));
         bp.add_bezier(Bezier::line(&p2, &p3));
