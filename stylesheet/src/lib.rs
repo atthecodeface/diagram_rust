@@ -29,14 +29,20 @@ extern crate regex;
 #[macro_use]
 extern crate lazy_static;
 
+mod error;
 mod style;
 mod tree_rules;
+mod type_values;
+mod utils;
+
+pub use error::ValueError;
+
+pub use type_values::{StyleTypeValue, TypeValue};
 
 pub use style::Descriptor;
 pub use style::NamedTypeSet;
 pub use style::Stylesheet;
 pub use style::{StylableNode, StylableNodeAction, StylableNodeRule};
-pub use style::{StyleTypeValue, TypeValue, ValueError};
 
 pub use tree_rules::{Action, RuleFn, RuleResult, RuleSet};
 pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};

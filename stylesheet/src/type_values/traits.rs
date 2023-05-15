@@ -21,7 +21,7 @@ use erased_serde::Serialize as ESerialize;
 use serde::Serialize;
 use std::any::Any;
 
-use crate::style::utils;
+use crate::utils;
 use crate::ValueError;
 
 //a Macros
