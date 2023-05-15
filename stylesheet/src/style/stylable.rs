@@ -25,9 +25,9 @@ use crate::{Descriptor, StyleTypeValue, ValueError};
 /// are styled by a stylesheet
 /// ```
 ///  extern crate stylesheet;
-///  use stylesheet::{TypeValue, StyleTypeValue, NamedTypeSet, StylableNode, Descriptor};
+///  use stylesheet::{TypeValue, StyleTypeValue, TypeSet, StylableNode, Descriptor};
 ///  let int_type = StyleTypeValue::new(Option::<isize>::None);
-///  let nts = NamedTypeSet::default()
+///  let nts = TypeSet::default()
 ///       .add_type("width",  int_type.clone(), true)
 ///       .add_type("height", int_type.clone(), true);
 ///  let mut d = Descriptor::new(&nts);

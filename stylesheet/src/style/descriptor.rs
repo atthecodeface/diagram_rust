@@ -17,13 +17,13 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{NamedTypeSet, StyleTypeValue};
+use crate::{StyleTypeValue, TypeSet};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 #[derive(Debug)]
 pub struct Descriptor<'a> {
-    pub style_set: &'a NamedTypeSet,
+    pub style_set: &'a TypeSet,
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes: Vec<(String, Vec<(String, isize)>)>,
@@ -75,7 +75,7 @@ let build_desc desc t =
 //ti Descriptor
 impl<'a> Descriptor<'a> {
     //fp new
-    pub fn new(style_set: &'a NamedTypeSet) -> Self {
+    pub fn new(style_set: &'a TypeSet) -> Self {
         Self {
             style_set,
             state_classes: Vec::new(),
@@ -89,7 +89,7 @@ impl<'a> Descriptor<'a> {
             match self.style_set.borrow_type(name) {
                 None => {
                     panic!(
-                        "Failed to add style {} as it is not in NamedTypeSet  {}\n",
+                        "Failed to add style {} as it is not in TypeSet {}\n",
                         name, self.style_set
                     );
                 }
