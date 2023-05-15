@@ -17,21 +17,21 @@ limitations under the License.
  */
 
 //a Imports
-use crate::{NamedTypeSet, TypeValue};
+use crate::{NamedTypeSet, StyleTypeValue};
 
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 #[derive(Debug)]
-pub struct Descriptor<'a, V: TypeValue> {
-    pub style_set: &'a NamedTypeSet<V>,
+pub struct Descriptor<'a> {
+    pub style_set: &'a NamedTypeSet,
     /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
     /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
     pub state_classes: Vec<(String, Vec<(String, isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
     pub styles: Vec<(
         String,
-        V,    /* as type and default value */
-        bool, /* is inheritable by default? */
+        StyleTypeValue, /* as type and default value */
+        bool,           /* is inheritable by default? */
     )>,
 }
 
@@ -73,9 +73,9 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-impl<'a, V: TypeValue> Descriptor<'a, V> {
+impl<'a> Descriptor<'a> {
     //fp new
-    pub fn new(style_set: &'a NamedTypeSet<V>) -> Self {
+    pub fn new(style_set: &'a NamedTypeSet) -> Self {
         Self {
             style_set,
             state_classes: Vec::new(),
@@ -115,7 +115,7 @@ impl<'a, V: TypeValue> Descriptor<'a, V> {
     }
 
     //mp build_style_value_array
-    pub fn build_style_value_array(&self) -> Vec<(bool, V)> {
+    pub fn build_style_value_array(&self) -> Vec<(bool, StyleTypeValue)> {
         let mut result = Vec::new();
         for (_, v, _) in &self.styles {
             result.push((false, v.new_value()));
@@ -124,7 +124,10 @@ impl<'a, V: TypeValue> Descriptor<'a, V> {
     }
 
     //mp clone_style_value_array
-    pub fn clone_style_value_array(&self, values: &Vec<(bool, V)>) -> Vec<(bool, V)> {
+    pub fn clone_style_value_array(
+        &self,
+        values: &Vec<(bool, StyleTypeValue)>,
+    ) -> Vec<(bool, StyleTypeValue)> {
         let mut result = Vec::new();
         for v in values.iter() {
             result.push(v.clone());

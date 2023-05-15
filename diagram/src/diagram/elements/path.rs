@@ -100,13 +100,23 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Path {
         if let Some(i) = header.get_style_of_name_int(at::FLAGS, None) {
             self.closed = (i & 1) == 1;
         }
-        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
+        let mut floats = [0.; 4];
+        if let Some(v) = header
+            .get_style_value_of_name(at::FILL)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             self.fill = Some((v[0], v[1], v[2]));
         }
-        if let Some(v) = header.get_style_rgb_of_name(at::STROKE).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::STROKE)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             self.stroke = Some((v[0], v[1], v[2]));
         }
-        if let Some(v) = header.get_style_floats_of_name(at::COORDS).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::COORDS)
+            .and_then(|x| x.as_vec_float())
+        {
             // v : Vec<f64>
             self.coords = Vec::new();
             for i in 0..v.len() / 2 {
@@ -115,24 +125,26 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Path {
                 self.coords.push(Point::from_array([x, y]));
             }
         }
+        let mut strs = [""; 4];
         if let Some(v) = header
-            .get_style_strings_of_name(at::MARKERS)
-            .as_strings(None)
+            .get_style_value_of_name(at::MARKERS)
+            .and_then(|x| x.as_strs(&mut strs))
         {
             match v.len() {
+                0 => {}
                 1 => {
-                    self.markers.0 = Some(v[0].clone());
+                    self.markers.0 = Some(v[0].into());
                 }
                 2 => {
                     if v[0] != "none" {
-                        self.markers.0 = Some(v[0].clone());
+                        self.markers.0 = Some(v[0].into());
                     }
-                    self.markers.2 = Some(v[1].clone());
+                    self.markers.2 = Some(v[1].into());
                 }
                 _ => {
-                    self.markers.0 = Some(v[0].clone());
-                    self.markers.1 = Some(v[1].clone());
-                    self.markers.2 = Some(v[2].clone());
+                    self.markers.0 = Some(v[0].into());
+                    self.markers.1 = Some(v[1].into());
+                    self.markers.2 = Some(v[2].into());
                 }
             }
         }

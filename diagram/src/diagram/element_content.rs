@@ -25,8 +25,6 @@ use stylesheet::{StylableNode, Tree};
 use vg_rs::layout::Layout;
 use vg_rs::BBox;
 
-pub use super::elements::{Group, Path, Shape, Text, Use};
-use super::types::*;
 use super::DiagramElementContent;
 use super::Element;
 use super::ElementError;
@@ -34,6 +32,7 @@ use super::ElementHeader;
 use super::ElementScope;
 use super::IndentOptions;
 use crate::constants::elements as el;
+use crate::diagram::elements::{Group, Path, Shape, Text, Use};
 use crate::DiagramDescriptor;
 
 //a ElementContent - enumerated union of the above
@@ -158,8 +157,8 @@ impl<'a> ElementContent<'a> {
     //fp tree_add_element
     pub fn tree_add_element<'b>(
         &'b mut self,
-        tree: Tree<'b, StylableNode<'a, StyleValue>>,
-    ) -> Tree<'b, StylableNode<'a, StyleValue>> {
+        tree: Tree<'b, StylableNode<'a>>,
+    ) -> Tree<'b, StylableNode<'a>> {
         match self {
             Self::Group(ref mut g) => g.tree_add_element(tree),
             Self::Use(ref mut g) => g.tree_add_element(tree),

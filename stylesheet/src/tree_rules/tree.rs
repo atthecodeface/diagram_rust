@@ -336,13 +336,13 @@ impl<'a, V> Tree<'a, V> {
 #[cfg(test)]
 mod test_tree {
     use super::*;
-    use crate::{BaseValue, Descriptor, NamedTypeSet, StylableNode};
+    use crate::{Descriptor, NamedTypeSet, StylableNode, StyleTypeValue};
 
     #[test]
     fn test_simple() {
-        let style_set = NamedTypeSet::<BaseValue>::new()
-            .add_type("x", BaseValue::int(None), false)
-            .add_type("y", BaseValue::int(None), false);
+        let style_set = NamedTypeSet::default()
+            .add_type("x", StyleTypeValue::int(None), false)
+            .add_type("y", StyleTypeValue::int(None), false);
         let mut d_pt = Descriptor::new(&style_set);
         d_pt.add_style("x");
         d_pt.add_style("y");

@@ -25,10 +25,11 @@ use indent_display::IndentedOptions;
 
 use stylesheet;
 
-pub type StyleValue = stylesheet::BaseValue;
-pub type StyleDescriptor<'a> = stylesheet::Descriptor<'a, StyleValue>;
-pub type StyleSet = stylesheet::NamedTypeSet<StyleValue>;
-pub type StyleSheet<'a> = stylesheet::Stylesheet<'a, StyleValue>;
+pub type StylableNode<'a> = stylesheet::StylableNode<'a>;
+pub type StyleTypeValue = stylesheet::StyleTypeValue;
+pub type StyleDescriptor<'a> = stylesheet::Descriptor<'a>;
+pub type StyleSet = stylesheet::NamedTypeSet;
+pub type StyleSheet<'a> = stylesheet::Stylesheet<'a>;
 pub type StyleRule = stylesheet::StylableNodeRule;
 pub type ValueError = stylesheet::ValueError;
 pub type RrcFont = Rc<RefCell<font::Font>>;

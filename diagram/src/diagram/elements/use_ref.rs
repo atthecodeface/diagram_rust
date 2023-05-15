@@ -12,8 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-@file    group.rs
-@brief   Diagram group element
+@file    use_ref.rs
+@brief   The use of another item in the diagram; this is a clone with its own styles once uniqified
  */
 
 //a Imports
@@ -22,14 +22,11 @@ use stylesheet::{StylableNode, Tree};
 use vg_rs::layout::Layout;
 use vg_rs::BBox;
 
-use super::super::types::*;
-use super::super::IndentOptions;
-use super::super::{
-    DiagramDescriptor, DiagramElementContent, Element, ElementError, ElementHeader, ElementScope,
-};
-use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
+use crate::diagram::{DiagramElementContent, Element, ElementError, ElementHeader, ElementScope};
+use crate::diagram::{GenerateSvg, GenerateSvgElement, Svg, SvgError};
+use crate::{DiagramDescriptor, IndentOptions};
 
 //a Use element
 //tp Use - an Element that is a reference to a group or other element
@@ -169,8 +166,8 @@ impl<'a> Use<'a> {
     //fp tree_add_element
     pub fn tree_add_element<'b>(
         &'b mut self,
-        mut tree: Tree<'b, StylableNode<'a, StyleValue>>,
-    ) -> Tree<'b, StylableNode<'a, StyleValue>> {
+        mut tree: Tree<'b, StylableNode<'a>>,
+    ) -> Tree<'b, StylableNode<'a>> {
         for c in self.content.iter_mut() {
             tree = c.tree_add_element(tree);
         }

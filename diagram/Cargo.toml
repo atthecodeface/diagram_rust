@@ -12,4 +12,5 @@ indent-display = "0.1"
 vg-rs    = { path="../vg-rs", version="0.1.0" }
 stylesheet  = { path="../stylesheet", version="0.1.0" }
 hml-rs = "0.0.2"
+erased-serde = "0.3.25"
 

@@ -105,7 +105,11 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Text {
         descriptor: &DiagramDescriptor,
         header: &ElementHeader,
     ) -> Result<(), ElementError> {
-        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
+        let mut floats = [0.; 4];
+        if let Some(v) = header
+            .get_style_value_of_name(at::FILL)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             self.fill = Some((v[0], v[1], v[2]));
         }
         self.font = header.get_style_of_name_string(at::FONT);

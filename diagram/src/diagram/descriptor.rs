@@ -22,6 +22,7 @@ use super::types::*;
 use super::{Element, ElementHeader};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
+use crate::diagram::Color;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -49,44 +50,53 @@ impl<'a> DiagramDescriptor<'a> {
     /// The `StyleSet` must have a lifetime that exceeds the descriptor,
     /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
-        let style_set = StyleSet::new()
-            .add_type(at::DEBUG, StyleValue::string(None), false)
-            .add_type(at::BBOX, StyleValue::float_array(), false)
-            .add_type(at::GRID, StyleValue::int_array(), false)
-            .add_type(at::GRIDX, StyleValue::int_array(), false)
-            .add_type(at::GRIDY, StyleValue::int_array(), false)
-            .add_type(at::MINX, StyleValue::string_array(",", false), false)
-            .add_type(at::MINY, StyleValue::string_array(",", false), false)
-            .add_type(at::PLACE, StyleValue::float_array(), false)
-            .add_type(at::ANCHOR, StyleValue::floats(2), true)
-            .add_type(at::EXPAND, StyleValue::floats(2), true)
-            .add_type(at::PAD, StyleValue::floats(4), false)
-            .add_type(at::MARGIN, StyleValue::floats(4), true)
-            .add_type(at::BORDERWIDTH, StyleValue::float(None), true)
-            .add_type(at::BORDERROUND, StyleValue::float(None), true)
-            .add_type(at::BORDERCOLOR, StyleValue::rgb(None), true)
-            .add_type(at::BG, StyleValue::rgb(None), true)
-            .add_type(at::SCALE, StyleValue::float(None), true)
-            .add_type(at::ROTATE, StyleValue::float(None), true)
-            .add_type(at::TRANSLATE, StyleValue::floats(2), true)
-            .add_type(at::POINT, StyleValue::floats(2), true)
-            .add_type(at::RELIEF, StyleValue::floats(2), true)
-            .add_type(at::FILL, StyleValue::rgb(None), true)
-            .add_type(at::STROKE, StyleValue::rgb(None), true)
-            .add_type(at::STROKEWIDTH, StyleValue::float(None), true)
-            .add_type(at::WIDTH, StyleValue::float(None), true)
-            .add_type(at::HEIGHT, StyleValue::float(None), true)
-            .add_type(at::COORDS, StyleValue::float_array(), false)
-            .add_type(at::ROUND, StyleValue::float(None), true)
-            .add_type(at::STELLATE, StyleValue::float(None), true)
-            .add_type(at::MARKERS, StyleValue::string_array("", true), true)
-            .add_type(at::FONT, StyleValue::string(None), true)
-            .add_type(at::FONTSIZE, StyleValue::float(None), true)
-            .add_type(at::FONTWEIGHT, StyleValue::string(None), true)
-            .add_type(at::FONTSTYLE, StyleValue::string(None), true)
-            .add_type(at::VERTICES, StyleValue::int(None), true)
-            .add_type(at::FLAGS, StyleValue::int(None), true)
-            .add_type(at::REF, StyleValue::string(None), false);
+        let color_type = StyleTypeValue::new(Color::default());
+        let style_set = StyleSet::default()
+            .add_type(at::DEBUG, StyleTypeValue::string(None), false)
+            .add_type(at::BBOX, StyleTypeValue::float_array(), false)
+            .add_type(at::GRID, StyleTypeValue::int_array(), false)
+            .add_type(at::GRIDX, StyleTypeValue::int_array(), false)
+            .add_type(at::GRIDY, StyleTypeValue::int_array(), false)
+            .add_type(
+                at::MINX,
+                StyleTypeValue::new((",", true, Vec::<String>::new())),
+                false,
+            )
+            .add_type(
+                at::MINY,
+                StyleTypeValue::new((",", true, Vec::<String>::new())),
+                false,
+            )
+            .add_type(at::PLACE, StyleTypeValue::float_array(), false)
+            .add_type(at::ANCHOR, StyleTypeValue::floats2(), true)
+            .add_type(at::EXPAND, StyleTypeValue::floats2(), true)
+            .add_type(at::PAD, StyleTypeValue::floats4(), false)
+            .add_type(at::MARGIN, StyleTypeValue::floats4(), true)
+            .add_type(at::BORDERWIDTH, StyleTypeValue::float(None), true)
+            .add_type(at::BORDERROUND, StyleTypeValue::float(None), true)
+            .add_type(at::BORDERCOLOR, color_type.as_type(), true)
+            .add_type(at::BG, color_type.as_type(), true)
+            .add_type(at::SCALE, StyleTypeValue::float(None), true)
+            .add_type(at::ROTATE, StyleTypeValue::float(None), true)
+            .add_type(at::TRANSLATE, StyleTypeValue::floats2(), true)
+            .add_type(at::POINT, StyleTypeValue::floats2(), true)
+            .add_type(at::RELIEF, StyleTypeValue::floats2(), true)
+            .add_type(at::FILL, StyleTypeValue::rgb(None), true)
+            .add_type(at::STROKE, StyleTypeValue::rgb(None), true)
+            .add_type(at::STROKEWIDTH, StyleTypeValue::float(None), true)
+            .add_type(at::WIDTH, StyleTypeValue::float(None), true)
+            .add_type(at::HEIGHT, StyleTypeValue::float(None), true)
+            .add_type(at::COORDS, StyleTypeValue::float_array(), false)
+            .add_type(at::ROUND, StyleTypeValue::float(None), true)
+            .add_type(at::STELLATE, StyleTypeValue::float(None), true)
+            .add_type(at::MARKERS, StyleTypeValue::string_array("", true), true)
+            .add_type(at::FONT, StyleTypeValue::string(None), true)
+            .add_type(at::FONTSIZE, StyleTypeValue::float(None), true)
+            .add_type(at::FONTWEIGHT, StyleTypeValue::string(None), true)
+            .add_type(at::FONTSTYLE, StyleTypeValue::string(None), true)
+            .add_type(at::VERTICES, StyleTypeValue::int(None), true)
+            .add_type(at::FLAGS, StyleTypeValue::int(None), true)
+            .add_type(at::REF, StyleTypeValue::string(None), false);
         style_set
     }
 

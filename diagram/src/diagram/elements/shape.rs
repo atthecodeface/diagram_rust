@@ -117,10 +117,17 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Shape {
         _descriptor: &DiagramDescriptor,
         header: &ElementHeader,
     ) -> Result<(), ElementError> {
-        if let Some(v) = header.get_style_rgb_of_name(at::FILL).as_floats(None) {
+        let mut floats = [0.; 4];
+        if let Some(v) = header
+            .get_style_value_of_name(at::FILL)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             self.fill = Some((v[0], v[1], v[2]));
         }
-        if let Some(v) = header.get_style_rgb_of_name(at::STROKE).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::STROKE)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             self.stroke = Some((v[0], v[1], v[2]));
         }
         self.stroke_width = header

@@ -1,530 +1,155 @@
 //a Imports
+// use erased_serde::{Serialize, Serializer};
+use serde::{Serialize, Serializer};
 use std::any::{Any, TypeId};
 
-use crate::style::utils;
-use crate::ValueError;
-
-//a NVBTrait
-//tp NVBTrait
-pub trait NVBTrait: std::fmt::Debug + 'static {
-    /// Return 'self' as an &dyn Any
-    ///
-    /// This should always be "fn as_any(&self) -> &dyn Any { self }"
-    fn as_any(&self) -> &dyn Any;
-
-    /// Get a new "empty" value assuming 'self' is the 'type'
-    ///
-    /// This should be an empty Vec, for example, or zeros, etc
-    fn new_nvb(&self) -> Box<dyn NVBTrait>;
-
-    /// Clone the value
-    fn clone(&self) -> Box<dyn NVBTrait> {
-        self.new_nvb()
-    }
-
-    /// Return the length - if a singleton, then 1; if none then 0
-    fn len(&self) -> usize;
-
-    /// Return true if this is a 'None' value
-    fn is_none(&self) -> bool;
-
-    /// Return the value as a string, using the type-specific 'format'
-    fn as_string(&self, _format: usize) -> String {
-        format!("{:?}", self)
-    }
-
-    /// Get ints from the value, returning the slice that has been
-    /// filled in, or None if not possible
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        None
-    }
-
-    /// Get floats from the value, returning the slice that has been
-    /// filled in, or None if not possible
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        None
-    }
-
-    /// Get strs from the value, where possible returning the number
-    /// of strs gotten.
-    ///
-    /// Only really useful for a string or list of strings
-    fn get_strs<'a>(&'a self, _data: &'a mut [&'a str]) -> Option<&'a [&'a str]> {
-        None
-    }
-
-    /// Compare a value with another that should be *OF THE SAME TYPE*
-    fn cmp(&self, _other: &dyn Any) -> Option<std::cmp::Ordering> {
-        None
-    }
-
-    /// Determine if this contains a string; for non-string things, this is false
-    fn has_string(&self, _s: &str, _as_token: bool) -> bool {
-        false
-    }
-
-    /// Parse the string and set the value (or add to a list if append is false)
-    fn parse_string(&mut self, _s: &str, append: bool) -> Result<(), ValueError>;
-}
-
-//a NVBTrait implementations
-//ip NVBTrait for Option<T>
-impl<T: NVBTrait + Default> NVBTrait for Option<T> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        let s: Self = None;
-        Box::new(s)
-    }
-    fn len(&self) -> usize {
-        if let Some(t) = self {
-            t.len()
-        } else {
-            0
-        }
-    }
-    fn is_none(&self) -> bool {
-        Option::is_none(self)
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        if let Some(t) = self {
-            t.get_floats(data)
-        } else {
-            None
-        }
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        if let Some(t) = self {
-            t.get_ints(data)
-        } else {
-            None
-        }
-    }
-    fn cmp(&self, other: &dyn Any) -> Option<std::cmp::Ordering> {
-        match other.downcast_ref::<Self>() {
-            Some(other) => match (self, other) {
-                (Some(t), Some(o)) => t.cmp(o),
-                (None, None) => Some(std::cmp::Ordering::Equal),
-                (None, _) => Some(std::cmp::Ordering::Less),
-                (_, None) => Some(std::cmp::Ordering::Greater),
-            },
-            _ => None,
-        }
-    }
-
-    fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
-        if utils::parse_str_is_none(s) {
-            if !append {
-                *self = None;
-            }
-        } else if let Some(t) = self {
-            t.parse_string(s, append)?;
-        } else {
-            let mut t = T::default();
-            t.parse_string(s, append)?;
-            *self = Some(t);
-        }
-        let make_none = self.as_ref().map_or(false, |x| x.is_none());
-        if make_none {
-            *self = None;
-        }
-        Ok(())
-    }
-}
-
-//ip NVBTrait for isize
-impl NVBTrait for isize {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        Box::new(0)
-    }
-    fn len(&self) -> usize {
-        1
-    }
-    fn is_none(&self) -> bool {
-        false
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        if !data.is_empty() {
-            data[0] = *self as f64;
-            Some(&data[0..1])
-        } else {
-            None
-        }
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        if !data.is_empty() {
-            data[0] = *self;
-            Some(&data[0..1])
-        } else {
-            None
-        }
-    }
-    fn cmp(&self, other: &dyn Any) -> Option<std::cmp::Ordering> {
-        match other.downcast_ref::<Self>() {
-            Some(other) => self.partial_cmp(other),
-            _ => None,
-        }
-    }
-    fn parse_string(&mut self, s: &str, _append: bool) -> Result<(), ValueError> {
-        *self = utils::parse_str_as_ints(s, Some(1))?[0];
-        Ok(())
-    }
-}
-
-//ip NVBTrait for [isize; N]
-impl<const N: usize> NVBTrait for [isize; N] {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        Box::new([0; N])
-    }
-    fn len(&self) -> usize {
-        N
-    }
-    fn is_none(&self) -> bool {
-        false
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= N {
-                return Some(&data[0..N]);
-            }
-            *d = self[i] as f64;
-        }
-        Some(data)
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= N {
-                return Some(&data[0..N]);
-            }
-            *d = self[i];
-        }
-        Some(data)
-    }
-    fn parse_string(&mut self, s: &str, _append: bool) -> Result<(), ValueError> {
-        for (i, f) in utils::parse_str_as_ints(s, Some(N))?
-            .into_iter()
-            .enumerate()
-        {
-            self[i] = f;
-        }
-        Ok(())
-    }
-}
-
-//ip NVBTrait for Vec<isize>
-impl NVBTrait for Vec<isize> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        let v: Vec<isize> = vec![];
-        Box::new(v)
-    }
-    fn len(&self) -> usize {
-        self.len()
-    }
-    fn is_none(&self) -> bool {
-        self.is_empty()
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        let n = self.len();
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= n {
-                return Some(&data[0..n]);
-            }
-            *d = self[i] as f64;
-        }
-        Some(data)
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        let n = self.len();
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= n {
-                return Some(&data[0..n]);
-            }
-            *d = self[i];
-        }
-        Some(data)
-    }
-    fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
-        if !append {
-            self.clear();
-        }
-        self.append(&mut utils::parse_str_as_ints(s, None)?);
-        Ok(())
-    }
-}
-
-//ip NVBTrait for f64
-impl NVBTrait for f64 {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        Box::new(0.0_f64)
-    }
-    fn len(&self) -> usize {
-        1
-    }
-    fn is_none(&self) -> bool {
-        false
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        if !data.is_empty() {
-            data[0] = *self;
-            Some(&data[0..1])
-        } else {
-            None
-        }
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        if !data.is_empty() {
-            data[0] = *self as isize;
-            Some(&data[0..1])
-        } else {
-            None
-        }
-    }
-    fn cmp(&self, other: &dyn Any) -> Option<std::cmp::Ordering> {
-        match other.downcast_ref::<Self>() {
-            Some(other) => self.partial_cmp(other),
-            _ => None,
-        }
-    }
-    fn parse_string(&mut self, s: &str, _append: bool) -> Result<(), ValueError> {
-        *self = utils::parse_str_as_floats(s, Some(1))?[0];
-        Ok(())
-    }
-}
-
-//ip NVBTrait for [f64; N]
-impl<const N: usize> NVBTrait for [f64; N] {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        Box::new([0.0_f64; N])
-    }
-    fn len(&self) -> usize {
-        N
-    }
-    fn is_none(&self) -> bool {
-        false
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= N {
-                return Some(&data[0..N]);
-            }
-            *d = self[i];
-        }
-        Some(data)
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= N {
-                return Some(&data[0..N]);
-            }
-            *d = self[i] as isize;
-        }
-        Some(data)
-    }
-    fn parse_string(&mut self, s: &str, _append: bool) -> Result<(), ValueError> {
-        for (i, f) in utils::parse_str_as_floats(s, Some(N))?
-            .into_iter()
-            .enumerate()
-        {
-            self[i] = f;
-        }
-        Ok(())
-    }
-}
-
-//ip NVBTrait for Vec<f64>
-impl NVBTrait for Vec<f64> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        let v: Vec<f64> = vec![];
-        Box::new(v)
-    }
-    fn len(&self) -> usize {
-        self.len()
-    }
-    fn is_none(&self) -> bool {
-        self.is_empty()
-    }
-    fn get_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
-        let n = self.len();
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= n {
-                return Some(&data[0..n]);
-            }
-            *d = self[i];
-        }
-        Some(data)
-    }
-    fn get_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
-        let n = self.len();
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= n {
-                return Some(&data[0..n]);
-            }
-            *d = self[i] as isize;
-        }
-        Some(data)
-    }
-    fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
-        if !append {
-            self.clear();
-        }
-        self.append(&mut utils::parse_str_as_floats(s, None)?);
-        Ok(())
-    }
-}
-
-//ip NVBTrait for String
-impl NVBTrait for String {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        let s: String = Self::new();
-        Box::new(s)
-    }
-    fn len(&self) -> usize {
-        1
-    }
-    fn is_none(&self) -> bool {
-        self.is_empty()
-    }
-    fn get_strs<'a>(&'a self, data: &'a mut [&'a str]) -> Option<&'a [&'a str]> {
-        if data.is_empty() {
-            None
-        } else {
-            data[0] = self;
-            Some(&data[0..1])
-        }
-    }
-    fn cmp(&self, other: &dyn Any) -> Option<std::cmp::Ordering> {
-        match other.downcast_ref::<Self>() {
-            Some(other) => self.partial_cmp(other),
-            _ => None,
-        }
-    }
-    fn has_string(&self, s: &str, as_token: bool) -> bool {
-        if as_token {
-            false
-        } else {
-            self == s
-        }
-    }
-    fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
-        if !append {
-            self.clear();
-        }
-        self.push_str(s);
-        Ok(())
-    }
-}
-
-//ip NVBTrait for Vec<String>
-impl NVBTrait for Vec<String> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn new_nvb(&self) -> Box<dyn NVBTrait> {
-        let v: Vec<f64> = vec![];
-        Box::new(v)
-    }
-    fn len(&self) -> usize {
-        self.len()
-    }
-    fn is_none(&self) -> bool {
-        self.is_empty()
-    }
-    fn get_strs<'a>(&'a self, data: &'a mut [&'a str]) -> Option<&'a [&'a str]> {
-        let n = self.len();
-        for (i, d) in data.iter_mut().enumerate() {
-            if i >= n {
-                return Some(&data[0..n]);
-            }
-            *d = &self[i];
-        }
-        Some(data)
-    }
-    fn has_string(&self, s: &str, _as_token: bool) -> bool {
-        self.iter().fold(false, |acc, x| acc || (x == s))
-    }
-    fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
-        if !append {
-            self.clear();
-        }
-        if !s.is_empty() {
-            self.push(s.into());
-        }
-        Ok(())
-    }
-}
+use crate::{TypeValue, ValueError};
 
 //a StyleTypeValue
+//tp StyleTypeValue
+/// This is a type of a style or the value of such a type.
+///
+/// The normal use is that a style is declared to be of a type such as:
+///
+///    let t = StyleTypeValue::<[isize; 2]>::mk_type();
+///
+/// Then new values are created using
+///
+///    let mut v = t.new_value();
+///    v.from_string("73, 46");
+///
+/// and the contents can be interrogated somewhat type-agnostically using
+///
+///    assert_eq!(v.as_ints(&mut [0; 2]), Some(&[73,46][..]));
+///
 #[derive(Debug)]
 pub struct StyleTypeValue {
-    value: Box<dyn NVBTrait>,
+    value: Box<dyn TypeValue>,
 }
+
+//ip Display for StyleTypeValue
 impl std::fmt::Display for StyleTypeValue {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         std::fmt::Debug::fmt(&self.value, fmt)
     }
 }
+
+//ip Clone for StyleTypeValue
 impl std::clone::Clone for StyleTypeValue {
     fn clone(&self) -> Self {
-        let value = self.value.clone();
+        let value = self.value.clone_value();
         Self { value }
     }
 }
+
+//ip PartialEq for StyleTypeValue
 impl std::cmp::PartialEq<StyleTypeValue> for StyleTypeValue {
     fn eq(&self, other: &Self) -> bool {
         self.value.cmp(other.value.as_any()) == Some(std::cmp::Ordering::Equal)
     }
 }
+
+//ip PartialOrd for StyleTypeValue
 impl std::cmp::PartialOrd<StyleTypeValue> for StyleTypeValue {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.value.cmp(other.value.as_any())
     }
 }
+
+//ip Serialize for StyleTypeValue
+impl Serialize for StyleTypeValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if let Some(f) = self.value.as_serialize() {
+            f.serialize(serializer)
+        } else {
+            "No serializer".serialize(serializer)
+        }
+    }
+}
+
+//ip StyleTypeValue
 impl StyleTypeValue {
-    pub fn mk_type<T: NVBTrait + Default>() -> Self {
+    //cp mk_type
+    /// Create a [StyleTypeValue] that represents a type (which must
+    /// be TypeValue and Default)
+    ///
+    /// Once the type has been created, values can be created from it
+    pub fn mk_type<T: TypeValue + Default>() -> Self {
         Self::new(T::default())
     }
-    pub fn new<T: NVBTrait>(value: T) -> Self {
+
+    //mp new_value
+    /// Create a [StyleTypeValue] from this that is a type
+    pub fn new_value(&self) -> Self {
+        let value = self.value.mk_value();
+        Self { value }
+    }
+
+    //cp new
+    /// Create a [StyleTypeValue] from a *value* of a type that must
+    /// be TypeValue - but not necessarily Default.
+    ///
+    /// Once the type has been created, values can be created from it
+    pub fn new<T: TypeValue>(value: T) -> Self {
         let value = Box::new(value);
         Self { value }
     }
+
+    //mp of_type
+    /// Create a new [StyleTypeValue] of the same type as this one,
+    /// with its 'standard' value
     pub fn of_type(&self) -> Self {
-        let value = self.value.new_nvb();
+        let value = self.value.mk_value();
         Self { value }
     }
-    pub fn is_type<T: NVBTrait>(&self) -> bool {
+
+    //mp is_t
+    /// Returns true if this [StyleTypeValue] contains the type T
+    pub fn is_t<T: TypeValue>(&self) -> bool {
         self.value.as_ref().as_any().type_id() == TypeId::of::<T>()
     }
-    pub fn as_t<T: NVBTrait>(&self) -> &T {
-        self.value.as_any().downcast_ref::<T>().unwrap()
+
+    //mp as_t
+    /// Returns Some(&T) if this [StyleTypeValue] contains a value of
+    /// the type T; None if it does not.
+    ///
+    /// This is useful when the type of [StyleTypeValue] is
+    /// *explicitly* known - as is usually the case for style values
+    pub fn as_t<T: TypeValue>(&self) -> Option<&T> {
+        self.value.as_any().downcast_ref::<T>()
     }
+
+    //mp as_mut_t
+    /// Returns Some(&mut T) if this [StyleTypeValue] contains a value of
+    /// the type T; None if it does not.
+    ///
+    /// This is useful when the type of [StyleTypeValue] is
+    /// *explicitly* known - as is usually the case for style values
+    pub fn as_mut_t<T: TypeValue>(&mut self) -> Option<&mut T> {
+        self.value.as_any_mut().downcast_mut::<T>()
+    }
+
+    //mp cmp
+    /// Compare the value of this [StyleTypeValue] to another value of
+    /// type T; if the [StyleTypeValue] is *not* of type T then it
+    /// will should None; on a true success it returns Some(Ordering).
     pub fn cmp<T: Any>(&self, other: &T) -> Option<std::cmp::Ordering> {
         self.value.cmp(other as &dyn Any)
     }
+
+    //mp eq
+    /// Compare the value of this [StyleTypeValue] to another value of type T.
+    ///
+    /// It only returns true *IF* the [StyleTypeValue] is of type T
+    /// and the value compares as 'Equal'
     pub fn eq<T: Any>(&self, other: &T) -> bool {
         self.cmp(other) == Some(std::cmp::Ordering::Equal)
     }
+
+    //mp as_f64
     pub fn as_f64(&self) -> Option<f64> {
         let mut data = [0.];
         if self.value.get_floats(&mut data).is_some() {
@@ -533,6 +158,26 @@ impl StyleTypeValue {
             None
         }
     }
+
+    //mp as_str
+    pub fn as_str(&self) -> Option<&str> {
+        let mut data = [""];
+        let has_strs = self.value.get_strs(&mut data).is_some();
+        if has_strs {
+            Some(data[0])
+        } else {
+            None
+        }
+    }
+
+    //ap as_isize
+    /// Return the value as an isize, if the type provides such access
+    /// (for example, f64 does, as does isize)
+    ///
+    /// If not it returns None
+    ///
+    /// If the type of the value of the [StyleTypeValue] is known then
+    /// this can provide simple access to the data
     pub fn as_isize(&self) -> Option<isize> {
         let mut data = [0];
         if self.value.get_ints(&mut data).is_some() {
@@ -541,27 +186,197 @@ impl StyleTypeValue {
             None
         }
     }
-    fn as_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
+
+    //ap as_ints
+    /// Fill a slice with the contents of the [StyleTypeValue] if it
+    /// can be represented as one or more isize
+    ///
+    /// It returns the slice that was filled (so the length of the slice indicates the number of valid values).
+    ///
+    /// It returns None if the type does not support access as isize (e.g. a String)
+    ///
+    /// If the type of the value of the [StyleTypeValue] is known then
+    /// this can provide simple access to the data
+    pub fn as_ints<'a>(&self, data: &'a mut [isize]) -> Option<&'a [isize]> {
         self.value.get_ints(data)
     }
-    fn as_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
+
+    //ap as_floats
+    /// Fill a slice with the contents of the [StyleTypeValue] if it
+    /// can be represented as one or more f64
+    ///
+    /// It returns the slice that was filled (so the length of the slice indicates the number of valid values).
+    ///
+    /// It returns None if the type does not support access as f64 (e.g. a String)
+    ///
+    /// If the type of the value of the [StyleTypeValue] is known then
+    /// this can provide simple access to the data
+    pub fn as_floats<'a>(&self, data: &'a mut [f64]) -> Option<&'a [f64]> {
         self.value.get_floats(data)
     }
-    // From TypeValue
-    fn new_value(&self) -> Self {
-        self.clone()
+    //ap as_strs
+    pub fn as_strs<'a, 'b>(&'b self, data: &'a mut [&'b str]) -> Option<&'a [&'b str]> {
+        self.value.get_strs(data)
     }
-    fn as_type(&self) -> Self {
+    //ap as_vec_int
+    /// Create a Vec with the contents of the [StyleTypeValue] if it
+    /// can be represented as one or more isize
+    ///
+    /// It returns a Vec if the type provides an isize method
+    ///
+    /// It returns None if the type does not support access as isize (e.g. a String)
+    pub fn as_vec_int(&self) -> Option<Vec<isize>> {
+        if self.value.is_none() {
+            None
+        } else {
+            let n = self.value.len();
+            let mut data = vec![0_isize; n];
+            let n = self.value.get_ints(&mut data).map(|x| x.len()).unwrap_or(0);
+            data.truncate(n);
+            Some(data)
+        }
+    }
+
+    //ap as_vec_float
+    /// Create a Vec with the contents of the [StyleTypeValue] if it
+    /// can be represented as one or more isize
+    ///
+    /// It returns a Vec if the type provides an isize method
+    ///
+    /// It returns None if the type does not support access as isize (e.g. a String)
+    pub fn as_vec_float(&self) -> Option<Vec<f64>> {
+        if self.value.is_none() {
+            None
+        } else {
+            let n = self.value.len();
+            let mut data = vec![0.0_f64; n];
+            let n = self
+                .value
+                .get_floats(&mut data)
+                .map(|x| x.len())
+                .unwrap_or(0);
+            data.truncate(n);
+            Some(data)
+        }
+    }
+
+    //ap as_vec_str
+    /// Create a Vec with the contents of the [StyleTypeValue] if it
+    /// can be represented as one or more isize
+    ///
+    /// It returns a Vec if the type provides an isize method
+    ///
+    /// It returns None if the type does not support access as isize (e.g. a String)
+    pub fn as_vec_str(&self) -> Option<Vec<&str>> {
+        if self.value.is_none() {
+            None
+        } else {
+            let n = self.value.len();
+            let mut data = vec![""; n];
+            let n = self.value.get_strs(&mut data).map(|x| x.len()).unwrap_or(0);
+            data.truncate(n);
+            Some(data)
+        }
+    }
+
+    //cp value_of_string
+    /// Get a value from a string
+    #[inline]
+    pub fn value_of_string(&self, s: &str) -> Result<Self, ValueError> {
+        let mut v = self.new_value();
+        v.value.parse_string(s, false)?;
+        Ok(v)
+    }
+
+    //zz OLLD
+    // From TypeValue
+    //mp as_type
+    pub fn as_type(&self) -> Self {
         self.clone()
     }
     //mp from_string
     /// Set the value from a string
-    fn from_string<'a>(&'a mut self, s: &str) -> Result<&'a mut Self, ValueError> {
+    #[inline]
+    pub fn from_string<'a>(&'a mut self, s: &str) -> Result<&'a mut Self, ValueError> {
         self.value.parse_string(s, false)?;
         Ok(self)
     }
-    fn eq_string(&self, s: &str) -> bool {
+
+    //ap eq_string
+    pub fn eq_string(&self, s: &str) -> bool {
         self.value.has_string(s, false)
+    }
+    //zz EXTRA
+    //fp floats2
+    /// Create a new floats value
+    pub fn floats2() -> Self {
+        Self::new::<Option<[f64; 2]>>(None)
+    }
+
+    //fp floats3
+    /// Create a new floats value
+    pub fn floats3() -> Self {
+        Self::new::<Option<[f64; 3]>>(None)
+    }
+
+    //fp floats4
+    /// Create a new floats value
+    pub fn floats4() -> Self {
+        Self::new::<Option<[f64; 4]>>(None)
+    }
+
+    //fp float_array
+    pub fn float_array() -> Self {
+        Self::mk_type::<Option<Vec<f64>>>()
+    }
+
+    //fp float
+    pub fn float(f: Option<f64>) -> Self {
+        Self::new(f)
+    }
+
+    //fp ints2
+    pub fn ints2() -> Self {
+        Self::new::<Option<[isize; 2]>>(None)
+    }
+
+    //fp ints3
+    pub fn ints3() -> Self {
+        Self::new::<Option<[isize; 3]>>(None)
+    }
+
+    //fp ints4
+    pub fn ints4() -> Self {
+        Self::new::<Option<[isize; 4]>>(None)
+    }
+
+    //fp int_array
+    pub fn int_array() -> Self {
+        Self::mk_type::<Option<Vec<isize>>>()
+    }
+
+    //fp int
+    pub fn int(n: Option<isize>) -> Self {
+        Self::new(n)
+    }
+
+    //fp rgb
+    pub fn rgb(rgb: Option<(f64, f64, f64)>) -> Self {
+        let mut t = Self::new::<Option<[f64; 3]>>(None);
+        if let Some((r, g, b)) = rgb {
+            *(t.as_mut_t::<Option<[f64; 3]>>().unwrap().as_mut().unwrap()) = [r, g, b];
+        }
+        t
+    }
+
+    //fp string
+    pub fn string(s: Option<String>) -> Self {
+        Self::new::<Option<String>>(s)
+    }
+
+    //fp string_array
+    pub fn string_array(s: &'static str, r: bool) -> Self {
+        Self::new::<Vec<String>>(vec![])
     }
 }
 
@@ -572,11 +387,12 @@ fn test_isize() {
     let t_isize = StyleTypeValue::mk_type::<isize>();
     let mut v_isize = t_isize.new_value();
     v_isize.from_string("73").unwrap();
-    assert!(
-        v_isize.is_type::<isize>(),
-        "Expect isize to be of type isize"
+    assert!(v_isize.is_t::<isize>(), "Expect isize to be of type isize");
+    assert_eq!(
+        v_isize.as_t::<isize>(),
+        Some(&73_isize),
+        "Expect value to be isize 73"
     );
-    assert_eq!(v_isize.as_t::<isize>(), &73, "Expect value to be isize 73");
     assert!(v_isize.eq(&73_isize));
     assert!(
         !v_isize.eq(&73_usize),
@@ -586,7 +402,11 @@ fn test_isize() {
     assert_eq!(v_isize.as_f64().unwrap(), 73.0);
 
     v_isize.from_string("1").unwrap();
-    assert_eq!(v_isize.as_t::<isize>(), &1, "Expect value to be isize 1");
+    assert_eq!(
+        v_isize.as_t::<isize>(),
+        Some(&1_isize),
+        "Expect value to be isize 1"
+    );
     assert!(v_isize.eq(&1_isize));
     assert!(
         !v_isize.eq(&1_usize),
@@ -603,10 +423,7 @@ fn test_isize() {
 fn test_isize_array() {
     let t = StyleTypeValue::mk_type::<[isize; 2]>();
     let mut v = t.new_value();
-    assert!(
-        v.is_type::<[isize; 2]>(),
-        "Expect v to be of type [isize; 2]"
-    );
+    assert!(v.is_t::<[isize; 2]>(), "Expect v to be of type [isize; 2]");
     v.from_string("73").unwrap();
     assert_eq!(v.as_ints(&mut [0, 1]), Some(&[73, 73][..]));
     v.from_string("-6, 3").unwrap();
@@ -614,10 +431,7 @@ fn test_isize_array() {
 
     let t = StyleTypeValue::mk_type::<[isize; 4]>();
     let mut v = t.new_value();
-    assert!(
-        v.is_type::<[isize; 4]>(),
-        "Expect v to be of type [isize; 4]"
-    );
+    assert!(v.is_t::<[isize; 4]>(), "Expect v to be of type [isize; 4]");
     v.from_string("1").unwrap();
     assert_eq!(v.as_ints(&mut [0, 1, 2, 3]), Some(&[1, 1, 1, 1][..]));
     v.from_string("-6, 3").unwrap();
@@ -634,8 +448,12 @@ fn test_f64() {
     let t_f64 = StyleTypeValue::mk_type::<f64>();
     let mut v_f64 = t_f64.new_value();
     v_f64.from_string("73").unwrap();
-    assert!(v_f64.is_type::<f64>(), "Expect f64 to be of type f64");
-    assert_eq!(v_f64.as_t::<f64>(), &73.0, "Expect value to be f64 73");
+    assert!(v_f64.is_t::<f64>(), "Expect f64 to be of type f64");
+    assert_eq!(
+        v_f64.as_t::<f64>(),
+        Some(&73.0_f64),
+        "Expect value to be f64 73"
+    );
     assert!(v_f64.eq(&73_f64));
     assert!(!v_f64.eq(&73_usize), "73 *f64* should not equal 73 *usize*");
 
@@ -643,7 +461,11 @@ fn test_f64() {
     assert_eq!(v_f64.as_f64().unwrap(), 73.0);
 
     v_f64.from_string("1").unwrap();
-    assert_eq!(v_f64.as_t::<f64>(), &1.0, "Expect value to be f64 1");
+    assert_eq!(
+        v_f64.as_t::<f64>(),
+        Some(&1.0_f64),
+        "Expect value to be f64 1"
+    );
     assert!(v_f64.eq(&1_f64));
     assert!(!v_f64.eq(&1_usize), "1 *f64* should not equal 1 *usize*");
 
@@ -656,7 +478,7 @@ fn test_f64() {
 fn test_f64_array() {
     let t = StyleTypeValue::mk_type::<[f64; 2]>();
     let mut v = t.new_value();
-    assert!(v.is_type::<[f64; 2]>(), "Expect v to be of type [f64; 2]");
+    assert!(v.is_t::<[f64; 2]>(), "Expect v to be of type [f64; 2]");
     v.from_string("73").unwrap();
     assert_eq!(v.as_ints(&mut [0, 1]), Some(&[73, 73][..]));
     assert_eq!(v.as_floats(&mut [0., 1.]), Some(&[73., 73.][..]));
@@ -666,7 +488,7 @@ fn test_f64_array() {
 
     let t = StyleTypeValue::mk_type::<[f64; 4]>();
     let mut v = t.new_value();
-    assert!(v.is_type::<[f64; 4]>(), "Expect v to be of type [f64; 4]");
+    assert!(v.is_t::<[f64; 4]>(), "Expect v to be of type [f64; 4]");
     v.from_string("1").unwrap();
     assert_eq!(v.as_ints(&mut [0, 1, 2, 3]), Some(&[1, 1, 1, 1][..]));
     v.from_string("-6, 3").unwrap();
@@ -711,12 +533,12 @@ fn test_option() {
 
     v_opt_isize.from_string("73").unwrap();
     assert!(
-        v_opt_isize.is_type::<Option<isize>>(),
+        v_opt_isize.is_t::<Option<isize>>(),
         "Expect Option<isize> to be of type Option<isize>"
     );
     assert_eq!(
         v_opt_isize.as_t::<Option<isize>>(),
-        &Some(73_isize),
+        Some(&Some(73_isize)),
         "Expect value to be Some(isize 73)"
     );
     assert_eq!(
@@ -737,4 +559,29 @@ fn test_option() {
     v_opt_isize.from_string("").unwrap();
     assert_eq!(v_opt_isize.as_isize(), None,);
     assert_eq!(v_opt_isize.as_f64(), None,);
+}
+
+//tf test_serialize
+/// Test Serialize
+#[test]
+fn test_serialize() {
+    let t_opt_isize = StyleTypeValue::mk_type::<Option<isize>>();
+    let t_i4 = StyleTypeValue::mk_type::<[isize; 4]>();
+    assert_eq!(serde_json::to_string(&t_opt_isize).unwrap(), "null");
+    assert_eq!(
+        serde_json::to_string(&t_opt_isize.value_of_string("1").unwrap()).unwrap(),
+        "1"
+    );
+    assert_eq!(
+        serde_json::to_string(&t_opt_isize.value_of_string("-100").unwrap()).unwrap(),
+        "-100"
+    );
+    assert_eq!(
+        serde_json::to_string(&t_i4.value_of_string("-100").unwrap()).unwrap(),
+        "[-100,-100,-100,-100]"
+    );
+    assert_eq!(
+        serde_json::to_string(&t_i4.value_of_string("-100,2").unwrap()).unwrap(),
+        "[-100,2,-100,2]"
+    );
 }

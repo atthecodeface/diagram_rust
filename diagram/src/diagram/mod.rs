@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 //a Imports
+mod color;
 mod descriptor;
 mod diagram;
 mod element;
@@ -34,9 +35,13 @@ mod traits;
 pub mod types;
 pub use traits::DiagramElementContent;
 
+pub use color::Color;
+
 pub use self::descriptor::DiagramDescriptor;
 pub use self::diagram::{Diagram, DiagramContents};
-pub use self::types::{IndentOptions, StyleRule, StyleSheet, ValueError}; // , StyleAction};
+pub use self::types::{
+    IndentOptions, StylableNode, StyleRule, StyleSheet, StyleTypeValue, ValueError,
+}; // , StyleAction};
 pub use element::Element;
 pub use element_content::ElementContent;
 pub use element_error::ElementError;

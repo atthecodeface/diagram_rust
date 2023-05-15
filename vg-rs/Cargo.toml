@@ -3,6 +3,9 @@ name = "vg-rs"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+serde = "1.0.163"
+
 [dependencies.geo-nd]
 version = "0.5"
 

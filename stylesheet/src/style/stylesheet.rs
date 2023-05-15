@@ -20,7 +20,7 @@ limitations under the License.
 use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
 use crate::RuleSet;
 use crate::Tree;
-use crate::{NamedTypeSet, TypeValue, ValueError};
+use crate::{NamedTypeSet, ValueError};
 use crate::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
 use std::collections::HashMap;
 
@@ -30,14 +30,14 @@ const DEBUG_STYLESHEETTREE: bool = 1 == 0;
 //a Stylesheet
 //tp Stylesheet
 /// The Stylesheet
-pub struct Stylesheet<'a, V: TypeValue> {
-    style_set: &'a NamedTypeSet<V>,
-    rules: RuleSet<StylableNode<'a, V>, StylableNodeAction<V>, StylableNodeRule>,
+pub struct Stylesheet<'a> {
+    style_set: &'a NamedTypeSet,
+    rules: RuleSet<StylableNode<'a>, StylableNodeAction, StylableNodeRule>,
     style_of_id: HashMap<String, usize>,
 }
 
-impl<'a, V: TypeValue> Stylesheet<'a, V> {
-    pub fn new(style_set: &'a NamedTypeSet<V>) -> Self {
+impl<'a> Stylesheet<'a> {
+    pub fn new(style_set: &'a NamedTypeSet) -> Self {
         Self {
             style_set,
             rules: RuleSet::new(),
@@ -46,7 +46,7 @@ impl<'a, V: TypeValue> Stylesheet<'a, V> {
     }
     //mp add_action
     /// Add an action to the set
-    pub fn add_action(&mut self, id: Option<&str>, action: StylableNodeAction<V>) -> usize {
+    pub fn add_action(&mut self, id: Option<&str>, action: StylableNodeAction) -> usize {
         if DEBUG_STYLESHEETTREE {
             println!("Adding action {:?}", action);
         }
@@ -106,7 +106,7 @@ impl<'a, V: TypeValue> Stylesheet<'a, V> {
     }
 
     //mp apply_rule
-    pub fn apply_rules_to_tree(&self, tree: &mut Tree<StylableNode<'a, V>>) {
+    pub fn apply_rules_to_tree(&self, tree: &mut Tree<StylableNode<'a>>) {
         let num_rules = self.rules.num_rules();
         let mut iter = tree.it_create();
 
@@ -148,13 +148,13 @@ impl<'a, V: TypeValue> Stylesheet<'a, V> {
 #[cfg(test)]
 mod test_stylesheet {
     use super::*;
-    use crate::{BaseValue, Descriptor, NamedTypeSet};
+    use crate::{Descriptor, NamedTypeSet, StyleTypeValue};
     struct Element<'a> {
-        pub stylable: StylableNode<'a, BaseValue>,
+        pub stylable: StylableNode<'a>,
         pub children: Vec<Element<'a>>,
     }
     impl<'a> Element<'a> {
-        pub fn new(stylable: StylableNode<'a, BaseValue>) -> Self {
+        pub fn new(stylable: StylableNode<'a>) -> Self {
             Self {
                 stylable,
                 children: Vec::new(),
@@ -165,8 +165,8 @@ mod test_stylesheet {
         }
         pub fn add_to_tree<'b>(
             &'b mut self,
-            mut tree: Tree<'b, StylableNode<'a, BaseValue>>,
-        ) -> Tree<'b, StylableNode<'a, BaseValue>> {
+            mut tree: Tree<'b, StylableNode<'a>>,
+        ) -> Tree<'b, StylableNode<'a>> {
             if self.children.len() > 0 {
                 tree.open_container(&mut self.stylable);
                 for c in self.children.iter_mut() {
@@ -177,7 +177,7 @@ mod test_stylesheet {
             }
             tree
         }
-        pub fn create_tree<'b>(&'b mut self) -> Tree<'b, StylableNode<'a, BaseValue>> {
+        pub fn create_tree<'b>(&'b mut self) -> Tree<'b, StylableNode<'a>> {
             let Self {
                 stylable, children, ..
             } = self;
@@ -191,16 +191,16 @@ mod test_stylesheet {
     }
     #[test]
     fn test_simple() {
-        let style_set = NamedTypeSet::<BaseValue>::new()
-            .add_type("x", BaseValue::int(None), false)
-            .add_type("y", BaseValue::int(None), false);
+        let style_set = NamedTypeSet::default()
+            .add_type("x", StyleTypeValue::int(None), false)
+            .add_type("y", StyleTypeValue::int(None), false);
         let mut d_pt = Descriptor::new(&style_set);
         d_pt.add_style("x");
         d_pt.add_style("y");
         let d_g = Descriptor::new(&style_set);
 
         let mut stylesheet = Stylesheet::new(&style_set);
-        let act0_nv = vec![("x".to_string(), BaseValue::int(Some(7)))];
+        let act0_nv = vec![("x".to_string(), StyleTypeValue::int(Some(7)))];
         let act_0 = stylesheet.add_action(None, StylableNodeAction::new(act0_nv));
         let v = vec![("x", "3"), ("id", "action_1"), ("y", "-99")];
         let mut blah = v.iter().map(|(a, b)| (a.to_string(), *b));

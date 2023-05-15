@@ -103,7 +103,12 @@ impl ElementLayout {
         if let Some(d) = header.get_style_of_name_string(at::DEBUG) {
             layout.debug = d;
         }
-        match header.get_style_floats_of_name(at::BBOX).as_floats(None) {
+        let mut floats = [0.; 4];
+        let mut ints = [0; 4];
+        match header
+            .get_style_value_of_name(at::BBOX)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             Some(g) => match g.len() {
                 0 => (),
                 1 => {
@@ -121,10 +126,16 @@ impl ElementLayout {
             },
             _ => (),
         };
-        if let Some(v) = header.get_style_floats_of_name(at::ANCHOR).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::ANCHOR)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             layout.anchor = Point::from_array([v[0], v[1]]);
         }
-        if let Some(v) = header.get_style_floats_of_name(at::EXPAND).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::EXPAND)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             layout.expand = Point::from_array([v[0], v[1]]);
         }
         if let Some(v) = header.get_style_of_name_float(at::BORDERWIDTH, None) {
@@ -140,29 +151,41 @@ impl ElementLayout {
             layout.rotation = v;
         }
         if let Some(v) = header
-            .get_style_rgb_of_name(at::BORDERCOLOR)
-            .as_floats(None)
+            .get_style_value_of_name(at::BORDERCOLOR)
+            .and_then(|x| x.as_floats(&mut floats))
         {
             layout.border_color = Some((v[0], v[1], v[2]));
         }
-        if let Some(v) = header.get_style_rgb_of_name(at::BG).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::BG)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             layout.bg = Some((v[0], v[1], v[2]));
         }
-        if let Some(v) = header.get_style_floats_of_name(at::MARGIN).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::MARGIN)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             layout.margin = Some((v[0], v[1], v[2], v[3]));
         }
-        if let Some(v) = header.get_style_floats_of_name(at::PAD).as_floats(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::PAD)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             layout.pad = Some((v[0], v[1], v[2], v[3]));
         }
         if let Some(v) = header
-            .get_style_floats_of_name(at::TRANSLATE)
-            .as_floats(None)
+            .get_style_value_of_name(at::TRANSLATE)
+            .and_then(|x| x.as_floats(&mut floats))
         {
             layout.translate = Point::from_array([v[0], v[1]]);
         }
         if let Some((sx, sy, ex, ey)) = {
             let opt_gx = {
-                match header.get_style_ints_of_name(at::GRIDX).as_ints(None) {
+                match header
+                    .get_style_value_of_name(at::GRIDX)
+                    .and_then(|x| x.as_ints(&mut ints))
+                {
                     Some(g) => match g.len() {
                         0 => None,
                         1 => Some((g[0], g[0] + 1)),
@@ -172,7 +195,10 @@ impl ElementLayout {
                 }
             };
             let opt_gy = {
-                match header.get_style_ints_of_name(at::GRIDY).as_ints(None) {
+                match header
+                    .get_style_value_of_name(at::GRIDY)
+                    .and_then(|x| x.as_ints(&mut ints))
+                {
                     Some(g) => match g.len() {
                         0 => None,
                         1 => Some((g[0], g[0] + 1)),
@@ -182,7 +208,10 @@ impl ElementLayout {
                 }
             };
             let opt_grid = {
-                match header.get_style_ints_of_name(at::GRID).as_ints(None) {
+                match header
+                    .get_style_value_of_name(at::GRID)
+                    .and_then(|x| x.as_ints(&mut ints))
+                {
                     Some(g) => match g.len() {
                         0 => None,
                         1 => Some((g[0], g[0], g[0] + 1, g[0] + 1)),
@@ -219,7 +248,10 @@ impl ElementLayout {
             );
         }
         if let Some((x, y)) = {
-            match header.get_style_ints_of_name(at::PLACE).as_floats(None) {
+            match header
+                .get_style_value_of_name(at::PLACE)
+                .and_then(|x| x.as_floats(&mut floats))
+            {
                 Some(g) => match g.len() {
                     0 => None,
                     1 => Some((g[0], g[0])),

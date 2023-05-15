@@ -68,7 +68,7 @@ impl<'a> ColorDatabase<'a> {
             Some(color_none)
         } else {
             self.find_color_index(name)
-                .map(|i| Color::new(self.colors[i].0, self.colors[i].1))
+                .map(|i| Color::new(Some(self.colors[i].0.into()), self.colors[i].1))
         }
     }
 

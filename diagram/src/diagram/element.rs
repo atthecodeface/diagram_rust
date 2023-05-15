@@ -23,8 +23,7 @@ limitations under the License.
 use crate::constants::elements as el;
 use crate::DiagramDescriptor;
 use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::TypeValue; // For the trait, to get access to 'from_string'
-use stylesheet::{StylableNode, Tree};
+use stylesheet::Tree;
 use vg_rs::layout::Layout;
 
 use super::elements::{Group, Path, Shape, Text, Use};
@@ -139,8 +138,8 @@ impl<'a> Element<'a> {
     pub fn value_of_name(
         name_values: Vec<(String, String)>,
         name: &str,
-        mut value: StyleValue,
-    ) -> Result<StyleValue, ValueError> {
+        mut value: StyleTypeValue,
+    ) -> Result<StyleTypeValue, ValueError> {
         for (n, v) in name_values {
             if n == name {
                 value.from_string(&v)?;
@@ -160,8 +159,8 @@ impl<'a> Element<'a> {
     //fp tree_add_element
     pub fn tree_add_element<'b>(
         &'b mut self,
-        mut tree: Tree<'b, StylableNode<'a, StyleValue>>,
-    ) -> Tree<'b, StylableNode<'a, StyleValue>> {
+        mut tree: Tree<'b, StylableNode<'a>>,
+    ) -> Tree<'b, StylableNode<'a>> {
         tree.open_container(&mut self.header.stylable);
         tree = self.content.tree_add_element(tree);
         tree.close_container();

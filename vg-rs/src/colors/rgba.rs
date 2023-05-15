@@ -1,3 +1,6 @@
+//a Imports
+use serde::Serialize;
+
 //a Rgba
 //tp Rgba
 /// A 32-bit color consisting of a 24-bit RGB color with an 8-bit alpha.
@@ -6,7 +9,7 @@
 ///
 /// Stored as a u32 with (255-alpha) in top 8 bits, then R, then G, then B in bottom 8 bits
 ///
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize)]
 pub struct Rgba(u32);
 
 //ip From<u32> for Rgba
@@ -111,11 +114,42 @@ impl Rgba {
         Self(rgba)
     }
 
-    //di as_tuple_rgba
+    //cp of_str
+    /// Create an Rgba by paarsing a string
+    ///
+    /// The string must be #xxx or #xxxxxx (really)
+    pub fn of_str(s: &str) -> Option<Rgba> {
+        if s.as_bytes().first() != Some(&35) {
+            None
+        } else {
+            let short_rgb = s.len() < 7;
+            match u32::from_str_radix(s.split_at(1).1, 16) {
+                Ok(rgb) => {
+                    if short_rgb {
+                        let b = (rgb >> 8) & 0xf;
+                        let g = (rgb >> 4) & 0xf;
+                        let r = rgb & 0xf;
+                        let r = (r | (r << 4)) as u8;
+                        let g = (g | (g << 4)) as u8;
+                        let b = (b | (b << 4)) as u8;
+                        Some((r, g, b).into())
+                    } else {
+                        let b = ((rgb >> 24) & 0xff) as u8;
+                        let g = ((rgb >> 16) & 0xff) as u8;
+                        let r = (rgb & 0xff) as u8;
+                        Some((r, g, b).into())
+                    }
+                }
+                _ => None,
+            }
+        }
+    }
+
+    //dp as_tuple_rgba
     /// Convert to an (R, G, B, A) tuple of u8 values
     ///
     /// This is accessed from the 'From' trait (or, therefore, Into)
-    fn as_tuple_rgba(self) -> (u8, u8, u8, u8) {
+    pub fn as_tuple_rgba(self) -> (u8, u8, u8, u8) {
         (
             ((self.0 >> 16) & 0xff) as u8,         // r
             ((self.0 >> 8) & 0xff) as u8,          // g

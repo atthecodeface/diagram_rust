@@ -21,7 +21,6 @@ const DEBUG_ELEMENT_HEADER: bool = 1 == 0;
 
 //a Imports
 use indent_display::{IndentedDisplay, Indenter};
-use stylesheet::StylableNode;
 use vg_rs::layout::{Layout, LayoutBox};
 use vg_rs::BBox;
 
@@ -31,6 +30,7 @@ use super::ElementScope;
 use super::{ElementLayout, LayoutPlacement};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
+use crate::diagram::{StylableNode, StyleTypeValue};
 use crate::DiagramDescriptor;
 
 //a ElementHeader
@@ -38,7 +38,7 @@ use crate::DiagramDescriptor;
 #[derive(Debug)]
 pub struct ElementHeader<'a> {
     pub uid: usize,
-    pub stylable: StylableNode<'a, StyleValue>,
+    pub stylable: StylableNode<'a>,
     pub id_name: Option<String>, // replicated from stylable
     pub layout_box: LayoutBox,
     pub layout: ElementLayout,
@@ -158,8 +158,13 @@ impl<'a> ElementHeader<'a> {
         }
     }
 
+    //mp get_style_value_of_name
+    pub fn get_style_value_of_name(&self, name: &str) -> Option<&StyleTypeValue> {
+        self.stylable.get_style_value_of_name(name)
+    }
+
     //mp get_opt_style_value_of_name
-    pub fn get_opt_style_value_of_name(&self, name: &str) -> Option<StyleValue> {
+    pub fn get_opt_style_value_of_name(&self, name: &str) -> Option<StyleTypeValue> {
         let r = self
             .stylable
             .get_style_value_of_name(name)
@@ -171,33 +176,33 @@ impl<'a> ElementHeader<'a> {
     }
 
     //mp get_style_rgb_of_name
-    pub fn get_style_rgb_of_name(&self, name: &str) -> StyleValue {
+    pub fn get_style_rgb_of_name(&self, name: &str) -> StyleTypeValue {
         match self.get_opt_style_value_of_name(name) {
-            None => StyleValue::rgb(None),
+            None => StyleTypeValue::rgb(None),
             Some(value) => value,
         }
     }
 
     //mp get_style_ints_of_name
-    pub fn get_style_ints_of_name(&self, name: &str) -> StyleValue {
+    pub fn get_style_ints_of_name(&self, name: &str) -> StyleTypeValue {
         match self.get_opt_style_value_of_name(name) {
-            None => StyleValue::int_array(),
+            None => StyleTypeValue::int_array(),
             Some(value) => value,
         }
     }
 
     //mp get_style_floats_of_name
-    pub fn get_style_floats_of_name(&self, name: &str) -> StyleValue {
+    pub fn get_style_floats_of_name(&self, name: &str) -> StyleTypeValue {
         match self.get_opt_style_value_of_name(name) {
-            None => StyleValue::float_array(),
+            None => StyleTypeValue::float_array(),
             Some(value) => value,
         }
     }
 
     //mp get_style_strings_of_name
-    pub fn get_style_strings_of_name(&self, name: &str) -> StyleValue {
+    pub fn get_style_strings_of_name(&self, name: &str) -> StyleTypeValue {
         match self.get_opt_style_value_of_name(name) {
-            None => StyleValue::string_array("", true),
+            None => StyleTypeValue::string_array("", true),
             Some(value) => value,
         }
     }
@@ -206,24 +211,22 @@ impl<'a> ElementHeader<'a> {
     pub fn get_style_of_name_string(&self, name: &str) -> Option<String> {
         match self.get_opt_style_value_of_name(name) {
             None => None,
-            Some(value) => value.as_string(),
+            Some(value) => value.as_str().map(|s| s.into()),
         }
     }
 
     //mp get_style_of_name_float
     pub fn get_style_of_name_float(&self, name: &str, default: Option<f64>) -> Option<f64> {
-        match self.get_opt_style_value_of_name(name) {
-            None => default,
-            Some(value) => value.as_float(default),
-        }
+        self.get_style_value_of_name(name)
+            .and_then(|value| value.as_f64())
+            .or(default)
     }
 
     //mp get_style_of_name_int
     pub fn get_style_of_name_int(&self, name: &str, default: Option<isize>) -> Option<isize> {
-        match self.get_opt_style_value_of_name(name) {
-            None => default,
-            Some(value) => value.as_int(default),
-        }
+        self.get_style_value_of_name(name)
+            .and_then(|value| value.as_isize())
+            .or(default)
     }
 
     //mp style

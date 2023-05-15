@@ -24,15 +24,11 @@ use vg_rs::grid::GridData;
 use vg_rs::layout::{Layout, LayoutRecord};
 use vg_rs::{BBox, Point};
 
-use super::super::IndentOptions;
-use super::super::{
-    DiagramDescriptor, DiagramElementContent, Element, ElementError, ElementHeader, ElementScope,
-};
-use super::super::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
 use crate::constants::attributes as at;
 use crate::constants::elements as el;
-
-use super::super::types::*;
+use crate::diagram::{DiagramElementContent, Element, ElementError, ElementHeader, ElementScope};
+use crate::diagram::{GenerateSvg, GenerateSvgElement, Svg, SvgElement, SvgError};
+use crate::{DiagramDescriptor, IndentOptions};
 
 //a Group element
 //tp GroupType
@@ -183,10 +179,16 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         descriptor: &DiagramDescriptor,
         header: &ElementHeader,
     ) -> Result<(), ElementError> {
-        if let Some(v) = header.get_style_strings_of_name(at::MINX).as_strings(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::MINX)
+            .and_then(|x| x.as_vec_str())
+        {
             self.x_cell_data = self.read_cell_data(true, header, v)?;
         }
-        if let Some(v) = header.get_style_strings_of_name(at::MINY).as_strings(None) {
+        if let Some(v) = header
+            .get_style_value_of_name(at::MINY)
+            .and_then(|x| x.as_vec_str())
+        {
             self.y_cell_data = self.read_cell_data(false, header, v)?;
         }
         if let Some(layout) = &mut self.layout {
@@ -201,7 +203,11 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             }
         }
         // width, height, flags, ref point are only used in markers
-        match header.get_style_floats_of_name(at::POINT).as_floats(None) {
+        let mut floats = [0.; 4];
+        match header
+            .get_style_value_of_name(at::POINT)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             Some(g) => match g.len() {
                 0 => {}
                 1 => {
@@ -213,7 +219,10 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             },
             _ => {}
         }
-        match header.get_style_floats_of_name(at::RELIEF).as_floats(None) {
+        match header
+            .get_style_value_of_name(at::RELIEF)
+            .and_then(|x| x.as_floats(&mut floats))
+        {
             Some(g) => match g.len() {
                 0 => {}
                 1 => {
@@ -362,7 +371,7 @@ impl<'a> Group<'a> {
         &mut self,
         x: bool,
         header: &ElementHeader,
-        v: &Vec<String>,
+        v: Vec<&str>,
     ) -> Result<Vec<GridData>, ElementError> {
         if self.layout.is_none() {
             return Err(ElementError::of_string(
@@ -444,8 +453,8 @@ impl<'a> Group<'a> {
     //mp tree_add_element
     pub fn tree_add_element<'b>(
         &'b mut self,
-        mut tree: Tree<'b, StylableNode<'a, StyleValue>>,
-    ) -> Tree<'b, StylableNode<'a, StyleValue>> {
+        mut tree: Tree<'b, StylableNode<'a>>,
+    ) -> Tree<'b, StylableNode<'a>> {
         for c in self.content.iter_mut() {
             tree = c.tree_add_element(tree);
         }

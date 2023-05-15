@@ -22,9 +22,8 @@ use stylesheet::{StylableNode, Tree};
 use vg_rs::layout::Layout;
 use vg_rs::BBox;
 
-use super::types::*;
-use super::{Element, ElementError, ElementScope};
 use crate::constants::elements as el;
+use crate::diagram::{Element, ElementError, ElementScope};
 use crate::IndentOptions;
 use crate::{DiagramDescriptor, StyleSheet};
 
@@ -193,10 +192,8 @@ impl<'a> Diagram<'a> {
     /// stylesheet and its rules; the actually styling is then
     /// appllied in `style`.
     pub fn apply_stylesheet(&mut self) {
-        let mut x = StylableNode::<'a, StyleValue>::new(
-            "diagram",
-            self.descriptor.get(el::Typ::Group).unwrap(),
-        );
+        let mut x =
+            StylableNode::<'a>::new("diagram", self.descriptor.get(el::Typ::Group).unwrap());
         let mut tree = Tree::new(&mut x);
         if let Some(element) = &mut self.contents.root_layout {
             tree = element.tree_add_element(tree);
