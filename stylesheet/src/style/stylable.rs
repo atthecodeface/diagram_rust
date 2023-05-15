@@ -39,38 +39,30 @@ use crate::{Descriptor, StyleTypeValue, ValueError};
 ///
 /// ```
 #[derive(Debug)]
-pub struct StylableNode<'a> {
-    /// The `parent` of a node is the parent in the hierarchy; this is
-    /// required to provide inheritance by a child of style values
-    /// from its parent
-    // parent                : Option<RrcStylableNode<'a, V>>,
-    /// The `children` of a node are those which have the node as a
-    /// parent; this is used to propagate the stylesheet through the
-    /// hierarchy.
-    // children              : Vec<RrcStylableNode<'a, V>>,
+pub struct StylableNode<'desc> {
     /// The descriptor provides the description of the styles required by the node
     // descriptor            : RrcDescriptor<V>,
-    descriptor: &'a Descriptor<'a>,
+    descriptor: &'desc Descriptor<'desc>,
     /// id_name is a string that (should be) is unique in the hierarchy for the element,
     /// and which can be used to specify style values; it may be used in rules.
-    pub(crate) id_name: Option<String>,
+    id_name: Option<String>,
     /// node_type is the type of the element, such as 'line' or 'circle'; it may be used in rules.
-    pub(crate) node_type: String,
+    node_type: String,
     /// classes is an array of class names that the element belongs to, the styles of all
     /// of which may be used to specify style values; it may be used in rules.
-    pub(crate) classes: Vec<String>,
+    classes: Vec<String>,
     /// `extra_sids` provides values for a stylesheet that do *not*
     /// belong to the node, but may be inherited by children of the
     /// node
-    pub(crate) extra_sids: Vec<(String, StyleTypeValue)>,
+    extra_sids: Vec<(String, StyleTypeValue)>,
     /// `values` contains the nodes values for each of the styles in
     /// the descriptor; it contains bool and value, the bool
     /// indicating whether it is set by the node or not
-    pub(crate) values: Vec<(bool, StyleTypeValue)>,
+    values: Vec<(bool, StyleTypeValue)>,
 }
 
 //ip StylableNode
-impl<'a> StylableNode<'a> {
+impl<'desc> StylableNode<'desc> {
     //fp new
     /// Create a new stylable node with a given node descriptor and a set of name/value pairs that set the values to be non-default
     /// any name_values that are not specific to the node descriptor, but that are permitted by the stylesheet, are added as 'extra_value's
@@ -78,7 +70,7 @@ impl<'a> StylableNode<'a> {
     ///
     /// The name of 'id' is special; it defines the (document-unique) id of the node
     /// The name of 'class' is special; it provides a list of whitespace-separated class names that the node belongs to
-    pub fn new(node_type: &str, descriptor: &'a Descriptor) -> Self {
+    pub fn new(node_type: &str, descriptor: &'desc Descriptor) -> Self {
         let extra_sids = Vec::new();
         let classes = Vec::new();
         let values = descriptor.build_style_value_array();
@@ -113,8 +105,8 @@ impl<'a> StylableNode<'a> {
         }
     }
 
-    //mp borrow_id
-    pub fn borrow_id(&self) -> Option<&str> {
+    //mp id
+    pub fn id(&self) -> Option<&str> {
         match &self.id_name {
             None => None,
             Some(s) => Some(s),
@@ -263,8 +255,8 @@ impl StylableNodeAction {
         Self { values }
     }
 }
-impl<'a> Action<StylableNode<'a>> for StylableNodeAction {
-    fn apply(&self, _rule: usize, _depth: usize, value: &mut StylableNode<'a>) {
+impl<'desc> Action<StylableNode<'desc>> for StylableNodeAction {
+    fn apply(&self, _rule: usize, _depth: usize, value: &mut StylableNode<'desc>) {
         for (n, v) in &self.values {
             if let Some(x) = value.borrow_mut_style_value_of_name(n) {
                 *x = v.clone();
@@ -302,8 +294,8 @@ impl StylableNodeRule {
         self
     }
 }
-impl<'a> RuleFn<StylableNode<'a>> for StylableNodeRule {
-    fn apply(&self, depth: usize, value: &StylableNode<'a>) -> RuleResult {
+impl<'desc> RuleFn<StylableNode<'desc>> for StylableNodeRule {
+    fn apply(&self, depth: usize, value: &StylableNode<'desc>) -> RuleResult {
         let matched = {
             if let Some(s) = self.id_matches.as_ref() {
                 value.has_id(s)

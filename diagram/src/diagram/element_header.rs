@@ -70,8 +70,7 @@ impl<'a> ElementHeader<'a> {
                 let result = hdr.stylable.add_name_value(&name, value);
                 ElementError::of_result(&hdr, result)?;
             }
-            let id_name = hdr.stylable.borrow_id().map(|s| s.to_string());
-            hdr.id_name = id_name;
+            hdr.id_name = hdr.stylable.id().map(|s| s.into());
             Ok(hdr)
         } else {
             Err(ElementError::Error(
@@ -153,7 +152,7 @@ impl<'a> ElementHeader<'a> {
     //mp borrow_id
     pub fn borrow_id(&self) -> &str {
         match &self.id_name {
-            None => self.stylable.borrow_id().unwrap_or(""),
+            None => self.stylable.id().unwrap_or(""),
             Some(s) => s,
         }
     }
