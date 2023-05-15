@@ -17,11 +17,10 @@ limitations under the License.
  */
 
 //a Imports
-use super::stylable::{StylableNode, StylableNodeAction, StylableNodeRule};
-use crate::RuleSet;
-use crate::Tree;
-use crate::{NamedTypeSet, ValueError};
+use crate::{RuleSet, Tree};
+use crate::{StylableNode, StylableNodeAction, StylableNodeRule};
 use crate::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
+use crate::{TypeSet, ValueError};
 use std::collections::HashMap;
 
 //a Constants for debug
@@ -31,13 +30,13 @@ const DEBUG_STYLESHEETTREE: bool = 1 == 0;
 //tp Stylesheet
 /// The Stylesheet
 pub struct Stylesheet<'a> {
-    style_set: &'a NamedTypeSet,
+    style_set: &'a TypeSet,
     rules: RuleSet<StylableNode<'a>, StylableNodeAction, StylableNodeRule>,
     style_of_id: HashMap<String, usize>,
 }
 
 impl<'a> Stylesheet<'a> {
-    pub fn new(style_set: &'a NamedTypeSet) -> Self {
+    pub fn new(style_set: &'a TypeSet) -> Self {
         Self {
             style_set,
             rules: RuleSet::new(),
@@ -133,7 +132,7 @@ impl<'a> Stylesheet<'a> {
 #[cfg(test)]
 mod test_stylesheet {
     use super::*;
-    use crate::{Descriptor, NamedTypeSet, StyleTypeValue};
+    use crate::{Descriptor, StyleTypeValue, TypeSet};
     struct Element<'a> {
         pub stylable: StylableNode<'a>,
         pub children: Vec<Element<'a>>,
@@ -177,7 +176,7 @@ mod test_stylesheet {
     #[test]
     fn test_simple() {
         let int_type = StyleTypeValue::new(Option::<isize>::None);
-        let style_set = NamedTypeSet::default()
+        let style_set = TypeSet::default()
             .add_type("x", int_type.clone(), false)
             .add_type("y", int_type.clone(), false);
         let mut d_pt = Descriptor::new(&style_set);

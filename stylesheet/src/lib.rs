@@ -31,6 +31,7 @@ extern crate lazy_static;
 
 mod error;
 mod style;
+mod stylesheet;
 mod tree_rules;
 mod type_values;
 mod utils;
@@ -41,10 +42,12 @@ pub use type_values::{StyleTypeValue, TypeValue};
 
 pub use style::Descriptor;
 pub use style::NamedTypeSet;
-pub use style::Stylesheet;
+pub use style::NamedTypeSet as TypeSet;
 pub use style::{StylableNode, StylableNodeAction, StylableNodeRule};
 
 pub use tree_rules::{Action, RuleFn, RuleResult, RuleSet};
 pub use tree_rules::{BitMask, BitMaskU32, BitMaskU64};
 pub use tree_rules::{Tree, TreeIterOp};
 pub use tree_rules::{TreeApplicator32, TreeApplicator64, TreeApplicatorX};
+
+pub use self::stylesheet::Stylesheet;
