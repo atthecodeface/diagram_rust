@@ -24,9 +24,10 @@ use num::{Integer, NumCast, Unsigned};
 
 //a BitMask
 //tt BitMask
-pub trait BitMask: Sized + std::fmt::Debug {
-    fn new(n: usize) -> Self;
-    fn clone(&self, n: usize) -> Self;
+pub trait BitMask: Default + Clone + std::fmt::Debug {
+    fn new() -> Self;
+    #[must_use]
+    fn set_capacity(self, n: usize) -> Self;
     fn set(&mut self, n: usize);
     fn clear(&mut self, n: usize);
     fn is_set(&mut self, n: usize) -> bool;
@@ -35,9 +36,10 @@ pub trait BitMask: Sized + std::fmt::Debug {
 //a BitMaskU
 //tp BitMaskU - a u8/u16/u32/u64 that has the trait BitMask
 /// This struct is a generic implementation of BitMask using a single u<>
+#[derive(Default, Clone)]
 pub struct BitMaskU<U>
 where
-    U: Unsigned, // from num
+    U: Maskable<U> + Default,
 {
     mask: U,
 }
@@ -62,7 +64,7 @@ pub trait Maskable<U>:
 //ip std::fmt::Debug for BitMaskU
 impl<U> std::fmt::Debug for BitMaskU<U>
 where
-    U: Maskable<U>,
+    U: Maskable<U> + Default,
 {
     //mp fmt
     /// Make it human-readable
@@ -77,20 +79,22 @@ where
 /// Implementation of BitMask for an unsigned value used as a bit mask
 impl<U> BitMask for BitMaskU<U>
 where
-    U: Maskable<U>,
+    U: Maskable<U> + Default,
 {
     //fp new
     /// Create a new mask
     #[inline]
-    fn new(n: usize) -> Self {
-        assert!(n <= 8 * std::mem::size_of::<U>());
+    fn new() -> Self {
         let mask = U::zero();
         Self { mask }
     }
 
+    //fp set_capacity
+    /// Set the capacity
     #[inline]
-    fn clone(&self, _n: usize) -> Self {
-        Self { mask: self.mask }
+    fn set_capacity(self, n: usize) -> Self {
+        assert!(n <= 8 * std::mem::size_of::<U>());
+        self
     }
 
     #[inline]
@@ -121,8 +125,9 @@ pub type BitMaskU64 = BitMaskU<u64>;
 ///
 /// It utilizes a vector of u64, so it is should be used only for
 /// where more than 64 bits are required
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct BitMaskX {
+    num_bits: usize,
     mask: Vec<u64>,
 }
 
@@ -132,20 +137,23 @@ impl BitMask for BitMaskX {
     //fp new
     /// Create a new mask
     #[inline]
-    fn new(n: usize) -> Self {
-        let num_u64 = (n + 63) / 64;
-        let mask = vec![0; num_u64];
-        Self { mask }
+    fn new() -> Self {
+        Self {
+            num_bits: 0,
+            mask: vec![],
+        }
     }
 
+    //fp set_capacity
+    /// Set the capacity
     #[inline]
-    fn clone(&self, n: usize) -> Self {
+    fn set_capacity(mut self, n: usize) -> Self {
         let num_u64 = (n + 63) / 64;
-        let mut mask = Vec::with_capacity(num_u64);
-        for i in 0..num_u64 {
-            mask.push(self.mask[i]);
+        while self.mask.len() < num_u64 {
+            self.mask.push(0);
         }
-        Self { mask }
+        self.num_bits = n;
+        self
     }
 
     #[inline]

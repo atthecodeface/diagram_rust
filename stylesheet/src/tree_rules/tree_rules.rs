@@ -70,7 +70,7 @@ where
     pub fn new(rules: &'a RuleSet<V, A, F>) -> Self {
         let num_rules = rules.num_rules();
         let mut active_stack = Vec::new();
-        let mut active_mask = M::new(num_rules);
+        let mut active_mask = M::new().set_capacity(num_rules);
         for i in 0..num_rules {
             if rules.is_toplevel(i) {
                 active_mask.set(i);
@@ -93,7 +93,7 @@ where
             println!("Try mask {:?} to node content {:?}", active_mask, node);
         }
         let depth = self.active_stack.len();
-        let mut result_mask = active_mask.clone(self.num_rules);
+        let mut result_mask = active_mask.clone();
         for i in 0..self.num_rules {
             if active_mask.is_set(i) {
                 let action = {
@@ -186,13 +186,13 @@ where
         match top {
             TreeIterOp::Push(node) => {
                 let n = self.active_stack.len();
-                let am = self.active_stack[n - 1].clone(self.num_rules);
+                let am = self.active_stack[n - 1].clone();
                 self.try_rules(am, node) // will push updated am
             }
             TreeIterOp::Sibling(node) => {
                 self.active_stack.pop().unwrap();
                 let n = self.active_stack.len();
-                let am = self.active_stack[n - 1].clone(self.num_rules);
+                let am = self.active_stack[n - 1].clone();
                 self.try_rules(am, node) // will push updated am
             }
             TreeIterOp::Pop => {
