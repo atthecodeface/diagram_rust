@@ -221,6 +221,7 @@ impl StyleTypeValue {
     pub fn as_strs<'a, 'b>(&'b self, data: &'a mut [&'b str]) -> Option<&'a [&'b str]> {
         self.value.get_strs(data)
     }
+
     //ap as_vec_int
     /// Create a Vec with the contents of the [StyleTypeValue] if it
     /// can be represented as one or more isize

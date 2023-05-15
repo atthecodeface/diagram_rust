@@ -660,9 +660,17 @@ impl TypeValue for (&'static str, bool, Vec<String>) {
             self.2.clear();
         }
         if !s.is_empty() {
-            for fs in s.split(self.0) {
-                if !fs.is_empty() || self.1 {
-                    self.2.push(fs.into());
+            if self.0.is_empty() {
+                for fs in s.split_whitespace() {
+                    if !fs.is_empty() || self.1 {
+                        self.2.push(fs.into());
+                    }
+                }
+            } else {
+                for fs in s.split(self.0) {
+                    if !fs.is_empty() || self.1 {
+                        self.2.push(fs.into());
+                    }
                 }
             }
         }

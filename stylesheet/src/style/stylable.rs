@@ -38,6 +38,8 @@ use crate::{Descriptor, StyleTypeValue, ValueError};
 ///  let child_11 = StylableNode::new("line", &d);// , vec![]);
 ///
 /// ```
+///
+/// Want to change this somewhat to remove id and classes; extra_sids is extra_styles;
 #[derive(Debug)]
 pub struct StylableNode<'desc> {
     /// The descriptor provides the description of the styles required by the node

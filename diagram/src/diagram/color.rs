@@ -29,13 +29,16 @@ use vg_rs::{Rgba, COLOR_DB_SVG};
 //tp Color
 #[derive(Debug, Clone)]
 pub struct Color(VgColor);
-//ip TypeValue for Color
+
+//ip Default for Color
 impl std::default::Default for Color {
     fn default() -> Self {
         // Defaut needs to be transparent
         Self(VgColor::new(None, 0xff_00_00_00_u32))
     }
 }
+
+//ip TypeValue for Color
 impl TypeValue for Color {
     fn as_any(&self) -> &dyn Any {
         self
@@ -67,7 +70,7 @@ impl TypeValue for Color {
         if self.is_none() {
             None
         } else {
-            let (r, g, b, a) = self.0.rgba().as_tuple_rgba();
+            let (r, g, b, a) = self.0.rgba().as_tuple_rgba_f32();
             let n = data.len().max(4);
             if n > 0 {
                 data[0] = r as f64
@@ -106,7 +109,6 @@ impl TypeValue for Color {
         }
     }
     fn parse_string(&mut self, s: &str, _append: bool) -> Result<(), ValueError> {
-        dbg!(s);
         if let Some(c) = COLOR_DB_SVG.find_color(s) {
             self.0 = c;
             Ok(())

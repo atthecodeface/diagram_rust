@@ -22,8 +22,8 @@ use crate::{StyleTypeValue, TypeSet};
 //tp Descriptor
 /// A `Descriptor` is used to describe the values that a particular node type may have in a hierarchy of nodes.
 #[derive(Debug)]
-pub struct Descriptor<'a> {
-    pub style_set: &'a TypeSet,
+pub struct Descriptor<'type_set> {
+    pub style_set: &'type_set TypeSet,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
     pub styles: Vec<(
         String,
@@ -70,16 +70,16 @@ let build_desc desc t =
 */
 
 //ti Descriptor
-impl<'a> Descriptor<'a> {
+impl<'type_set> Descriptor<'type_set> {
     //fp new
-    pub fn new(style_set: &'a TypeSet) -> Self {
+    pub fn new(style_set: &'type_set TypeSet) -> Self {
         Self {
             style_set,
             styles: Vec::new(),
         }
     }
 
-    //cp add_style
+    //mp add_style
     pub fn add_style(&mut self, name: &str) {
         let (value, inheritable) = {
             match self.style_set.borrow_type(name) {

@@ -207,6 +207,7 @@ impl GenerateSvgElement for Path {
                 ele.add_attribute("stroke", "None");
             }
             Some(rgb) => {
+                dbg!("Stroke", rgb);
                 ele.add_color("stroke", rgb);
             }
         }
