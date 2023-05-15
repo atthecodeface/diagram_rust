@@ -183,30 +183,6 @@ impl<'a> ElementHeader<'a> {
         }
     }
 
-    //mp get_style_ints_of_name
-    pub fn get_style_ints_of_name(&self, name: &str) -> StyleTypeValue {
-        match self.get_opt_style_value_of_name(name) {
-            None => StyleTypeValue::int_array(),
-            Some(value) => value,
-        }
-    }
-
-    //mp get_style_floats_of_name
-    pub fn get_style_floats_of_name(&self, name: &str) -> StyleTypeValue {
-        match self.get_opt_style_value_of_name(name) {
-            None => StyleTypeValue::float_array(),
-            Some(value) => value,
-        }
-    }
-
-    //mp get_style_strings_of_name
-    pub fn get_style_strings_of_name(&self, name: &str) -> StyleTypeValue {
-        match self.get_opt_style_value_of_name(name) {
-            None => StyleTypeValue::string_array("", true),
-            Some(value) => value,
-        }
-    }
-
     //mp get_style_of_name_string
     pub fn get_style_of_name_string(&self, name: &str) -> Option<String> {
         match self.get_opt_style_value_of_name(name) {

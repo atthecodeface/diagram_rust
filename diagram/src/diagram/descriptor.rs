@@ -51,52 +51,53 @@ impl<'a> DiagramDescriptor<'a> {
     /// and it should be treated as immutable
     pub fn create_style_set() -> StyleSet {
         let color_type = StyleTypeValue::new(Color::default());
+        let string_type = StyleTypeValue::new(Option::<String>::None);
+        let int_type = StyleTypeValue::new(Option::<isize>::None);
+        let int_list_type = StyleTypeValue::new(Option::<Vec<isize>>::None);
+        let float_type = StyleTypeValue::new(Option::<f64>::None);
+        let float_list_type = StyleTypeValue::new(Option::<Vec<f64>>::None);
+        let point_type = StyleTypeValue::new(Option::<[f64; 2]>::None);
+        let box_type = StyleTypeValue::new(Option::<[f64; 4]>::None);
+        let string_list_type = StyleTypeValue::new(("", true, Vec::<String>::new()));
+        let string_comma_list_type = StyleTypeValue::new((",", true, Vec::<String>::new()));
         let style_set = StyleSet::default()
-            .add_type(at::DEBUG, StyleTypeValue::string(None), false)
-            .add_type(at::BBOX, StyleTypeValue::float_array(), false)
-            .add_type(at::GRID, StyleTypeValue::int_array(), false)
-            .add_type(at::GRIDX, StyleTypeValue::int_array(), false)
-            .add_type(at::GRIDY, StyleTypeValue::int_array(), false)
-            .add_type(
-                at::MINX,
-                StyleTypeValue::new((",", true, Vec::<String>::new())),
-                false,
-            )
-            .add_type(
-                at::MINY,
-                StyleTypeValue::new((",", true, Vec::<String>::new())),
-                false,
-            )
-            .add_type(at::PLACE, StyleTypeValue::float_array(), false)
-            .add_type(at::ANCHOR, StyleTypeValue::floats2(), true)
-            .add_type(at::EXPAND, StyleTypeValue::floats2(), true)
-            .add_type(at::PAD, StyleTypeValue::floats4(), false)
-            .add_type(at::MARGIN, StyleTypeValue::floats4(), true)
-            .add_type(at::BORDERWIDTH, StyleTypeValue::float(None), true)
-            .add_type(at::BORDERROUND, StyleTypeValue::float(None), true)
+            .add_type(at::DEBUG, string_type.clone(), false)
+            .add_type(at::BBOX, box_type.clone(), false)
+            .add_type(at::GRID, int_list_type.clone(), false)
+            .add_type(at::GRIDX, int_list_type.clone(), false)
+            .add_type(at::GRIDY, int_list_type.clone(), false)
+            .add_type(at::MINX, string_comma_list_type.clone(), false)
+            .add_type(at::MINY, string_comma_list_type.clone(), false)
+            .add_type(at::PLACE, float_list_type.clone(), false)
+            .add_type(at::ANCHOR, point_type.clone(), true)
+            .add_type(at::EXPAND, point_type.clone(), true)
+            .add_type(at::PAD, box_type.clone(), false)
+            .add_type(at::MARGIN, box_type.clone(), true)
+            .add_type(at::BORDERWIDTH, float_type.clone(), true)
+            .add_type(at::BORDERROUND, float_type.clone(), true)
             .add_type(at::BORDERCOLOR, color_type.as_type(), true)
             .add_type(at::BG, color_type.as_type(), true)
-            .add_type(at::SCALE, StyleTypeValue::float(None), true)
-            .add_type(at::ROTATE, StyleTypeValue::float(None), true)
-            .add_type(at::TRANSLATE, StyleTypeValue::floats2(), true)
-            .add_type(at::POINT, StyleTypeValue::floats2(), true)
-            .add_type(at::RELIEF, StyleTypeValue::floats2(), true)
+            .add_type(at::SCALE, float_type.clone(), true)
+            .add_type(at::ROTATE, float_type.clone(), true)
+            .add_type(at::TRANSLATE, point_type.clone(), true)
+            .add_type(at::POINT, point_type.clone(), true)
+            .add_type(at::RELIEF, point_type.clone(), true)
             .add_type(at::FILL, StyleTypeValue::rgb(None), true)
             .add_type(at::STROKE, StyleTypeValue::rgb(None), true)
-            .add_type(at::STROKEWIDTH, StyleTypeValue::float(None), true)
-            .add_type(at::WIDTH, StyleTypeValue::float(None), true)
-            .add_type(at::HEIGHT, StyleTypeValue::float(None), true)
-            .add_type(at::COORDS, StyleTypeValue::float_array(), false)
-            .add_type(at::ROUND, StyleTypeValue::float(None), true)
-            .add_type(at::STELLATE, StyleTypeValue::float(None), true)
-            .add_type(at::MARKERS, StyleTypeValue::string_array("", true), true)
-            .add_type(at::FONT, StyleTypeValue::string(None), true)
-            .add_type(at::FONTSIZE, StyleTypeValue::float(None), true)
-            .add_type(at::FONTWEIGHT, StyleTypeValue::string(None), true)
-            .add_type(at::FONTSTYLE, StyleTypeValue::string(None), true)
-            .add_type(at::VERTICES, StyleTypeValue::int(None), true)
-            .add_type(at::FLAGS, StyleTypeValue::int(None), true)
-            .add_type(at::REF, StyleTypeValue::string(None), false);
+            .add_type(at::STROKEWIDTH, float_type.clone(), true)
+            .add_type(at::WIDTH, float_type.clone(), true)
+            .add_type(at::HEIGHT, float_type.clone(), true)
+            .add_type(at::COORDS, float_list_type.clone(), false)
+            .add_type(at::ROUND, float_type.clone(), true)
+            .add_type(at::STELLATE, float_type.clone(), true)
+            .add_type(at::MARKERS, string_list_type, true)
+            .add_type(at::FONT, string_type.clone(), true)
+            .add_type(at::FONTSIZE, float_type.clone(), true)
+            .add_type(at::FONTWEIGHT, string_type.clone(), true)
+            .add_type(at::FONTSTYLE, string_type.clone(), true)
+            .add_type(at::VERTICES, int_type.clone(), true)
+            .add_type(at::FLAGS, int_type.clone(), true)
+            .add_type(at::REF, string_type.clone(), false);
         style_set
     }
 

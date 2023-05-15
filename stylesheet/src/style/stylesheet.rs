@@ -191,16 +191,18 @@ mod test_stylesheet {
     }
     #[test]
     fn test_simple() {
+        let int_type = StyleTypeValue::new(Option::<isize>::None);
         let style_set = NamedTypeSet::default()
-            .add_type("x", StyleTypeValue::int(None), false)
-            .add_type("y", StyleTypeValue::int(None), false);
+            .add_type("x", int_type.clone(), false)
+            .add_type("y", int_type.clone(), false);
         let mut d_pt = Descriptor::new(&style_set);
         d_pt.add_style("x");
         d_pt.add_style("y");
         let d_g = Descriptor::new(&style_set);
 
         let mut stylesheet = Stylesheet::new(&style_set);
-        let act0_nv = vec![("x".to_string(), StyleTypeValue::int(Some(7)))];
+        let int_type_default_7 = StyleTypeValue::new(Some(7_isize));
+        let act0_nv = vec![("x".to_string(), int_type_default_7)];
         let act_0 = stylesheet.add_action(None, StylableNodeAction::new(act0_nv));
         let v = vec![("x", "3"), ("id", "action_1"), ("y", "-99")];
         let mut blah = v.iter().map(|(a, b)| (a.to_string(), *b));

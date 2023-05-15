@@ -26,9 +26,10 @@ use crate::{Descriptor, StyleTypeValue, ValueError};
 /// ```
 ///  extern crate stylesheet;
 ///  use stylesheet::{TypeValue, StyleTypeValue, NamedTypeSet, StylableNode, Descriptor};
+///  let int_type = StyleTypeValue::new(Option::<isize>::None);
 ///  let nts = NamedTypeSet::default()
-///       .add_type("width",  StyleTypeValue::int(None), true)
-///       .add_type("height", StyleTypeValue::int(None), true);
+///       .add_type("width",  int_type.clone(), true)
+///       .add_type("height", int_type.clone(), true);
 ///  let mut d = Descriptor::new(&nts);
 ///  d.add_styles(vec!["width", "height"]);
 ///  let root = StylableNode::new("graph", &d); //, vec![("width","3"), ("height","1")]);

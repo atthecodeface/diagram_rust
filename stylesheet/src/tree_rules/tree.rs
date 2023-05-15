@@ -340,9 +340,10 @@ mod test_tree {
 
     #[test]
     fn test_simple() {
+        let int_type = StyleTypeValue::new(Option::<isize>::None);
         let style_set = NamedTypeSet::default()
-            .add_type("x", StyleTypeValue::int(None), false)
-            .add_type("y", StyleTypeValue::int(None), false);
+            .add_type("x", int_type.clone(), false)
+            .add_type("y", int_type.clone(), false);
         let mut d_pt = Descriptor::new(&style_set);
         d_pt.add_style("x");
         d_pt.add_style("y");

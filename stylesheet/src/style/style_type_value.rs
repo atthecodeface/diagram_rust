@@ -312,60 +312,6 @@ impl StyleTypeValue {
     pub fn eq_string(&self, s: &str) -> bool {
         self.value.has_string(s, false)
     }
-    //zz EXTRA
-    //fp floats2
-    /// Create a new floats value
-    pub fn floats2() -> Self {
-        Self::new::<Option<[f64; 2]>>(None)
-    }
-
-    //fp floats3
-    /// Create a new floats value
-    pub fn floats3() -> Self {
-        Self::new::<Option<[f64; 3]>>(None)
-    }
-
-    //fp floats4
-    /// Create a new floats value
-    pub fn floats4() -> Self {
-        Self::new::<Option<[f64; 4]>>(None)
-    }
-
-    //fp float_array
-    pub fn float_array() -> Self {
-        Self::mk_type::<Option<Vec<f64>>>()
-    }
-
-    //fp float
-    pub fn float(f: Option<f64>) -> Self {
-        Self::new(f)
-    }
-
-    //fp ints2
-    pub fn ints2() -> Self {
-        Self::new::<Option<[isize; 2]>>(None)
-    }
-
-    //fp ints3
-    pub fn ints3() -> Self {
-        Self::new::<Option<[isize; 3]>>(None)
-    }
-
-    //fp ints4
-    pub fn ints4() -> Self {
-        Self::new::<Option<[isize; 4]>>(None)
-    }
-
-    //fp int_array
-    pub fn int_array() -> Self {
-        Self::mk_type::<Option<Vec<isize>>>()
-    }
-
-    //fp int
-    pub fn int(n: Option<isize>) -> Self {
-        Self::new(n)
-    }
-
     //fp rgb
     pub fn rgb(rgb: Option<(f64, f64, f64)>) -> Self {
         let mut t = Self::new::<Option<[f64; 3]>>(None);
@@ -373,16 +319,6 @@ impl StyleTypeValue {
             *(t.as_mut_t::<Option<[f64; 3]>>().unwrap().as_mut().unwrap()) = [r, g, b];
         }
         t
-    }
-
-    //fp string
-    pub fn string(s: Option<String>) -> Self {
-        Self::new::<Option<String>>(s)
-    }
-
-    //fp string_array
-    pub fn string_array(s: &'static str, r: bool) -> Self {
-        Self::new::<Vec<String>>(vec![])
     }
 }
 
