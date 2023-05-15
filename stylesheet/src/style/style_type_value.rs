@@ -279,6 +279,12 @@ impl StyleTypeValue {
         }
     }
 
+    //ap type_name
+    /// Get the type name as a [String]
+    pub fn type_name(&self) -> String {
+        self.value.type_name()
+    }
+
     //cp value_of_string
     /// Get a value from a string
     #[inline]
