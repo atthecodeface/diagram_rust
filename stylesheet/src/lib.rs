@@ -42,7 +42,6 @@ pub use type_values::{StyleTypeValue, TypeValue};
 
 pub use style::Descriptor;
 pub use style::TypeSet;
-pub use style::TypeSet as NamedTypeSet;
 pub use style::{StylableNode, StylableNodeAction, StylableNodeRule};
 
 pub use tree_rules::{Action, RuleFn, RuleResult, RuleSet};

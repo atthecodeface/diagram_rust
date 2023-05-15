@@ -28,7 +28,7 @@ use stylesheet;
 pub type StylableNode<'a> = stylesheet::StylableNode<'a>;
 pub type StyleTypeValue = stylesheet::StyleTypeValue;
 pub type StyleDescriptor<'a> = stylesheet::Descriptor<'a>;
-pub type StyleSet = stylesheet::NamedTypeSet;
+pub type StyleSet = stylesheet::TypeSet;
 pub type StyleSheet<'a> = stylesheet::Stylesheet<'a>;
 pub type StyleRule = stylesheet::StylableNodeRule;
 pub type ValueError = stylesheet::ValueError;
