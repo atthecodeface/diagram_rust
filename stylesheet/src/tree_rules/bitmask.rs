@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use num;
+use num::{Integer, NumCast, Unsigned};
 
 //a Global constants for debug
 // const DEBUG_      : bool = 1 == 0;
@@ -37,7 +37,7 @@ pub trait BitMask: Sized + std::fmt::Debug {
 /// This struct is a generic implementation of BitMask using a single u<>
 pub struct BitMaskU<U>
 where
-    U: num::Unsigned,
+    U: Unsigned, // from num
 {
     mask: U,
 }
@@ -47,9 +47,9 @@ where
 /// copy and the relevant bit ops/casts
 pub trait Maskable<U>:
     Copy
-    + num::Unsigned
-    + num::Integer
-    + num::NumCast
+    + Unsigned // from num
+    + Integer // from num
+    + NumCast // from num
     + std::fmt::LowerHex
     + std::ops::BitOr<Output = U>
     + std::ops::BitAnd<Output = U>
@@ -134,10 +134,7 @@ impl BitMask for BitMaskX {
     #[inline]
     fn new(n: usize) -> Self {
         let num_u64 = (n + 63) / 64;
-        let mut mask = Vec::with_capacity(num_u64);
-        for _ in 0..num_u64 {
-            mask.push(0);
-        }
+        let mask = vec![0; num_u64];
         Self { mask }
     }
 
@@ -155,14 +152,14 @@ impl BitMask for BitMaskX {
     fn set(&mut self, n: usize) {
         let b = n % 64;
         let n = n / 64;
-        self.mask[n] = self.mask[n] | (1 << b);
+        self.mask[n] |= 1 << b;
     }
 
     #[inline]
     fn clear(&mut self, n: usize) {
         let b = n % 64;
         let n = n / 64;
-        self.mask[n] = self.mask[n] & !(1 << b);
+        self.mask[n] &= !(1 << b);
     }
 
     #[inline]

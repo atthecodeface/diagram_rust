@@ -83,15 +83,8 @@ impl<'a> Descriptor<'a> {
         }
     }
 
-    //fp new_rrc
-    /*
-    pub fn new_rrc() -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self { state_classes:Vec::new(), styles:Vec::new() }))
-    }
-     */
-
     //cp add_style
-    pub fn add_style(&mut self, name: &str) -> () {
+    pub fn add_style(&mut self, name: &str) {
         let (value, inheritable) = {
             match self.style_set.borrow_type(name) {
                 None => {
@@ -108,7 +101,7 @@ impl<'a> Descriptor<'a> {
     }
 
     //mp add_styles
-    pub fn add_styles(&mut self, names: Vec<&str>) -> () {
+    pub fn add_styles(&mut self, names: Vec<&str>) {
         for name in names {
             self.add_style(name);
         }
@@ -126,7 +119,7 @@ impl<'a> Descriptor<'a> {
     //mp clone_style_value_array
     pub fn clone_style_value_array(
         &self,
-        values: &Vec<(bool, StyleTypeValue)>,
+        values: &[(bool, StyleTypeValue)],
     ) -> Vec<(bool, StyleTypeValue)> {
         let mut result = Vec::new();
         for v in values.iter() {
@@ -137,12 +130,10 @@ impl<'a> Descriptor<'a> {
 
     //mp find_style_index -- was find_sid_index(_exn)
     pub fn find_style_index(&self, s: &str) -> Option<usize> {
-        let mut n = 0;
-        for (sn, _, _) in &self.styles {
+        for (n, (sn, _, _)) in self.styles.iter().enumerate() {
             if sn == s {
                 return Some(n);
             }
-            n += 1
         }
         None
     }

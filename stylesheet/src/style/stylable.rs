@@ -106,10 +106,10 @@ impl<'a> StylableNode<'a> {
             .iter()
             .map(|(s, v)| (s.clone(), v.clone()))
             .collect();
-        let classes = self.classes.iter().map(|s| s.clone()).collect();
+        let classes = self.classes.clone();
         let values = self.descriptor.clone_style_value_array(&self.values);
         let id_name = Some(id_name.to_string());
-        let node = Self {
+        Self {
             descriptor: self.descriptor,
             extra_sids,
             values,
@@ -117,8 +117,7 @@ impl<'a> StylableNode<'a> {
             state: Vec::new(),
             node_type: self.node_type.clone(),
             classes,
-        };
-        node
+        }
     }
 
     //mp borrow_id
@@ -274,7 +273,7 @@ impl StylableNodeAction {
 impl<'a> Action<StylableNode<'a>> for StylableNodeAction {
     fn apply(&self, _rule: usize, _depth: usize, value: &mut StylableNode<'a>) {
         for (n, v) in &self.values {
-            if let Some(x) = value.borrow_mut_style_value_of_name(&n) {
+            if let Some(x) = value.borrow_mut_style_value_of_name(n) {
                 *x = v.clone();
             }
         }
@@ -282,7 +281,7 @@ impl<'a> Action<StylableNode<'a>> for StylableNodeAction {
 }
 
 //a StylableNodeRule
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StylableNodeRule {
     id_matches: Option<String>,
     has_class: Option<String>,
@@ -291,12 +290,7 @@ pub struct StylableNodeRule {
 }
 impl StylableNodeRule {
     pub fn new() -> Self {
-        Self {
-            id_matches: None,
-            has_class: None,
-            sideways: false,
-            propagate_depth: 0,
-        }
+        Self::default()
     }
     pub fn sideways(mut self, sideways: bool) -> Self {
         self.sideways = sideways;

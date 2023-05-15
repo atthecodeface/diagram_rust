@@ -21,7 +21,7 @@ limitations under the License.
 //a Global constants for debug
 // const DEBUG_      : bool = 1 == 0;
 
-//a Rules
+//a RuleResult
 //tp RuleResult
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RuleResult {
@@ -77,6 +77,7 @@ impl std::fmt::Display for RuleResult {
     }
 }
 
+//a Traits
 //tp trait RuleFn<T>
 /// This trait must be satisfied by a struct that a RuleSet can be made for
 ///
@@ -102,6 +103,7 @@ pub trait Action<T> {
     }
 }
 
+//a Rule
 //tp Rule
 /// A rule is RuleFn and an optional action indicator; it is part of a
 /// RuleSet, which is a Vec of Rule's; it has children, indicated by
@@ -150,6 +152,7 @@ impl<T, F: RuleFn<T>> Rule<T, F> {
     //zz All done
 }
 
+//a RuleSet
 //tp RuleSet
 /// A set of rules that can be applied
 ///
@@ -167,6 +170,13 @@ impl<T, F: RuleFn<T>> Rule<T, F> {
 pub struct RuleSet<T, A: Action<T>, F: RuleFn<T>> {
     rules: Vec<Rule<T, F>>,
     actions: Vec<A>,
+}
+
+//ip Default for RuleSet
+impl<T, A: Action<T>, F: RuleFn<T>> Default for RuleSet<T, A, F> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 //ip RuleSet

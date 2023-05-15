@@ -76,7 +76,7 @@ impl<'a> Stylesheet<'a> {
                 v.from_string(value)?;
                 styling.push(((*name).into(), v));
             } else {
-                return Err(ValueError::bad_value(&format!(
+                return Err(ValueError::bad_value(format!(
                     "unknown style name {} with value {}",
                     name, value
                 )));
@@ -112,33 +112,18 @@ impl<'a> Stylesheet<'a> {
 
         if num_rules <= 32 {
             let mut applicator = TreeApplicator32::new(&self.rules);
-            loop {
-                match tree.it_next(&mut iter) {
-                    Some(n) => applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x))),
-                    None => {
-                        break;
-                    }
-                }
+            while let Some(n) = tree.it_next(&mut iter) {
+                applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x)));
             }
         } else if num_rules <= 64 {
             let mut applicator = TreeApplicator64::new(&self.rules);
-            loop {
-                match tree.it_next(&mut iter) {
-                    Some(n) => applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x))),
-                    None => {
-                        break;
-                    }
-                }
+            while let Some(n) = tree.it_next(&mut iter) {
+                applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x)));
             }
         } else {
             let mut applicator = TreeApplicatorX::new(&self.rules);
-            loop {
-                match tree.it_next(&mut iter) {
-                    Some(n) => applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x))),
-                    None => {
-                        break;
-                    }
-                }
+            while let Some(n) = tree.it_next(&mut iter) {
+                applicator.handle_tree_op(n.map(|(_, x)| tree.borrow_mut(x)));
             }
         }
     }

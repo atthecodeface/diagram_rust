@@ -45,14 +45,14 @@ impl std::clone::Clone for StyleTypeValue {
 //ip PartialEq for StyleTypeValue
 impl std::cmp::PartialEq<StyleTypeValue> for StyleTypeValue {
     fn eq(&self, other: &Self) -> bool {
-        self.value.cmp(other.value.as_any()) == Some(std::cmp::Ordering::Equal)
+        self.equals(&other.value)
     }
 }
 
 //ip PartialOrd for StyleTypeValue
 impl std::cmp::PartialOrd<StyleTypeValue> for StyleTypeValue {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.cmp(other.value.as_any())
+        self.compare(&other.value)
     }
 }
 
@@ -132,21 +132,21 @@ impl StyleTypeValue {
         self.value.as_any_mut().downcast_mut::<T>()
     }
 
-    //mp cmp
+    //mp compare
     /// Compare the value of this [StyleTypeValue] to another value of
     /// type T; if the [StyleTypeValue] is *not* of type T then it
     /// will should None; on a true success it returns Some(Ordering).
-    pub fn cmp<T: Any>(&self, other: &T) -> Option<std::cmp::Ordering> {
+    pub fn compare<T: Any>(&self, other: &T) -> Option<std::cmp::Ordering> {
         self.value.cmp(other as &dyn Any)
     }
 
-    //mp eq
+    //mp equals
     /// Compare the value of this [StyleTypeValue] to another value of type T.
     ///
     /// It only returns true *IF* the [StyleTypeValue] is of type T
     /// and the value compares as 'Equal'
-    pub fn eq<T: Any>(&self, other: &T) -> bool {
-        self.cmp(other) == Some(std::cmp::Ordering::Equal)
+    pub fn equals<T: Any>(&self, other: &T) -> bool {
+        self.compare(other) == Some(std::cmp::Ordering::Equal)
     }
 
     //mp as_f64
@@ -335,9 +335,9 @@ fn test_isize() {
         Some(&73_isize),
         "Expect value to be isize 73"
     );
-    assert!(v_isize.eq(&73_isize));
+    assert!(v_isize.equals(&73_isize));
     assert!(
-        !v_isize.eq(&73_usize),
+        !v_isize.equals(&73_usize),
         "73 *isize* should not equal 73 *usize*"
     );
     assert_eq!(v_isize.as_isize().unwrap(), 73);
@@ -349,9 +349,9 @@ fn test_isize() {
         Some(&1_isize),
         "Expect value to be isize 1"
     );
-    assert!(v_isize.eq(&1_isize));
+    assert!(v_isize.equals(&1_isize));
     assert!(
-        !v_isize.eq(&1_usize),
+        !v_isize.equals(&1_usize),
         "1 *isize* should not equal 1 *usize*"
     );
     assert_eq!(v_isize.as_isize().unwrap(), 1);
@@ -396,8 +396,11 @@ fn test_f64() {
         Some(&73.0_f64),
         "Expect value to be f64 73"
     );
-    assert!(v_f64.eq(&73_f64));
-    assert!(!v_f64.eq(&73_usize), "73 *f64* should not equal 73 *usize*");
+    assert!(v_f64.equals(&73_f64));
+    assert!(
+        !v_f64.equals(&73_usize),
+        "73 *f64* should not equal 73 *usize*"
+    );
 
     assert_eq!(v_f64.as_isize().unwrap(), 73);
     assert_eq!(v_f64.as_f64().unwrap(), 73.0);
@@ -408,8 +411,11 @@ fn test_f64() {
         Some(&1.0_f64),
         "Expect value to be f64 1"
     );
-    assert!(v_f64.eq(&1_f64));
-    assert!(!v_f64.eq(&1_usize), "1 *f64* should not equal 1 *usize*");
+    assert!(v_f64.equals(&1_f64));
+    assert!(
+        !v_f64.equals(&1_usize),
+        "1 *f64* should not equal 1 *usize*"
+    );
 
     assert_eq!(v_f64.as_isize().unwrap(), 1);
     assert_eq!(v_f64.as_f64().unwrap(), 1.0);
@@ -488,13 +494,13 @@ fn test_option() {
         Some(73),
         "Expect value to be Some(isize 73)"
     );
-    assert!(v_opt_isize.eq(&Some(73_isize)));
+    assert!(v_opt_isize.equals(&Some(73_isize)));
     assert!(
-        !v_opt_isize.eq(&Some(73_usize)),
+        !v_opt_isize.equals(&Some(73_usize)),
         "Some(73 *isize*) should not equal Some(73 *usize*)"
     );
     assert!(
-        !v_opt_isize.eq(&Option::<isize>::None),
+        !v_opt_isize.equals(&Option::<isize>::None),
         "Some(73 *isize*) should not equal None",
     );
 

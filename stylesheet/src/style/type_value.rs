@@ -52,7 +52,8 @@ impl TypeValue for [$t ; $n] {
         format!($tname, $n)
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
-        Box::new(Self::default())
+        let s = Self::default();
+        Box::new(s)
     }
     fn clone_value(&self) -> Box<dyn TypeValue> {
         Box::new(*self)
@@ -265,7 +266,7 @@ impl TypeValue for isize {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("isize")
+        "isize".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         Box::new(0)
@@ -346,7 +347,7 @@ impl TypeValue for Vec<isize> {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("Vec<isize>")
+        "Vec<isize>".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         let v: Vec<isize> = vec![];
@@ -396,7 +397,7 @@ impl TypeValue for f64 {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("f64")
+        "f64".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         Box::new(0.0_f64)
@@ -477,7 +478,7 @@ impl TypeValue for Vec<f64> {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("Vec<f64>")
+        "Vec<f64>".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         let v: Vec<f64> = vec![];
@@ -527,7 +528,7 @@ impl TypeValue for String {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("String")
+        "String".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         let s: String = Self::new();
@@ -578,7 +579,7 @@ impl TypeValue for Vec<String> {
     boiler_plate!();
     boiler_plate_serialize!();
     fn type_name(&self) -> String {
-        format!("Vec<String>")
+        "Vec<String>".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         let v: Vec<f64> = vec![];
@@ -605,7 +606,7 @@ impl TypeValue for Vec<String> {
         Some(data)
     }
     fn has_string(&self, s: &str, _as_token: bool) -> bool {
-        self.iter().fold(false, |acc, x| acc || (x == s))
+        self.iter().any(|x| (x == s))
     }
     fn parse_string(&mut self, s: &str, append: bool) -> Result<(), ValueError> {
         if !append {

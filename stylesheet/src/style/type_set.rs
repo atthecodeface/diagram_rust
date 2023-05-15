@@ -100,10 +100,9 @@ impl TypeSet {
     //cp borrow_type
     /// Borrow a type from the set, if it is there, and whether it is inheritable
     pub fn borrow_type(&self, s: &str) -> Option<(&StyleTypeValue, bool)> {
-        match self.set.get(s) {
-            Some(value) => Some((value.type_value(), value.inheritable())),
-            _ => None,
-        }
+        self.set
+            .get(s)
+            .map(|value| (value.type_value(), value.inheritable()))
     }
 
     //zz All done

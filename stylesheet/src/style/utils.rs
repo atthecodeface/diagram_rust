@@ -44,10 +44,8 @@ lazy_static! {
 // only used in test at present
 #[allow(dead_code)]
 fn extract_first_and_rest<'a>(rex: &Regex, s: &'a str) -> Option<(&'a str, &'a str)> {
-    match rex.captures(s) {
-        None => None,
-        Some(caps) => Some((caps.get(1).unwrap().as_str(), caps.get(2).unwrap().as_str())),
-    }
+    rex.captures(s)
+        .map(|caps| (caps.get(1).unwrap().as_str(), caps.get(2).unwrap().as_str()))
 }
 #[warn(dead_code)]
 

@@ -84,6 +84,7 @@ impl<V> TreeIterOp<V> {
 //a TreeIndexIter non-iterator
 //tp TreeIndexIter
 /// An iterator structure to permit iteration over a tree
+#[derive(Debug)]
 pub struct TreeIndexIter {
     start: bool,
     stack: Vec<(usize, usize)>,
@@ -164,11 +165,9 @@ impl<'a, 'b, V> Iterator for TreeIter<'a, 'b, V> {
 
     //mp next
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(top) = self.iter.next(self.tree) {
-            Some(top.map(|(d, i)| (d, &self.tree.nodes[i])))
-        } else {
-            None
-        }
+        self.iter
+            .next(self.tree)
+            .map(|top| top.map(|(d, i)| (d, &self.tree.nodes[i])))
     }
 
     //zz All done
@@ -262,7 +261,7 @@ impl<'a, V> Tree<'a, V> {
     //fi pop_node
     /// Invoked to close the container
     fn pop_node(&mut self) {
-        assert!(self.stack.len() > 0);
+        assert!(!self.stack.is_empty());
         self.stack.pop();
     }
 
@@ -293,6 +292,8 @@ impl<'a, V> Tree<'a, V> {
     ///
     /// It is a logic error to mutate the tree after this is called,
     /// before the iterator is finished
+    #[inline]
+    #[must_use]
     pub fn it_create(&self) -> TreeIndexIter {
         TreeIndexIter::new()
     }
