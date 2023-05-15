@@ -17,13 +17,15 @@ limitations under the License.
  */
 
 //a Imports
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+
+use serde::Serialize;
 
 use crate::StyleTypeValue;
 
 //a TypeSet
 //tp TypeSetValue
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct TypeSetValue {
     type_value: StyleTypeValue,
     inheritable: bool,
@@ -62,9 +64,13 @@ impl std::fmt::Display for TypeSetValue {
 ///
 /// This is used as the complete allowable set of stylable properties
 /// and their types for a stylesheet
-#[derive(Debug, Default)]
+///
+/// Note: a type set is ordered by its key; it internally uses a
+/// BTreeMap rather than a HashMap to ensure this. This provides
+/// reproducible serializations using derive
+#[derive(Debug, Default, Serialize)]
 pub struct TypeSet {
-    set: HashMap<String, TypeSetValue>,
+    set: BTreeMap<String, TypeSetValue>,
 }
 
 //ti std::fmt::Display for TypeSet

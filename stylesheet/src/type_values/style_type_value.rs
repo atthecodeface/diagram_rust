@@ -1,5 +1,4 @@
 //a Imports
-// use erased_serde::{Serialize, Serializer};
 use serde::{Serialize, Serializer};
 use std::any::{Any, TypeId};
 
@@ -62,11 +61,15 @@ impl Serialize for StyleTypeValue {
     where
         S: Serializer,
     {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(Some(1))?;
+        let k = self.value.type_name();
         if let Some(f) = self.value.as_serialize() {
-            f.serialize(serializer)
+            map.serialize_entry(&k, f)?;
         } else {
-            "No serializer".serialize(serializer)
+            map.serialize_entry(&k, "<no serializer>")?;
         }
+        map.end()
     }
 }
 
@@ -515,21 +518,24 @@ fn test_option() {
 fn test_serialize() {
     let t_opt_isize = StyleTypeValue::mk_type::<Option<isize>>();
     let t_i4 = StyleTypeValue::mk_type::<[isize; 4]>();
-    assert_eq!(serde_json::to_string(&t_opt_isize).unwrap(), "null");
+    assert_eq!(
+        serde_json::to_string(&t_opt_isize).unwrap(),
+        r#"{"Option<isize>":null}"#
+    );
     assert_eq!(
         serde_json::to_string(&t_opt_isize.value_of_string("1").unwrap()).unwrap(),
-        "1"
+        r#"{"Option<isize>":1}"#
     );
     assert_eq!(
         serde_json::to_string(&t_opt_isize.value_of_string("-100").unwrap()).unwrap(),
-        "-100"
+        r#"{"Option<isize>":-100}"#
     );
     assert_eq!(
         serde_json::to_string(&t_i4.value_of_string("-100").unwrap()).unwrap(),
-        "[-100,-100,-100,-100]"
+        r#"{"isize[4]":[-100,-100,-100,-100]}"#
     );
     assert_eq!(
         serde_json::to_string(&t_i4.value_of_string("-100,2").unwrap()).unwrap(),
-        "[-100,2,-100,2]"
+        r#"{"isize[4]":[-100,2,-100,2]}"#
     );
 }

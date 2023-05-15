@@ -24,9 +24,6 @@ use crate::{StyleTypeValue, TypeSet};
 #[derive(Debug)]
 pub struct Descriptor<'a> {
     pub style_set: &'a TypeSet,
-    /// `states` has one entry for each class of state, and each entry is a vector of <name>:<value>
-    /// An example of one state class would be for a GUI 'button', with the options being 'enabled', 'disabled', and 'active'
-    pub state_classes: Vec<(String, Vec<(String, isize)>)>,
     /// Vec of all stylenames the stylable cares about; this is normally known at compile time
     pub styles: Vec<(
         String,
@@ -78,7 +75,6 @@ impl<'a> Descriptor<'a> {
     pub fn new(style_set: &'a TypeSet) -> Self {
         Self {
             style_set,
-            state_classes: Vec::new(),
             styles: Vec::new(),
         }
     }
