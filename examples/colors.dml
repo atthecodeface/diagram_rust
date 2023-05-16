@@ -1,0 +1,6 @@
+#diagram
+
+;; This is the first example in the documentation
+
+##polygon vertices=3 grid=1,1 fill-color=#ffece0 width=10 stroke-color=yellow stroke-width=1 
+##polygon vertices=4 grid=1,2 fill-color=pink width=10 stroke-color=#26a stroke-width=1 

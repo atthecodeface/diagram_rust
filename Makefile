@@ -14,6 +14,7 @@ examples: build
 	# ${BIN} errors.dml
 	# ${BIN} --output svg/pipeline.svg   examples/pipeline.dml
 	# ${BIN} --output svg/temp.svg       examples/temp.dml
+	${BIN} --output svg/colors.svg     examples/colors.dml
 	${BIN} --output svg/example_1.svg  examples/example_1.dml
 	${BIN} --output svg/example_2.svg  examples/example_2.dml
 	${BIN} --output svg/grid.svg       examples/grid.dml

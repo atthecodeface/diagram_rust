@@ -102,6 +102,7 @@ impl Rgba {
     /// This is accessed from the 'From' trait (or, therefore, Into)
     fn from_tuple_rgb((r, g, b): (u8, u8, u8)) -> Self {
         let rgb = (b as u32) | ((g as u32) << 8) | ((r as u32) << 16);
+        dbg!(r, g, b, &rgb);
         Self(rgb)
     }
 
@@ -119,7 +120,7 @@ impl Rgba {
     ///
     /// The string must be #xxx or #xxxxxx (really)
     pub fn of_str(s: &str) -> Option<Rgba> {
-        if s.as_bytes().first() != Some(&35) {
+        if s.as_bytes().first() != Some(&b'#') {
             None
         } else {
             let short_rgb = s.len() < 7;
@@ -134,9 +135,10 @@ impl Rgba {
                         let b = (b | (b << 4)) as u8;
                         Some((r, g, b).into())
                     } else {
-                        let b = ((rgb >> 24) & 0xff) as u8;
-                        let g = ((rgb >> 16) & 0xff) as u8;
+                        let b = ((rgb >> 16) & 0xff) as u8;
+                        let g = ((rgb >> 8) & 0xff) as u8;
                         let r = (rgb & 0xff) as u8;
+                        eprintln!("{:x}, {}, {}, {}", rgb, r, g, b);
                         Some((r, g, b).into())
                     }
                 }
