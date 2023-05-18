@@ -90,15 +90,22 @@ pub struct TreeIndexIter {
     stack: Vec<(usize, usize)>,
 }
 
+//ip Default for TreeIterIter
+impl Default for TreeIndexIter {
+    fn default() -> Self {
+        Self {
+            start: true,
+            stack: Vec::new(),
+        }
+    }
+}
+
 //ip TreeIndexIter
 impl TreeIndexIter {
     //fp new
     /// Create a new iterator
     pub fn new() -> Self {
-        Self {
-            start: true,
-            stack: Vec::new(),
-        }
+        Self::default()
     }
 
     //mp next
