@@ -73,16 +73,14 @@ impl Layout {
     pub fn add_grid_id(&mut self, x: bool, s: &str) -> usize {
         if let Some(n) = self.find_grid_id(x, s) {
             *n
+        } else if x {
+            let n = self.refs.0.len();
+            self.refs.0.insert(s.into(), n);
+            n
         } else {
-            if x {
-                let n = self.refs.0.len();
-                self.refs.0.insert(s.into(), n);
-                n
-            } else {
-                let n = self.refs.1.len();
-                self.refs.1.insert(s.into(), n);
-                n
-            }
+            let n = self.refs.1.len();
+            self.refs.1.insert(s.into(), n);
+            n
         }
     }
 

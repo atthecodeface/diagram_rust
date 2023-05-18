@@ -62,10 +62,9 @@ pub struct LayoutBox {
     content_to_layout: Option<Transform>,
 }
 
-//ti LayoutBox
-impl LayoutBox {
-    //fp new
-    pub fn new() -> Self {
+//ip Default for LayoutBox
+impl Default for LayoutBox {
+    fn default() -> Self {
         Self {
             expansion: Point::zero(),
             anchor: Point::zero(),
@@ -85,17 +84,18 @@ impl LayoutBox {
             content_to_layout: None,
         }
     }
+}
+
+//ip LayoutBox
+impl LayoutBox {
+    //fp new
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     //fp set_content_geometry
     /// Sets the content's desired geometry
-    pub fn set_content_geometry(
-        &mut self,
-        rect: BBox,
-        ref_pt: Point,
-        scale: f64,
-        rotation: f64,
-    ) -> () {
-        // self.content_ref      = Some(rect.pt_within(ref_pt));
+    pub fn set_content_geometry(&mut self, rect: BBox, ref_pt: Point, scale: f64, rotation: f64) {
         self.content_ref = Some(ref_pt);
         self.content_scale = scale;
         self.content_rotation = rotation;
@@ -300,7 +300,7 @@ impl LayoutBox {
     /// Sets the inner rectangle based on an outer rectangle, allowing for border
     ///
     /// This also creates any border shape required later
-    fn inner_within_outer(&mut self, rectangle: BBox) -> () {
+    fn inner_within_outer(&mut self, rectangle: BBox) {
         if DEBUG_LAYOUT_BOX {
             println!(
                 "Create inner within outer rectangle {} {} {}",
@@ -326,7 +326,7 @@ impl LayoutBox {
 
     //mp content_within_inner
     ///
-    fn content_within_inner(&mut self) -> () {
+    fn content_within_inner(&mut self) {
         if DEBUG_LAYOUT_BOX {
             println!("{:?} {:?}", self.inner, self.content_desired);
         }
