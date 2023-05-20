@@ -192,8 +192,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             self.y_cell_data = self.read_cell_data(false, header, v)?;
         }
         if let Some(layout) = &mut self.layout {
-            layout.grid_expand.0 = header.layout.expand[0];
-            layout.grid_expand.1 = header.layout.expand[1];
+            layout.set_grid_expand(true, header.layout.expand[0]);
+            layout.set_grid_expand(false, header.layout.expand[1]);
         } else {
             if header.layout.expand[0] != 0. {
                 return Err(ElementError::of_string(header, &format!("X Expand {} specified for element id {} but it is not directly part of a Layout", header.layout.expand[0], header.borrow_id())));
@@ -277,7 +277,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             }
             match self.layout_record {
                 None => {
-                    let mut layout_record = LayoutRecord::new();
+                    let mut layout_record = LayoutRecord::default();
                     match layout_record.capture_grid(&layout) {
                         Err(x) => {
                             eprintln!("Warning: failed to apply grid layout {}", x);
@@ -302,9 +302,9 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         if let Some(layout) = &self.layout {
             println!("{}  layout", indent_str);
             println!("{}    X grid", indent_str);
-            layout.grid_placements.0.display(indent_str);
+            layout.grid_placements(true).display(indent_str);
             println!("{}    Y grid", indent_str);
-            layout.grid_placements.1.display(indent_str);
+            layout.grid_placements(false).display(indent_str);
         } else {
             println!("{}  group only", indent_str);
         }

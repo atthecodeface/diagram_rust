@@ -23,21 +23,15 @@ use crate::Range;
 //tp Placements
 /// A set of placements for a single dimension, where items when
 /// placed have a range that they fit within
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Placements {
     elements: Vec<Range>,
 }
 
 //ip Placements
 impl Placements {
-    //fp new
-    pub fn new() -> Self {
-        Self {
-            elements: Vec::new(),
-        }
-    }
-
     //fp mp add_element
+    /// Add an element to a 1D placemment
     pub fn add_element(
         &mut self,
         _eref: &str,

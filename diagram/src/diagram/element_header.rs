@@ -57,7 +57,7 @@ impl<'a> ElementHeader<'a> {
             let uid = 0;
             let stylable = StylableNode::new(name.as_str(), styles);
             let id_name = None;
-            let layout_box = LayoutBox::new();
+            let layout_box = LayoutBox::default();
             let layout = ElementLayout::new();
             let mut hdr = ElementHeader {
                 uid,
@@ -89,7 +89,7 @@ impl<'a> ElementHeader<'a> {
         let uid = 0;
         let stylable = self.stylable.clone(&id_name);
         let id_name = Some(id_name);
-        let layout_box = LayoutBox::new();
+        let layout_box = LayoutBox::default();
         let layout = ElementLayout::new();
         ElementHeader {
             uid,
@@ -223,7 +223,7 @@ impl<'a> ElementHeader<'a> {
         };
         self.layout
             .set_layout_box(&eref, &mut self.layout_box, content_desired);
-        let bbox = self.layout_box.get_desired_bbox();
+        let bbox = self.layout_box.desired_bbox();
         self.layout.set_layout_properties(&eref, layout, bbox);
     }
 
@@ -241,13 +241,13 @@ impl<'a> ElementHeader<'a> {
     pub fn apply_placement(&mut self, layout: &Layout) -> BBox {
         let rect = {
             match &self.layout.placement {
-                LayoutPlacement::None => self.layout_box.get_desired_bbox(),
+                LayoutPlacement::None => self.layout_box.desired_bbox(),
                 LayoutPlacement::Grid(sx, sy, ex, ey) => {
                     let sx = layout.find_grid_id(true, &sx).unwrap();
                     let sy = layout.find_grid_id(false, &sy).unwrap();
                     let ex = layout.find_grid_id(true, &ex).unwrap();
                     let ey = layout.find_grid_id(false, &ey).unwrap();
-                    layout.get_grid_rectangle((*sx, *sy), (*ex, *ey))
+                    layout.grid_bbox((*sx, *sy), (*ex, *ey))
                 }
                 LayoutPlacement::Place(pt) => layout.get_placed_rectangle(&pt, &self.layout.ref_pt),
             }

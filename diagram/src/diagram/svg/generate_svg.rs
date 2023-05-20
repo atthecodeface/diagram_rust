@@ -65,11 +65,8 @@ impl<'a> GenerateSvg for ElementHeader<'a> {
         if let Some(id) = self.id_name.as_ref() {
             ele.add_attribute("id", id);
         }
-        match self.layout_box.borrow_content_transform() {
-            Some(transform) => {
-                ele.add_transform(transform);
-            }
-            _ => (),
+        if let Some(transform) = self.layout_box.content_transform() {
+            ele.add_transform(transform);
         }
     }
 }
@@ -125,7 +122,7 @@ impl<'a> GenerateSvg for Element<'a> {
 //ip GenerateSvg for LayoutRecord
 impl GenerateSvg for LayoutRecord {
     fn generate_svg(&self, svg: &mut Svg) -> Result<(), SvgError> {
-        match &self.grid_positions {
+        match self.grid_positions() {
             Some((grid_x, grid_y)) => {
                 if grid_x.len() < 2 || grid_y.len() < 2 {
                     ()

@@ -29,24 +29,29 @@ const DEBUG_LAYOUT: bool = 1 == 0;
 
 //a Layout
 //tp Layout
+/// A layout
 #[derive(Debug)]
 pub struct Layout {
-    pub grid_placements: (GridPlacement, GridPlacement),
+    grid_placements: (GridPlacement, GridPlacement),
     /// 0. to 1. for each dimension to expand layout to fill its parent
-    pub grid_expand: (f64, f64),
-    pub direct_placements: (Placements, Placements),
-    pub desired_grid: BBox,
-    pub desired_placement: BBox,
-    pub desired_geometry: BBox,
+    grid_expand: (f64, f64),
+    direct_placements: (Placements, Placements),
+    desired_grid: BBox,
+    desired_placement: BBox,
+    desired_geometry: BBox,
     refs: (HashMap<String, usize>, HashMap<String, usize>),
     content_to_actual: Transform,
 }
 
+//ip Default for Layout
+
 //ip Layout
 impl Layout {
+    //fp new
+    /// Create a new layout
     pub fn new() -> Self {
         let grid_placements = (GridPlacement::new(), GridPlacement::new());
-        let direct_placements = (Placements::new(), Placements::new());
+        let direct_placements = (Placements::default(), Placements::default());
         let refs = (HashMap::new(), HashMap::new());
         Self {
             grid_placements,
@@ -60,7 +65,35 @@ impl Layout {
         }
     }
 
+    //ap grid_placements
+    /// Set the placement
+    pub fn grid_placements(&self, x: bool) -> &GridPlacement {
+        if x {
+            &self.grid_placements.0
+        } else {
+            &self.grid_placements.1
+        }
+    }
+    //ap grid_expand
+    /// Get the expansion
+    pub fn grid_expand(&self, x: bool) -> f64 {
+        if x {
+            self.grid_expand.0
+        } else {
+            self.grid_expand.1
+        }
+    }
+    //mp set_grid_expand
+    /// Set the expansion
+    pub fn set_grid_expand(&mut self, x: bool, expand: f64) {
+        if x {
+            self.grid_expand.0 = expand;
+        } else {
+            self.grid_expand.1 = expand;
+        }
+    }
     //mp find_grid_id
+    /// Get the element number (if any) for an ID in the grid for X or Y
     pub fn find_grid_id(&self, x: bool, s: &str) -> Option<&usize> {
         if x {
             self.refs.0.get(s)
@@ -70,6 +103,8 @@ impl Layout {
     }
 
     //mp add_grid_id
+    /// Add a 'str' grid ID to the X or Y grid; returns the grid
+    /// element number (possibly this is a temporary fix)
     pub fn add_grid_id(&mut self, x: bool, s: &str) -> usize {
         if let Some(n) = self.find_grid_id(x, s) {
             *n
@@ -103,6 +138,8 @@ impl Layout {
     }
 
     //mp add_placed_element
+    /// Add an element reference placed at a point, given a reference
+    /// point within that content and some bounding box
     pub fn add_placed_element(
         &mut self,
         eref: &str,
@@ -127,7 +164,8 @@ impl Layout {
     }
 
     //mp add_cell_data
-    pub fn add_cell_data(&mut self, x: &Vec<GridData>, y: &Vec<GridData>) {
+    /// Add the cell data to placements
+    pub fn add_cell_data(&mut self, x: &[GridData], y: &[GridData]) {
         self.grid_placements.0.add_cell_data(x);
         self.grid_placements.1.add_cell_data(y);
     }
@@ -200,19 +238,23 @@ impl Layout {
         self.content_to_actual = Transform::of_translation(ac - dc);
     }
 
-    //mp get_layout_transform
-    pub fn get_layout_transform(&self) -> Transform {
-        self.content_to_actual.clone()
+    //ap layout_transform
+    /// Get the transformation that needs to be applied to the content
+    /// to put it into outer coordinates
+    pub fn layout_transform(&self) -> Transform {
+        self.content_to_actual
     }
 
-    //mp get_grid_rectangle
-    pub fn get_grid_rectangle(&self, start: (usize, usize), end: (usize, usize)) -> BBox {
+    //ap grid_bbox
+    /// Get the bounding box of the content that is laid out as a grid
+    pub fn grid_bbox(&self, start: (usize, usize), end: (usize, usize)) -> BBox {
         let (x0, x1) = self.grid_placements.0.get_span(start.0, end.0);
         let (y0, y1) = self.grid_placements.1.get_span(start.1, end.1);
         BBox::new(x0, y0, x1, y1)
     }
 
     //mp get_place_rectangle
+    /// Get the place rectangle, whatever that means
     pub fn get_placed_rectangle(&self, _pt: &Point, _ref_pt: &Option<Point>) -> BBox {
         BBox::new(0., 0., 10., 10.)
     }
@@ -246,7 +288,7 @@ impl Layout {
     }
 
     //mp display
-    // Display with an indent of indent_str plus two spaces
+    /// Display with an indent of indent_str plus two spaces
     pub fn display(&self, indent_str: &str) {
         println!("{}  Layout NOT DONE", indent_str);
     }

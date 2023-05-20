@@ -24,19 +24,17 @@ use crate::layout::Layout;
 //a LayoutRecord
 //tp LayoutRecord
 /// A type used to preserve the layout for, e.g., display as a grid
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LayoutRecord {
-    pub grid_positions: Option<(HashMap<String, f64>, HashMap<String, f64>)>,
+    grid_positions: Option<(HashMap<String, f64>, HashMap<String, f64>)>,
 }
 
 //ip LayoutRecord
 impl LayoutRecord {
-    //fp new
-    /// Create a new layout record
-    pub fn new() -> Self {
-        Self {
-            grid_positions: None,
-        }
+    //ap grid_positions
+    /// Borrow the grid positions
+    pub fn grid_positions(&self) -> Option<&(HashMap<String, f64>, HashMap<String, f64>)> {
+        self.grid_positions.as_ref()
     }
 
     //mp capture_grid

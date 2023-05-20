@@ -26,6 +26,9 @@ const DEBUG_LAYOUT_BOX: bool = 1 == 0;
 
 //a LayoutBox
 //tp LayoutBox
+/// A box that lis used to layout a content container with a
+/// transformation for that content; this is itself a container
+/// (i.e. it has a margin, border, and padding)
 #[derive(Debug)]
 pub struct LayoutBox {
     /// This indicates how much to expand the content within its laid-out space (0-1 each in x and y)
@@ -88,11 +91,6 @@ impl Default for LayoutBox {
 
 //ip LayoutBox
 impl LayoutBox {
-    //fp new
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     //fp set_content_geometry
     /// Sets the content's desired geometry
     pub fn set_content_geometry(&mut self, rect: BBox, ref_pt: Point, scale: f64, rotation: f64) {
@@ -104,16 +102,19 @@ impl LayoutBox {
     }
 
     //fp set_border_width
+    /// Set the border width
     pub fn set_border_width(&mut self, border_width: f64) {
         self.border_width = border_width;
     }
 
     //fp set_border_round
+    /// Set the border rounding
     pub fn set_border_round(&mut self, border_round: f64) {
         self.border_round = border_round;
     }
 
     //fp set_margin
+    /// Set the margin
     pub fn set_margin(&mut self, value: &Option<(f64, f64, f64, f64)>) {
         if let Some((x0, y0, x1, y1)) = value.as_ref() {
             self.margin = Some([*x0, *y0, *x1, *y1]);
@@ -123,6 +124,7 @@ impl LayoutBox {
     }
 
     //fp set_padding
+    /// Set the padding
     pub fn set_padding(&mut self, value: &Option<(f64, f64, f64, f64)>) {
         if let Some((x0, y0, x1, y1)) = value.as_ref() {
             self.padding = Some([*x0, *y0, *x1, *y1]);
@@ -132,28 +134,30 @@ impl LayoutBox {
     }
 
     //fp set_anchor_expand
+    /// Set the anchor point and expansion
     pub fn set_anchor_expand(&mut self, anchor: Point, expansion: Point) {
         self.anchor = anchor;
         self.expansion = expansion;
     }
 
-    //fp borrow_content_transform
-    pub fn borrow_content_transform(&self) -> Option<&Transform> {
+    //ap content_transform
+    /// Get the content transformation
+    pub fn content_transform(&self) -> Option<&Transform> {
         self.content_to_layout.as_ref()
     }
 
-    //fp get_desired_bbox
-    pub fn get_desired_bbox(&self) -> BBox {
+    //fp desired_bbox
+    /// Get the desired [BBox] for the layout from all of its content,
+    /// with associated placement; include the container expansion
+    pub fn desired_bbox(&self) -> BBox {
         let mut rect = {
             match &self.content_desired {
                 None => BBox::none(),
                 Some(bbox) => {
-                    let bbox = bbox.new_rotated_around(
+                    bbox.new_rotated_around(
                         self.content_ref.as_ref().unwrap(),
                         self.content_rotation,
-                    );
-                    let bbox = bbox * self.content_scale;
-                    bbox
+                    ) * self.content_scale
                 }
             }
         };
@@ -319,7 +323,8 @@ impl LayoutBox {
         self.inner = Some(inner);
     }
 
-    //mp get_border_shape
+    //ap get_border_shape
+    /// Get the [Polygon] of the border if it has one
     pub fn get_border_shape(&self) -> Option<&Polygon> {
         self.border_shape.as_ref()
     }
@@ -402,7 +407,7 @@ impl LayoutBox {
     }
 
     //mp display
-    // Display with an indent of indent_str plus two spaces
+    /// Display with an indent of indent_str plus two spaces
     pub fn display(&self, indent_str: &str) {
         println!("{}  Layout box", indent_str);
         println!("{}    Margin {:?}", indent_str, self.margin);
