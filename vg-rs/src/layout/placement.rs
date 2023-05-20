@@ -53,7 +53,7 @@ impl Placements {
         match self.elements.len() {
             0 => Range::none(),
             _ => {
-                let mut range = self.elements[0].clone();
+                let mut range = self.elements[0];
                 for e in &self.elements {
                     range = range.union(e);
                 }

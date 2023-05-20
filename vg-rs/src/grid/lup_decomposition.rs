@@ -18,11 +18,7 @@ impl LUPDecomposition {
         assert_eq!(matrix.len(), size * size);
         let mut data = vec![0.; size * size];
         data.copy_from_slice(matrix);
-        if let Some(pivot) = Self::decompose(&mut data, size) {
-            Some(Self { size, data, pivot })
-        } else {
-            None
-        }
+        Self::decompose(&mut data, size).map(|pivot| Self { size, data, pivot })
     }
 
     //fi decompose
@@ -60,13 +56,9 @@ impl LUPDecomposition {
             if let Some(r_max) = r_max {
                 // Swap row i with r_max and update the pivot list
                 if r_max != d {
-                    let p_r_max = permute[r_max];
-                    permute[r_max] = permute[d];
-                    permute[d] = p_r_max;
+                    permute.swap(r_max, d);
                     for c in 0..size {
-                        let v = matrix[r_max * size + c];
-                        matrix[r_max * size + c] = matrix[d * size + c];
-                        matrix[d * size + c] = v;
+                        matrix.swap(r_max * size + c, d * size + c);
                     }
                 }
             } else {

@@ -132,17 +132,20 @@ impl EquationSet {
     }
 
     //fp invert
+    /// Invert the equation set matrix, returning an error if not possible
+    ///
+    /// Once inverted the equation set can be resolved by applying the
+    /// matrix. If an inversion is not possible then the equation set
+    /// *cannot* be resolved - it is over- or under-constrained
     pub fn invert(&mut self) -> Result<(), String> {
         if let Some(lup) = LUPDecomposition::new(&self.matrix, self.size) {
             if lup.invert(&mut self.matrix) {
                 Ok(())
             } else {
-                Err(format!(
-                    "Failed to invert after decomposition, not invertible"
-                ))
+                Err("Failed to invert after decomposition, not invertible".into())
             }
         } else {
-            Err(format!("Failed to decompose, not invertible"))
+            Err("Failed to decompose, not invertible".into())
         }
     }
 
@@ -183,6 +186,6 @@ impl std::fmt::Display for EquationSet {
             }
             write!(f, "|  ({:8})", self.results[i])?;
         }
-        write!(f, "\n")
+        writeln!(f)
     }
 }

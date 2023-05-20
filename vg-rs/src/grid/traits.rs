@@ -19,8 +19,25 @@ limitations under the License.
 //a Imports
 
 //a Traits
+//tt NodeId
+/// Types must implement this trait if they are to be used as a node ID in the grid
+///
+/// This must be copy; it is stored in the resolver for the nodes and links. It is *not* a node!
+///
+/// Default is required *not* because it is used, but because
+/// Resolver<N:NodeId> can only be default if N is; N::default is not
+/// used
 pub trait NodeId:
-    Sized + PartialEq + Eq + std::hash::Hash + Copy + std::fmt::Debug + std::fmt::Display
+    Sized
+    + PartialEq
+    + Eq
+    + std::hash::Hash
+    + Copy
+    + std::fmt::Debug
+    + std::fmt::Display
+    + std::default::Default
 {
 }
+
+//ip NodeId for usize
 impl NodeId for usize {}

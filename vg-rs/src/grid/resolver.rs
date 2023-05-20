@@ -41,7 +41,7 @@ const DEBUG_CELL_DATA: bool = 1 == 0;
 /// where each step to a new node requires that *all* the predecessor
 /// link-node to that node have already been traversed (and hence
 /// assigned positions).
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Resolver<N: NodeId> {
     /// All the node ids used
     node_ids: Vec<N>,
@@ -64,22 +64,7 @@ impl<N: NodeId> Resolver<N> {
     //fp none
     /// Create a new resolver with no data
     pub fn none() -> Self {
-        let node_ids = Vec::new();
-        let nodes = HashMap::new();
-        let links = HashMap::new();
-        let roots = Vec::new();
-        let leaves = Vec::new();
-        let node_resolution_order = Vec::new();
-        let unresolved_nodes = HashSet::new();
-        Self {
-            node_ids,
-            nodes,
-            links,
-            roots,
-            leaves,
-            node_resolution_order,
-            unresolved_nodes,
-        }
+        Self::default()
     }
 
     //fp new
@@ -124,7 +109,7 @@ impl<N: NodeId> Resolver<N> {
         let roots = roots.into_iter().collect();
         let leaves = leaves.into_iter().collect();
         let node_resolution_order = Vec::new();
-        let s = Self {
+        Self {
             node_ids,
             nodes,
             links,
@@ -132,19 +117,18 @@ impl<N: NodeId> Resolver<N> {
             leaves,
             node_resolution_order,
             unresolved_nodes,
-        };
-        // s.place_roots(0.);
-        s
+        }
     }
 
     //mp set_growth_data
+    /// Set a link between two NodeId's to have a certain growth factor
     pub fn set_growth_data(&mut self, start: N, end: N, growth: f64) -> Result<(), String> {
         let reachable = self.reachable_nodes(start);
         let predecessor = self.predecessor_nodes(end);
-        let intersection: HashSet<N> = reachable.intersection(&predecessor).map(|x| *x).collect();
+        let intersection: HashSet<N> = reachable.intersection(&predecessor).copied().collect();
         for node_id in intersection.iter() {
             for e in &self.nodes[node_id].link_ends {
-                if intersection.contains(&e) {
+                if intersection.contains(e) {
                     self.links
                         .get_mut(&(*node_id, *e))
                         .unwrap()
@@ -163,11 +147,17 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp place_node
-    pub fn place_node(&mut self, node: N, position: Option<f64>) {
-        self.nodes.get_mut(&node).unwrap().placed_position(position);
+    /// Place a particular NodeId at an (optional) position; this
+    /// forces it to a value if Some, otherwise lets it float (if None)
+    pub fn place_node(&mut self, node_id: N, position: Option<f64>) {
+        self.nodes
+            .get_mut(&node_id)
+            .unwrap()
+            .placed_position(position);
     }
 
     //mp clear_node_placements
+    /// Clear all the placements of nodes in the [Resolver]
     pub fn clear_node_placements(&mut self) {
         for (_, node) in self.nodes.iter_mut() {
             node.placed_position(None);
@@ -195,7 +185,7 @@ impl<N: NodeId> Resolver<N> {
                 let link = self.links.get(&(*n, *e)).unwrap();
                 end_updates.push((*e, p + link.min_size));
             }
-            drop(node);
+            // drop(node);
             for (start, max_pos) in start_updates {
                 self.nodes
                     .get_mut(&start)
@@ -403,16 +393,21 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp has_node
-    pub fn has_node(&self, node: &N) -> bool {
-        self.nodes.contains_key(node)
+    /// Determine if the [Resolver] has a specific NodeId
+    pub fn has_node(&self, node_id: N) -> bool {
+        self.nodes.contains_key(&node_id)
     }
 
     //mp get_node_position
+    /// Get the position of the node
     pub fn get_node_position(&self, node: N) -> f64 {
         self.nodes[&node].get_position()
     }
 
     //mp get_edge_nodes
+    /// Get a Vec of the nodes which are at the min or max edge of the
+    /// bounds of this Resolver - as a tuple with a bool of false for
+    /// min, true for max
     pub fn get_edge_nodes(&self, epsilon: f64) -> Vec<(N, bool)> {
         let bounds = self.find_bounds();
         let mut result = Vec::new();
@@ -434,35 +429,37 @@ impl<N: NodeId> Resolver<N> {
     }
 
     //mp place_edge_nodes
+    /// Place edge odes
     pub fn place_edge_nodes(
         &mut self,
-        edge_nodes: Vec<(N, bool)>,
+        edge_nodes: &[(N, bool)],
         min: Option<f64>,
         max: Option<f64>,
     ) {
         for (node_id, is_max) in edge_nodes {
-            if is_max {
-                self.place_node(node_id, max);
+            if *is_max {
+                self.place_node(*node_id, max);
             } else {
-                self.place_node(node_id, min);
+                self.place_node(*node_id, min);
             }
         }
     }
 
-    //mp borrow_roots
-    /// Borrow the roots, for test mainly
-    #[allow(dead_code)]
-    pub fn borrow_roots(&self) -> &Vec<N> {
+    //mp root_nodes
+    /// Get the list of root nodes - those that don't depend on other nodes
+    pub fn root_nodes(&self) -> &[N] {
         &self.roots
     }
 
-    //mp borrow_resolution_order
-    #[allow(dead_code)]
-    pub fn borrow_resolution_order(&self) -> &Vec<N> {
+    //mp resolution_order
+    /// Get a slice indicating the node order
+    pub fn resolution_order(&self) -> &[N] {
         &self.node_resolution_order
     }
 
     //mp place_roots_to_resolve
+    /// Place the unnresolved roots - nodes which don't depend on
+    /// others - at a given position
     pub fn place_roots_to_resolve(&mut self, pos: f64) -> bool {
         while !self.unresolved_nodes.is_empty() {
             let mut placed = false;
@@ -522,8 +519,8 @@ mod test_resolver {
         let data = vec![(0, 100, 10.), (100, 50, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.place_roots_to_resolve(0.);
-        assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0, 100, 50]);
+        assert_eq!(res.root_nodes(), &vec![0]);
+        assert_eq!(res.resolution_order(), &vec![0, 100, 50]);
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(100), 10.);
@@ -535,15 +532,15 @@ mod test_resolver {
     fn test_1() {
         let data = vec![(0, 100, 10.), (100, 50, 10.), (100, 250, 5.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
-        assert_eq!(res.borrow_roots(), &vec![0]);
+        assert_eq!(res.root_nodes(), &vec![0]);
         res.place_roots_to_resolve(0.);
-        // assert_eq!(res.borrow_resolution_order(), &vec![0,100,50,250]);
+        // assert_eq!(res.resolution_order(), &vec![0,100,50,250]);
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(100), 10.);
         assert_eq!(res.get_node_position(250), 15.);
         assert_eq!(res.get_node_position(50), 20.);
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(20.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(20.));
         res.create_energy_matrix();
     }
     //fi approx_eq
@@ -557,21 +554,21 @@ mod test_resolver {
         let data = vec![(0, 1, 10.), (1, 2, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.place_roots_to_resolve(0.);
-        assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0, 1, 2]);
+        assert_eq!(res.root_nodes(), &vec![0]);
+        assert_eq!(res.resolution_order(), &vec![0, 1, 2]);
         res.set_growth_data(0, 1, 1.).unwrap();
         res.set_growth_data(1, 2, 0.00001).unwrap();
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
         assert_eq!(res.get_node_position(1), 10.);
         assert_eq!(res.get_node_position(2), 20.);
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
         let mut eqns = res.create_energy_matrix();
         println!("energy {}", eqns);
         eqns.invert().unwrap();
         println!("inverted energy {}", eqns);
         res.assign_min_positions();
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 20.);
@@ -583,8 +580,8 @@ mod test_resolver {
         let data = vec![(0, 1, 10.), (1, 2, 10.)];
         let mut res = Resolver::new(&mut data.iter().map(|x| (x.0, x.1, x.2)));
         res.place_roots_to_resolve(0.);
-        assert_eq!(res.borrow_roots(), &vec![0]);
-        assert_eq!(res.borrow_resolution_order(), &vec![0, 1, 2]);
+        assert_eq!(res.root_nodes(), &vec![0]);
+        assert_eq!(res.resolution_order(), &vec![0, 1, 2]);
         res.set_growth_data(0, 2, 1.).unwrap();
         res.assign_min_positions();
         assert_eq!(res.get_node_position(0), 0.);
@@ -592,7 +589,7 @@ mod test_resolver {
         assert_eq!(res.get_node_position(2), 20.);
         let eqns = res.create_energy_matrix();
         println!("energy {}", eqns);
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
         let mut eqns = res.create_energy_matrix();
         println!("energy {}", eqns);
         eqns.invert().unwrap();
@@ -605,7 +602,7 @@ mod test_resolver {
         println!("Assign min positions");
         res.assign_min_positions();
         println!("Place edge nodes streteched");
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(30.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 15.);
@@ -620,7 +617,7 @@ mod test_resolver {
         res.place_roots_to_resolve(0.);
         res.set_growth_data(0, 3, 1.).unwrap();
         res.assign_min_positions();
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(40.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(40.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 13.333333);
@@ -637,7 +634,7 @@ mod test_resolver {
         res.set_growth_data(0, 3, 1.).unwrap();
         res.set_growth_data(1, 2, 2.).unwrap();
         res.assign_min_positions();
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-3), Some(0.), Some(40.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-3), Some(0.), Some(40.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 12.5);
@@ -661,7 +658,7 @@ mod test_resolver {
         println!("Assign min positions");
         res.assign_min_positions();
         println!("Place edge nodes");
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-7), Some(0.), Some(40.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-7), Some(0.), Some(40.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 10.);
@@ -684,7 +681,7 @@ mod test_resolver {
         res.set_growth_data(1, 2, 2.).unwrap();
         res.set_growth_data(2, 3, 1.).unwrap();
         res.assign_min_positions();
-        res.place_edge_nodes(res.get_edge_nodes(1.0E-7), Some(0.), Some(40.));
+        res.place_edge_nodes(&res.get_edge_nodes(1.0E-7), Some(0.), Some(40.));
         res.minimize_energy().unwrap();
         approx_eq(res.get_node_position(0), 0.);
         approx_eq(res.get_node_position(1), 10.);

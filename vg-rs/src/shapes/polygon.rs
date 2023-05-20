@@ -74,7 +74,23 @@ impl std::fmt::Display for Polygon {
     }
 }
 
-//ti Polygon
+//ip Clone for Polygon
+impl Clone for Polygon {
+    //mp clone
+    /// Clone the polygon
+    fn clone(&self) -> Self {
+        Self {
+            center: self.center,
+            vertices: self.vertices,
+            size: self.size,
+            stellate_size: self.stellate_size,
+            eccentricity: self.eccentricity,
+            rotation: self.rotation,
+            rounding: self.rounding,
+        }
+    }
+}
+//tp Polygon
 impl Polygon {
     //fp new
     /// Create a new Polygon with a certain number of vertices and a
@@ -83,7 +99,7 @@ impl Polygon {
     pub fn new(vertices: usize, stellate_size: f64) -> Self {
         Self {
             center: Point::zero(),
-            vertices: vertices,
+            vertices,
             rotation: 0.,
             rounding: 0.,
             size: 0.,
@@ -193,20 +209,6 @@ impl Polygon {
     /// Set the stellation of a polygon (not useful for circles...!)
     pub fn set_stellate_size(&mut self, stellate_size: f64) {
         self.stellate_size = stellate_size;
-    }
-
-    //mp clone
-    /// Clone the polygon
-    pub fn clone(&self) -> Self {
-        Self {
-            center: self.center.clone(),
-            vertices: self.vertices,
-            size: self.size,
-            stellate_size: self.stellate_size,
-            eccentricity: self.eccentricity,
-            rotation: self.rotation,
-            rounding: self.rounding,
-        }
     }
 
     //mp as_paths

@@ -311,10 +311,10 @@ impl LayoutBox {
                 rectangle, self.border_width, self.border_round
             );
         }
-        let mut inner = rectangle.clone();
+        let mut inner = rectangle;
         self.outer = Some(rectangle);
         inner = self.margin.map_or(inner, |r| inner.shrink(&r, 1.));
-        let (c, w, h) = inner.clone().reduce(self.border_width * 0.5).get_cwh();
+        let (c, w, h) = inner.reduce(self.border_width * 0.5).get_cwh();
         let mut polygon = Polygon::new_rect(w, h).translate(&c);
         polygon.set_rounding(self.border_round);
         self.border_shape = Some(polygon);
@@ -347,16 +347,12 @@ impl LayoutBox {
         let di_x_range = cd.x * self.content_scale;
         let a_x_range = Range::new(ic[0] - aw / 2., ic[0] + aw / 2.);
         let (x_translation, ci_x_range) =
-            di_x_range
-                .clone()
-                .fit_within_dimension(&a_x_range, self.anchor[0], self.expansion[0]);
+            di_x_range.fit_within_dimension(&a_x_range, self.anchor[0], self.expansion[0]);
 
         let di_y_range = cd.y * self.content_scale;
         let a_y_range = Range::new(ic[1] - ah / 2., ic[1] + ah / 2.);
         let (y_translation, ci_y_range) =
-            di_y_range
-                .clone()
-                .fit_within_dimension(&a_y_range, self.anchor[1], self.expansion[1]);
+            di_y_range.fit_within_dimension(&a_y_range, self.anchor[1], self.expansion[1]);
 
         // ci_*_range is in inner coordinates centred on 'zero => inner center'
         // assuming content will be 'centred' on its desired centre (should perhaps use reference points?)
@@ -428,37 +424,37 @@ impl LayoutBox {
 impl<'a, O: IndentedOptions<'a>> IndentedDisplay<'a, O> for LayoutBox {
     fn indent(&self, ind: &mut Indenter<'a, O>) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(ind, "Layout box\n")?;
+        writeln!(ind, "Layout box")?;
         let mut sub = ind.sub();
-        write!(&mut sub, "anchor  : {}\n", self.anchor)?;
-        write!(&mut sub, "expand  : {}\n", self.expansion)?;
-        write!(&mut sub, "pad: {:?}\n", self.padding)?;
-        write!(&mut sub, "border wid: {}\n", self.border_width)?;
-        write!(&mut sub, "border rnd: {}\n", self.border_round)?;
-        // write!(&mut sub, "border color: {:?}\n", self.border_color)?;
-        write!(&mut sub, "margin: {:?}\n", self.margin)?;
-        write!(&mut sub, "content_scale   : {}\n", self.content_scale)?;
-        write!(&mut sub, "content_rotation: {}\n", self.content_rotation)?;
+        writeln!(&mut sub, "anchor  : {}", self.anchor)?;
+        writeln!(&mut sub, "expand  : {}", self.expansion)?;
+        writeln!(&mut sub, "pad: {:?}", self.padding)?;
+        writeln!(&mut sub, "border wid: {}", self.border_width)?;
+        writeln!(&mut sub, "border rnd: {}", self.border_round)?;
+        // writeln!(&mut sub, "border color: {:?}", self.border_color)?;
+        writeln!(&mut sub, "margin: {:?}", self.margin)?;
+        writeln!(&mut sub, "content_scale   : {}", self.content_scale)?;
+        writeln!(&mut sub, "content_rotation: {}", self.content_rotation)?;
         if let Some(pt) = &self.content_ref {
-            write!(&mut sub, "content_ref: {}\n", pt)?;
+            writeln!(&mut sub, "content_ref: {}", pt)?;
         }
         if let Some(r) = &self.content_desired {
-            write!(&mut sub, "content desired: {}\n", r)?;
+            writeln!(&mut sub, "content desired: {}", r)?;
         }
         if let Some(r) = &self.outer_desired {
-            write!(&mut sub, "outer desired: {}\n", r)?;
+            writeln!(&mut sub, "outer desired: {}", r)?;
         }
         if let Some(r) = &self.outer {
-            write!(&mut sub, "outer actual: {}\n", r)?;
+            writeln!(&mut sub, "outer actual: {}", r)?;
         }
         if let Some(r) = &self.inner {
-            write!(&mut sub, "inner actual: {}\n", r)?;
+            writeln!(&mut sub, "inner actual: {}", r)?;
         }
         if let Some(r) = &self.content {
-            write!(&mut sub, "content actual: {}\n", r)?;
+            writeln!(&mut sub, "content actual: {}", r)?;
         }
         if let Some(t) = &self.content_to_layout {
-            write!(&mut sub, "content to layout: {}\n", t)?;
+            writeln!(&mut sub, "content to layout: {}", t)?;
         }
         Ok(())
     }

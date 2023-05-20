@@ -44,6 +44,11 @@ pub struct Layout {
 }
 
 //ip Default for Layout
+impl Default for Layout {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 //ip Layout
 impl Layout {
@@ -198,9 +203,9 @@ impl Layout {
         };
         self.desired_geometry = {
             if self.desired_placement.is_none() {
-                self.desired_grid.clone()
+                self.desired_grid
             } else {
-                self.desired_placement.clone().union(self.desired_grid)
+                self.desired_placement.union(self.desired_grid)
             }
         };
         if DEBUG_LAYOUT {
@@ -209,7 +214,7 @@ impl Layout {
                 self.desired_grid, self.desired_placement, self.desired_geometry
             );
         }
-        self.desired_geometry.clone()
+        self.desired_geometry
     }
 
     //mp layout

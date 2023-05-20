@@ -37,12 +37,13 @@ impl BezierPath {
         let rd = degrees.to_radians();
         let x = Point::from_array([eccentricity, 0.]);
         let y = Point::from_array([0., 1.]);
-        let mut v = Vec::new();
-        v.push(Bezier::arc(ra, radius, origin, &x, &y, rd));
-        v.push(Bezier::arc(ra, radius, origin, &y, &(-x), rd));
-        v.push(Bezier::arc(ra, radius, origin, &(-x), &(-y), rd));
-        v.push(Bezier::arc(ra, radius, origin, &(-y), &x, rd));
-        Self { elements: v }
+        let elements = vec![
+            Bezier::arc(ra, radius, origin, &x, &y, rd),
+            Bezier::arc(ra, radius, origin, &y, &(-x), rd),
+            Bezier::arc(ra, radius, origin, &(-x), &(-y), rd),
+            Bezier::arc(ra, radius, origin, &(-y), &x, rd),
+        ];
+        Self { elements }
     }
 
     //fp of_points
@@ -81,11 +82,11 @@ impl BezierPath {
                 let corner = self.elements[i].borrow_pt(1); // same as i_1.borrow_pt(0);
                 let v0 = self.elements[i].tangent_at(1.);
                 let v1 = -self.elements[i_1].tangent_at(0.);
-                let bezier = Bezier::of_round_corner(&corner, &v0, &v1, rounding);
-                let np00 = self.elements[i].borrow_pt(0).clone();
-                let np01 = bezier.borrow_pt(0).clone();
-                let np10 = bezier.borrow_pt(1).clone();
-                let np11 = self.elements[i_1].borrow_pt(1).clone();
+                let bezier = Bezier::of_round_corner(corner, &v0, &v1, rounding);
+                let np00 = *self.elements[i].borrow_pt(0);
+                let np01 = *bezier.borrow_pt(0);
+                let np10 = *bezier.borrow_pt(1);
+                let np11 = *self.elements[i_1].borrow_pt(1);
                 self.elements[i] = Bezier::line(&np00, &np01);
                 self.elements[i_1] = Bezier::line(&np10, &np11);
                 self.elements.insert(i + 1, bezier);
@@ -105,9 +106,9 @@ impl BezierPath {
         if n == 0 {
             Point::zero()
         } else if index == 0 {
-            self.elements[0].borrow_pt(0).clone()
+            *self.elements[0].borrow_pt(0)
         } else {
-            self.elements[n - 1].borrow_pt(1).clone()
+            *self.elements[n - 1].borrow_pt(1)
         }
     }
 

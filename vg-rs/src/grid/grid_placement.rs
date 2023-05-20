@@ -21,7 +21,7 @@ use crate::grid::{GridCellDataEntry, GridData, Resolver};
 use crate::Range;
 
 //a Global constants for debug
-const DEBUG_GRID_PLACEMENT: bool = 1 == 1;
+const DEBUG_GRID_PLACEMENT: bool = true;
 
 //a Public GridPlacement type
 //tp GridPlacement
@@ -29,7 +29,7 @@ const DEBUG_GRID_PLACEMENT: bool = 1 == 1;
 /// The cell_positions contains an order vector of <dimension index,posn>, where the dimension indices increase
 /// through the vector
 /// Structure for a grid - a list of start, span, and height of each cell *)
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GridPlacement {
     cell_data: Vec<GridCellDataEntry>,
     resolver: Resolver<usize>,
@@ -42,16 +42,7 @@ pub struct GridPlacement {
 impl GridPlacement {
     //fp new
     pub fn new() -> Self {
-        let cell_data = Vec::new();
-        let resolver = Resolver::none();
-        let growth_data = Vec::new();
-        Self {
-            cell_data,
-            resolver,
-            growth_data,
-            desired_range: Range::none(),
-            size: 0.,
-        }
+        Self::default()
     }
 
     //mp add_cell
@@ -93,15 +84,12 @@ impl GridPlacement {
     pub fn get_desired_geometry(&mut self) -> Range {
         self.resolver = Resolver::new(&mut self.cell_data.iter().map(|x| (x.start, x.end, x.size)));
         for (start, end, growth) in &self.growth_data {
-            if self.resolver.has_node(start) && self.resolver.has_node(end) {
-                match self.resolver.set_growth_data(*start, *end, *growth) {
-                    Err(x) => {
-                        eprintln!(
-                            "Warning: Could not set growth data {} {} {}: {}",
-                            *start, *end, *growth, x
-                        );
-                    }
-                    _ => (),
+            if self.resolver.has_node(*start) && self.resolver.has_node(*end) {
+                if let Err(x) = self.resolver.set_growth_data(*start, *end, *growth) {
+                    eprintln!(
+                        "Warning: Could not set growth data {} {} {}: {}",
+                        *start, *end, *growth, x
+                    );
                 }
             }
         }
@@ -128,12 +116,9 @@ impl GridPlacement {
         self.resolver.place_roots_to_resolve(min);
         self.resolver.assign_min_positions();
         self.resolver
-            .place_edge_nodes(self.resolver.get_edge_nodes(1.0E-7), Some(min), Some(max));
-        match self.resolver.minimize_energy() {
-            Err(x) => {
-                eprintln!("Warning: failed to resolve cleanly: {}", x);
-            }
-            _ => (),
+            .place_edge_nodes(&self.resolver.get_edge_nodes(1.0E-7), Some(min), Some(max));
+        if let Err(x) = self.resolver.minimize_energy() {
+            eprintln!("Warning: failed to resolve cleanly: {}", x);
         }
         self.size = self.resolver.find_bounds().size();
     }
@@ -165,7 +150,7 @@ impl GridPlacement {
     //mp get_position
     /// Get the position of all the references
     pub fn get_position(&self, n: usize) -> Option<f64> {
-        if self.resolver.has_node(&n) {
+        if self.resolver.has_node(n) {
             let pos = self.resolver.get_node_position(n);
             if DEBUG_GRID_PLACEMENT {
                 println!("get_pos - {} : {}", n, pos);
