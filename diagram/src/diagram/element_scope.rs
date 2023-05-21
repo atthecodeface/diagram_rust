@@ -67,9 +67,8 @@ impl<'a, 'b> ElementScope<'a, 'b> {
             if let Some(index) = index {
                 let mut id_prefix = self.id_prefix.clone();
                 id_prefix.push_str(header.borrow_id());
-                id_prefix.push_str(".");
+                id_prefix.push('.');
                 id_prefix.push_str(name);
-                // println!("New scope with prefix {}", id_prefix);
                 let definitions = self.definitions;
                 let element = &self.definitions[index];
                 Ok((

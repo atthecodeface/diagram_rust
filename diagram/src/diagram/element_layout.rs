@@ -32,8 +32,9 @@ use crate::constants::attributes as at;
 
 //a ElementLayout
 //tp LayoutPlacement
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum LayoutPlacement {
+    #[default]
     None,
     Place(Point),
     Grid(String, String, String, String),
@@ -55,7 +56,7 @@ impl std::fmt::Display for LayoutPlacement {
 }
 
 //tp ElementLayout
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ElementLayout {
     pub placement: LayoutPlacement,
     debug: String,
@@ -105,11 +106,11 @@ impl ElementLayout {
         }
         let mut floats = [0.; 4];
         let mut ints = [0; 4];
-        match header
+        if let Some(g) = header
             .get_style_value_of_name(at::BBOX)
             .and_then(|x| x.as_floats(&mut floats))
         {
-            Some(g) => match g.len() {
+            match g.len() {
                 0 => (),
                 1 => {
                     layout.bbox = BBox::of_cwh(Point::zero(), g[0], g[0]);
@@ -123,8 +124,7 @@ impl ElementLayout {
                 _ => {
                     layout.bbox = BBox::new(g[0], g[1], g[2], g[3]);
                 }
-            },
-            _ => (),
+            }
         };
         if let Some(v) = header
             .get_style_value_of_name(at::ANCHOR)
@@ -267,7 +267,7 @@ impl ElementLayout {
 
     //mp debug_get_grid
     pub fn debug_get_grid(&self) -> Option<(f64, &str)> {
-        if self.debug != "" {
+        if !self.debug.is_empty() {
             Some((1., "cyan"))
         } else {
             None
@@ -310,7 +310,7 @@ impl ElementLayout {
         layout_box.set_border_round(self.border_round);
         layout_box.set_margin(&self.margin);
         layout_box.set_padding(&self.pad);
-        layout_box.set_anchor_expand(self.anchor.clone(), self.expand.clone());
+        layout_box.set_anchor_expand(self.anchor, self.expand);
     }
 
     //mp set_layout_properties
@@ -335,7 +335,7 @@ impl ElementLayout {
                 layout.add_grid_element(eref, (sx, sy), (ex, ey), (bbox.width(), bbox.height()));
             }
             LayoutPlacement::Place(pt) => {
-                layout.add_placed_element(eref, &pt, &self.ref_pt, &bbox);
+                layout.add_placed_element(eref, pt, &self.ref_pt, &bbox);
             }
         }
     }
@@ -355,24 +355,24 @@ impl ElementLayout {
 impl<'a> IndentedDisplay<'a, IndentOptions> for ElementLayout {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(ind, "Layout\n")?;
+        writeln!(ind, "Layout")?;
         let mut sub = ind.sub();
         if let Some(pt) = self.ref_pt {
-            write!(&mut sub, "ref_pt: {}\n", pt)?;
+            writeln!(&mut sub, "ref_pt: {}", pt)?;
         }
         if !self.bbox.is_none() {
-            write!(&mut sub, "bbox:    {}\n", self.bbox)?;
+            writeln!(&mut sub, "bbox:    {}", self.bbox)?;
         }
-        write!(&mut sub, "anchor  : {}\n", self.anchor)?;
-        write!(&mut sub, "expand  : {}\n", self.expand)?;
-        write!(&mut sub, "scale   : {}\n", self.scale)?;
-        write!(&mut sub, "rotation: {}\n", self.rotation)?;
-        write!(&mut sub, "border wid: {}\n", self.border_width)?;
-        write!(&mut sub, "border rnd: {}\n", self.border_round)?;
-        write!(&mut sub, "border color: {:?}\n", self.border_color)?;
-        write!(&mut sub, "bg color: {:?}\n", self.bg)?;
-        write!(&mut sub, "pad: {:?}\n", self.pad)?;
-        write!(&mut sub, "margin: {:?}\n", self.margin)?;
+        writeln!(&mut sub, "anchor  : {}", self.anchor)?;
+        writeln!(&mut sub, "expand  : {}", self.expand)?;
+        writeln!(&mut sub, "scale   : {}", self.scale)?;
+        writeln!(&mut sub, "rotation: {}", self.rotation)?;
+        writeln!(&mut sub, "border wid: {}", self.border_width)?;
+        writeln!(&mut sub, "border rnd: {}", self.border_round)?;
+        writeln!(&mut sub, "border color: {:?}", self.border_color)?;
+        writeln!(&mut sub, "bg color: {:?}", self.bg)?;
+        writeln!(&mut sub, "pad: {:?}", self.pad)?;
+        writeln!(&mut sub, "margin: {:?}", self.margin)?;
         Ok(())
     }
 }
