@@ -104,17 +104,17 @@ impl Layout {
     /// end, and a minimum size between them
     pub fn add_grid_element(
         &mut self,
-        eref: &str,
+        _eref: &str,
         start: (usize, usize),
         end: (usize, usize),
         size: (f64, f64),
     ) {
         self.grid_placements
             .0
-            .add_cell(eref, start.0, end.0, size.0);
+            .add_cell_data(&[GridData::new_width(start.0, end.0, size.0)]);
         self.grid_placements
             .1
-            .add_cell(eref, start.1, end.1, size.1);
+            .add_cell_data(&[GridData::new_width(start.1, end.1, size.1)]);
     }
 
     //mp add_placed_element

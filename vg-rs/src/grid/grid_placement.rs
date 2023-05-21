@@ -21,7 +21,7 @@ use crate::grid::{GridCellDataEntry, GridData, NodeId, Resolver};
 use crate::Range;
 
 //a Global constants for debug
-const DEBUG_GRID_PLACEMENT: bool = true;
+const DEBUG_GRID_PLACEMENT: bool = false;
 
 //a Public GridPlacement type
 //tp GridPlacement
@@ -40,19 +40,9 @@ pub struct GridPlacement<N: NodeId> {
 
 //ip GridPlacement
 impl<N: NodeId> GridPlacement<N> {
-    //mp add_cell
-    pub fn add_cell(&mut self, eref: &str, start: N, end: N, size: f64) {
-        if DEBUG_GRID_PLACEMENT {
-            println!("Add cell {} {} {} {}", eref, start, end, size);
-        }
-        assert!(end != start);
-        let size = if size < 0. { 0. } else { size };
-        self.cell_data
-            .push(GridCellDataEntry::new(start, end, size));
-    }
-
     //mp add_cell_data
-    /// Used to add growth of cell data
+    /// Specifiy some grid data - gap between nodes, the elasticity,
+    /// or the placement of a node, etc
     pub fn add_cell_data(&mut self, growth_data: &[GridData<N>]) {
         for gd in growth_data {
             match gd {
@@ -191,8 +181,7 @@ mod test_grid_placement {
     #[allow(dead_code)]
     fn test_0() {
         let mut gp = GridPlacement::default();
-        gp.add_cell("", 0, 4, 4.);
-        gp.add_cell("", 4, 6, 2.);
+        gp.add_cell_data(&[GridData::new_width(0, 4, 4.), GridData::new_width(4, 6, 2.)]);
         gp.calculate_positions(0., 0., 0.);
         assert_eq!(gp.get_size(), 6.);
         check_positions(&gp, &vec![(0, -3.), (4, 1.), (6, 3.)]);
@@ -205,9 +194,11 @@ mod test_grid_placement {
     #[allow(dead_code)]
     fn test_1() {
         let mut gp = GridPlacement::default();
-        gp.add_cell("", 0, 4, 4.);
-        gp.add_cell("", 4, 6, 2.);
-        gp.add_cell_data(&vec![GridData::new_growth(2, 4, 1.)]);
+        gp.add_cell_data(&[
+            GridData::new_width(0, 4, 4.),
+            GridData::new_width(4, 6, 2.),
+            GridData::new_growth(2, 4, 1.),
+        ]);
 
         gp.calculate_positions(0., 0., 0.); // so we can invoke gp.get_size()
         gp.calculate_positions(gp.get_size() + 2., 0., 1.);
@@ -222,8 +213,8 @@ mod test_grid_placement {
     #[allow(dead_code)]
     fn test_2() {
         let mut gp = GridPlacement::default();
-        gp.add_cell("", 0, 10, 10.);
         gp.add_cell_data(&vec![
+            GridData::new_width(0, 10, 10.),
             GridData::new_growth(0, 2, 1.),
             GridData::new_growth(2, 8, 0.),
             GridData::new_growth(8, 10, 1.),
