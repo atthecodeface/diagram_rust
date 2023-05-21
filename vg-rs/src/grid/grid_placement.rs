@@ -31,7 +31,7 @@ const DEBUG_GRID_PLACEMENT: bool = true;
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug, Default)]
 pub struct GridPlacement {
-    cell_data: Vec<GridCellDataEntry>,
+    cell_data: Vec<GridCellDataEntry<usize>>,
     resolver: Resolver<usize>,
     growth_data: Vec<(usize, usize, f64)>,
     desired_range: Range,
