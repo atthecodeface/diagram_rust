@@ -58,7 +58,7 @@ impl GridPlacement {
 
     //mp add_cell_data
     /// Used to add growth of cell data
-    pub fn add_cell_data(&mut self, growth_data: &[GridData]) {
+    pub fn add_cell_data(&mut self, growth_data: &[GridData<usize>]) {
         for gd in growth_data {
             match gd {
                 GridData::Width(start, end, size) => {

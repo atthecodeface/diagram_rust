@@ -16,8 +16,6 @@ limitations under the License.
 @brief   Grid layout resolver using springs
  */
 
-//a To do
-
 //a Imports
 use std::collections::{HashMap, HashSet};
 

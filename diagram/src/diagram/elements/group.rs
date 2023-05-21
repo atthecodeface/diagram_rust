@@ -55,8 +55,8 @@ pub struct Group<'a> {
     pub content: Vec<Element<'a>>,
     layout: Option<Layout>,
     layout_record: Option<LayoutRecord>,
-    x_cell_data: Vec<GridData>,
-    y_cell_data: Vec<GridData>,
+    x_cell_data: Vec<GridData<usize>>,
+    y_cell_data: Vec<GridData<usize>>,
     bbox: BBox,
 
     // For markers ONLY
@@ -372,7 +372,7 @@ impl<'a> Group<'a> {
         x: bool,
         header: &ElementHeader,
         v: Vec<&str>,
-    ) -> Result<Vec<GridData>, ElementError> {
+    ) -> Result<Vec<GridData<usize>>, ElementError> {
         if self.layout.is_none() {
             return Err(ElementError::of_string(
                 header,

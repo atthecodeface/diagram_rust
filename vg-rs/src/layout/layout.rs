@@ -170,7 +170,7 @@ impl Layout {
 
     //mp add_cell_data
     /// Add the cell data to placements
-    pub fn add_cell_data(&mut self, x: &[GridData], y: &[GridData]) {
+    pub fn add_cell_data(&mut self, x: &[GridData<usize>], y: &[GridData<usize>]) {
         self.grid_placements.0.add_cell_data(x);
         self.grid_placements.1.add_cell_data(y);
     }
