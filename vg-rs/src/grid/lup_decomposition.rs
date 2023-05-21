@@ -1,12 +1,15 @@
-//a Hack matrix inversion
+//a An LUPDecomposition of a matrix, to permit simple matrix inversion
 //tp LUPDecomposition
+/// A decomposition of an NxN matrix into upper and lower matrices
+/// (both stored in the same square data array, as the diagonal of L
+/// is not stored as it is all ones)
 pub struct LUPDecomposition {
-    pub size: usize,
-    pub data: Vec<f64>,
+    size: usize,
+    data: Vec<f64>,
     /// P is a vector of row numbers
     /// P[0] is the row of the matrix that must be returned in row 0 after unpivot
     /// P[1] is the row of the matrix that must be returned in row 1 after unpivot
-    pub pivot: Vec<usize>,
+    pivot: Vec<usize>,
 }
 
 //ip LUPDecomposition
@@ -113,6 +116,7 @@ impl LUPDecomposition {
     }
 
     //fp inverse
+    /// Calculate the inverse given this LUP decomposition
     //
     // Note that LUP decomposition of M has M = P.L.U
     //
@@ -141,7 +145,7 @@ impl LUPDecomposition {
     // Hence again x(c)(r) = (y(c)(r)-sum(U(l,r)*x(c)(l))/U(c,r),
     // for l=r+1..n
     ///
-    pub fn inverse(&self, result: &mut Vec<f64>) -> bool {
+    pub fn inverse(&self, result: &mut [f64]) -> bool {
         assert_eq!(self.data.len(), result.len());
         let size = self.size;
         for c in 0..size {
@@ -177,7 +181,11 @@ impl LUPDecomposition {
     }
 
     //mp invert
-    pub fn invert(&self, result: &mut Vec<f64>) -> bool {
+    /// invert the matrix given by this LUP decomposition into a
+    /// result matrix, returning false if the inversion cannot be done
+    ///
+    /// The result slice must be the correct size, or it will panic
+    pub fn invert(&self, result: &mut [f64]) -> bool {
         let size = self.size;
         assert_eq!(result.len(), size * size);
         let mut temp = self.data.clone();
@@ -196,6 +204,7 @@ impl LUPDecomposition {
     }
 
     //mp unpivot
+    /// Apply the pivot in reverese, permutinng rows as specified
     #[allow(dead_code)]
     pub fn unpivot(&self) -> Vec<f64> {
         let size = self.size;

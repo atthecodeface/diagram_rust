@@ -191,6 +191,7 @@ impl Rgba {
     }
 
     //mp as_tuple_rgba_f32
+    /// Get the RGBA as a tuple (R,G,B,A) of floats in the range 0. to 1. inclusive
     #[inline]
     pub fn as_tuple_rgba_f32(&self) -> (f32, f32, f32, f32) {
         let (r, g, b, a): (u8, u8, u8, u8) = self.into();
@@ -202,6 +203,7 @@ impl Rgba {
     }
 
     //mp as_tuple_rgb_f32
+    /// Get the RGB as a tuple (R,G,B) of floats in the range 0. to 1. inclusive
     #[inline]
     pub fn as_tuple_rgb_f32(&self) -> (f32, f32, f32) {
         let (r, g, b, _a): (u8, u8, u8, u8) = self.into();
@@ -335,9 +337,9 @@ impl Rgba {
                 t / (3.0 * DELTA_SQUARED) + 4.0 / 29.0
             }
         }
-        let f_x = f(x / 0.950489);
+        let f_x = f(x / 0.950_489);
         let f_y = f(y / 1.000);
-        let f_z = f(z / 1.088840);
+        let f_z = f(z / 1.088_84);
         let l = 116.0 * f_y - 16.0;
         let a = 500.0 * (f_x - f_y);
         let b = 200.0 * (f_y - f_z);
@@ -349,7 +351,7 @@ impl Rgba {
     pub fn srgb_to_cie_lch_ab_d6500(&self) -> (f32, f32, f32) {
         let (l, a, b) = self.srgb_to_cie_lab_d6500();
         let c = (a * a + b * b).sqrt();
-        let h = b.atan2(a) * 180. / 3.14159265;
+        let h = b.atan2(a) * 180. / std::f32::consts::PI;
         (l, c, h)
     }
     //ap srgb_to_cie_luv_d6500
@@ -401,7 +403,7 @@ impl Rgba {
     pub fn srgb_to_cie_lch_uv_d6500(&self) -> (f32, f32, f32) {
         let (l, u, v) = self.srgb_to_cie_luv_d6500();
         let c = (u * u + v * v).sqrt();
-        let h = v.atan2(u) * 180. / 3.14159265;
+        let h = v.atan2(u) * 180. / std::f32::consts::PI;
         (l, c, h)
     }
     //zz All done

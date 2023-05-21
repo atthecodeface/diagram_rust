@@ -179,11 +179,11 @@ impl<N: NodeId> Resolver<N> {
             let mut start_updates = Vec::new();
             for e in &node.link_starts {
                 let link = self.links.get(&(*e, *n)).unwrap();
-                start_updates.push((*e, p - link.min_size));
+                start_updates.push((*e, p - link.min_size()));
             }
             for e in &node.link_ends {
                 let link = self.links.get(&(*n, *e)).unwrap();
-                end_updates.push((*e, p + link.min_size));
+                end_updates.push((*e, p + link.min_size()));
             }
             // drop(node);
             for (start, max_pos) in start_updates {
@@ -313,11 +313,11 @@ impl<N: NodeId> Resolver<N> {
         let num_nodes = self.node_ids.len();
         let mut eqns = EquationSet::new(num_nodes);
         for (se, link) in self.links.iter() {
-            if let Some(growth) = link.growth {
+            if let Some(growth) = link.growth() {
                 let (s, e) = se;
                 let s = self.nodes[s].index;
                 let e = self.nodes[e].index;
-                let length = link.min_size;
+                let length = link.min_size();
                 eqns.add_growth_link(s, e, length, growth);
             }
         }

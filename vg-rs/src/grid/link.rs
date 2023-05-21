@@ -21,14 +21,24 @@ use super::NodeId;
 
 //a Link
 //tp Link
-/// A link between two grid points
+/// A link between two grid points, specified by NodeId
+///
+/// This has a minimum size, and an optional growth factor; if the
+/// growth is None then the link is of a fixed size. The larger the
+/// growth value the weaker (more elastic) the link
 #[derive(Debug)]
 pub struct Link<N: NodeId> {
-    /// Start client id
-    pub start: N,
-    pub end: N,
-    pub min_size: f64,
-    pub growth: Option<f64>,
+    /// Start NodeID (left-hand end)
+    #[allow(dead_code)]
+    start: N,
+    /// End NodeID (right-hand end)
+    #[allow(dead_code)]
+    end: N,
+    /// Minimum size
+    min_size: f64,
+    /// Growth factor; the larger, the easier it is to grow; None
+    /// means it is fixed size
+    growth: Option<f64>,
 }
 
 //ip Link
@@ -42,6 +52,16 @@ impl<N: NodeId> Link<N> {
             min_size,
             growth: None,
         }
+    }
+
+    //ap min_size
+    pub fn min_size(&self) -> f64 {
+        self.min_size
+    }
+
+    //ap growth
+    pub fn growth(&self) -> Option<f64> {
+        self.growth
     }
 
     //fp union

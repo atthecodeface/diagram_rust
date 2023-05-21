@@ -25,11 +25,11 @@ impl CharIndices {
         assert!(depth < 16);
         assert!(italic < 64);
         assert!(options < 1024);
-        let v = (options << 22) | (italic << 16) | (depth << 12) | (height << 8) | (width << 0);
+        let v = (options << 22) | (italic << 16) | (depth << 12) | (height << 8) | width;
         Self(v as u32)
     }
     pub fn width_index(&self) -> usize {
-        ((self.0 >> 0) & 0xff) as usize
+        (self.0 & 0xff) as usize
     }
     pub fn height_index(&self) -> usize {
         ((self.0 >> 8) & 0xf) as usize
@@ -143,9 +143,7 @@ impl<V: Value> Metrics<V> {
         }
     }
     pub fn borrow_metrics_of_char(&self, c: char) -> Option<(&Metrics<V>, usize)> {
-        if c < self.first_char {
-            None
-        } else if c > self.last_char {
+        if c < self.first_char || c > self.last_char {
             None
         } else {
             for e in &self.exceptions {
