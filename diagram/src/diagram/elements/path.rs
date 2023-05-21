@@ -158,7 +158,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Path {
             .unwrap();
         let n = self.coords.len();
         if self.closed && n > 2 && self.coords[0].distance(&self.coords[n - 1]) > 1E-6 {
-            self.coords.push(self.coords[0].clone());
+            self.coords.push(self.coords[0]);
         }
         Ok(())
     }
@@ -233,7 +233,7 @@ impl GenerateSvgElement for Path {
         if let Some(m) = &self.markers.0 {
             if let Some((_, m)) = svg
                 .diagram
-                .find_marker(&m)
+                .find_marker(m)
                 .map(|e| e.borrow_marker().unwrap())
             {
                 let relief = m.get_relief(0);
@@ -245,7 +245,7 @@ impl GenerateSvgElement for Path {
         if let Some(m) = &self.markers.2 {
             if let Some((_, m)) = svg
                 .diagram
-                .find_marker(&m)
+                .find_marker(m)
                 .map(|e| e.borrow_marker().unwrap())
             {
                 let relief = m.get_relief(1);
@@ -264,17 +264,17 @@ impl GenerateSvgElement for Path {
 impl<'a> IndentedDisplay<'a, IndentOptions> for Path {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(ind, "Path\n")?;
+        writeln!(ind, "Path")?;
         let mut sub = ind.sub();
-        write!(&mut sub, "center  : {}\n", self.center)?;
-        write!(&mut sub, "width   : {}\n", self.width)?;
-        write!(&mut sub, "height  : {}\n", self.height)?;
-        write!(&mut sub, "round   : {}\n", self.round)?;
-        write!(&mut sub, "closed  : {}\n", self.closed)?;
-        write!(&mut sub, "fill    : {:?}\n", self.fill)?;
-        write!(&mut sub, "stroke  : {:?}\n", self.stroke)?;
-        write!(&mut sub, "strokewidth  : {}\n", self.stroke_width)?;
-        write!(&mut sub, "markers  : {:?}\n", self.markers)?;
+        writeln!(&mut sub, "center  : {}", self.center)?;
+        writeln!(&mut sub, "width   : {}", self.width)?;
+        writeln!(&mut sub, "height  : {}", self.height)?;
+        writeln!(&mut sub, "round   : {}", self.round)?;
+        writeln!(&mut sub, "closed  : {}", self.closed)?;
+        writeln!(&mut sub, "fill    : {:?}", self.fill)?;
+        writeln!(&mut sub, "stroke  : {:?}", self.stroke)?;
+        writeln!(&mut sub, "strokewidth  : {}", self.stroke_width)?;
+        writeln!(&mut sub, "markers  : {:?}", self.markers)?;
         // pub coords : Vec<Point>, // relative to actual width and height
         Ok(())
     }

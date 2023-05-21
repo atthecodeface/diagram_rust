@@ -73,7 +73,7 @@ impl SvgElement {
         if transform.scale() != 1. {
             r.push_str(&format!("scale({:.4}) ", transform.scale()));
         }
-        if r.len() > 0 {
+        if !r.is_empty() {
             self.add_attribute("transform", &r);
         }
     }
@@ -88,7 +88,7 @@ impl SvgElement {
         let r = (value.0 * 255.).round() as u32;
         let g = (value.1 * 255.).round() as u32;
         let b = (value.2 * 255.).round() as u32;
-        let rgb = (b << 0) | (g << 8) | (r << 16); // this order for SVG
+        let rgb = b | (g << 8) | (r << 16); // this order for SVG
         self.add_attribute(name, &format!("#{:06x}", rgb));
     }
 

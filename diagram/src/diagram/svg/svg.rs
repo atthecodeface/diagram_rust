@@ -202,7 +202,7 @@ impl<'a> Svg<'a> {
     ///
     /// This permits the SVG to be read by an XML reader, or written
     /// using xml-rs to convert reader XmlEvents to writer XmlEvents.
-    pub fn iter_events<'z>(&'z self) -> ElementIter<'z> {
+    pub fn iter_events(&self) -> ElementIter {
         ElementIter::new(&self.stack[0])
     }
 

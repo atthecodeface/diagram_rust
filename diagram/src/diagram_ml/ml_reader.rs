@@ -99,13 +99,13 @@ where
 
     //mp next_event
     pub fn next_event(&mut self) -> MLResult<HmlEvent<HmlSpan<P>>, P, E> {
-        let (parser, mut namespace_stack, lexer, mut reader) = (
+        let (parser, namespace_stack, lexer, reader) = (
             &mut self.parser,
             &mut self.namespace_stack,
             &mut self.lexer,
             &mut self.reader,
         );
-        let e = parser.next_event(&mut namespace_stack, || lexer.next_token(&mut reader))?;
+        let e = parser.next_event(namespace_stack, || lexer.next_token(reader))?;
         Ok(e)
     }
 
@@ -138,8 +138,8 @@ where
         drop(self.consume_element());
         MLError::bad_element_name_expected(
             &self.namespace_stack,
-            &span,
-            &tag,
+            span,
+            tag,
             &self.name_ids,
             expected,
         )
@@ -197,7 +197,7 @@ where
     //mp read_rule
     fn read_rule(
         &mut self,
-        descriptor: &'diag DiagramDescriptor,
+        _descriptor: &'diag DiagramDescriptor,
         parent: Option<usize>,
         span: &HmlSpan<P>,
         tag: HmlTag,
@@ -237,12 +237,12 @@ where
                     self.errors.add(MLError::bad_attribute_name(
                         &self.namespace_stack,
                         span,
-                        &attr,
+                        attr,
                     ));
                 }
             }
         }
-        if attrs.len() > 0 {
+        if !attrs.is_empty() {
             assert!(action.is_none());
             let mut attr_values = attrs.into_iter().map(|(n, v)| (n, v));
             action = Some(MLError::value_result(
@@ -267,7 +267,7 @@ where
                     let tag = e.as_start_element().unwrap();
                     match self.known_id(&tag.name) {
                         Some(KnownName::Rule) => {
-                            let e = self.read_rule(descriptor, Some(rule_index), &span, tag);
+                            let e = self.read_rule(_descriptor, Some(rule_index), &span, tag);
                             self.errors.update(e);
                         }
                         _ => {
@@ -293,7 +293,7 @@ where
         let (namespace_stack, stylesheet) = (&self.namespace_stack, &mut self.stylesheet);
         let mut attr_values = attrs
             .iter()
-            .map(|a| (a.name.to_string(&namespace_stack), a.value.as_str()));
+            .map(|a| (a.name.to_string(namespace_stack), a.value.as_str()));
         MLError::value_result(
             span,
             stylesheet.add_action_from_name_values(&mut attr_values),

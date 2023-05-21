@@ -204,11 +204,11 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         }
         // width, height, flags, ref point are only used in markers
         let mut floats = [0.; 4];
-        match header
+        if let Some(g) = header
             .get_style_value_of_name(at::POINT)
             .and_then(|x| x.as_floats(&mut floats))
         {
-            Some(g) => match g.len() {
+            match g.len() {
                 0 => {}
                 1 => {
                     self.ref_pt = Point::from_array([g[0], g[0]]);
@@ -216,14 +216,13 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
                 _ => {
                     self.ref_pt = Point::from_array([g[0], g[1]]);
                 }
-            },
-            _ => {}
+            }
         }
-        match header
+        if let Some(g) = header
             .get_style_value_of_name(at::RELIEF)
             .and_then(|x| x.as_floats(&mut floats))
         {
-            Some(g) => match g.len() {
+            match g.len() {
                 0 => {}
                 1 => {
                     self.relief = (g[0], g[0]);
@@ -231,8 +230,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
                 _ => {
                     self.relief = (g[0], g[1]);
                 }
-            },
-            _ => {}
+            }
         }
         if let Some(i) = header.get_style_of_name_int(at::FLAGS, None) {
             self.flags = i as usize;
@@ -275,18 +273,12 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
             for e in self.content.iter_mut() {
                 e.apply_placement(layout);
             }
-            match self.layout_record {
-                None => {
-                    let mut layout_record = LayoutRecord::default();
-                    match layout_record.capture_grid(&layout) {
-                        Err(x) => {
-                            eprintln!("Warning: failed to apply grid layout {}", x);
-                        }
-                        _ => (),
-                    }
-                    self.layout_record = Some(layout_record);
+            if self.layout_record.is_none() {
+                let mut layout_record = LayoutRecord::default();
+                if let Err(x) = layout_record.capture_grid(layout) {
+                    eprintln!("Warning: failed to apply grid layout {}", x);
                 }
-                _ => (),
+                self.layout_record = Some(layout_record);
             }
         } else {
             for e in self.content.iter_mut() {

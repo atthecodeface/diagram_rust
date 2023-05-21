@@ -65,11 +65,7 @@ where
         span: &HmlSpan<P>,
         tag: &HmlTag,
     ) -> Self {
-        Self::BadElementName(
-            span.clone(),
-            tag.name.to_string(namespace_stack),
-            String::new(),
-        )
+        Self::BadElementName(*span, tag.name.to_string(namespace_stack), String::new())
     }
 
     //fi bad_element_name_expected
@@ -94,11 +90,7 @@ where
                 let _ = write!(&mut expectation, " '{}'", name_ids.str_of_name(e));
             }
         }
-        Self::BadElementName(
-            span.clone(),
-            tag.name.to_string(namespace_stack),
-            expectation,
-        )
+        Self::BadElementName(*span, tag.name.to_string(namespace_stack), expectation)
     }
 
     //fi bad_attribute_name
@@ -107,12 +99,12 @@ where
         span: &HmlSpan<P>,
         attr: &HmlAttribute,
     ) -> Self {
-        Self::BadAttributeName(span.clone(), attr.name.to_string(namespace_stack))
+        Self::BadAttributeName(*span, attr.name.to_string(namespace_stack))
     }
 
     //fi bad_value
     pub(crate) fn bad_value(span: &HmlSpan<P>, reason: &str, value: &str) -> Self {
-        Self::BadValue(span.clone(), format!("{}: '{}'", reason, value))
+        Self::BadValue(*span, format!("{}: '{}'", reason, value))
     }
 
     //fi bad_attribute_name
@@ -122,7 +114,7 @@ where
 
     //mp bad_ml_event
     pub(crate) fn bad_ml_event(ewp: &HmlEvent<HmlSpan<P>>) -> Self {
-        Self::BadMLEvent(ewp.borrow_span().clone(), format!("{:?}", ewp))
+        Self::BadMLEvent(*ewp.borrow_span(), format!("{:?}", ewp))
     }
 
     //fi value_result
@@ -132,7 +124,7 @@ where
     ) -> Result<V, Self> {
         match result {
             Ok(v) => Ok(v),
-            Err(e) => Err(Self::BadValue(span.clone(), e.to_string())),
+            Err(e) => Err(Self::BadValue(*span, e.to_string())),
         }
     }
 
@@ -143,7 +135,7 @@ where
     ) -> Result<V, Self> {
         match result {
             Ok(v) => Ok(v),
-            Err(e) => Err(Self::BadElement(span.clone(), e.to_string())),
+            Err(e) => Err(Self::BadElement(*span, e.to_string())),
         }
     }
 

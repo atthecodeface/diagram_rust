@@ -74,18 +74,15 @@ where
     /// error is effectively caught and recorded. Subsequent errors
     /// are therefore less reliable.
     pub fn update<T>(&mut self, e: MLResult<T, P, E>) {
-        match e {
-            Err(e) => {
-                self.errors.push(e);
-            }
-            _ => (),
+        if let Err(e) = e {
+            self.errors.push(e);
         }
     }
 
     //mp take
     /// Take the errors for consumption by caller
     pub fn take(&mut self) -> Vec<MLError<P, E>> {
-        std::mem::replace(&mut self.errors, Vec::new())
+        std::mem::take(&mut self.errors)
     }
 
     //mp as_err
@@ -113,7 +110,7 @@ where
     /// Display the [MLErrorList] for humans
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for e in &self.errors {
-            write!(f, "{}\n", *e)?;
+            writeln!(f, "{}", *e)?;
         }
         Ok(())
     }

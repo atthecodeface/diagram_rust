@@ -189,9 +189,9 @@ impl NameIds {
         self.str_map.insert(kn, s);
     }
     pub fn known_id(&self, name: &Name) -> Option<KnownName> {
-        self.map.get(&name.name).map(|x| *x)
+        self.map.get(&name.name).copied()
     }
     pub fn str_of_name(&self, name: &KnownName) -> &'static str {
-        self.str_map.get(&name).map(|x| *x).unwrap()
+        self.str_map.get(name).copied().unwrap()
     }
 }

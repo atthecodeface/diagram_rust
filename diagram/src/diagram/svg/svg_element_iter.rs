@@ -53,8 +53,7 @@ impl<'a> ElementIter<'a> {
     //fp new
     /// Create a new Svg element iterator
     pub fn new(e: &'a SvgElement) -> Self {
-        let mut elements = Vec::new();
-        elements.push((e, 0));
+        let elements = vec![(e, 0)];
         Self {
             state: IterState::PreDocument,
             elements,

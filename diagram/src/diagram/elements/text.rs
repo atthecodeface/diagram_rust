@@ -72,7 +72,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Text {
             font_style: None,
             font_weight: None,
             font_size: 10.,
-            text_area: TextArea::new(),
+            text_area: TextArea::default(),
         })
     }
 
@@ -191,7 +191,7 @@ impl GenerateSvgElement for Text {
             if let Some(f) = &self.font_weight {
                 style.push_str(&format!("font-weight:{};", f));
             }
-            if style != "" {
+            if !style.is_empty() {
                 ele.add_attribute("style", &style);
             }
             ele.add_string(t.text);
@@ -205,13 +205,13 @@ impl GenerateSvgElement for Text {
 impl<'a> IndentedDisplay<'a, IndentOptions> for Text {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(ind, "Text\n")?;
+        writeln!(ind, "Text")?;
         let mut sub = ind.sub();
-        write!(&mut sub, "fill       : {:?}\n", self.fill)?;
-        write!(&mut sub, "font       : {:?}\n", self.font)?;
-        write!(&mut sub, "font_style : {:?}\n", self.font_style)?;
-        write!(&mut sub, "font_weight: {:?}\n", self.font_weight)?;
-        write!(&mut sub, "font_size  : {}\n", self.font_size)?;
+        writeln!(&mut sub, "fill       : {:?}", self.fill)?;
+        writeln!(&mut sub, "font       : {:?}", self.font)?;
+        writeln!(&mut sub, "font_style : {:?}", self.font_style)?;
+        writeln!(&mut sub, "font_weight: {:?}", self.font_weight)?;
+        writeln!(&mut sub, "font_size  : {}", self.font_size)?;
         Ok(())
     }
 }

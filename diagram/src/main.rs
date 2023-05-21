@@ -166,7 +166,7 @@ fn main() {
     let mut emitter_config = xml::writer::EmitterConfig::new();
     if let Some(indent) = svg_indent {
         unsafe {
-            SVG_INDENT_STR = indent.clone();
+            SVG_INDENT_STR = indent;
             emitter_config = emitter_config
                 .perform_indent(true)
                 .indent_string(&SVG_INDENT_STR);

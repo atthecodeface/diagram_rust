@@ -74,7 +74,7 @@ impl<F: FontMetrics> TextLine<F> {
         let mut max_desc = 0.;
         let mut width = self.line_metrics();
         if self.bullet.is_some() {
-            width = width + 7.;
+            width += 7.;
         }
         for s in &self.spans {
             let tm = s.get_metrics();
@@ -96,18 +96,13 @@ impl<F: FontMetrics> TextLine<F> {
 
 //a Text area
 //ip TextArea
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TextArea<F: FontMetrics> {
     lines: Vec<TextLine<F>>,
 }
 
 //ip TextArea
 impl<F: FontMetrics> TextArea<F> {
-    //fp new
-    pub fn new() -> Self {
-        Self { lines: Vec::new() }
-    }
-
     //mp add_line
     pub fn add_line(&mut self, line: TextLine<F>) {
         self.lines.push(line);
@@ -117,7 +112,7 @@ impl<F: FontMetrics> TextArea<F> {
     pub fn add_text(&mut self, text: &str, font: Rc<RefCell<F>>, style: FontStyle) {
         for l in text.lines() {
             let mut bullet = None;
-            let mut sl = &l[..];
+            let mut sl = l;
             let mut indent = 0;
             while sl.starts_with("  ") {
                 indent += 1;

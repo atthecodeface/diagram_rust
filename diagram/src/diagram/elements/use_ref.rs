@@ -67,7 +67,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Use<'a> {
     /// Clone element given clone of header within scope
     fn clone(&self, _header: &ElementHeader, scope: &ElementScope) -> Result<Self, ElementError> {
         let id_ref = self.id_ref.clone();
-        let strings = self.strings.iter().map(|s| s.clone()).collect();
+        let strings = self.strings.to_vec();
         let content = Vec::new();
         let depth = scope.depth + 1;
         Ok(Self {

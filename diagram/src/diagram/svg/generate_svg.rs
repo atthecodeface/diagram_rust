@@ -146,10 +146,10 @@ impl GenerateSvg for LayoutRecord {
                 }
                 let (x0, x1) = bounds_of_hash(grid_x);
                 let (y0, y1) = bounds_of_hash(grid_y);
-                for (_, x) in grid_x {
+                for x in grid_x.values() {
                     rx.push_str(&format!("M {:.4},{:.4} v {:.4} ", x, y0, y1 - y0));
                 }
-                for (_, y) in grid_y {
+                for y in grid_y.values() {
                     ry.push_str(&format!("M {:.4},{:.4} h {:.4} ", x0, y, x1 - x0));
                 }
                 rx.push_str(&ry);
