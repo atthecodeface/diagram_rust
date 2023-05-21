@@ -73,6 +73,7 @@ impl Range {
     }
 
     //fp of_pts
+    /// Create a range between two floats
     #[must_use]
     #[inline]
     pub fn of_pts(a: f64, b: f64) -> Self {
@@ -108,6 +109,7 @@ impl Range {
     }
 
     //ap min
+    /// Get the minimum of the [Range]
     #[inline]
     #[must_use]
     pub fn min(&self) -> f64 {
@@ -115,6 +117,7 @@ impl Range {
     }
 
     //ap max
+    /// Get the maximum of the [Range]
     #[inline]
     #[must_use]
     pub fn max(&self) -> f64 {

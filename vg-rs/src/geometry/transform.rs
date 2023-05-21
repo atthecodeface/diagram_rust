@@ -52,18 +52,21 @@ impl std::default::Default for Transform {
 //ip Transform
 impl Transform {
     //ap translation
+    /// Get the translation of the [Transformation]
     #[inline]
     pub fn translation(&self) -> Point {
         self.translation
     }
 
     //ap rotation
+    /// Get the rotation of the [Transformation]
     #[inline]
     pub fn rotation(&self) -> f64 {
         self.rotation
     }
 
     //ap scale
+    /// Get the scale of the [Transformation]
     #[inline]
     pub fn scale(&self) -> f64 {
         self.scale
@@ -213,6 +216,7 @@ impl Transform {
     }
 
     //fp as_svg_attribute_string
+    /// Get an SVG attribute string for the translation
     pub fn as_svg_attribute_string(&self) -> String {
         let mut r = String::new();
         let dxy = self.translation;

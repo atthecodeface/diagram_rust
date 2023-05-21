@@ -69,6 +69,7 @@ pub struct EquationSet {
 //ip EquationSet
 impl EquationSet {
     //fp new
+    /// Create an [EquationSet] for a given number of equations
     pub fn new(size: usize) -> Self {
         let matrix = vec![0.0f64; size * size];
         let results = vec![0.0f64; size];
@@ -80,6 +81,7 @@ impl EquationSet {
     }
 
     //fp add_growth_link
+    /// Add a link with some growth between two elements
     pub fn add_growth_link(&mut self, start: usize, end: usize, length: f64, growth: f64) {
         let size = self.size;
         let inv_growth = 1.0 / growth;
@@ -109,6 +111,7 @@ impl EquationSet {
     }
 
     //fi column_is_zero
+    /// Return true if the column is zero
     #[allow(dead_code)]
     pub fn column_is_zero(&self, n: usize) -> bool {
         let size = self.size;
@@ -121,6 +124,7 @@ impl EquationSet {
     }
 
     //fi row_is_zero
+    /// Return true if the row is zero
     pub fn row_is_zero(&self, n: usize) -> bool {
         let size = self.size;
         for i in 0..size {
@@ -150,6 +154,7 @@ impl EquationSet {
     }
 
     //fp solve
+    /// Solve the equation set, or return an error if not feasible
     pub fn solve(&mut self) -> Result<(), String> {
         self.invert()?;
         let size = self.size;
@@ -167,6 +172,7 @@ impl EquationSet {
     }
 
     //fp results
+    /// Iterate through the results, returning an iterator of (usize, f64)
     pub fn results(&self) -> std::iter::Enumerate<std::slice::Iter<'_, f64>> {
         self.results.iter().enumerate()
     }
