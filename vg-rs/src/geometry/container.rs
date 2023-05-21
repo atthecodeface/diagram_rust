@@ -20,25 +20,31 @@ use crate::geometry::{BBox, MBox};
 
 //a Container
 //tp Edge
-#[derive(Debug, Clone, Copy, PartialEq)]
-/// [MBox] describes margins (or padding) for a box; it is a pair of
-/// Margin
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+/// An enumeration for an edge
 pub enum Edge {
+    /// The top edge
+    #[default]
     Top,
+    /// The bottom edge
     Bottom,
+    /// The left edge
     Left,
+    /// The right edge
     Right,
 }
 
 //tt ContainerBorder
+/// A trait that must be supported by a border; it allows a border to
+/// be given a width on each edge, without forcing a particular type
 pub trait ContainerBorder:
     Copy + std::default::Default + std::fmt::Debug + std::fmt::Display
 {
-    #[inline]
+    /// Get an [MBox] - widths of each 4 edges
     fn get_mbox(&self) -> MBox {
         MBox::none()
     }
-    #[inline]
+    /// Get the width of a specific edge
     fn get_width(&self, edge: Edge) -> f64 {
         let mbox = self.get_mbox();
         match edge {
@@ -51,17 +57,19 @@ pub trait ContainerBorder:
 }
 
 //tp Container
+/// A container of content, which is defined to be a margin around a
+/// border around padding around the content
 pub struct Container<B: ContainerBorder> {
     /// Content BBox - padding, border and margin go around it (in that order)
     content_bbox: BBox,
     /// The margin is applied just inside the container
-    pub margin: MBox,
+    margin: MBox,
     /// Border - which provides the width of the border on each edge
     ///
     /// border is *inside* the margin of the container
-    pub border: B,
+    border: B,
     /// Padding applies *within* the border
-    pub padding: MBox,
+    padding: MBox,
 }
 
 //ip Default for Container
@@ -184,6 +192,34 @@ where
     #[inline]
     pub fn set_content_bbox(&mut self, content_bbox: BBox) {
         self.content_bbox = content_bbox;
+    }
+
+    //ap margin
+    /// Set the margin
+    #[inline]
+    pub fn margin(&self) -> &MBox {
+        &self.margin
+    }
+
+    //ap border
+    /// Get the border
+    #[inline]
+    pub fn border(&self) -> &B {
+        &self.border
+    }
+
+    //ap padding
+    /// Get the padding
+    #[inline]
+    pub fn padding(&self) -> &MBox {
+        &self.padding
+    }
+
+    //ap content_bbox
+    /// Set the content bbox
+    #[inline]
+    pub fn content_bbox(&self) -> &BBox {
+        &self.content_bbox
     }
 
     //zz All done

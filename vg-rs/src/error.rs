@@ -21,8 +21,13 @@ use thiserror::Error;
 
 //a Error
 //tp Error
+/// Errors used in the Vector Graphics library
 #[derive(Error, Debug)]
 pub enum Error {
+    /// An invalid matrix transformation
     #[error("Invalid transformation matrix, {reason}")]
-    InvalidTransformationMatrix { reason: String },
+    InvalidTransformationMatrix {
+        /// The underlying reason for the error
+        reason: String,
+    },
 }

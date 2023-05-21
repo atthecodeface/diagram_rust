@@ -285,6 +285,7 @@ impl BBox {
     }
 
     //mp transform
+    /// Apply a transformation to this BBox, and return the resulting BBox
     #[must_use]
     #[inline]
     pub fn transform(mut self, transform: &Transform) -> Self {

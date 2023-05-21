@@ -151,7 +151,7 @@ impl<V: Value> Metrics<V> {
                     return Some(m);
                 }
             }
-            Some((&self, ((c as u32) - (self.first_char as u32)) as usize))
+            Some((self, ((c as u32) - (self.first_char as u32)) as usize))
         }
     }
     pub fn glyph_metrics(&self, c: char) -> GlyphMetrics<V> {

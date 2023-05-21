@@ -20,11 +20,16 @@ limitations under the License.
 
 //a GridData
 //tp GridData
-/// Used in external interfaces
+/// This enumeration allows adjusting the specification of a grid
+/// dimension, mapping one or more nodes to an attribute (such as the
+/// expected size of the separation of two nodes)
 #[derive(Debug)]
 pub enum GridData {
+    /// Specify the width between two nodes
     Width(usize, usize, f64),
+    /// Specify the growth (elasticity) of the link between two nodes
     Growth(usize, usize, f64),
+    /// Specify the placement of a node
     Place(usize, f64),
 }
 
