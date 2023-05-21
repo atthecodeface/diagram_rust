@@ -24,7 +24,14 @@ type), which are placed in the grid with relations between them
 defined. This is handled with the [GridPlacement]; a node identifier
 can be any type that supports the NodeId type.
 
-The [GridPlacement] is first created
+The [GridPlacement] is first created (with default()), and cell data
+is added. This cell data specifies the placement of grid node IDs, or
+the gap between two, or the elasticity of the gaps.
+
+Once fully specified a [GridPlacement] can be calculated, which
+resolves the placement given a centre, maximum size, and expansion
+value; then the size of any span, or position of any node, can be
+found
 
 !*/
 
