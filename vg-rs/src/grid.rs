@@ -16,6 +16,18 @@ limitations under the License.
 @brief   Grid placement, layout, growth, resolution etc
  */
 
+/*!
+This library provides a gridded placement system for a single dimension
+
+It utilizes the concept of grid Nodes (with a user-defined identifier
+type), which are placed in the grid with relations between them
+defined. This is handled with the [GridPlacement]; a node identifier
+can be any type that supports the NodeId type.
+
+The [GridPlacement] is first created
+
+!*/
+
 //a Imports
 mod equation_set;
 mod grid_cell_data;

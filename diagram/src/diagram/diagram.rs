@@ -231,7 +231,7 @@ impl<'a> Diagram<'a> {
     /// and so on
     ///
     pub fn layout(&mut self, within: &BBox) -> Result<(), DiagramError> {
-        let mut layout = Layout::new();
+        let mut layout = Layout::default();
         if let Some(element) = &mut self.contents.root_layout {
             element.set_layout_properties(&mut layout);
         }
@@ -252,7 +252,7 @@ impl<'a> Diagram<'a> {
         }
 
         for element in &mut self.contents.markers {
-            let mut layout = Layout::new();
+            let mut layout = Layout::default();
             element.set_layout_properties(&mut layout);
             element.apply_placement(&layout);
         }

@@ -40,11 +40,6 @@ pub struct GridPlacement<N: NodeId> {
 
 //ip GridPlacement
 impl<N: NodeId> GridPlacement<N> {
-    //fp new
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     //mp add_cell
     pub fn add_cell(&mut self, eref: &str, start: N, end: N, size: f64) {
         if DEBUG_GRID_PLACEMENT {
@@ -195,7 +190,7 @@ mod test_grid_placement {
     // This test is old and does not work with current system
     #[allow(dead_code)]
     fn test_0() {
-        let mut gp = GridPlacement::new();
+        let mut gp = GridPlacement::default();
         gp.add_cell("", 0, 4, 4.);
         gp.add_cell("", 4, 6, 2.);
         gp.calculate_positions(0., 0., 0.);
@@ -209,7 +204,7 @@ mod test_grid_placement {
     // This test is old and does not work with current system
     #[allow(dead_code)]
     fn test_1() {
-        let mut gp = GridPlacement::new();
+        let mut gp = GridPlacement::default();
         gp.add_cell("", 0, 4, 4.);
         gp.add_cell("", 4, 6, 2.);
         gp.add_cell_data(&vec![GridData::new_growth(2, 4, 1.)]);
@@ -226,7 +221,7 @@ mod test_grid_placement {
     // This test is old and does not work with current system
     #[allow(dead_code)]
     fn test_2() {
-        let mut gp = GridPlacement::new();
+        let mut gp = GridPlacement::default();
         gp.add_cell("", 0, 10, 10.);
         gp.add_cell_data(&vec![
             GridData::new_growth(0, 2, 1.),

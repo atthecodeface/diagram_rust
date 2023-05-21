@@ -30,7 +30,7 @@ const DEBUG_LAYOUT: bool = 1 == 0;
 //a Layout
 //tp Layout
 /// A layout
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Layout {
     grid_placements: (GridPlacement<usize>, GridPlacement<usize>),
     /// 0. to 1. for each dimension to expand layout to fill its parent
@@ -43,33 +43,8 @@ pub struct Layout {
     content_to_actual: Transform,
 }
 
-//ip Default for Layout
-impl Default for Layout {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 //ip Layout
 impl Layout {
-    //fp new
-    /// Create a new layout
-    pub fn new() -> Self {
-        let grid_placements = (GridPlacement::new(), GridPlacement::new());
-        let direct_placements = (Placements::default(), Placements::default());
-        let refs = (HashMap::new(), HashMap::new());
-        Self {
-            grid_placements,
-            direct_placements,
-            grid_expand: (0., 0.),
-            refs,
-            desired_placement: BBox::none(),
-            desired_grid: BBox::none(),
-            desired_geometry: BBox::none(),
-            content_to_actual: Transform::default(),
-        }
-    }
-
     //ap grid_placements
     /// Set the placement
     pub fn grid_placements(&self, x: bool) -> &GridPlacement<usize> {

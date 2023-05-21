@@ -81,8 +81,8 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
         let (group_type, layout) = {
             match name {
                 el::Typ::Group => (GroupType::Group, None),
-                el::Typ::Marker => (GroupType::Marker, Some(Layout::new())),
-                _ => (GroupType::Layout, Some(Layout::new())),
+                el::Typ::Marker => (GroupType::Marker, Some(Layout::default())),
+                _ => (GroupType::Layout, Some(Layout::default())),
             }
         };
         // println!("Group created using name '{}' layout {:?}",  name, layout);
@@ -112,7 +112,7 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
     ) -> Result<Self, ElementError> {
         let layout = {
             if self.layout.is_some() {
-                Some(Layout::new())
+                Some(Layout::default())
             } else {
                 None
             }
