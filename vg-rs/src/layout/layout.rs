@@ -32,7 +32,7 @@ const DEBUG_LAYOUT: bool = 1 == 0;
 /// A layout
 #[derive(Debug)]
 pub struct Layout {
-    grid_placements: (GridPlacement, GridPlacement),
+    grid_placements: (GridPlacement<usize>, GridPlacement<usize>),
     /// 0. to 1. for each dimension to expand layout to fill its parent
     grid_expand: (f64, f64),
     direct_placements: (Placements, Placements),
@@ -72,7 +72,7 @@ impl Layout {
 
     //ap grid_placements
     /// Set the placement
-    pub fn grid_placements(&self, x: bool) -> &GridPlacement {
+    pub fn grid_placements(&self, x: bool) -> &GridPlacement<usize> {
         if x {
             &self.grid_placements.0
         } else {

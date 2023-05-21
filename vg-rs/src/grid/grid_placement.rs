@@ -17,7 +17,7 @@ limitations under the License.
  */
 
 //a Imports
-use crate::grid::{GridCellDataEntry, GridData, Resolver};
+use crate::grid::{GridCellDataEntry, GridData, NodeId, Resolver};
 use crate::Range;
 
 //a Global constants for debug
@@ -30,23 +30,23 @@ const DEBUG_GRID_PLACEMENT: bool = true;
 /// through the vector
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug, Default)]
-pub struct GridPlacement {
-    cell_data: Vec<GridCellDataEntry<usize>>,
-    resolver: Resolver<usize>,
-    growth_data: Vec<(usize, usize, f64)>,
+pub struct GridPlacement<N: NodeId> {
+    cell_data: Vec<GridCellDataEntry<N>>,
+    resolver: Resolver<N>,
+    growth_data: Vec<(N, N, f64)>,
     desired_range: Range,
     size: f64,
 }
 
 //ip GridPlacement
-impl GridPlacement {
+impl<N: NodeId> GridPlacement<N> {
     //fp new
     pub fn new() -> Self {
         Self::default()
     }
 
     //mp add_cell
-    pub fn add_cell(&mut self, eref: &str, start: usize, end: usize, size: f64) {
+    pub fn add_cell(&mut self, eref: &str, start: N, end: N, size: f64) {
         if DEBUG_GRID_PLACEMENT {
             println!("Add cell {} {} {} {}", eref, start, end, size);
         }
@@ -58,7 +58,7 @@ impl GridPlacement {
 
     //mp add_cell_data
     /// Used to add growth of cell data
-    pub fn add_cell_data(&mut self, growth_data: &[GridData<usize>]) {
+    pub fn add_cell_data(&mut self, growth_data: &[GridData<N>]) {
         for gd in growth_data {
             match gd {
                 GridData::Width(start, end, size) => {
@@ -125,7 +125,7 @@ impl GridPlacement {
 
     //mp get_span
     /// Find the span of a start/number of grid positions
-    pub fn get_span(&self, start: usize, end: usize) -> (f64, f64) {
+    pub fn get_span(&self, start: N, end: N) -> (f64, f64) {
         if DEBUG_GRID_PLACEMENT {
             println!("Get span {} {}", start, end);
         }
@@ -149,7 +149,7 @@ impl GridPlacement {
 
     //mp get_position
     /// Get the position of all the references
-    pub fn get_position(&self, n: usize) -> Option<f64> {
+    pub fn get_position(&self, n: N) -> Option<f64> {
         if self.resolver.has_node(n) {
             let pos = self.resolver.get_node_position(n);
             if DEBUG_GRID_PLACEMENT {
@@ -176,7 +176,7 @@ impl GridPlacement {
 mod test_grid_placement {
     use super::*;
     //fi check_positions
-    fn check_positions(cp: &GridPlacement, exp: &Vec<(usize, f64)>) {
+    fn check_positions(cp: &GridPlacement<usize>, exp: &Vec<(usize, f64)>) {
         for (r, e) in exp {
             let p = cp.get_position(*r);
             assert!(p.is_some(), "Expected ref {} to have a position", r);
