@@ -298,19 +298,21 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Group<'a> {
     //mp display
     /// Display - using indent_str + 2 indent, or an indent of indent spaces
     /// Content should be invoked with indent+4
-    fn display(&self, indent: usize, indent_str: &str) {
-        if let Some(layout) = &self.layout {
-            println!("{}  layout", indent_str);
-            println!("{}    X grid", indent_str);
-            layout.grid_placements(true).display(indent_str);
-            println!("{}    Y grid", indent_str);
-            layout.grid_placements(false).display(indent_str);
-        } else {
-            println!("{}  group only", indent_str);
-        }
-        for e in self.content.iter() {
-            e.display(indent + 4);
-        }
+    fn display(&self, _indent: usize, _indent_str: &str) {
+        panic!("Display in group");
+        /*        if let Some(layout) = &self.layout {
+                    println!("{}  layout", indent_str);
+                    println!("{}    X grid", indent_str);
+                    layout.grid_placements(true).display(indent_str);
+                    println!("{}    Y grid", indent_str);
+                    layout.grid_placements(false).display(indent_str);
+                } else {
+                    println!("{}  group only", indent_str);
+                }
+                for e in self.content.iter() {
+                    e.display(indent + 4);
+                }
+        */
     }
 
     //zz All done
@@ -447,7 +449,7 @@ impl<'a> Group<'a> {
 
     //mp add_element
     /// Add an element to the group; moves the element in to the content
-    pub fn add_element(&mut self, element: Element<'a>) -> () {
+    pub fn add_element(&mut self, element: Element<'a>) {
         self.content.push(element);
     }
     //mp tree_add_element
@@ -534,39 +536,39 @@ impl<'a, 'diag> IndentedDisplay<'a, IndentOptions> for Group<'diag> {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         use std::fmt::Write;
         match self.group_type {
-            GroupType::Marker => write!(ind, "Marker\n")?,
-            GroupType::Group => write!(ind, "Group\n")?,
-            GroupType::Layout => write!(ind, "Content\n")?,
+            GroupType::Marker => writeln!(ind, "Marker")?,
+            GroupType::Group => writeln!(ind, "Group")?,
+            GroupType::Layout => writeln!(ind, "Content")?,
         }
 
         let mut sub = ind.sub();
-        write!(&mut sub, "bbox       : {}\n", self.bbox)?;
-        write!(&mut sub, "ref_pt     : {}\n", self.ref_pt)?;
-        write!(
+        writeln!(&mut sub, "bbox       : {}", self.bbox)?;
+        writeln!(&mut sub, "ref_pt     : {}", self.ref_pt)?;
+        writeln!(
             &mut sub,
-            "relief     : {}, {}\n",
+            "relief     : {}, {}",
             self.relief.0, self.relief.1
         )?;
-        write!(&mut sub, "flags      : {}\n", self.flags)?;
-        write!(&mut sub, "width      : {}\n", self.width)?;
-        write!(&mut sub, "height     : {}\n", self.height)?;
-        write!(&mut sub, "x cell data\n")?;
+        writeln!(&mut sub, "flags      : {}", self.flags)?;
+        writeln!(&mut sub, "width      : {}", self.width)?;
+        writeln!(&mut sub, "height     : {}", self.height)?;
+        writeln!(&mut sub, "x cell data")?;
         {
             let mut sub = sub.sub();
             for gd in &self.x_cell_data {
-                write!(&mut sub, "{}\n", gd)?;
+                writeln!(&mut sub, "{}", gd)?;
             }
         }
-        write!(&mut sub, "y cell data\n")?;
+        writeln!(&mut sub, "y cell data")?;
         {
             let mut sub = sub.sub();
             for gd in &self.y_cell_data {
-                write!(&mut sub, "{}\n", gd)?;
+                writeln!(&mut sub, "{}", gd)?;
             }
         }
 
         for (i, e) in self.content.iter().enumerate() {
-            write!(&mut sub, "Element {}\n", i + 1)?;
+            writeln!(&mut sub, "Element {}", i + 1)?;
             let mut sub = sub.sub();
             e.indent(&mut sub)?;
         }

@@ -38,6 +38,7 @@ pub struct GridCellDataEntry<N: NodeId> {
 //ii GridCellDataEntry
 impl<N: NodeId> GridCellDataEntry<N> {
     //fp new
+    /// Create a new [GridCellDataEntry], for a link between two nodes
     pub fn new(start: N, end: N, size: f64) -> Self {
         Self { start, end, size }
     }

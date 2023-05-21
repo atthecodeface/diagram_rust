@@ -122,49 +122,44 @@ impl<'a> GenerateSvg for Element<'a> {
 //ip GenerateSvg for LayoutRecord
 impl GenerateSvg for LayoutRecord {
     fn generate_svg(&self, svg: &mut Svg) -> Result<(), SvgError> {
-        match self.grid_positions() {
-            Some((grid_x, grid_y)) => {
-                if grid_x.len() < 2 || grid_y.len() < 2 {
-                    ()
-                } else {
-                    let color = "lime";
-                    let line_width = 0.25;
-                    let mut rx = String::new();
-                    let mut ry = String::new();
-                    fn bounds_of_hash(hash: &HashMap<String, f64>) -> (f64, f64) {
-                        let mut bounds = (0., 0.);
-                        let found = false;
-                        for p in hash.values() {
-                            let p = *p;
-                            if !found {
-                                bounds = (p, p);
-                            } else if p < bounds.0 {
-                                bounds.0 = p;
-                            } else if p > bounds.1 {
-                                bounds.1 = p;
-                            }
+        if let Some((grid_x, grid_y)) = self.grid_positions() {
+            if grid_x.len() < 2 || grid_y.len() < 2 {
+            } else {
+                let color = "lime";
+                let line_width = 0.25;
+                let mut rx = String::new();
+                let mut ry = String::new();
+                fn bounds_of_hash(hash: &HashMap<String, f64>) -> (f64, f64) {
+                    let mut bounds = (0., 0.);
+                    let found = false;
+                    for p in hash.values() {
+                        let p = *p;
+                        if !found {
+                            bounds = (p, p);
+                        } else if p < bounds.0 {
+                            bounds.0 = p;
+                        } else if p > bounds.1 {
+                            bounds.1 = p;
                         }
-                        bounds
                     }
-                    let (x0, x1) = bounds_of_hash(grid_x);
-                    let (y0, y1) = bounds_of_hash(grid_y);
-                    for (_, x) in grid_x {
-                        rx.push_str(&format!("M {:.4},{:.4} v {:.4} ", x, y0, y1 - y0));
-                    }
-                    for (_, y) in grid_y {
-                        ry.push_str(&format!("M {:.4},{:.4} h {:.4} ", x0, y, x1 - x0));
-                    }
-                    rx.push_str(&ry);
-                    let mut grid = SvgElement::new("path");
-                    grid.add_attribute("fill", "None");
-                    grid.add_attribute("stroke", color);
-                    grid.add_attribute("stroke-width", &format!("{:.4}", line_width));
-                    grid.add_attribute("d", &rx);
-                    svg.add_subelement(grid);
-                    ()
+                    bounds
                 }
+                let (x0, x1) = bounds_of_hash(grid_x);
+                let (y0, y1) = bounds_of_hash(grid_y);
+                for (_, x) in grid_x {
+                    rx.push_str(&format!("M {:.4},{:.4} v {:.4} ", x, y0, y1 - y0));
+                }
+                for (_, y) in grid_y {
+                    ry.push_str(&format!("M {:.4},{:.4} h {:.4} ", x0, y, x1 - x0));
+                }
+                rx.push_str(&ry);
+                let mut grid = SvgElement::new("path");
+                grid.add_attribute("fill", "None");
+                grid.add_attribute("stroke", color);
+                grid.add_attribute("stroke-width", &format!("{:.4}", line_width));
+                grid.add_attribute("d", &rx);
+                svg.add_subelement(grid);
             }
-            _ => (),
         }
         Ok(())
     }

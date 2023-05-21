@@ -107,7 +107,7 @@ impl<'a> Diagram<'a> {
     /// already been created.
     pub fn new(descriptor: &'a DiagramDescriptor) -> Self {
         let contents = DiagramContents::new();
-        let stylesheet = StyleSheet::new(&descriptor.style_set);
+        let stylesheet = StyleSheet::new(descriptor.style_set);
         Self {
             descriptor,
             stylesheet,
@@ -129,42 +129,21 @@ impl<'a> Diagram<'a> {
         &'z mut DiagramContents<'a>,
         &'z mut StyleSheet<'a>,
     ) {
-        (&self.descriptor, &mut self.contents, &mut self.stylesheet)
+        (self.descriptor, &mut self.contents, &mut self.stylesheet)
     }
 
     //mp find_definition
     /// Find the definition of an id, if it exists in the contents
     /// 'definitions' section
     pub fn find_definition<'b>(&'b self, name: &str) -> Option<&'b Element<'a>> {
-        for i in &self.contents.definitions {
-            if i.has_id(name) {
-                return Some(i);
-            }
-        }
-        None
+        self.contents.definitions.iter().find(|i| i.has_id(name))
     }
 
     //mp find_marker
     /// Find the marker of an id, if it exists in the contents
     /// 'markers' section
     pub fn find_marker<'z>(&'z self, name: &str) -> Option<&'z Element<'a>> {
-        for i in &self.contents.markers {
-            if i.has_id(name) {
-                return Some(i);
-            }
-        }
-        None
-    }
-
-    //mp borrow_marker
-    /// Borrow the marker header and content of a marker
-    pub fn borrow_marker<'z>(&'z self, name: &str) -> Option<&'z Element<'a>> {
-        for i in &self.contents.markers {
-            if i.has_id(name) {
-                return Some(i);
-            }
-        }
-        None
+        self.contents.markers.iter().find(|i| i.has_id(name))
     }
 
     //mp uniquify

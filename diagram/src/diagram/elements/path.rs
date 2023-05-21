@@ -156,10 +156,9 @@ impl<'a, 'b> DiagramElementContent<'a, 'b> for Path {
         self.height = header
             .get_style_of_name_float(at::HEIGHT, Some(self.width))
             .unwrap();
-        if self.closed && self.coords.len() > 2 {
-            if self.coords[0].distance(&self.coords[self.coords.len() - 1]) > 1E-6 {
-                self.coords.push(self.coords[0].clone());
-            }
+        let n = self.coords.len();
+        if self.closed && n > 2 && self.coords[0].distance(&self.coords[n - 1]) > 1E-6 {
+            self.coords.push(self.coords[0].clone());
         }
         Ok(())
     }
@@ -234,7 +233,7 @@ impl GenerateSvgElement for Path {
         if let Some(m) = &self.markers.0 {
             if let Some((_, m)) = svg
                 .diagram
-                .borrow_marker(&m)
+                .find_marker(&m)
                 .map(|e| e.borrow_marker().unwrap())
             {
                 let relief = m.get_relief(0);
@@ -246,7 +245,7 @@ impl GenerateSvgElement for Path {
         if let Some(m) = &self.markers.2 {
             if let Some((_, m)) = svg
                 .diagram
-                .borrow_marker(&m)
+                .find_marker(&m)
                 .map(|e| e.borrow_marker().unwrap())
             {
                 let relief = m.get_relief(1);

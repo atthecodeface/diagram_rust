@@ -50,7 +50,7 @@ impl TypeValue for Color {
         Some(&self.0)
     }
     fn type_name(&self) -> String {
-        format!("Color")
+        "Color".into()
     }
     fn mk_value(&self) -> Box<dyn TypeValue> {
         let s = Self::default();
@@ -116,7 +116,7 @@ impl TypeValue for Color {
             self.0 = VgColor::new(None, rgba);
             Ok(())
         } else {
-            Err(ValueError::bad_value(&format!(
+            Err(ValueError::bad_value(format!(
                 "failed to parse color '{}'",
                 s
             )))

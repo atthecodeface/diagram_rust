@@ -19,6 +19,7 @@ limitations under the License.
 //a Imports
 use crate::grid::{GridCellDataEntry, GridData, NodeId, Resolver};
 use crate::Range;
+use indent_display::{IndentedDisplay, IndentedOptions, Indenter};
 
 //a Global constants for debug
 const DEBUG_GRID_PLACEMENT: bool = false;
@@ -31,16 +32,19 @@ const DEBUG_GRID_PLACEMENT: bool = false;
 /// Structure for a grid - a list of start, span, and height of each cell *)
 #[derive(Debug, Default)]
 pub struct GridPlacement<N: NodeId> {
+    /// Desired placement of node pairs with the gap between them
     cell_data: Vec<GridCellDataEntry<N>>,
-    resolver: Resolver<N>,
+    /// Elasticity between node pairs
     growth_data: Vec<(N, N, f64)>,
+    /// Desired range
     desired_range: Range,
+    resolver: Resolver<N>,
     size: f64,
 }
 
 //ip GridPlacement
 impl<N: NodeId> GridPlacement<N> {
-    //mp add_cell_data
+    //mp add_cell_data3
     /// Specifiy some grid data - gap between nodes, the elasticity,
     /// or the placement of a node, etc
     pub fn add_cell_data(&mut self, growth_data: &[GridData<N>]) {
@@ -50,8 +54,8 @@ impl<N: NodeId> GridPlacement<N> {
                     self.cell_data
                         .push(GridCellDataEntry::new(*start, *end, *size));
                 }
-                GridData::Growth(start, end, size) => {
-                    self.growth_data.push((*start, *end, *size));
+                GridData::Growth(start, end, growth) => {
+                    self.growth_data.push((*start, *end, *growth));
                 }
                 _ => {
                     todo!();
@@ -146,14 +150,31 @@ impl<N: NodeId> GridPlacement<N> {
         }
     }
 
-    // Display with an indent of indent_str plus six spaces
-    pub fn display(&self, _indent_str: &str) {
-        // println!("{}      {}", indent_str, self.cell_data);
-        // println!("{}      {}", indent_str, self.grid_dimension);
-        // println!("{}      {}", indent_str, self.growth_data);
-    }
-
     //zz All done
+}
+
+//ti IndentedDisplay for GridPlacement
+impl<'a, N: NodeId, O: IndentedOptions<'a>> IndentedDisplay<'a, O> for GridPlacement<N> {
+    fn indent(&self, ind: &mut Indenter<'a, O>) -> std::fmt::Result {
+        use std::fmt::Write;
+        writeln!(ind, "Grid Placement:")?;
+        let mut sub = ind.sub();
+        writeln!(sub, "Cell data:")?;
+        {
+            let mut inner = ind.sub();
+            for c in self.cell_data.iter() {
+                writeln!(inner, "{}", c)?;
+            }
+        }
+        writeln!(sub, "Growth data:")?;
+        {
+            let mut inner = ind.sub();
+            for c in self.growth_data.iter() {
+                writeln!(inner, "{:?}", c)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 //mt Test for GridPlacement

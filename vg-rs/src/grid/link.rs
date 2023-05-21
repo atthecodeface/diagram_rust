@@ -55,11 +55,13 @@ impl<N: NodeId> Link<N> {
     }
 
     //ap min_size
+    /// Get the minimum size of the link
     pub fn min_size(&self) -> f64 {
         self.min_size
     }
 
     //ap growth
+    /// Get the growth (elasticity) of the link
     pub fn growth(&self) -> Option<f64> {
         self.growth
     }

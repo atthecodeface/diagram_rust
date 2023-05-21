@@ -60,19 +60,19 @@ impl<'a> DiagramDescriptor<'a> {
         let box_type = StyleTypeValue::new(Option::<[f64; 4]>::None);
         let string_list_type = StyleTypeValue::new(("", true, Vec::<String>::new()));
         let string_comma_list_type = StyleTypeValue::new((",", true, Vec::<String>::new()));
-        let style_set = StyleSet::default()
+        StyleSet::default()
             .add_type(at::DEBUG, string_type.clone(), false)
             .add_type(at::BBOX, box_type.clone(), false)
             .add_type(at::GRID, int_list_type.clone(), false)
             .add_type(at::GRIDX, int_list_type.clone(), false)
-            .add_type(at::GRIDY, int_list_type.clone(), false)
+            .add_type(at::GRIDY, int_list_type, false)
             .add_type(at::MINX, string_comma_list_type.clone(), false)
-            .add_type(at::MINY, string_comma_list_type.clone(), false)
+            .add_type(at::MINY, string_comma_list_type, false)
             .add_type(at::PLACE, float_list_type.clone(), false)
             .add_type(at::ANCHOR, point_type.clone(), true)
             .add_type(at::EXPAND, point_type.clone(), true)
             .add_type(at::PAD, box_type.clone(), false)
-            .add_type(at::MARGIN, box_type.clone(), true)
+            .add_type(at::MARGIN, box_type, true)
             .add_type(at::BORDERWIDTH, float_type.clone(), true)
             .add_type(at::BORDERROUND, float_type.clone(), true)
             .add_type(at::BORDERCOLOR, color_type.as_type(), true)
@@ -81,24 +81,23 @@ impl<'a> DiagramDescriptor<'a> {
             .add_type(at::ROTATE, float_type.clone(), true)
             .add_type(at::TRANSLATE, point_type.clone(), true)
             .add_type(at::POINT, point_type.clone(), true)
-            .add_type(at::RELIEF, point_type.clone(), true)
+            .add_type(at::RELIEF, point_type, true)
             .add_type(at::FILL, color_type.as_type(), true)
             .add_type(at::STROKE, color_type.as_type(), true)
             .add_type(at::STROKEWIDTH, float_type.clone(), true)
             .add_type(at::WIDTH, float_type.clone(), true)
             .add_type(at::HEIGHT, float_type.clone(), true)
-            .add_type(at::COORDS, float_list_type.clone(), false)
+            .add_type(at::COORDS, float_list_type, false)
             .add_type(at::ROUND, float_type.clone(), true)
             .add_type(at::STELLATE, float_type.clone(), true)
             .add_type(at::MARKERS, string_list_type, true)
             .add_type(at::FONT, string_type.clone(), true)
-            .add_type(at::FONTSIZE, float_type.clone(), true)
+            .add_type(at::FONTSIZE, float_type, true)
             .add_type(at::FONTWEIGHT, string_type.clone(), true)
             .add_type(at::FONTSTYLE, string_type.clone(), true)
             .add_type(at::VERTICES, int_type.clone(), true)
-            .add_type(at::FLAGS, int_type.clone(), true)
-            .add_type(at::REF, string_type.clone(), false);
-        style_set
+            .add_type(at::FLAGS, int_type, true)
+            .add_type(at::REF, string_type, false)
     }
 
     //fp new
@@ -147,7 +146,7 @@ impl<'a> DiagramDescriptor<'a> {
         include_hdr: bool,
         styles: Vec<&str>,
     ) {
-        let mut descriptor = StyleDescriptor::new(&self.style_set);
+        let mut descriptor = StyleDescriptor::new(self.style_set);
         if include_hdr {
             descriptor.add_styles(ElementHeader::get_style_names());
         }
