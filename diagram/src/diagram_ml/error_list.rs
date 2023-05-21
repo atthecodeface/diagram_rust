@@ -40,6 +40,17 @@ where
     errors: Vec<MLError<P, E>>,
 }
 
+//ip Default for MLError
+impl<P, E> Default for MLErrorList<P, E>
+where
+    P: HmlPosition,
+    E: HmlError<Position = P>,
+{
+    fn default() -> Self {
+        Self { errors: Vec::new() }
+    }
+}
+
 //ip MLErrorList
 impl<P, E> MLErrorList<P, E>
 where
@@ -49,12 +60,12 @@ where
     //fp new
     /// Create a new MLErrorList
     pub fn new() -> Self {
-        Self { errors: Vec::new() }
+        Self::default()
     }
 
     //mp add
     /// Add an error to the list
-    pub fn add(&mut self, e: MLError<P, E>) -> () {
+    pub fn add(&mut self, e: MLError<P, E>) {
         self.errors.push(e);
     }
 

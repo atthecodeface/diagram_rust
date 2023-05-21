@@ -150,10 +150,7 @@ impl<'a> Element<'a> {
 
     //mp borrow_marker
     pub fn borrow_marker<'z>(&'z self) -> Option<(&'z ElementHeader<'a>, &'z Group<'a>)> {
-        match self.content.borrow_group() {
-            None => None,
-            Some(x) => Some((&self.header, x)),
-        }
+        self.content.borrow_group().map(|x| (&self.header, x))
     }
 
     //fp tree_add_element

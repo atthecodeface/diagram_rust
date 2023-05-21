@@ -83,7 +83,7 @@ impl<'a> ElementHeader<'a> {
     //fp clone
     pub fn clone(&self, scope: &ElementScope) -> ElementHeader<'a> {
         let mut id_name = scope.id_prefix.clone();
-        id_name.push_str(".");
+        id_name.push('.');
         id_name.push_str(self.borrow_id());
         // println!("Clone header with new id {}", id_name);
         let uid = 0;
@@ -164,10 +164,7 @@ impl<'a> ElementHeader<'a> {
 
     //mp get_opt_style_value_of_name
     pub fn get_opt_style_value_of_name(&self, name: &str) -> Option<StyleTypeValue> {
-        let r = self
-            .stylable
-            .get_style_value_of_name(name)
-            .map(|a| a.clone());
+        let r = self.stylable.get_style_value_of_name(name).cloned();
         if DEBUG_ELEMENT_HEADER {
             println!("Debug {} {} {:?}", self.borrow_id(), name, r);
         }
@@ -243,16 +240,15 @@ impl<'a> ElementHeader<'a> {
             match &self.layout.placement {
                 LayoutPlacement::None => self.layout_box.desired_bbox(),
                 LayoutPlacement::Grid(sx, sy, ex, ey) => {
-                    let sx = layout.find_grid_id(true, &sx).unwrap();
-                    let sy = layout.find_grid_id(false, &sy).unwrap();
-                    let ex = layout.find_grid_id(true, &ex).unwrap();
-                    let ey = layout.find_grid_id(false, &ey).unwrap();
+                    let sx = layout.find_grid_id(true, sx).unwrap();
+                    let sy = layout.find_grid_id(false, sy).unwrap();
+                    let ex = layout.find_grid_id(true, ex).unwrap();
+                    let ey = layout.find_grid_id(false, ey).unwrap();
                     layout.grid_bbox((*sx, *sy), (*ex, *ey))
                 }
-                LayoutPlacement::Place(pt) => layout.get_placed_rectangle(&pt, &self.layout.ref_pt),
+                LayoutPlacement::Place(pt) => layout.get_placed_rectangle(pt, &self.layout.ref_pt),
             }
         };
-        //println!("Laying out {:?} => {}",self.layout,rect);
         self.layout_box.layout_within_rectangle(rect);
         self.layout_box.get_content_rectangle()
     }
@@ -270,7 +266,7 @@ impl<'a> ElementHeader<'a> {
 impl<'diag, 'a> IndentedDisplay<'a, IndentOptions> for ElementHeader<'diag> {
     fn indent(&self, ind: &mut Indenter<'_, IndentOptions>) -> std::fmt::Result {
         use std::fmt::Write;
-        write!(ind, "{} : {:?}\n", self.uid, self.id_name)?;
+        writeln!(ind, "{} : {:?}", self.uid, self.id_name)?;
         self.layout.indent(ind)?;
         self.layout_box.indent(ind)?;
         Ok(())

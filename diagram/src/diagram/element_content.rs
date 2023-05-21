@@ -56,18 +56,18 @@ impl<'a> ElementContent<'a> {
     //fp new
     pub fn new(header: &ElementHeader<'a>, name: el::Typ) -> Result<Self, ElementError> {
         match name {
-            el::Typ::Diagram => Ok(Self::Group(Group::new(&header, name)?)),
-            el::Typ::Group => Ok(Self::Group(Group::new(&header, name)?)),
-            el::Typ::Layout => Ok(Self::Group(Group::new(&header, name)?)),
-            el::Typ::Marker => Ok(Self::Group(Group::new(&header, name)?)),
-            el::Typ::Path => Ok(Self::Path(Path::new(&header, name)?)),
-            el::Typ::Rect => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::Typ::Circle => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::Typ::Polygon => Ok(Self::Shape(Shape::new(&header, name)?)),
-            el::Typ::Text => Ok(Self::Text(Text::new(&header, name)?)),
-            el::Typ::Use => Ok(Self::Use(Use::new(&header, name)?)),
+            el::Typ::Diagram => Ok(Self::Group(Group::new(header, name)?)),
+            el::Typ::Group => Ok(Self::Group(Group::new(header, name)?)),
+            el::Typ::Layout => Ok(Self::Group(Group::new(header, name)?)),
+            el::Typ::Marker => Ok(Self::Group(Group::new(header, name)?)),
+            el::Typ::Path => Ok(Self::Path(Path::new(header, name)?)),
+            el::Typ::Rect => Ok(Self::Shape(Shape::new(header, name)?)),
+            el::Typ::Circle => Ok(Self::Shape(Shape::new(header, name)?)),
+            el::Typ::Polygon => Ok(Self::Shape(Shape::new(header, name)?)),
+            el::Typ::Text => Ok(Self::Text(Text::new(header, name)?)),
+            el::Typ::Use => Ok(Self::Use(Use::new(header, name)?)),
             _ => ElementError::of_result(
-                &header,
+                header,
                 Err(format!("Bug - bad element name {}", name.as_str())),
             ),
         }
@@ -105,23 +105,23 @@ impl<'a> ElementContent<'a> {
     ) -> Result<Self, ElementError> {
         match self {
             Self::Group(ref c) => Ok(Self::Group(ElementError::of_result(
-                &header,
+                header,
                 c.clone(header, scope),
             )?)),
             Self::Shape(ref c) => Ok(Self::Shape(ElementError::of_result(
-                &header,
+                header,
                 c.clone(header, scope),
             )?)),
             Self::Path(ref c) => Ok(Self::Path(ElementError::of_result(
-                &header,
+                header,
                 c.clone(header, scope),
             )?)),
             Self::Text(ref c) => Ok(Self::Text(ElementError::of_result(
-                &header,
+                header,
                 c.clone(header, scope),
             )?)),
             Self::Use(ref c) => Ok(Self::Use(ElementError::of_result(
-                &header,
+                header,
                 c.clone(header, scope),
             )?)),
         }
@@ -129,11 +129,8 @@ impl<'a> ElementContent<'a> {
 
     //mp add_element
     pub fn add_element(&mut self, element: Element<'a>) {
-        match self {
-            Self::Group(ref mut c) => {
-                c.add_element(element);
-            }
-            _ => (),
+        if let Self::Group(ref mut c) = self {
+            c.add_element(element);
         }
     }
 
